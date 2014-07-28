@@ -8,7 +8,9 @@
 #include "GLI/gli.hpp"
 
 GLUFErrorMethod ErrorMethod;
-GLUFProgramPtr GLUFShaderManager::m_pCurrentProgram;
+
+//this is added to every PPO
+std::string StandardShaderTexts[5];
 
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 {
@@ -20,10 +22,59 @@ GLUFErrorMethod GLUFGetErrorMethod()
 {
 	return ErrorMethod;
 }
+namespace GLUF
+{
+	unsigned char ShaderTypeToIndex(GLUFShaderType type)
+	{
+		switch (type)
+		{
+		case SH_VERTEX_SHADER:
+			return 0;
+		case SH_TESS_CONTROL_SHADER:
+			return 1;
+		case SH_TESS_EVALUATION_SHADER:
+			return 2;
+		case SH_GEOMETRY_SHADER:
+			return 3;
+		case SH_FRAGMENT_SHADER:
+			return 4;
+		default:
+			GLUF_ERROR("ERROR, unknown shader type");
+			return 255;
+		}
+	}
 
 
+	/*
+	const char* StandardVertexShader =
+	"#version 430 core	layout(std140, binding = 0) uniform MatrixTransformations	{	mat4 m;	mat4 v; mat4 p; mat4 mv; mat4 mvp;};	out VS_OUT	{	vec2 uvCoord;	} vs_out; ";
 
+	const char* StandardFragmentShader =
+	"#version 430 core	layout(std140, binding = 0) uniform MatrixTransformations	{	mat4 m;	mat4 v; mat4 p; mat4 mv; mat4 mvp;};	in VS_OUT	{	vec2 uvCoord;	} fs_in; layout(location = 0) out vec4 color; layout(location = 5) uniform sampler2D TextureSampler;";
+	*/
 
+	void GLUFInit(std::string standardFilePaths[5])
+	{
+		for (unsigned char i = 0; i < 5; ++i)
+		{
+			if (standardFilePaths[i] != "")
+			{
+				std::ifstream inFile(standardFilePaths[i]);
+				inFile.seekg(0, std::ios::end);
+				StandardShaderTexts[i].resize(inFile.tellg());
+				inFile.seekg(0, std::ios::beg);
+				inFile.read(&StandardShaderTexts[i][0], StandardShaderTexts[i].size());
+				inFile.close();
+
+				//printf(StandardShaderTexts[i].c_str());
+			}
+			else
+			{
+				StandardShaderTexts[i] = "";
+			}
+		}
+	}
+}
 
 void GLUFMatrixStack::Push(const glm::mat4& matrix)
 {
@@ -519,7 +570,7 @@ void GLUFBufferManager::LoadTextureFromFile(GLUFTexturePtr texture, std::string 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data, uint64_t length, GLUFTextureFileFormat format)
+void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format)
 {
 	gli::texture2D Texture(gli::load_dds_memory(data, length));
 	assert(!Texture.empty());
@@ -635,14 +686,19 @@ public:
 
 	void Build(GLUFShaderInfoStruct& retStruct);
 
-
+	GLuint GetId(){ return mProgramId; }
 };
 
 class GLUFSeperateProgram
 {
 	friend GLUFShaderManager;
+	GLuint mPPOId;
 
-	//this is done completely different
+public:
+	void Init(){ glGenProgramPipelines(1, &mPPOId); }
+	
+	void AttachProgram(GLUFProgramPtr program, GLbitfield stages){ glUseProgramStages(mPPOId, stages, program->GetId()); }
+
 };
 
 
@@ -653,10 +709,6 @@ class GLUFSeperateProgram
 //
 //
 
-GLuint GLUFShaderManager::GetCurrProgramPtr()
-{
-	return m_pCurrentProgram->mProgramId;
-}
 
 GLUFShader::GLUFShader()
 {
@@ -751,9 +803,19 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 
 	//start by adding the strings to glShader Source.  This is done right before the compile
 	//process becuase it is hard to remove it if there is any reason to flush the text
-	const GLint tmpSize = mTmpShaderText.length();
-	const char* text = mTmpShaderText.c_str();
-	glShaderSource(mShaderId, 1, &text, &tmpSize - 1 /*BECAUSE OF NULL TERMINATED STRINGS*/);
+
+	//add the standard shaders to this
+	std::string tmpText = "";
+	tmpText += StandardShaderTexts[GLUF::ShaderTypeToIndex(mShaderType)].c_str();
+	tmpText += mTmpShaderText;
+
+	GLint tmpSize = 0;
+	tmpSize += StandardShaderTexts[GLUF::ShaderTypeToIndex(mShaderType)].length();
+	tmpSize += mTmpShaderText.length();
+	tmpSize--; /*BECAUSE OF NULL TERMINATED STRINGS*/
+
+	const GLchar* text = tmpText.c_str();
+	glShaderSource(mShaderId, 1, &text, &tmpSize);
 
 	FlushText();
 
@@ -826,6 +888,8 @@ void GLUFProgram::FlushShaders(void)
 
 void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct)
 {
+	//make sure we always enable seperable shading
+	glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE);
 
 	//Link our program
 	glLinkProgram(mProgramId);
@@ -852,8 +916,11 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct)
 	}
 }
 
-
-
+////////////////////////////////////////
+//
+//GLUFSeperateProgram Methods:
+//
+//
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -951,7 +1018,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths)
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderPaths)
 	{
-		//use the counter global to get a unique name  This is temperary anyway
+
 		shaders.push_back(CreateShader(it.second, it.first, true));
 
 		//make sure it didn't fail
@@ -1028,10 +1095,45 @@ const GLUFLinkOutputStruct GLUFShaderManager::GetProgramLog(GLUFProgramPtr progr
 void GLUFShaderManager::UseProgram(GLUFProgramPtr program)
 {
 	glUseProgram(program->mProgramId);
-	m_pCurrentProgram = program;
 }
 
 void GLUFShaderManager::UseProgramNull()
 {
 	glUseProgram(0);
+	glBindProgramPipeline(0);//juse in case we are using pipelines
+}
+
+GLUFSepProgramPtr GLUFShaderManager::CreateSeperateProgram(GLUFProgramPtrStagesMap programs)
+{
+	GLUFSepProgramPtr ret(new GLUFSeperateProgram);
+	ret->Init();
+
+	for (auto it : programs)
+	{
+		ret->AttachProgram(it.second, it.first);
+	}
+	return ret;
+}
+
+void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr ppo, GLbitfield stages, GLUFProgramPtr program)
+{
+	ppo->AttachProgram(program, stages);
+}
+
+void GLUFShaderManager::AttachPrograms(GLUFSepProgramPtr ppo, GLUFProgramPtrStagesMap programs)
+{
+	for (auto it : programs)
+	{
+		ppo->AttachProgram(it.second, it.first);
+	}
+}
+
+void GLUFShaderManager::ClearPrograms(GLUFSepProgramPtr ppo, GLbitfield stages)
+{
+	glUseProgramStages(ppo->mPPOId, stages, 0);
+}
+
+void GLUFShaderManager::UseProgram(GLUFSepProgramPtr program)
+{
+	glBindProgramPipeline(program->mPPOId);
 }

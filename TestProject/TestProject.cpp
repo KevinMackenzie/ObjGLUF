@@ -49,6 +49,8 @@ int main(void)
 	{
 		exit(EXIT_FAILURE);
 	}
+	std::string filePaths[5] = {"vert.glsl", "", "", "", "frag.glsl"};
+	GLUF::GLUFInit(filePaths);
 
 	GLUFRegisterErrorMethod(ErrorMethod);
 

@@ -1,13 +1,20 @@
-#version 430 core
+#version 430 core //FRAGMENT STANDARD
 
-layout (location = 0) out vec4 color;
+layout(std140, binding = 0) uniform MatrixTransformations
+{						//base alignment			offset			aligned offset
+	mat4 M;				//16						0					0
+	mat4 V;				//16						64					64
+	mat4 P;				//16						128					128
+	mat4 MV;			//16						192					192
+	mat4 MVP;			//16						256					256
+};
+
+out vec4 _Color;
+
+layout(location = 5) uniform sampler2D TextureSampler;
 
 in VS_OUT
 {
-	vec4 inColor;
+	vec2 uvCoord;
 } fs_in;
 
-void main(void)
-{
-	color = fs_in.inColor;
-}

@@ -61,16 +61,14 @@ inline glm::vec4 AssimpToGlm(aiColor4D v)
 
 typedef void(*GLUFErrorMethod)(const char* message, const char* funcName, const char* sourceFile, unsigned int lineNum);
 
-void OBJGLUF_API GLUFRegisterErrorMethod(GLUFErrorMethod method);
-GLUFErrorMethod OBJGLUF_API GLUFGetErrorMethod();
+OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
+OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
 #define GLUF_ASSERT(statement)	if(!statement){GLUF_ERROR("Assertion Error!");}
 
 typedef glm::u8vec4 Color;//only accepts numbers from 0 to 255
 typedef glm::vec3 Color3f;
-
-
 
 
 //a little treat for initializing streambuf's with existing data
@@ -95,6 +93,11 @@ struct OBJGLUF_API MemStreamBuf : public std::streambuf
 #define DEG_TO_RAD(value) (value *(GLUF_PI / 180))
 #define DEG_TO_RAD_F(value) (value *(GLUF_PI_F / 180))
 
+
+namespace GLUF
+{
+	OBJGLUF_API void GLUFInit(std::string standardFilePaths[5]);
+}
 
 
 typedef std::vector<glm::vec4> Vec4Array;
@@ -124,7 +127,7 @@ enum GLUFShaderType
 	SH_VERTEX_SHADER = GL_VERTEX_SHADER,
 	SH_TESS_CONTROL_SHADER = GL_TESS_CONTROL_SHADER,
 	SH_TESS_EVALUATION_SHADER = GL_TESS_EVALUATION_SHADER,
-	SH_GEOMETRY_SHADER = GL_FRAGMENT_SHADER,
+	SH_GEOMETRY_SHADER = GL_GEOMETRY_SHADER,
 	SH_FRAGMENT_SHADER = GL_FRAGMENT_SHADER
 };
 
@@ -170,6 +173,8 @@ typedef std::shared_ptr<GLUFShader>  GLUFShaderPtr;
 typedef std::weak_ptr<GLUFShader>    GLUFShaderPtrWeak;
 typedef std::shared_ptr<GLUFProgram> GLUFProgramPtr;
 typedef std::weak_ptr<GLUFProgram>   GLUFProgramPtrWeak;
+typedef std::shared_ptr<GLUFSeperateProgram> GLUFSepProgramPtr;
+typedef std::weak_ptr<GLUFSeperateProgram> GLUFSepProgramPtrWeak;
 
 typedef std::map<GLUFShaderType, const char*> GLUFShaderSourceList;
 typedef std::map<GLUFShaderType, std::string> GLUFShaderPathList;//do a little bit of fudging to get around this being the same as the above
@@ -179,6 +184,8 @@ typedef std::vector<std::string> GLUFShaderNameList;
 typedef std::vector<std::string> GLUFProgramNameList;
 typedef std::vector<GLUFShaderPtr> GLUFShaderPtrList;
 typedef std::vector<GLUFProgramPtr> GLUFProgramPtrList;
+typedef std::map<GLbitfield, GLUFProgramPtr> GLUFProgramPtrStagesMap;
+typedef std::map<GLUFShaderType, GLUFProgramPtr> GLUFProgramPtrMap;
 typedef std::vector<GLUFShaderPtrWeak> GLUFShaderPtrListWeak;
 typedef std::vector<GLUFProgramPtrWeak> GLUFProgramPtrListWeak;
 
@@ -193,13 +200,10 @@ class OBJGLUF_API GLUFShaderManager
 	//a little helper function for creating things
 	GLUFShaderPtr CreateShader(std::string shad, GLUFShaderType type, bool file);
 
-	static GLUFProgramPtr m_pCurrentProgram;
-
-	static GLuint GetCurrProgramPtr();
-
 	friend class GLUFBufferManager;
 
 public:
+
 
 	//for creating things
 
@@ -210,6 +214,7 @@ public:
 	GLUFProgramPtr CreateProgram(GLUFShaderSourceList shaderSources);
 	GLUFProgramPtr CreateProgram(GLUFShaderPathList shaderPaths);
 
+	GLUFSepProgramPtr CreateSeperateProgram(GLUFProgramPtrStagesMap programs);
 
 	//for removing things
 
@@ -230,10 +235,16 @@ public:
 
 	const GLUFLinkOutputStruct GetProgramLog(GLUFProgramPtr programPtr) const;
 
+	void AttachPrograms(GLUFSepProgramPtr ppo, GLUFProgramPtrStagesMap programs);
+	void AttachProgram(GLUFSepProgramPtr ppo, GLbitfield stages, GLUFProgramPtr);
+
+	//this clears all programs from the given stages
+	void ClearPrograms(GLUFSepProgramPtr ppo, GLbitfield stages = GL_ALL_SHADER_BITS);
 
 	//for using things
 
 	void UseProgram(GLUFProgramPtr program);
+	void UseProgram(GLUFSepProgramPtr program);
 	void UseProgramNull();
 
 
@@ -610,7 +621,7 @@ public:
 	void LoadTextureFromFile(GLUFTexturePtr texture, std::string filePath, GLUFTextureFileFormat format);
 
 	//NOTE: call CreateTextureBuffer() FIRST
-	void LoadTextureFromMemory(GLUFTexturePtr texture, char* data, uint64_t length, GLUFTextureFileFormat format);
+	void LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format);
 
 	//void BufferTexture(GLUFTexturePtr texture, GLsizei length, GLvoid* data){};
 
