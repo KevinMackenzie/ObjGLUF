@@ -44,6 +44,8 @@ int main(void)
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 
+	printf((const char*)glGetString(GL_VERSION));
+
 	GLenum err = glewInit();
 	if (GLEW_OK != err)
 	{
@@ -61,7 +63,7 @@ int main(void)
 	// And have it read the given file with some example postprocessing
 	// Usually - if speed is not the most important aspect for you - you'll
 	// propably to request more postprocessing than we do in this example.
-	const aiScene* scene = importer.ReadFile("suzanne.obj",
+	const aiScene* scene = importer.ReadFile("suzanne.obj.model",
 		aiProcess_CalcTangentSpace |
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
@@ -176,7 +178,7 @@ int main(void)
 		glm::vec3 lightPos = glm::vec3(4, 4, 4);
 		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
-		buffMan.UseTexture(texture);
+		buffMan.UseTexture(texture, 5, GL_TEXTURE0);
 
 		buffManager.DrawVertexArray(vertArray);
 

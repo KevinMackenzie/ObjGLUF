@@ -583,30 +583,6 @@ public:
 	void ModifyUniformMaterial(GLUFUniformBufferPtr buffer, GLUFMaterial mat){};//todo
 	void ModifyLighting(GLUFUniformBufferPtr buffer){ };//todo
 
-	//for non-generic circumstances
-	void ModifyUniform1f(GLUFUniformBufferPtr buffer, GLuint location, float data){};
-	void ModifyUniform1d(GLUFUniformBufferPtr buffer, GLuint location, double data){};
-	void ModifyUniform1i(GLUFUniformBufferPtr buffer, GLuint location, int data){};
-	void ModifyUniform1ui(GLUFUniformBufferPtr buffer, GLuint location, unsigned int data){};
-
-	void ModifyUniform2f(GLUFUniformBufferPtr buffer, GLuint location, glm::vec2 data){};
-	void ModifyUniform2d(GLUFUniformBufferPtr buffer, GLuint location, glm::dvec2 data){};
-	void ModifyUniform2i(GLUFUniformBufferPtr buffer, GLuint location, glm::ivec2 data){};
-
-	void ModifyUniform3f(GLUFUniformBufferPtr buffer, GLuint location, glm::vec3 data){};
-	void ModifyUniform3d(GLUFUniformBufferPtr buffer, GLuint location, glm::dvec3 data){};
-	void ModifyUniform3i(GLUFUniformBufferPtr buffer, GLuint location, glm::ivec3 data){};
-
-	void ModifyUniform4f(GLUFUniformBufferPtr buffer, GLuint location, glm::vec4 data){};
-	void ModifyUniform4d(GLUFUniformBufferPtr buffer, GLuint location, glm::dvec4 data){};
-	void ModifyUniform4i(GLUFUniformBufferPtr buffer, GLuint location, glm::ivec4 data){};
-
-
-	void ModifyUniformMatrix3f(GLUFUniformBufferPtr buffer, GLuint location, glm::mat3 data){};
-	void ModifyUniformMatrix3d(GLUFUniformBufferPtr buffer, GLuint location, glm::dmat3 data){};
-	void ModifyUniformMatrix4f(GLUFUniformBufferPtr buffer, GLuint location, glm::mat4 data){};
-	void ModifyUniformMatrix4d(GLUFUniformBufferPtr buffer, GLuint location, glm::dmat4 data){};
-
 	//TODO: add support for custom uniform blocks
 	//WORK IN PROGRESS
 	void ModifyUniformBlock(GLUFUniformBufferPtr buffer, GLUFUniformBlockStandardLayoutData param){};
@@ -615,7 +591,7 @@ public:
 	//texture methods
 	GLUFTexturePtr CreateTextureBuffer();
 
-	void UseTexture(GLUFTexturePtr texture);
+	void UseTexture(GLUFTexturePtr texture, GLuint samplerLocation, GLenum bindingPoint);
 
 	//NOTE: call CreateTextureBuffer() FIRST
 	void LoadTextureFromFile(GLUFTexturePtr texture, std::string filePath, GLUFTextureFileFormat format);

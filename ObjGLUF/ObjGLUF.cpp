@@ -513,12 +513,11 @@ GLUFTexturePtr GLUFBufferManager::CreateTextureBuffer()
 	return GLUFTexturePtr(new GLUFTextureBuffer);
 }
 
-void GLUFBufferManager::UseTexture(GLUFTexturePtr texture)
+void GLUFBufferManager::UseTexture(GLUFTexturePtr texture, GLuint location, GLenum bindingPoint)
 {
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(bindingPoint);
 	glBindTexture(GL_TEXTURE_2D, texture->mTextureId);
-	glUniform1f(5, 0);//texture0 and 0 is the number here
-	//for now assume location 5 for sampler
+	glUniform1f(location, bindingPoint);
 }
 
 void GLUFBufferManager::LoadTextureFromFile(GLUFTexturePtr texture, std::string filePath, GLUFTextureFileFormat format)
@@ -618,8 +617,6 @@ void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
-
-
 
 ////////////////////////////
 //
