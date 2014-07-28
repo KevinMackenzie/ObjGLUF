@@ -1,0 +1,1037 @@
+// ObjGLUFUF.cpp : Defines the exported functions for the DLL application.
+//
+
+#include "stdafx.h"
+#include "ObjGLUF.h"
+#include <fstream>
+#include <sstream>
+#include "GLI/gli.hpp"
+
+GLUFErrorMethod ErrorMethod;
+GLUFProgramPtr GLUFShaderManager::m_pCurrentProgram;
+
+void GLUFRegisterErrorMethod(GLUFErrorMethod method)
+{
+	ErrorMethod = method;
+}
+
+
+GLUFErrorMethod GLUFGetErrorMethod()
+{
+	return ErrorMethod;
+}
+
+
+
+
+
+void GLUFMatrixStack::Push(const glm::mat4& matrix)
+{
+	if (mStack.size() != 0)
+	{
+		//if there are already things on the stack, instead of multiplying through EVERY TIME TOP IS CALLED, make it more efficient 
+		//so the top is ALWAYS a concatination
+		glm::mat4 transformed = matrix * Top();
+
+		mStack.push(transformed);
+	}
+	else
+	{
+		mStack.push(matrix);
+	}
+}
+
+void GLUFMatrixStack::Pop(void)
+{
+	mStack.pop();
+}
+
+const glm::mat4& GLUFMatrixStack::Top(void)
+{
+	return mStack.top();
+}
+
+size_t GLUFMatrixStack::Size(void)
+{
+	return mStack.size();
+}
+
+void GLUFMatrixStack::Empty(void)
+{
+	mStack.empty();
+}
+
+class GLUFUniformBuffer
+{
+
+	friend GLUFBufferManager;
+
+	//GLUFProgramPtrWeak programRef;
+	GLuint mTransformBufferId;
+	//TODO: impliment this further with a std::vector
+
+	GLUFMatrixTransformBlock mTransformData;//this will be used lator for mapping
+
+public:
+
+	void RefreshTransformData();
+
+	GLUFUniformBuffer(){ glGenBuffers(1, &mTransformBufferId); glBindBuffer(GL_UNIFORM_BUFFER, mTransformBufferId); glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 5, nullptr, GL_DYNAMIC_DRAW); }
+	~GLUFUniformBuffer(){ glDeleteBuffers(1, &mTransformBufferId); mTransformData.TrueDelete(); }
+};
+
+class GLUFVertexArrayObject
+{
+	friend GLUFBufferManager;
+
+	//make sure to check that each element has the SAME number of elements (except for indices)
+	Vec3Array mPositions;
+	Vec3Array mNormals;
+	Vec2Array mUVCoords;
+	IndexArray mIndicies;
+	GLubyte mVertsPerFace = 3;
+
+	GLuint mVAOId = 0;
+	GLuint mPositionId = 0;
+	GLuint mNormalId = 0;
+	GLuint mUVCoordId = 0;
+	GLuint mIndexId = 0;
+
+	bool mInitialiazed[3];
+
+
+public:
+
+	void Refresh();//this reloads the data from the memory to openGL
+	void EnableActive();
+	void DisableAll();
+
+	GLUFVertexArrayObject();
+	~GLUFVertexArrayObject();
+
+};
+
+class GLUFTextureBuffer
+{
+	friend GLUFBufferManager;
+	GLuint mTextureId;
+
+public:
+
+	GLUFTextureBuffer(){ glGenTextures(1, &mTextureId); }
+	~GLUFTextureBuffer(){ glDeleteTextures(1, &mTextureId); };
+};
+
+void GLUFVertexArrayObject::Refresh()
+{
+	glBindVertexArray(mVAOId);
+	
+	if (mIndicies.size())
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexId);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndicies.size() * sizeof(GLushort), &mIndicies[0], GL_DYNAMIC_DRAW);
+	}
+
+	if (mPositions.size())
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, mPositionId);
+		glBufferData(GL_ARRAY_BUFFER, mPositions.size() * sizeof(glm::vec3), &mPositions[0], GL_DYNAMIC_DRAW);
+		if (!mInitialiazed[IN_POSITIONS])
+		{
+			glEnableVertexAttribArray(IN_POSITIONS);
+			mInitialiazed[IN_POSITIONS] = true;
+		}
+	}
+	else if (mInitialiazed[IN_POSITIONS])
+	{
+		//if the array is EMPTY, and it IS initialized, then remove it
+		glBindBuffer(GL_ARRAY_BUFFER, mPositionId);
+		glDisableVertexAttribArray(IN_POSITIONS);
+		mInitialiazed[IN_POSITIONS] = false;
+	}
+
+	if (mNormals.size())
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, mNormalId);
+		glBufferData(GL_ARRAY_BUFFER, mNormals.size() * sizeof(glm::vec3), &mNormals[0], GL_DYNAMIC_DRAW);
+
+		if (!mInitialiazed[IN_NORMALS])
+		{
+			glEnableVertexAttribArray(IN_NORMALS);
+			mInitialiazed[IN_NORMALS] = true;
+		}
+	}
+	else if (mInitialiazed[IN_NORMALS])
+	{
+		//if the array is EMPTY, and it IS initialized, then remove it
+		glBindBuffer(GL_ARRAY_BUFFER, mNormalId);
+		glDisableVertexAttribArray(IN_NORMALS);
+		mInitialiazed[IN_NORMALS] = false;
+	}
+
+
+	if (mUVCoords.size())
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, mUVCoordId);
+		glBufferData(GL_ARRAY_BUFFER, mUVCoords.size() * sizeof(glm::vec2), &mUVCoords[0], GL_DYNAMIC_DRAW);
+
+		if (!mInitialiazed[IN_UVCOORDS])
+		{
+			glEnableVertexAttribArray(IN_UVCOORDS);
+
+			mInitialiazed[IN_UVCOORDS] = true;
+		}
+	}
+	else if (mInitialiazed[IN_UVCOORDS])
+	{
+		//if the array is EMPTY, and it IS initialized, then remove it
+		glBindBuffer(GL_ARRAY_BUFFER, mUVCoordId);
+		glDisableVertexAttribArray(IN_UVCOORDS);
+
+		mInitialiazed[IN_UVCOORDS] = false;
+	}
+
+}
+
+void GLUFVertexArrayObject::EnableActive()
+{
+	if (mInitialiazed[IN_POSITIONS])
+		glEnableVertexAttribArray(IN_POSITIONS);
+	if (mInitialiazed[IN_NORMALS])
+		glEnableVertexAttribArray(IN_NORMALS);
+	if (mInitialiazed[IN_UVCOORDS])
+		glEnableVertexAttribArray(IN_UVCOORDS);
+
+}
+
+void GLUFVertexArrayObject::DisableAll()
+{
+	glDisableVertexAttribArray(IN_POSITIONS);
+	glDisableVertexAttribArray(IN_NORMALS);
+	glDisableVertexAttribArray(IN_UVCOORDS);
+}
+
+GLUFVertexArrayObject::~GLUFVertexArrayObject()
+{
+	glDeleteVertexArrays(1, &mVAOId);
+	GLuint mBuffIds[4] = { mPositionId, mNormalId, mUVCoordId, mIndexId };
+	glDeleteBuffers(4, mBuffIds);
+}
+
+GLUFVertexArrayObject::GLUFVertexArrayObject()
+{
+	mInitialiazed[0] = false;
+	mInitialiazed[1] = false;
+	mInitialiazed[2] = false;
+
+	glGenVertexArrays(1, &mVAOId);
+	glBindVertexArray(mVAOId);//THIS WAS A HUGE THING TO MISS, THE VAO MUST BE BOUND
+
+	glGenBuffers(1, &mPositionId);
+	glGenBuffers(1, &mNormalId);
+	glGenBuffers(1, &mUVCoordId);
+	glGenBuffers(1, &mIndexId);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mPositionId);
+	glVertexAttribPointer(IN_POSITIONS, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mNormalId);
+	glVertexAttribPointer(IN_NORMALS, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mUVCoordId);
+	glVertexAttribPointer(IN_UVCOORDS, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//we only want to enable vertex arrays if there are ITEMS IN THE BUFFERS
+}
+
+void GLUFUniformBuffer::RefreshTransformData()
+{
+	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, mTransformBufferId);
+	glm::mat4 *pData = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * 5, GL_MAP_WRITE_BIT);
+	pData[UT_MODEL] = mTransformData[UT_MODEL];
+	pData[UT_VIEW] = mTransformData[UT_VIEW];
+	pData[UT_PROJ] = mTransformData[UT_PROJ];
+
+	pData[UT_MODELVIEW] = mTransformData[UT_MODELVIEW];
+	pData[UT_MVP] = mTransformData[UT_MVP];
+
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+}
+
+///////////////////////////////
+//Shader code for uniform block
+//
+//NOTE: All will be provided unless necisary ( MAYBE FOR NOW )
+//
+//
+/*
+
+layout(std140, binding = 0) uniform MatrixTransformations
+{						//base alignment			offset			aligned offset
+	mat4 m;				//16						0					0
+	mat4 v;				//16						64					64
+	mat4 p;				//16						128					128
+	mat4 mv;			//16						192					192
+	mat4 mvp;			//16						256					256
+};
+
+//NOTE: vertex shader input
+position -> 0
+normal   -> 1
+texCoord -> 2
+
+*/
+
+////////////////////////////
+//
+//Buffer Stuff
+///////////////////////////
+
+
+void GLUFBufferManager::ResetBufferBindings()
+{
+	glBindVertexArray(0);
+	glBindBuffer(GL_VERTEX_ARRAY, 0);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	//TODO: expand this
+}
+
+GLUFVertexArrayPtr GLUFBufferManager::CreateVertexArray()
+{
+	return GLUFVertexArrayPtr(new GLUFVertexArrayObject);
+}
+
+GLUFUniformBufferPtr GLUFBufferManager::CreateUniformArray()
+{
+	return GLUFUniformBufferPtr(new GLUFUniformBuffer);
+}
+
+void GLUFBufferManager::DeleteVertexBuffer(GLUFVertexArrayPtr vertArray)
+{
+	delete vertArray.get();
+}
+
+void GLUFBufferManager::DeleteUniformBuffer(GLUFUniformBufferPtr buffer)
+{
+	delete buffer.get();
+}
+
+void GLUFBufferManager::DrawVertexArray(GLUFVertexArrayPtr vertArray, GLenum topology)
+{
+	glBindVertexArray(vertArray->mVAOId);
+	vertArray->EnableActive();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertArray->mIndexId);
+	glDrawElements(topology, vertArray->mIndicies.size(), GL_UNSIGNED_SHORT, 0);
+	vertArray->DisableAll();
+	//glDrawArrays(topology, 0, 3);
+}
+
+void GLUFBufferManager::DrawVertexArrayInstanced(GLUFVertexArrayPtr vertArray, GLuint instanceCount, GLenum topology)
+{
+	glBindVertexArray(vertArray->mVAOId);
+	glDrawElementsInstanced(topology, vertArray->mPositions.size(), GL_UNSIGNED_SHORT, 0, instanceCount);
+}
+
+void GLUFBufferManager::BindUniformArray(GLUFUniformBufferPtr buffer)
+{
+	//TODO: setup with material and transform data
+	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, buffer->mTransformBufferId);
+	m_pBoundUniformBuffer = buffer;
+}
+
+void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, GLUFVertexAttributeType type, Vec3Array data)
+{
+	//when modifying, change the local copy as well
+	if (!data.size())
+	{
+		GLUF_ERROR("Attempt to modify vertex data with empty array");
+		return;
+	}
+
+	switch (type)
+	{
+	case VAO_POSITIONS:
+		glBindBuffer(GL_ARRAY_BUFFER, vertArray->mPositionId);
+		vertArray->mPositions = data;
+		break;
+	case VAO_NORMALS:
+		glBindBuffer(GL_ARRAY_BUFFER, vertArray->mNormalId);
+		vertArray->mNormals = data;
+		break;
+	default:
+		GLUF_ERROR("Unsupported Vertex Attribute Type for this Method");
+	}
+
+	glBufferData(GL_ARRAY_BUFFER, data.size() * 3 * sizeof(GLfloat), &data[0], GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, GLUFVertexAttributeType type, Vec2Array data)
+{
+	if (!data.size())
+	{
+		GLUF_ERROR("Attempt to modify vertex data with empty array");
+		return;
+	}
+
+	switch (type)
+	{
+	case VAO_TEXCOORDS:
+		glBindBuffer(GL_ARRAY_BUFFER, vertArray->mUVCoordId);
+		vertArray->mUVCoords = data;
+		break;
+	default:
+		GLUF_ERROR("Unsupported Vertex Attribute Type for this Method");
+	}
+
+	glBufferData(GL_ARRAY_BUFFER, data.size() * 2 * sizeof(GLfloat), &data[0], GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GLUFBufferManager::MoidfyVertexIncidies(GLUFVertexArrayPtr vertArray, IndexArray data)
+{
+	if (!data.size())
+	{
+		GLUF_ERROR("Attempt to modify vertex data with empty array");
+		return;
+	}
+
+	vertArray->mIndicies = data;
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertArray->mIndexId);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size() * sizeof(GLushort), &data[0], GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, Vec3Array positions, Vec3Array normals, Vec2Array texCoords, IndexArray indicies)
+{
+	vertArray->mIndicies = indicies;
+	vertArray->mPositions = positions;
+	vertArray->mNormals = normals;
+	vertArray->mUVCoords = texCoords;
+
+	vertArray->Refresh();
+}
+
+GLUFVAOData GLUFBufferManager::MapVertexArray(GLUFVertexArrayPtr vertArray)
+{
+	return GLUFVAOData(&vertArray->mPositions, &vertArray->mNormals, &vertArray->mUVCoords, &vertArray->mIndicies);
+}
+
+void GLUFBufferManager::UnMapVertexArray(GLUFVertexArrayPtr vertArray)
+{
+	vertArray->Refresh();
+}
+
+void GLUFBufferManager::ModifyUniformTransformMatrix(GLUFUniformBufferPtr buffer, GLUFTransformUniformType type, glm::mat4 data)
+{
+	//make sure the data can be accessed
+	if (!buffer->mTransformData.ModifyValue(type, data))
+		return;
+	buffer->RefreshTransformData();//this uses a bit more memory, but is centrailized
+}
+
+void GLUFBufferManager::ModifyUniformTransformMatrix(GLUFUniformBufferPtr buffer, GLUFMatrixTransformBlockParam data)
+{
+	//make sure the data can be accessed
+	buffer->mTransformData = data;
+	buffer->RefreshTransformData();
+}
+
+GLUFMatrixTransformBlock GLUFBufferManager::MapUniformTransform(GLUFUniformBufferPtr buffer)
+{
+	return buffer->mTransformData;
+}
+
+void GLUFBufferManager::UnMapUniformTransform(GLUFUniformBufferPtr buffer)
+{
+	buffer->RefreshTransformData();
+}
+
+GLuint GLUFBufferManager::GetUniformTransformBufferId(GLUFUniformBufferPtr buffer)
+{
+	return buffer->mTransformBufferId;
+}
+
+GLUFTexturePtr GLUFBufferManager::CreateTextureBuffer()
+{
+	return GLUFTexturePtr(new GLUFTextureBuffer);
+}
+
+void GLUFBufferManager::UseTexture(GLUFTexturePtr texture)
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture->mTextureId);
+	glUniform1f(5, 0);//texture0 and 0 is the number here
+	//for now assume location 5 for sampler
+}
+
+void GLUFBufferManager::LoadTextureFromFile(GLUFTexturePtr texture, std::string filePath, GLUFTextureFileFormat format)
+{
+	gli::texture2D Texture(gli::load_dds(filePath.c_str()));
+	assert(!Texture.empty());
+	glGenTextures(1, &texture->mTextureId);
+	glBindTexture(GL_TEXTURE_2D, texture->mTextureId);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, GLint(Texture.levels() - 1));
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+	glTexStorage2D(GL_TEXTURE_2D,
+		GLint(Texture.levels()),
+		GLenum(gli::internal_format(Texture.format())),
+		GLsizei(Texture.dimensions().x),
+		GLsizei(Texture.dimensions().y));
+	if (gli::is_compressed(Texture.format()))
+	{
+		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
+		{
+			glCompressedTexSubImage2D(GL_TEXTURE_2D,
+				GLint(Level),
+				0, 0,
+				GLsizei(Texture[Level].dimensions().x),
+				GLsizei(Texture[Level].dimensions().y),
+				GLenum(gli::internal_format(Texture.format())),
+				GLsizei(Texture[Level].size()),
+				Texture[Level].data());
+		}
+	}
+	else
+	{
+		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
+		{
+			glTexSubImage2D(GL_TEXTURE_2D,
+				GLint(Level),
+				0, 0,
+				GLsizei(Texture[Level].dimensions().x),
+				GLsizei(Texture[Level].dimensions().y),
+				GLenum(gli::external_format(Texture.format())),
+				GLenum(gli::type_format(Texture.format())),
+				Texture[Level].data());
+		}
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data, uint64_t length, GLUFTextureFileFormat format)
+{
+	gli::texture2D Texture(gli::load_dds_memory(data, length));
+	assert(!Texture.empty());
+	glGenTextures(1, &texture->mTextureId);
+	glBindTexture(GL_TEXTURE_2D, texture->mTextureId);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, GLint(Texture.levels() - 1));
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+	glTexStorage2D(GL_TEXTURE_2D,
+		GLint(Texture.levels()),
+		GLenum(gli::internal_format(Texture.format())),
+		GLsizei(Texture.dimensions().x),
+		GLsizei(Texture.dimensions().y));
+	if (gli::is_compressed(Texture.format()))
+	{
+		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
+		{
+			glCompressedTexSubImage2D(GL_TEXTURE_2D,
+				GLint(Level),
+				0, 0,
+				GLsizei(Texture[Level].dimensions().x),
+				GLsizei(Texture[Level].dimensions().y),
+				GLenum(gli::internal_format(Texture.format())),
+				GLsizei(Texture[Level].size()),
+				Texture[Level].data());
+		}
+	}
+	else
+	{
+		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
+		{
+			glTexSubImage2D(GL_TEXTURE_2D,
+				GLint(Level),
+				0, 0,
+				GLsizei(Texture[Level].dimensions().x),
+				GLsizei(Texture[Level].dimensions().y),
+				GLenum(gli::external_format(Texture.format())),
+				GLenum(gli::type_format(Texture.format())),
+				Texture[Level].data());
+		}
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+
+////////////////////////////
+//
+//Shader Stuff
+//////////////////////////
+
+
+class GLUFShader
+{
+	friend GLUFShaderManager;
+	friend GLUFProgram;
+
+	GLuint mShaderId;
+
+	std::string mTmpShaderText;
+
+	GLUFShaderType mShaderType;
+
+public:
+
+	GLUFShader();
+	~GLUFShader();
+
+	//common shader is if the shader will not be deleted after building into a program
+	//this is used for things like lighting functions
+	void Init(GLUFShaderType shaderType);
+
+	void Load(const char* shaderText, bool append = false);
+	void LoadFromMemory(char* shaderData, size_t length, bool append = false);
+	bool LoadFromFile(const char* filePath, bool append = false);
+
+	void FlushText(void){ mTmpShaderText.clear(); }
+
+	void Compile(GLUFShaderInfoStruct& retStruct);
+
+
+};
+
+typedef std::pair<GLUFShaderType, GLUFShaderPtr > GLUFShaderP;
+//this is a special instance
+class GLUFComputeShader
+{
+	friend GLUFShaderManager;
+	//TODO: low priority
+};
+
+class GLUFProgram
+{
+	friend GLUFShaderManager;
+
+	GLuint mUniformBuffId;
+	GLuint mProgramId;
+	std::map<GLUFShaderType, GLUFShaderPtr > mShaderBuff;
+
+public:
+
+	GLUFProgram();
+	~GLUFProgram();
+
+	void Init();
+
+	void AttachShader(GLUFShaderPtr shader);
+	void FlushShaders(void);
+
+	void Build(GLUFShaderInfoStruct& retStruct);
+
+
+};
+
+class GLUFSeperateProgram
+{
+	friend GLUFShaderManager;
+
+	//this is done completely different
+};
+
+
+
+////////////////////////////////////////
+//
+//GLUFShader Methods:
+//
+//
+
+GLuint GLUFShaderManager::GetCurrProgramPtr()
+{
+	return m_pCurrentProgram->mProgramId;
+}
+
+GLUFShader::GLUFShader()
+{
+	mShaderId = 0;
+}
+
+GLUFShader::~GLUFShader()
+{
+	if (mShaderId != 0)
+	{
+		glDeleteShader(mShaderId);
+	}
+	mTmpShaderText.clear();
+}
+
+void GLUFShader::Init(GLUFShaderType shaderType)
+{
+	mShaderType = shaderType;
+	mShaderId = 0;
+}
+
+void GLUFShader::Load(const char* shaderText, bool append)
+{
+	if (!append)
+		mTmpShaderText.clear();
+
+	mTmpShaderText = shaderText;
+}
+
+bool GLUFShader::LoadFromFile(const char* filePath, bool append)
+{
+	if (!append)
+		mTmpShaderText.clear();
+
+	std::ifstream inFile(filePath);
+	if (inFile)
+	{
+#pragma warning (disable : 4244)
+		inFile.seekg(0, std::ios::end);
+		mTmpShaderText.resize(inFile.tellg());
+		inFile.seekg(0, std::ios::beg);
+		inFile.read(&mTmpShaderText[0], mTmpShaderText.size());
+		inFile.close();
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void GLUFShader::LoadFromMemory(char* shaderData, size_t length, bool append)
+{
+	if (!append)
+		mTmpShaderText.clear();
+
+	MemStreamBuf *streamData = new MemStreamBuf(shaderData, length);
+	std::istream inData(streamData);
+	if (inData)
+	{
+		inData.seekg(0, std::ios::end);
+		mTmpShaderText.resize(inData.tellg());
+		inData.seekg(0, std::ios::beg);
+		inData.read(&mTmpShaderText[0], mTmpShaderText.size());
+
+#pragma warning (default : 4244)
+	}
+	else
+	{
+		delete streamData;
+		GLUF_ERROR("Failed to initialize stream to load shader data from");
+	}
+
+	delete streamData;
+}
+
+#define FAILED_COMPILE 'F'
+#define FAILED_LINK    'F'
+
+void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
+{
+	//make sure we aren't trying to recompile with a previously successful one
+	if (mShaderId != 0)
+	{
+		returnStruct.mSuccess = false;
+		returnStruct.mLog.push_back(FAILED_COMPILE);
+		return;
+	}
+
+	mShaderId = glCreateShader(mShaderType);
+
+	//start by adding the strings to glShader Source.  This is done right before the compile
+	//process becuase it is hard to remove it if there is any reason to flush the text
+	const GLint tmpSize = mTmpShaderText.length();
+	const char* text = mTmpShaderText.c_str();
+	glShaderSource(mShaderId, 1, &text, &tmpSize - 1 /*BECAUSE OF NULL TERMINATED STRINGS*/);
+
+	FlushText();
+
+	glCompileShader(mShaderId);
+
+	GLint isCompiled = 0;
+	glGetShaderiv(mShaderId, GL_COMPILE_STATUS, &isCompiled);
+	returnStruct.mSuccess = (isCompiled == GL_FALSE) ? false : true;
+
+	GLint maxLength = 0;
+	glGetShaderiv(mShaderId, GL_INFO_LOG_LENGTH, &maxLength);
+
+	//The maxLength includes the NULL character
+	returnStruct.mLog.resize(maxLength);
+	glGetShaderInfoLog(mShaderId, maxLength, &maxLength, &returnStruct.mLog[0]);
+
+	//Provide the infolog in whatever manor you deem best.
+	//Exit with failure.
+
+	//if it failed, delete the shader
+	if (returnStruct.mSuccess == false)
+	{
+		glDeleteShader(mShaderId);
+		mShaderId = 0;
+	}
+	return;
+}
+
+
+
+////////////////////////////////////////
+//
+//GLUFProgram Methods:
+//
+//
+
+GLUFProgram::GLUFProgram()
+{
+	mProgramId = 0;
+}
+
+GLUFProgram::~GLUFProgram()
+{
+	glDeleteProgram(mProgramId);
+}
+
+void GLUFProgram::Init()
+{
+	//unlike with the shader, this will be created during initialization
+	mProgramId = glCreateProgram();
+
+	//for uniforms
+	glGenBuffers(1, &mUniformBuffId);
+}
+
+void GLUFProgram::AttachShader(GLUFShaderPtr shader)
+{
+	mShaderBuff.insert(GLUFShaderP(shader->mShaderType, shader));
+	glAttachShader(mProgramId, shader->mShaderId);
+}
+
+void GLUFProgram::FlushShaders(void)
+{
+	for (auto it : mShaderBuff)
+	{
+		glDetachShader(mProgramId, it.second->mShaderId);
+	}
+	mShaderBuff.clear();
+}
+
+void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct)
+{
+
+	//Link our program
+	glLinkProgram(mProgramId);
+
+	//Note the different functions here: glGetProgram* instead of glGetShader*.
+	GLint isLinked = 0;
+	glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
+	retStruct.mSuccess = (isLinked == GL_FALSE) ? false : true;
+
+	GLint maxLength = 0;
+	glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
+
+	//The maxLength includes the NULL character
+	retStruct.mLog.resize(maxLength);
+	glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &retStruct.mLog[0]);
+
+	if (!retStruct.mSuccess)
+	{
+		//in the case of failure, DO NOT DELETE ANYTHING.
+	}
+	else
+	{
+		FlushShaders();//this removes the references to them from the program, but they will still exist unless they are 'common'
+	}
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+//
+//GLUFShaderManager Methods:
+//
+//
+//
+//
+//
+
+//for creating things
+
+
+GLUFShaderPtr GLUFShaderManager::CreateShader(std::string shad, GLUFShaderType type, bool file)
+{
+	GLUFShaderPtr shader(new GLUFShader());
+	shader->Init(type);
+
+	(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
+
+	GLUFShaderInfoStruct output;
+	shader->Compile(output);
+	mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, output));
+
+	//log it if it failed
+	if (!output)
+	{
+		std::stringstream ss;
+		ss << "Shader Compilation Failed: \n" << output.mLog.data();
+		GLUF_ERROR(ss.str().c_str());
+	}
+
+	return shader;
+}
+
+
+GLUFShaderPtr GLUFShaderManager::CreateShaderFromFile(std::string filePath, GLUFShaderType type)
+{
+	return CreateShader(filePath, type, true);
+}
+
+
+GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(const char* text, GLUFShaderType type)
+{
+	return CreateShader(text, type, false);
+}
+
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders)
+{
+	GLUFProgramPtr program(new GLUFProgram());
+	program->Init();
+
+	for (auto it : shaders)
+	{
+		program->AttachShader(it);
+	}
+
+	GLUFShaderInfoStruct out;
+	program->Build(out);
+	mLinklogs.insert(std::pair<GLUFProgramPtr, GLUFShaderInfoStruct>(program, out));
+
+	if (!out)
+	{
+		std::stringstream ss;
+		ss << "Program Link Failed: \n" << out.mLog.data();
+		GLUF_ERROR(ss.str().c_str());
+	}
+
+	return program;
+}
+
+
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSources)
+{
+	GLUFShaderPtrList shaders;
+	for (auto it : shaderSources)
+	{
+		//use the counter global to get a unique name  This is temperary anyway
+		shaders.push_back(CreateShader(it.second, it.first, false));
+
+		//make sure it didn't fail
+		if (!GetShaderLog(shaders[shaders.size()-1]))
+		{
+			GLUF_ERROR("Program Creation Failed, Reason: Shader Compilation Failed");
+			return nullptr;
+		}
+	}
+
+	return CreateProgram(shaders);
+}
+
+
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths)
+{
+	GLUFShaderPtrList shaders;
+	for (auto it : shaderPaths)
+	{
+		//use the counter global to get a unique name  This is temperary anyway
+		shaders.push_back(CreateShader(it.second, it.first, true));
+
+		//make sure it didn't fail
+		if (!GetShaderLog(shaders[shaders.size() - 1]))
+		{
+			GLUF_ERROR("Program Creation Failed, Reason: Shader Compilation Failed");
+			return nullptr;
+		}
+	}
+
+	return CreateProgram(shaders);
+}
+
+
+
+
+//for removing things
+
+void GLUFShaderManager::DeleteShader(GLUFShaderPtr shader)
+{
+	delete shader.get();
+}
+
+void GLUFShaderManager::DeleteProgram(GLUFProgramPtr program)
+{
+	delete program.get();
+}
+
+void GLUFShaderManager::FlushLogs()
+{
+	mLinklogs.clear();
+	mCompileLogs.clear();
+}
+
+
+//for accessing things
+
+const GLuint GLUFShaderManager::GetShaderId(GLUFShaderPtr shader) const
+{
+	GLUF_ASSERT(shader);
+
+	return shader->mShaderId;
+}
+
+
+const GLUFShaderType GLUFShaderManager::GetShaderType(GLUFShaderPtr shader) const
+{
+	GLUF_ASSERT(shader);
+
+	return shader->mShaderType;
+}
+
+
+const GLuint GLUFShaderManager::GetProgramId(GLUFProgramPtr program) const
+{
+	GLUF_ASSERT(program);
+
+	return program->mProgramId;
+}
+
+const GLUFCompileOutputStruct GLUFShaderManager::GetShaderLog(GLUFShaderPtr shaderPtr) const
+{
+	return mCompileLogs.find(shaderPtr)->second;
+}
+
+
+const GLUFLinkOutputStruct GLUFShaderManager::GetProgramLog(GLUFProgramPtr programPtr) const
+{
+	return mLinklogs.find(programPtr)->second;
+}
+
+//for using things
+
+void GLUFShaderManager::UseProgram(GLUFProgramPtr program)
+{
+	glUseProgram(program->mProgramId);
+	m_pCurrentProgram = program;
+}
+
+void GLUFShaderManager::UseProgramNull()
+{
+	glUseProgram(0);
+}
