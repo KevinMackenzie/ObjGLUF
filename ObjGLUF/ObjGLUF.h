@@ -14,8 +14,16 @@
 #define OBJGLUF_API __declspec(dllimport)
 #endif
 
+//TODO LIST:
+//
+//support normal mapping
+//support tangent space
+//support guided lighting
+//support guided materials
+
 
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -27,8 +35,6 @@
 #include <map>
 #include <list>
 #include <string>
-
-#include "GLUFWindow.h"
 
 #ifndef OBJGLUF_EXPORTS
 #ifndef SUPPRESS_RADIAN_ERROR
@@ -94,16 +100,17 @@ struct OBJGLUF_API MemStreamBuf : public std::streambuf
 #define DEG_TO_RAD_F(value) (value *(GLUF_PI_F / 180))
 
 
-namespace GLUF
-{
-	OBJGLUF_API void GLUFInit(std::string standardFilePaths[5]);
-}
+OBJGLUF_API bool GLUFInit();
+
+//call this after calling glfwMakeContextCurrent on the window
+OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 
 typedef std::vector<glm::vec4> Vec4Array;
 typedef std::vector<glm::vec3> Vec3Array;
 typedef std::vector<glm::vec2> Vec2Array;
 typedef std::vector<GLushort>  IndexArray;
+typedef glm::vec4 Color;
 
 #include <stack>
 
@@ -545,8 +552,6 @@ class OBJGLUF_API GLUFBufferManager
 	//GLTexturePtr CreateTexture(GLuint glTexId);
 
 	//friend class Scene;
-
-	GLUFUniformBufferPtr m_pBoundUniformBuffer;
 
 public:
 

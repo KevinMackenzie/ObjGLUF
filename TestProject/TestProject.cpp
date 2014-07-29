@@ -28,6 +28,8 @@ void ErrorMethod(const char* message, const char* func, const char* file, unsign
 
 int main(void)
 {
+	GLUFInit();
+
 	GLFWwindow* window;
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
@@ -41,18 +43,15 @@ int main(void)
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
+
 	glfwMakeContextCurrent(window);
+
+	GLUFInitOpenGLExtentions();
+
 	glfwSetKeyCallback(window, key_callback);
 
 	printf((const char*)glGetString(GL_VERSION));
 
-	GLenum err = glewInit();
-	if (GLEW_OK != err)
-	{
-		exit(EXIT_FAILURE);
-	}
-	std::string filePaths[5] = {"vert.glsl", "", "", "", "frag.glsl"};
-	GLUF::GLUFInit(filePaths);
 
 	GLUFRegisterErrorMethod(ErrorMethod);
 

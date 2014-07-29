@@ -6,15 +6,20 @@
 #include <fstream>
 #include <sstream>
 #include "GLI/gli.hpp"
+#include <GLFW/glfw3.h>
 
 GLUFErrorMethod ErrorMethod;
-
-//this is added to every PPO
-std::string StandardShaderTexts[5];
 
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 {
 	ErrorMethod = method;
+}
+
+void GLFWErrorMethod(int error, const char* description)
+{
+	std::stringstream ss;
+	ss << "GLFW ERROR: Error Code:" << error << "; " << description;
+	GLUF_ERROR(ss.str().c_str());
 }
 
 
@@ -22,28 +27,6 @@ GLUFErrorMethod GLUFGetErrorMethod()
 {
 	return ErrorMethod;
 }
-namespace GLUF
-{
-	unsigned char ShaderTypeToIndex(GLUFShaderType type)
-	{
-		switch (type)
-		{
-		case SH_VERTEX_SHADER:
-			return 0;
-		case SH_TESS_CONTROL_SHADER:
-			return 1;
-		case SH_TESS_EVALUATION_SHADER:
-			return 2;
-		case SH_GEOMETRY_SHADER:
-			return 3;
-		case SH_FRAGMENT_SHADER:
-			return 4;
-		default:
-			GLUF_ERROR("ERROR, unknown shader type");
-			return 255;
-		}
-	}
-
 
 	/*
 	const char* StandardVertexShader =
@@ -53,28 +36,30 @@ namespace GLUF
 	"#version 430 core	layout(std140, binding = 0) uniform MatrixTransformations	{	mat4 m;	mat4 v; mat4 p; mat4 mv; mat4 mvp;};	in VS_OUT	{	vec2 uvCoord;	} fs_in; layout(location = 0) out vec4 color; layout(location = 5) uniform sampler2D TextureSampler;";
 	*/
 
-	void GLUFInit(std::string standardFilePaths[5])
+bool GLUFInit()
+{
+	glfwSetErrorCallback(GLFWErrorMethod);
+	if (!glfwInit())
 	{
-		for (unsigned char i = 0; i < 5; ++i)
-		{
-			if (standardFilePaths[i] != "")
-			{
-				std::ifstream inFile(standardFilePaths[i]);
-				inFile.seekg(0, std::ios::end);
-				StandardShaderTexts[i].resize(inFile.tellg());
-				inFile.seekg(0, std::ios::beg);
-				inFile.read(&StandardShaderTexts[i][0], StandardShaderTexts[i].size());
-				inFile.close();
-
-				//printf(StandardShaderTexts[i].c_str());
-			}
-			else
-			{
-				StandardShaderTexts[i] = "";
-			}
-		}
+		GLUF_ERROR("GLFW Initialization Failed!");
+		return false;
 	}
+
+	return true;
 }
+
+bool GLUFInitOpenGLExtentions()
+{
+	GLenum err = glewInit();
+	if (err != GLEW_OK)
+	{
+		GLUF_ERROR("Failed to initialize OpenGL Extentions using GLEW");
+		return false;
+	}
+
+	return true;
+}
+
 
 void GLUFMatrixStack::Push(const glm::mat4& matrix)
 {
@@ -392,7 +377,6 @@ void GLUFBufferManager::BindUniformArray(GLUFUniformBufferPtr buffer)
 {
 	//TODO: setup with material and transform data
 	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, buffer->mTransformBufferId);
-	m_pBoundUniformBuffer = buffer;
 }
 
 void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, GLUFVertexAttributeType type, Vec3Array data)
@@ -801,14 +785,9 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 	//start by adding the strings to glShader Source.  This is done right before the compile
 	//process becuase it is hard to remove it if there is any reason to flush the text
 
-	//add the standard shaders to this
-	std::string tmpText = "";
-	tmpText += StandardShaderTexts[GLUF::ShaderTypeToIndex(mShaderType)].c_str();
-	tmpText += mTmpShaderText;
+	std::string tmpText = mTmpShaderText;
 
-	GLint tmpSize = 0;
-	tmpSize += StandardShaderTexts[GLUF::ShaderTypeToIndex(mShaderType)].length();
-	tmpSize += mTmpShaderText.length();
+	GLint tmpSize = mTmpShaderText.length();
 	tmpSize--; /*BECAUSE OF NULL TERMINATED STRINGS*/
 
 	const GLchar* text = tmpText.c_str();

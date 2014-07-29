@@ -26,7 +26,7 @@
     <ClInclude Include="stdafx.h">
       <Filter>Standard Files</Filter>
     </ClInclude>
-    <ClInclude Include="GLUFWindow.h">
+    <ClInclude Include="GLUFGui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -39,6 +39,9 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Standard Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GLUFGuit.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
