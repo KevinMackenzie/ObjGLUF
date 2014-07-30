@@ -71,7 +71,12 @@ OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
 OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
-#define GLUF_ASSERT(statement)	if(!statement){GLUF_ERROR("Assertion Error!");}
+#define GLUF_ASSERT(expr)	{ if (!(expr)) { GLUF_ERROR(#expr) } }
+
+#define GLUF_SAFE_DELETE(ptr) {delete(ptr); (ptr) = nullptr;}
+#define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))
+
+#define GLUFGetTime() glfwGetTime()
 
 typedef glm::u8vec4 Color;//only accepts numbers from 0 to 255
 typedef glm::vec3 Color3f;
@@ -126,8 +131,23 @@ public:
 };
 
 
+//REMEMBER: window positions is based from the "origin" of the window (upper-left)
+struct OBJGLUF_API GLUFRect
+{
+	long top, bottom, left, right;
+};
 
+struct OBJGLUF_API GLUFPoint
+{
+	union{ long x, width;  };
+	union{ long y, height; };
 
+	GLUFPoint(long val1, long val2) : x(val1), y(val2){}
+	GLUFPoint() : x(0), y(0){}
+};
+
+OBJGLUF_API bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
+OBJGLUF_API void GLUFSetRectEmpty(GLUFRect& rect);
 
 enum GLUFShaderType
 {
@@ -205,7 +225,7 @@ class OBJGLUF_API GLUFShaderManager
 	std::map<GLUFProgramPtr, GLUFShaderInfoStruct> mLinklogs;
 
 	//a little helper function for creating things
-	GLUFShaderPtr CreateShader(std::string shad, GLUFShaderType type, bool file);
+	GLUFShaderPtr CreateShader(std::string shad, GLUFShaderType type, bool file, bool seperate = false);
 
 	friend class GLUFBufferManager;
 
@@ -217,9 +237,9 @@ public:
 	GLUFShaderPtr CreateShaderFromFile(std::string filePath, GLUFShaderType type);
 	GLUFShaderPtr CreateShaderFromMemory(const char* text, GLUFShaderType type);
 
-	GLUFProgramPtr CreateProgram(GLUFShaderPtrList shaders);
-	GLUFProgramPtr CreateProgram(GLUFShaderSourceList shaderSources);
-	GLUFProgramPtr CreateProgram(GLUFShaderPathList shaderPaths);
+	GLUFProgramPtr CreateProgram(GLUFShaderPtrList shaders, bool seperate = false);
+	GLUFProgramPtr CreateProgram(GLUFShaderSourceList shaderSources, bool seperate = false);
+	GLUFProgramPtr CreateProgram(GLUFShaderPathList shaderPaths, bool seperate = false);
 
 	GLUFSepProgramPtr CreateSeperateProgram(GLUFProgramPtrStagesMap programs);
 
@@ -604,6 +624,15 @@ public:
 	//NOTE: call CreateTextureBuffer() FIRST
 	void LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format);
 
+	GLUFPoint GetTextureSize(GLUFTexturePtr texture);
+
 	//void BufferTexture(GLUFTexturePtr texture, GLsizei length, GLvoid* data){};
 
 };
+
+//global instances of the managers (becuase they are not static, and have to member variables)
+extern GLUFBufferManager OBJGLUF_API g_BufferManager;
+extern GLUFShaderManager OBJGLUF_API g_ShaderManager;
+
+#define GLUFBUFFERMANAGER g_BufferManager
+#define GLUFSHADERMANAGER g_ShaderManager

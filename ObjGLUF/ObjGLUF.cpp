@@ -53,7 +53,7 @@ bool GLUFInitOpenGLExtentions()
 	GLenum err = glewInit();
 	if (err != GLEW_OK)
 	{
-		GLUF_ERROR("Failed to initialize OpenGL Extentions using GLEW");
+		GLUF_ERROR("Failed to initialize OpenGL Extensions using GLEW");
 		return false;
 	}
 
@@ -66,7 +66,7 @@ void GLUFMatrixStack::Push(const glm::mat4& matrix)
 	if (mStack.size() != 0)
 	{
 		//if there are already things on the stack, instead of multiplying through EVERY TIME TOP IS CALLED, make it more efficient 
-		//so the top is ALWAYS a concatination
+		//so the top is ALWAYS a concatenation
 		glm::mat4 transformed = matrix * Top();
 
 		mStack.push(transformed);
@@ -95,6 +95,19 @@ size_t GLUFMatrixStack::Size(void)
 void GLUFMatrixStack::Empty(void)
 {
 	mStack.empty();
+}
+
+bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
+{
+	//for the first comparison, it is impossible for both statements to be false, 
+	//because if the y is less than the top, it is automatically less than the bottom, and vise versa
+	return	(pt.y < rect.bottom && pt.y > rect.top) &&
+		(pt.x < rect.right && pt.x > rect.left);
+}
+
+void GLUFSetRectEmpty(GLUFRect& rect)
+{
+	rect.top = rect.bottom = rect.left = rect.right = 0;
 }
 
 class GLUFUniformBuffer
@@ -151,6 +164,10 @@ class GLUFTextureBuffer
 {
 	friend GLUFBufferManager;
 	GLuint mTextureId;
+
+	//in pixels
+	long mHeight;
+	long mWidth;
 
 public:
 
@@ -602,6 +619,11 @@ void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+GLUFPoint GLUFBufferManager::GetTextureSize(GLUFTexturePtr texture)
+{
+	return GLUFPoint(texture->mWidth, texture->mHeight);
+}
+
 ////////////////////////////
 //
 //Shader Stuff
@@ -665,7 +687,7 @@ public:
 	void AttachShader(GLUFShaderPtr shader);
 	void FlushShaders(void);
 
-	void Build(GLUFShaderInfoStruct& retStruct);
+	void Build(GLUFShaderInfoStruct& retStruct, bool seperate);
 
 	GLuint GetId(){ return mProgramId; }
 };
@@ -862,10 +884,10 @@ void GLUFProgram::FlushShaders(void)
 	mShaderBuff.clear();
 }
 
-void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct)
+void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 {
-	//make sure we always enable seperable shading
-	glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE);
+	//make sure we enable separate shading
+	if (seperate){ glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE); }
 
 	//Link our program
 	glLinkProgram(mProgramId);
@@ -910,7 +932,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct)
 //for creating things
 
 
-GLUFShaderPtr GLUFShaderManager::CreateShader(std::string shad, GLUFShaderType type, bool file)
+GLUFShaderPtr GLUFShaderManager::CreateShader(std::string shad, GLUFShaderType type, bool file, bool seperate)
 {
 	GLUFShaderPtr shader(new GLUFShader());
 	shader->Init(type);
@@ -944,7 +966,7 @@ GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(const char* text, GLUFSh
 	return CreateShader(text, type, false);
 }
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders)
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool seperate)
 {
 	GLUFProgramPtr program(new GLUFProgram());
 	program->Init();
@@ -955,7 +977,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders)
 	}
 
 	GLUFShaderInfoStruct out;
-	program->Build(out);
+	program->Build(out, seperate);
 	mLinklogs.insert(std::pair<GLUFProgramPtr, GLUFShaderInfoStruct>(program, out));
 
 	if (!out)
@@ -969,7 +991,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders)
 }
 
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSources)
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSources, bool seperate)
 {
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderSources)
@@ -989,7 +1011,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSourc
 }
 
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths)
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths, bool seperate)
 {
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderPaths)

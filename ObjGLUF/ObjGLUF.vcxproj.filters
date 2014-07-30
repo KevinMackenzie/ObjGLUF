@@ -40,7 +40,7 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Standard Files</Filter>
     </ClCompile>
-    <ClCompile Include="GLUFGuit.cpp">
+    <ClCompile Include="GLUFGui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
