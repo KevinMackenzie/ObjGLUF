@@ -2,7 +2,7 @@
 
 #include "ObjGLUF.h"
 //#include <Dimm.h>
-#include "usp10NoWindows.h"
+//#include "usp10NoWindows.h"
 
 //TODO: create MsgProcs for all Controls
 
@@ -17,21 +17,7 @@
 #define GT_TOP      0x000000020
 #define GT_BOTTOM   0x000000030
 
-typedef unsigned long GLUFResult;
 
-//GLUFResult Values
-#define GR_FAILURE 0
-#define GR_SUCCESS 1
-#define GR_OUTOFMEMORY 2
-#define GR_INVALIDARG 3
-#define GR_NOTIMPL
-
-#define GLUF_FAILED(result) ((result == GR_FAILURE) ? true : false)
-#define GLUF_V_RETURN(result) {if(result != GR_SUCCESS) return result;}
-
-#define GLUFTRACE_ERR(str, gr) GLUFTrace(__FILE__, __FUNCTION__, (unsigned long)__LINE__, gr, str);
-
-OBJGLUF_API GLUFResult GLUFTrace(const char*, const char*, unsigned long, GLUFResult, const char*);
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -533,8 +519,7 @@ protected:
 };
 
 void BeginText();
-void DrawTextGLUF(std::string strText, GLUFRect rcScreen, Color vFontColor,
-	float fBBWidth, float fBBHeight, bool bCenter);
+void DrawTextGLUF(GLUFFontPtr font, std::string strText, GLUFRect rcScreen, Color vFontColor, GLUFFontSize size, bool bCenter);
 void EndText();
 
 //-----------------------------------------------------------------------------
@@ -754,9 +739,9 @@ public:
 
 	void            SetTrackRange(int nStart, int nEnd);
 	int             GetTrackPos()				{ return m_nPosition;									}
-	void            SetTrackPos(int nPosition)	{ m_nPosition = nPosition; Cap(); UpdateThumbGLUFRect(); }
+	void            SetTrackPos(int nPosition)	{ m_nPosition = nPosition; Cap(); UpdateThumbRect(); }
 	int             GetPageSize()				{ return m_nPageSize;									 }
-	void            SetPageSize(int nPageSize)	{ m_nPageSize = nPageSize; Cap(); UpdateThumbGLUFRect(); }
+	void            SetPageSize(int nPageSize)	{ m_nPageSize = nPageSize; Cap(); UpdateThumbRect(); }
 
 	void            Scroll(int nDelta);    // Scroll by nDelta items (plus or minus)
 	void            ShowItem(int nIndex);  // Ensure that item nIndex is displayed, scroll if necessary
@@ -777,7 +762,7 @@ protected:
 		HELD_DOWN
 	};
 
-	void            UpdateThumbGLUFRect();
+	void            UpdateThumbRect();
 	void            Cap();  // Clips position at boundaries. Ensures it stays within legal range.
 
 	bool m_bShowThumb;
@@ -902,9 +887,9 @@ public:
 	int             FindItem(std::string strText, unsigned int iStart = 0);
 	void*			GetItemData(std::string strText);
 	void*			GetItemData(int nIndex);
-	void            SetDropHeight(unsigned int nHeight)		{ m_nDropHeight = nHeight; UpdateRects();	}
+	void            SetDropHeight(unsigned int nHeight)		{ m_nDropHeight = nHeight; UpdateRects();		}
 	int             GetScrollBarWidth() const				{ return m_nSBWidth;							}
-	void            SetScrollBarWidth(int nWidth)			{ m_nSBWidth = nWidth; UpdateRects();		}
+	void            SetScrollBarWidth(int nWidth)			{ m_nSBWidth = nWidth; UpdateRects();			}
 
 	int             GetSelectedIndex() const				{ return m_iSelected;							}
 	void* GetSelectedData();
@@ -982,13 +967,13 @@ protected:
 //???
 
 //-----------------------------------------------------------------------------
-// CUniBuffer class for the edit control
+// GLUFUniBuffer class for the edit control
 //-----------------------------------------------------------------------------
-class CUniBuffer
+class GLUFUniBuffer
 {
 public:
-	CUniBuffer(int nInitialSize = 1);
-	~CUniBuffer();
+	GLUFUniBuffer(int nInitialSize = 1);
+	~GLUFUniBuffer();
 
 	static void			    Initialize();
 	static void			    Uninitialize();
@@ -996,22 +981,22 @@ public:
 	//int                     GetBufferSize(){ return 256; }
 	//bool                    SetBufferSize(int nSize);
 	int                     GetTextSize(){ return m_Buffer.length(); }
-	std::string				GetBuffer(){ return m_Buffer; }
-	const char&				operator[](int n) const{ return m_Buffer[n]; }
-	char&					operator[](int n){ return m_Buffer[n]; }
+	std::string				GetBuffer(unsigned int start = 0){ return m_Buffer.c_str + start; }
+	const char				operator[](int n) const{ return m_Buffer[n]; }
+	char					operator[](int n){ return m_Buffer[n]; }
 	GLUFFontNode*			GetFontNode(){ return m_pFontNode; }
 	void                    SetFontNode(GLUFFontNode* pFontNode){ m_pFontNode = pFontNode; }
 	void                    Clear();
 
 	bool                    InsertChar(int nIndex, char wChar); // Inserts the char at specified index. If nIndex == -1, insert to the end.
 	bool                    RemoveChar(int nIndex);  // Removes the char at specified index. If nIndex == -1, remove the last char.
-	bool                    InsertString(int nIndex, std::string pStr, int nCount = -1);  // Inserts the first nCount characters of the string pStr at specified index.  If nCount == -1, the entire string is inserted. If nIndex == -1, insert to the end.
+	bool                    InsertString(int nIndex, std::string pStr);  // Inserts the first nCount characters of the string pStr at specified index.  If nCount == -1, the entire string is inserted. If nIndex == -1, insert to the end.
 	bool                    SetText(std::string wszText);
 
-	// Uniscribe (what is the purpose of this?):  ???
+	// Uniscribe:  We do not need Unsubscribe because we are using FreeType
 	
 	GLUFResult              CPtoX(int nCP, bool bTrail, int* pX);
-	GLUFResult              XtoCP(int nX, int* pCP, int* pnTrail);
+	GLUFResult              XtoCP(int nX, int* pCP, bool* pnTrail);
 	void                    GetPriorItemPos(int nCP, int* pPrior);
 	void                    GetNextItemPos(int nCP, int* pPrior);
 
@@ -1020,10 +1005,12 @@ private:
 
 	std::string m_Buffer; //buffer to hold the text
 
+	std::vector<unsigned int> m_CalcXValues;//a buffer to hold all of the X values for each character (leading edges , however there will be the trailing edge for last char)
+
 	// Uniscribe-specific
 	GLUFFontNode* m_pFontNode;          // Font node for the font that this buffer uses
 	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
-	SCRIPT_STRING_ANALYSIS m_Analysis;  // Analysis for the current string
+	//SCRIPT_STRING_ANALYSIS m_Analysis;  // Analysis for the current string
 
 private:
 	// Empty implementation of the Uniscribe API
@@ -1112,7 +1099,7 @@ protected:
 	void            CopyToClipboard();
 	void            PasteFromClipboard();
 
-	CUniBuffer m_Buffer;     // Buffer to hold text
+	GLUFUniBuffer m_Buffer;     // Buffer to hold text
 	int m_nBorder;      // Border of the window
 	int m_nSpacing;     // Spacing between the text and the edge of border
 	GLUFRect m_rcText;       // Bounding GLUFRectangle for the text

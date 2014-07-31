@@ -155,6 +155,82 @@ void GLUFOffsetRect(GLUFRect& rect, int x, int y)
 	rect.right += x;
 }
 
+int GLUFRectHeight(GLUFRect rect)
+{
+	return rect.bottom - rect.top;
+}
+
+int GLUFRectWidth(GLUFRect rect)
+{
+	return rect.right - rect.left;
+}
+
+
+void GLUFInflateRect(GLUFRect& rect, int dx, int dy)
+{
+	float dx2 = (float)dx / 2.0f;
+	float dy2 = (float)dy / 2.0f;
+	rect.left -= dx2;
+	rect.right += dx2;//remember to have opposites
+
+	rect.top -= dy2;
+	rect.bottom += dy2;
+}
+
+bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
+{
+
+	//Left
+	if (rect0.left > rect1.left)
+	{
+		rectIntersect.left = rect0.left;
+	}
+	else
+	{
+		rectIntersect.left = rect1.left;
+	}
+
+	//Right
+	if (rect0.right < rect1.right)
+	{
+		rectIntersect.right = rect0.right;
+	}
+	else
+	{
+		rectIntersect.right = rect1.right;
+	}
+
+
+	//Top
+	if (rect0.top > rect1.top)
+	{
+		rectIntersect.top = rect0.top;
+	}
+	else
+	{
+		rectIntersect.top = rect1.top;
+	}
+
+	//Bottom
+	if (rect0.bottom < rect1.bottom)
+	{
+		rectIntersect.bottom = rect0.bottom;
+	}
+	else
+	{
+		rectIntersect.bottom = rect1.bottom;
+	}
+
+	//this will ONLY happen if the do NOT intersect
+	if (rectIntersect.left > rectIntersect.right || rectIntersect.top > rectIntersect.bottom)
+	{
+		GLUFSetRectEmpty(rectIntersect);
+		return false;
+	}
+
+	return true;
+}
+
 class GLUFUniformBuffer
 {
 

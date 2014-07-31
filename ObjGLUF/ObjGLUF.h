@@ -77,6 +77,23 @@ OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 #define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
 
+typedef unsigned long GLUFResult;
+
+//GLUFResult Values
+#define GR_FAILURE 0
+#define GR_SUCCESS 1
+#define GR_OUTOFMEMORY 2
+#define GR_INVALIDARG 3
+#define GR_NOTIMPL
+
+#define GLUF_FAILED(result) ((result == GR_FAILURE) ? true : false)
+#define GLUF_SUCCEEDED(result) ((result == GR_SUCCESS) ? true : false)
+#define GLUF_V_RETURN(result) {if(result != GR_SUCCESS) return result;}
+
+#define GLUFTRACE_ERR(str, gr) GLUFTrace(__FILE__, __FUNCTION__, (unsigned long)__LINE__, gr, str);
+
+OBJGLUF_API GLUFResult GLUFTrace(const char*, const char*, unsigned long, GLUFResult, const char*);
+
 #define GLUFGetTime() glfwGetTime()
 
 typedef glm::u8vec4 Color;//only accepts numbers from 0 to 255
@@ -157,6 +174,10 @@ OBJGLUF_API bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
 OBJGLUF_API void GLUFSetRectEmpty(GLUFRect& rect);
 OBJGLUF_API void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom);
 OBJGLUF_API void GLUFOffsetRect(GLUFRect& rect, int x, int y);
+OBJGLUF_API int  GLUFRectHeight(GLUFRect rect);
+OBJGLUF_API int  GLUFRectWidth(GLUFRect rect);
+OBJGLUF_API void GLUFInflateRect(GLUFRect& rect, int dx, int dy);
+OBJGLUF_API bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect);
 
 enum GLUFShaderType
 {

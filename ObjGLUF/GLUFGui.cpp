@@ -3,6 +3,9 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
+#include <algorithm>
+#include <stdio.h>
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //IMPORTANT///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,13 +36,20 @@
 
 #define GLUF_MAX_GUI_SPRITES 500
 
-// DXUT_MAX_EDITBOXLENGTH is the maximum string length allowed in edit boxes,
+// GLUF_MAX_EDITBOXLENGTH is the maximum string length allowed in edit boxes,
 // including the nul terminator.
 // 
 // Uniscribe does not support strings having bigger-than-16-bits length.
 // This means that the string must be less than 65536 characters long,
 // including the nul terminator.
-#define DXUT_MAX_EDITBOXLENGTH 0xFFFF
+#define GLUF_MAX_EDITBOXLENGTH 0xFFFF
+
+//this is just a constant to be a little bit less windows api dependent
+unsigned int GetCaretBlinkTime()
+{
+	return 1000;
+}
+
 
 //======================================================================================
 // GLFWCallback methods that ALL redirect to a universal callback
@@ -251,9 +261,9 @@ GLUFResult GLUFTrace(const char* file, const char* function, unsigned long lineN
 
 class GLUFFont
 {
+public:
 	FT_Face mFontFace;
 	GLUFFontSize mFontSize;
-public:
 
 	bool Init(unsigned char* data, uint64_t rawSize);
 
@@ -2373,7 +2383,8 @@ bool GLUFDialogResourceManager::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int p
 	return false;
 }
 
-/*
+/*
+
 GLUFResult GLUFDialogResourceManager::OnD3D11CreateDevice(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3d11DeviceContext)
 {
 	m_pd3d11Device = pd3dDevice;
@@ -2500,7 +2511,8 @@ GLUFResult GLUFDialogResourceManager::OnD3D11CreateDevice(ID3D11Device* pd3dDevi
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 GLUFResult GLUFDialogResourceManager::OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,
 const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
@@ -2560,7 +2572,7 @@ void GLUFDialogResourceManager::OnD3D11DestroyDevice()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::StoreD3D11State(_In_ ID3D11DeviceContext* pd3dImmediateContext)
+void GLUFDialogResourceManager::StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext)
 {
 	pd3dImmediateContext->OMGetDepthStencilState(&m_pDepthStencilStateStored11, &m_StencilRefStored11);
 	pd3dImmediateContext->RSGetState(&m_pRasterizerStateStored11);
@@ -2570,7 +2582,7 @@ void GLUFDialogResourceManager::StoreD3D11State(_In_ ID3D11DeviceContext* pd3dIm
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::RestoreD3D11State(_In_ ID3D11DeviceContext* pd3dImmediateContext)
+void GLUFDialogResourceManager::RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext)
 {
 	pd3dImmediateContext->OMSetDepthStencilState(m_pDepthStencilStateStored11, m_StencilRefStored11);
 	pd3dImmediateContext->RSSetState(m_pRasterizerStateStored11);
@@ -2631,7 +2643,8 @@ void GLUFDialogResourceManager::BeginSprites()
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 void GLUFDialogResourceManager::EndSprites()
 {
 
@@ -2900,7 +2913,7 @@ int GLUFDialogResourceManager::AddTexture(LPCWSTR strResourceName, HMODULE hReso
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFDialogResourceManager::CreateTexture11(_In_ UINT iTexture)
+GLUFResult GLUFDialogResourceManager::CreateTexture11( UINT iTexture)
 {
 	GLUFResult hr = GR_SUCCESS;
 
@@ -3114,7 +3127,8 @@ GLUFButton::GLUFButton(GLUFDialog* pDialog)
 	m_nHotkey = 0;
 }
 
-//--------------------------------------------------------------------------------------/*
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 {
@@ -3143,7 +3157,7 @@ bool GLUFButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (m_bPressed == true)
 			{
 				m_bPressed = false;
-				m_pDialog->SendEvent(EVENT_BUTTON_CLICKED, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTBUTTON_CLICKED, true, this);
 			}
 			return true;
 		}
@@ -3153,7 +3167,8 @@ bool GLUFButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
@@ -3194,7 +3209,7 @@ bool GLUFButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 			// Button click
 			if (ContainsPoint(pt))
-				m_pDialog->SendEvent(EVENT_BUTTON_CLICKED, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTBUTTON_CLICKED, true, this);
 
 			return true;
 		}
@@ -3286,7 +3301,8 @@ GLUFCheckBox::GLUFCheckBox(GLUFDialog* pDialog)
 }
 
 
-//--------------------------------------------------------------------------------------/*
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFCheckBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -3324,7 +3340,8 @@ bool GLUFCheckBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFCheckBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
@@ -3375,7 +3392,16 @@ bool GLUFCheckBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 }
 
 */
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
+bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+{
+
+}
+
+
+//--------------------------------------------------------------------------------------
+
 void GLUFCheckBox::SetCheckedInternal(bool bChecked, bool bFromInput)
 {
 	m_bChecked = bChecked;
@@ -3398,15 +3424,15 @@ void GLUFCheckBox::UpdateRects()
 	GLUFButton::UpdateRects();
 
 	m_rcButton = m_rcBoundingBox;
-	m_rcButton.right = m_rcButton.left + RectHeight(m_rcButton);
+	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
 
 	m_rcText = m_rcBoundingBox;
-	m_rcText.left += (int)(1.25f * RectWidth(m_rcButton));
+	m_rcText.left += (int)(1.25f * GLUFRectWidth(m_rcButton));
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFCheckBox::Render(_In_ float fElapsedTime)
+void GLUFCheckBox::Render( float fElapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -3430,8 +3456,8 @@ void GLUFCheckBox::Render(_In_ float fElapsedTime)
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
 	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
 
-	m_pDialog->DrawSprite(pElement, &m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
-	m_pDialog->DrawText(m_strText, pElement, &m_rcText, false, false);
+	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawText(m_strText, pElement, m_rcText, false, false);
 
 	if (!m_bChecked)
 		iState = GLUF_STATE_HIDDEN;
@@ -3439,7 +3465,7 @@ void GLUFCheckBox::Render(_In_ float fElapsedTime)
 	pElement = m_Elements[1];
 
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcButton, GLUF_FAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_FAR_BUTTON_DEPTH);
 }
 
 
@@ -3447,15 +3473,16 @@ void GLUFCheckBox::Render(_In_ float fElapsedTime)
 // GLUFRadioButton class
 //======================================================================================
 
-GLUFRadioButton::GLUFRadioButton(_In_opt_ GLUFDialog* pDialog)
+GLUFRadioButton::GLUFRadioButton( GLUFDialog* pDialog)
 {
 	m_Type = GLUF_CONTROL_RADIOBUTTON;
 	m_pDialog = pDialog;
 }
 
+/*
 
+//--------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------
 bool GLUFRadioButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -3487,7 +3514,7 @@ bool GLUFRadioButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				m_pDialog->ClearRadioButtonGroup(m_nButtonGroup);
 				m_bChecked = !m_bChecked;
 
-				m_pDialog->SendEvent(EVENT_RADIOBUTTON_CHANGED, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTRADIOBUTTON_CHANGED, true, this);
 			}
 			return true;
 		}
@@ -3497,7 +3524,8 @@ bool GLUFRadioButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFRadioButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
@@ -3539,7 +3567,7 @@ bool GLUFRadioButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPA
 				m_pDialog->ClearRadioButtonGroup(m_nButtonGroup);
 				m_bChecked = !m_bChecked;
 
-				m_pDialog->SendEvent(EVENT_RADIOBUTTON_CHANGED, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTRADIOBUTTON_CHANGED, true, this);
 			}
 
 			return true;
@@ -3551,15 +3579,23 @@ bool GLUFRadioButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPA
 
 	return false;
 }
+*/
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+bool GLUFRadioButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+{
+
+}
+
+//--------------------------------------------------------------------------------------
+
 void GLUFRadioButton::SetCheckedInternal(bool bChecked, bool bClearGroup, bool bFromInput)
 {
 	if (bChecked && bClearGroup)
 		m_pDialog->ClearRadioButtonGroup(m_nButtonGroup);
 
 	m_bChecked = bChecked;
-	m_pDialog->SendEvent(EVENT_RADIOBUTTON_CHANGED, bFromInput, this);
+	m_pDialog->SendEvent(GLUF_EVENT_RADIOBUTTON_CHANGED, bFromInput, this);
 }
 
 
@@ -3567,7 +3603,7 @@ void GLUFRadioButton::SetCheckedInternal(bool bChecked, bool bClearGroup, bool b
 // GLUFComboBox class
 //======================================================================================
 
-GLUFComboBox::GLUFComboBox(_In_opt_ GLUFDialog* pDialog) : m_ScrollBar(pDialog)
+GLUFComboBox::GLUFComboBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
 {
 	m_Type = GLUF_CONTROL_COMBOBOX;
 	m_pDialog = pDialog;
@@ -3589,7 +3625,7 @@ GLUFComboBox::~GLUFComboBox()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::SetTextColor(_In_ DWORD Color)
+void GLUFComboBox::SetTextColor(Color Color)
 {
 	GLUFElement* pElement = m_Elements[0];
 
@@ -3610,29 +3646,29 @@ void GLUFComboBox::UpdateRects()
 	GLUFButton::UpdateRects();
 
 	m_rcButton = m_rcBoundingBox;
-	m_rcButton.left = m_rcButton.right - RectHeight(m_rcButton);
+	m_rcButton.left = m_rcButton.right - GLUFRectHeight(m_rcButton);
 
 	m_rcText = m_rcBoundingBox;
 	m_rcText.right = m_rcButton.left;
 
 	m_rcDropdown = m_rcText;
-	OffsetRect(&m_rcDropdown, 0, (int)(0.90f * RectHeight(m_rcText)));
+	GLUFOffsetRect(m_rcDropdown, 0, (int)(0.90f * GLUFRectHeight(m_rcText)));
 	m_rcDropdown.bottom += m_nDropHeight;
 	m_rcDropdown.right -= m_nSBWidth;
 
 	m_rcDropdownText = m_rcDropdown;
-	m_rcDropdownText.left += (int)(0.1f * RectWidth(m_rcDropdown));
-	m_rcDropdownText.right -= (int)(0.1f * RectWidth(m_rcDropdown));
-	m_rcDropdownText.top += (int)(0.1f * RectHeight(m_rcDropdown));
-	m_rcDropdownText.bottom -= (int)(0.1f * RectHeight(m_rcDropdown));
+	m_rcDropdownText.left += (int)(0.1f * GLUFRectWidth(m_rcDropdown));
+	m_rcDropdownText.right -= (int)(0.1f * GLUFRectWidth(m_rcDropdown));
+	m_rcDropdownText.top += (int)(0.1f * GLUFRectHeight(m_rcDropdown));
+	m_rcDropdownText.bottom -= (int)(0.1f * GLUFRectHeight(m_rcDropdown));
 
 	// Update the scrollbar's rects
 	m_ScrollBar.SetLocation(m_rcDropdown.right, m_rcDropdown.top + 2);
-	m_ScrollBar.SetSize(m_nSBWidth, RectHeight(m_rcDropdown) - 2);
+	m_ScrollBar.SetSize(m_nSBWidth, GLUFRectHeight(m_rcDropdown) - 2);
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[2]->iFont);
-	if (pFontNode && pFontNode->nHeight)
+	if (pFontNode && pFontNode->mSize)
 	{
-		m_ScrollBar.SetPageSize(RectHeight(m_rcDropdownText) / pFontNode->nHeight);
+		m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcDropdownText) / pFontNode->mSize);
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
@@ -3650,7 +3686,8 @@ void GLUFComboBox::OnFocusOut()
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFComboBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	const DWORD REPEAT_MASK = (0x40000000);
@@ -3674,7 +3711,7 @@ bool GLUFComboBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				if (m_iSelected != m_iFocused)
 				{
 					m_iSelected = m_iFocused;
-					m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 				}
 				m_bOpened = false;
 
@@ -3694,7 +3731,7 @@ bool GLUFComboBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			if (!m_bOpened)
 			{
-				m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 
 				if (!m_pDialog->m_bKeyboardInput)
 					m_pDialog->ClearFocus();
@@ -3710,7 +3747,7 @@ bool GLUFComboBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				m_iSelected = m_iFocused;
 
 				if (!m_bOpened)
-					m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 			}
 
 			return true;
@@ -3723,7 +3760,7 @@ bool GLUFComboBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				m_iSelected = m_iFocused;
 
 				if (!m_bOpened)
-					m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 			}
 
 			return true;
@@ -3736,7 +3773,8 @@ bool GLUFComboBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	if (!m_bEnabled || !m_bVisible)
@@ -3805,7 +3843,7 @@ bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 					PtInRect(&pItem->rcActive, pt))
 				{
 					m_iFocused = m_iSelected = static_cast<int>(i);
-					m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 					m_bOpened = false;
 
 					if (!m_pDialog->m_bKeyboardInput)
@@ -3823,7 +3861,7 @@ bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 		{
 			m_iFocused = m_iSelected;
 
-			m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 			m_bOpened = false;
 		}
 
@@ -3872,7 +3910,7 @@ bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 					m_iSelected = m_iFocused;
 
 					if (!m_bOpened)
-						m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+						m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 				}
 			}
 			else
@@ -3883,7 +3921,7 @@ bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 					m_iSelected = m_iFocused;
 
 					if (!m_bOpened)
-						m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+						m_pDialog->SendEvent(GLUF_EVENTCOMBOBOX_SELECTION_CHANGED, true, this);
 				}
 			}
 		}
@@ -3893,7 +3931,13 @@ bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 
 	return false;
 }
+*/
 
+//--------------------------------------------------------------------------------------
+bool GLUFComboBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+{
+	//TODO:
+}
 
 //--------------------------------------------------------------------------------------
 void GLUFComboBox::OnHotkey()
@@ -3913,12 +3957,12 @@ void GLUFComboBox::OnHotkey()
 		m_iSelected = 0;
 
 	m_iFocused = m_iSelected;
-	m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+	m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::Render(_In_ float fElapsedTime)
+void GLUFComboBox::Render( float fElapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -3936,11 +3980,11 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 	if (!bSBInit)
 	{
 		// Update the page size of the scroll bar
-		if (m_pDialog->GetManager()->GetFontNode(pElement->iFont)->nHeight)
-			m_ScrollBar.SetPageSize(RectHeight(m_rcDropdownText) /
-			m_pDialog->GetManager()->GetFontNode(pElement->iFont)->nHeight);
+		if (m_pDialog->GetManager()->GetFontNode(pElement->iFont)->mSize)
+			m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcDropdownText) /
+			m_pDialog->GetManager()->GetFontNode(pElement->iFont)->mSize);
 		else
-			m_ScrollBar.SetPageSize(RectHeight(m_rcDropdownText));
+			m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcDropdownText));
 		bSBInit = true;
 	}
 
@@ -3952,7 +3996,7 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 	pElement->TextureColor.Blend(iState, fElapsedTime);
 	pElement->FontColor.Blend(iState, fElapsedTime);
 
-	m_pDialog->DrawSprite(pElement, &m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
 
 	// Selection outline
 	GLUFElement* pSelectionElement = m_Elements[3];
@@ -3963,7 +4007,7 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 	if (pFont)
 	{
 		int curY = m_rcDropdownText.top;
-		int nRemainingHeight = RectHeight(m_rcDropdownText);
+		int nRemainingHeight = GLUFRectHeight(m_rcDropdownText);
 		//WCHAR strDropdown[4096] = {0};
 
 		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
@@ -3971,15 +4015,15 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 			GLUFComboBoxItem* pItem = m_Items[i];
 
 			// Make sure there's room left in the dropdown
-			nRemainingHeight -= pFont->nHeight;
+			nRemainingHeight -= pFont->mSize;
 			if (nRemainingHeight < 0)
 			{
 				pItem->bVisible = false;
 				continue;
 			}
 
-			SetRect(&pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY + pFont->nHeight);
-			curY += pFont->nHeight;
+			GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY + pFont->mSize);
+			curY += pFont->mSize;
 
 			//debug
 			//int blue = 50 * i;
@@ -3991,15 +4035,15 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 			{
 				if ((int)i == m_iFocused)
 				{
-					RECT rc;
-					SetRect(&rc, m_rcDropdown.left, pItem->rcActive.top - 2, m_rcDropdown.right,
+					GLUFRect rc;
+					GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top - 2, m_rcDropdown.right,
 						pItem->rcActive.bottom + 2);
-					m_pDialog->DrawSprite(pSelectionElement, &rc, GLUF_NEAR_BUTTON_DEPTH);
-					m_pDialog->DrawText(pItem->strText, pSelectionElement, &pItem->rcActive);
+					m_pDialog->DrawSprite(pSelectionElement, rc, GLUF_NEAR_BUTTON_DEPTH);
+					m_pDialog->DrawText(pItem->strText, pSelectionElement, pItem->rcActive);
 				}
 				else
 				{
-					m_pDialog->DrawText(pItem->strText, pElement, &pItem->rcActive);
+					m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
 				}
 			}
 		}
@@ -4039,9 +4083,9 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
 
-	RECT rcWindow = m_rcButton;
-	OffsetRect(&rcWindow, nOffsetX, nOffsetY);
-	m_pDialog->DrawSprite(pElement, &rcWindow, GLUF_FAR_BUTTON_DEPTH);
+	GLUFRect rcWindow = m_rcButton;
+	GLUFOffsetRect(rcWindow, nOffsetX, nOffsetY);
+	m_pDialog->DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
 
 	if (m_bOpened)
 		iState = GLUF_STATE_PRESSED;
@@ -4053,38 +4097,40 @@ void GLUFComboBox::Render(_In_ float fElapsedTime)
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
 	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
 
-	m_pDialog->DrawSprite(pElement, &m_rcText, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcText, GLUF_NEAR_BUTTON_DEPTH);
 
 	if (m_iSelected >= 0 && m_iSelected < (int)m_Items.size())
 	{
 		GLUFComboBoxItem* pItem = m_Items[m_iSelected];
 		if (pItem)
 		{
-			m_pDialog->DrawText(pItem->strText, pElement, &m_rcText, false, true);
+			m_pDialog->DrawText(pItem->strText, pElement, m_rcText, false, true);
 
 		}
 	}
 }
 
 
-//--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::AddItem(const WCHAR* strText, void* pData)
+//--------------------------------------------------------------------------------------
+
+GLUFResult GLUFComboBox::AddItem(std::string strText, void* pData)
 {
 	// Validate parameters
-	if (!strText)
+	/*if (!strText)
 	{
 		return E_INVALIDARG;
-	}
+	}*/
 
 	// Create a new item and set the data
 	GLUFComboBoxItem* pItem = new (std::nothrow) GLUFComboBoxItem;
 	if (!pItem)
 	{
-		return DXTRACE_ERR_MSGBOX(L"new", E_OUTOFMEMORY);
+		return GLUFTRACE_ERR("new", GR_OUTOFMEMORY);
 	}
 
-	ZeroMemory(pItem, sizeof(GLUFComboBoxItem));
-	wcscpy_s(pItem->strText, 256, strText);
+	//ZeroMemory(pItem, sizeof(GLUFComboBoxItem));
+	//wcscpy_s(pItem->strText, 256, strText);
+	pItem->strText = strText;
 	pItem->pData = pData;
 
 	m_Items.push_back(pItem);
@@ -4097,7 +4143,7 @@ GLUFResult GLUFComboBox::AddItem(const WCHAR* strText, void* pData)
 	{
 		m_iSelected = 0;
 		m_iFocused = 0;
-		m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+		m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 	}
 
 	return GR_SUCCESS;
@@ -4105,11 +4151,11 @@ GLUFResult GLUFComboBox::AddItem(const WCHAR* strText, void* pData)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::RemoveItem(_In_ UINT index)
+void GLUFComboBox::RemoveItem( unsigned int index)
 {
 	auto it = m_Items.begin() + index;
 	GLUFComboBoxItem* pItem = *it;
-	SAFE_DELETE(pItem);
+	GLUF_SAFE_DELETE(pItem);
 	m_Items.erase(it);
 	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
 	if (m_iSelected >= (int)m_Items.size())
@@ -4123,7 +4169,7 @@ void GLUFComboBox::RemoveAllItems()
 	for (auto it = m_Items.begin(); it != m_Items.end(); ++it)
 	{
 		GLUFComboBoxItem* pItem = *it;
-		SAFE_DELETE(pItem);
+		GLUF_SAFE_DELETE(pItem);
 	}
 
 	m_Items.clear();
@@ -4133,23 +4179,23 @@ void GLUFComboBox::RemoveAllItems()
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFComboBox::ContainsItem(_In_z_ const WCHAR* strText, _In_ UINT iStart)
+bool GLUFComboBox::ContainsItem(std::string strText, unsigned int iStart)
 {
 	return (-1 != FindItem(strText, iStart));
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFComboBox::FindItem(_In_z_ const WCHAR* strText, _In_ UINT iStart) const
+int GLUFComboBox::FindItem(std::string strText, unsigned int iStart)
 {
-	if (!strText)
-		return -1;
+	/*if (!strText)
+		return -1;*/
 
 	for (size_t i = iStart; i < m_Items.size(); i++)
 	{
 		GLUFComboBoxItem* pItem = m_Items[i];
 
-		if (0 == wcscmp(pItem->strText, strText))
+		if (0 != pItem->strText.compare(strText))//REMEMBER if this returns 0, they are the same
 		{
 			return static_cast<int>(i);
 		}
@@ -4160,7 +4206,7 @@ int GLUFComboBox::FindItem(_In_z_ const WCHAR* strText, _In_ UINT iStart) const
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetSelectedData() const
+void* GLUFComboBox::GetSelectedData()
 {
 	if (m_iSelected < 0)
 		return nullptr;
@@ -4171,7 +4217,7 @@ void* GLUFComboBox::GetSelectedData() const
 
 
 //--------------------------------------------------------------------------------------
-GLUFComboBoxItem* GLUFComboBox::GetSelectedItem() const
+GLUFComboBoxItem* GLUFComboBox::GetSelectedItem()
 {
 	if (m_iSelected < 0)
 		return nullptr;
@@ -4181,7 +4227,7 @@ GLUFComboBoxItem* GLUFComboBox::GetSelectedItem() const
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetItemData(_In_z_ const WCHAR* strText) const
+void* GLUFComboBox::GetItemData(std::string strText) 
 {
 	int index = FindItem(strText);
 	if (index == -1)
@@ -4192,7 +4238,7 @@ void* GLUFComboBox::GetItemData(_In_z_ const WCHAR* strText) const
 	GLUFComboBoxItem* pItem = m_Items[index];
 	if (!pItem)
 	{
-		DXTRACE_ERR(L"GLUFComboBox::GetItemData", E_FAIL);
+		GLUFTRACE_ERR("GLUFComboBox::GetItemData", GR_FAILURE);
 		return nullptr;
 	}
 
@@ -4201,7 +4247,7 @@ void* GLUFComboBox::GetItemData(_In_z_ const WCHAR* strText) const
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetItemData(_In_ int nIndex) const
+void* GLUFComboBox::GetItemData( int nIndex)
 {
 	if (nIndex < 0 || nIndex >= (int)m_Items.size())
 		return nullptr;
@@ -4211,13 +4257,13 @@ void* GLUFComboBox::GetItemData(_In_ int nIndex) const
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByIndex(_In_ UINT index)
+GLUFResult GLUFComboBox::SetSelectedByIndex( unsigned int index)
 {
 	if (index >= GetNumItems())
-		return E_INVALIDARG;
+		return GR_INVALIDARG;
 
 	m_iFocused = m_iSelected = index;
-	m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+	m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 
 	return GR_SUCCESS;
 }
@@ -4225,17 +4271,17 @@ GLUFResult GLUFComboBox::SetSelectedByIndex(_In_ UINT index)
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByText(_In_z_  const WCHAR* strText)
+GLUFResult GLUFComboBox::SetSelectedByText(std::string strText)
 {
-	if (!strText)
-		return E_INVALIDARG;
+	/*if (!strText)
+		return E_INVALIDARG;*/
 
 	int index = FindItem(strText);
 	if (index == -1)
-		return E_FAIL;
+		return GR_FAILURE;
 
 	m_iFocused = m_iSelected = index;
-	m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+	m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 
 	return GR_SUCCESS;
 }
@@ -4243,7 +4289,7 @@ GLUFResult GLUFComboBox::SetSelectedByText(_In_z_  const WCHAR* strText)
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByData(_In_ void* pData)
+GLUFResult GLUFComboBox::SetSelectedByData( void* pData)
 {
 	for (size_t i = 0; i < m_Items.size(); i++)
 	{
@@ -4252,12 +4298,12 @@ GLUFResult GLUFComboBox::SetSelectedByData(_In_ void* pData)
 		if (pItem->pData == pData)
 		{
 			m_iFocused = m_iSelected = static_cast<int>(i);
-			m_pDialog->SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+			m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 			return GR_SUCCESS;
 		}
 	}
 
-	return E_FAIL;
+	return GR_FAILURE;
 }
 
 
@@ -4265,7 +4311,7 @@ GLUFResult GLUFComboBox::SetSelectedByData(_In_ void* pData)
 // GLUFSlider class
 //======================================================================================
 
-GLUFSlider::GLUFSlider(_In_opt_ GLUFDialog* pDialog)
+GLUFSlider::GLUFSlider( GLUFDialog* pDialog)
 {
 	m_Type = GLUF_CONTROL_SLIDER;
 	m_pDialog = pDialog;
@@ -4279,10 +4325,10 @@ GLUFSlider::GLUFSlider(_In_opt_ GLUFDialog* pDialog)
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFSlider::ContainsPoint(_In_ const POINT& pt)
+bool GLUFSlider::ContainsPoint(GLUFPoint pt)
 {
-	return (PtInRect(&m_rcBoundingBox, pt) ||
-		PtInRect(&m_rcButton, pt));
+	return (GLUFPtInRect(m_rcBoundingBox, pt) ||
+		GLUFPtInRect(m_rcButton, pt));
 }
 
 
@@ -4292,23 +4338,24 @@ void GLUFSlider::UpdateRects()
 	GLUFControl::UpdateRects();
 
 	m_rcButton = m_rcBoundingBox;
-	m_rcButton.right = m_rcButton.left + RectHeight(m_rcButton);
-	OffsetRect(&m_rcButton, -RectWidth(m_rcButton) / 2, 0);
+	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
+	GLUFOffsetRect(m_rcButton, -GLUFRectWidth(m_rcButton) / 2, 0);
 
-	m_nButtonX = (int)((m_nValue - m_nMin) * (float)RectWidth(m_rcBoundingBox) / (m_nMax - m_nMin));
-	OffsetRect(&m_rcButton, m_nButtonX, 0);
+	m_nButtonX = (int)((m_nValue - m_nMin) * (float)GLUFRectWidth(m_rcBoundingBox) / (m_nMax - m_nMin));
+	GLUFOffsetRect(m_rcButton, m_nButtonX, 0);
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFSlider::ValueFromPos(_In_ int x)
+int GLUFSlider::ValueFromPos( int x)
 {
-	float fValuePerPixel = (float)(m_nMax - m_nMin) / RectWidth(m_rcBoundingBox);
+	float fValuePerPixel = (float)(m_nMax - m_nMin) / GLUFRectWidth(m_rcBoundingBox);
 	return (int)(0.5f + m_nMin + fValuePerPixel * (x - m_rcBoundingBox.left));
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFSlider::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -4359,7 +4406,8 @@ bool GLUFSlider::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -4421,7 +4469,7 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 		{
 			m_bPressed = false;
 			ReleaseCapture();
-			m_pDialog->SendEvent(EVENT_SLIDER_VALUE_CHANGED_UP, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTSLIDER_VALUE_CHANGED_UP, true, this);
 
 			return true;
 		}
@@ -4450,10 +4498,17 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 	return false;
 }
+*/
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::SetRange(_In_ int nMin, _In_ int nMax)
+bool GLUFSlider::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+{
+	//TODO:
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFSlider::SetRange( int nMin,  int nMax)
 {
 	m_nMin = nMin;
 	m_nMax = nMax;
@@ -4463,7 +4518,7 @@ void GLUFSlider::SetRange(_In_ int nMin, _In_ int nMax)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::SetValueInternal(_In_ int nValue, _In_ bool bFromInput)
+void GLUFSlider::SetValueInternal( int nValue,  bool bFromInput)
 {
 	// Clamp to range
 	nValue = std::max(m_nMin, nValue);
@@ -4475,12 +4530,12 @@ void GLUFSlider::SetValueInternal(_In_ int nValue, _In_ bool bFromInput)
 	m_nValue = nValue;
 	UpdateRects();
 
-	m_pDialog->SendEvent(EVENT_SLIDER_VALUE_CHANGED, bFromInput, this);
+	m_pDialog->SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED, bFromInput, this);
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::Render(_In_ float fElapsedTime)
+void GLUFSlider::Render( float fElapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -4523,13 +4578,13 @@ void GLUFSlider::Render(_In_ float fElapsedTime)
 
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
 
 	pElement = m_Elements[1];
 
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
 }
 
 
@@ -4537,7 +4592,7 @@ void GLUFSlider::Render(_In_ float fElapsedTime)
 // GLUFScrollBar class
 //======================================================================================
 
-GLUFScrollBar::GLUFScrollBar(_In_opt_ GLUFDialog* pDialog)
+GLUFScrollBar::GLUFScrollBar( GLUFDialog* pDialog)
 {
 	m_Type = GLUF_CONTROL_SCROLLBAR;
 	m_pDialog = pDialog;
@@ -4545,10 +4600,10 @@ GLUFScrollBar::GLUFScrollBar(_In_opt_ GLUFDialog* pDialog)
 	m_bShowThumb = true;
 	m_bDrag = false;
 
-	SetRect(&m_rcUpButton, 0, 0, 0, 0);
-	SetRect(&m_rcDownButton, 0, 0, 0, 0);
-	SetRect(&m_rcTrack, 0, 0, 0, 0);
-	SetRect(&m_rcThumb, 0, 0, 0, 0);
+	GLUFSetRect(m_rcUpButton, 0, 0, 0, 0);
+	GLUFSetRect(m_rcDownButton, 0, 0, 0, 0);
+	GLUFSetRect(m_rcTrack, 0, 0, 0, 0);
+	GLUFSetRect(m_rcThumb, 0, 0, 0, 0);
 	m_nPosition = 0;
 	m_nPageSize = 1;
 	m_nStart = 0;
@@ -4571,11 +4626,11 @@ void GLUFScrollBar::UpdateRects()
 
 	// Make the buttons square
 
-	SetRect(&m_rcUpButton, m_rcBoundingBox.left, m_rcBoundingBox.top,
-		m_rcBoundingBox.right, m_rcBoundingBox.top + RectWidth(m_rcBoundingBox));
-	SetRect(&m_rcDownButton, m_rcBoundingBox.left, m_rcBoundingBox.bottom - RectWidth(m_rcBoundingBox),
+	GLUFSetRect(m_rcUpButton, m_rcBoundingBox.left, m_rcBoundingBox.top,
+		m_rcBoundingBox.right, m_rcBoundingBox.top + GLUFRectWidth(m_rcBoundingBox));
+	GLUFSetRect(m_rcDownButton, m_rcBoundingBox.left, m_rcBoundingBox.bottom - GLUFRectWidth(m_rcBoundingBox),
 		m_rcBoundingBox.right, m_rcBoundingBox.bottom);
-	SetRect(&m_rcTrack, m_rcUpButton.left, m_rcUpButton.bottom,
+	GLUFSetRect(m_rcTrack, m_rcUpButton.left, m_rcUpButton.bottom,
 		m_rcDownButton.right, m_rcDownButton.top);
 	m_rcThumb.left = m_rcUpButton.left;
 	m_rcThumb.right = m_rcUpButton.right;
@@ -4590,10 +4645,10 @@ void GLUFScrollBar::UpdateThumbRect()
 {
 	if (m_nEnd - m_nStart > m_nPageSize)
 	{
-		int nThumbHeight = std::max(RectHeight(m_rcTrack) * m_nPageSize / (m_nEnd - m_nStart),
+		int nThumbHeight = std::max(GLUFRectHeight(m_rcTrack) * m_nPageSize / (m_nEnd - m_nStart),
 			SCROLLBAR_MINTHUMBSIZE);
 		int nMaxPosition = m_nEnd - m_nStart - m_nPageSize;
-		m_rcThumb.top = m_rcTrack.top + (m_nPosition - m_nStart) * (RectHeight(m_rcTrack) - nThumbHeight)
+		m_rcThumb.top = m_rcTrack.top + (m_nPosition - m_nStart) * (GLUFRectHeight(m_rcTrack) - nThumbHeight)
 			/ nMaxPosition;
 		m_rcThumb.bottom = m_rcThumb.top + nThumbHeight;
 		m_bShowThumb = true;
@@ -4611,7 +4666,7 @@ void GLUFScrollBar::UpdateThumbRect()
 //--------------------------------------------------------------------------------------
 // Scroll() scrolls by nDelta items.  A positive value scrolls down, while a negative
 // value scrolls up.
-void GLUFScrollBar::Scroll(_In_ int nDelta)
+void GLUFScrollBar::Scroll( int nDelta)
 {
 	// Perform scroll
 	m_nPosition += nDelta;
@@ -4625,7 +4680,7 @@ void GLUFScrollBar::Scroll(_In_ int nDelta)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFScrollBar::ShowItem(_In_ int nIndex)
+void GLUFScrollBar::ShowItem( int nIndex)
 {
 	// Cap the index
 
@@ -4646,7 +4701,8 @@ void GLUFScrollBar::ShowItem(_In_ int nIndex)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFScrollBar::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(uMsg);
@@ -4656,7 +4712,8 @@ bool GLUFScrollBar::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFScrollBar::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
@@ -4752,7 +4809,7 @@ bool GLUFScrollBar::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARA
 			// Compute first item index based on thumb position
 
 			int nMaxFirstItem = m_nEnd - m_nStart - m_nPageSize + 1;  // Largest possible index for first item
-			int nMaxThumb = RectHeight(m_rcTrack) - RectHeight(m_rcThumb);  // Largest possible thumb position from the top
+			int nMaxThumb = GLUFRectHeight(m_rcTrack) - GLUFRectHeight(m_rcThumb);  // Largest possible thumb position from the top
 
 			m_nPosition = m_nStart +
 				(m_rcThumb.top - m_rcTrack.top +
@@ -4768,19 +4825,21 @@ bool GLUFScrollBar::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARA
 
 	return false;
 }
+*/
 
 
-//--------------------------------------------------------------------------------------
-bool GLUFScrollBar::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+//--------------------------------------------------------------------------------------
+
+bool GLUFScrollBar::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	UNREFERENCED_PARAMETER(wParam);
+	//UNREFERENCED_PARAMETER(wParam);
 
-	if (WM_CAPTURECHANGED == uMsg)
+	if (GM_FOCUS == msg && param1 == GL_FALSE)
 	{
 		// The application just lost mouse capture. We may not have gotten
 		// the WM_MOUSEUP message, so reset m_bDrag here.
-		if ((HWND)lParam != GLUFGetHWND())
-			m_bDrag = false;
+		//if ((HWND)lParam != GLUFGetHWND())
+		m_bDrag = false;
 	}
 
 	return false;
@@ -4788,7 +4847,7 @@ bool GLUFScrollBar::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFScrollBar::Render(_In_ float fElapsedTime)
+void GLUFScrollBar::Render( float fElapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -4799,7 +4858,7 @@ void GLUFScrollBar::Render(_In_ float fElapsedTime)
 	if (m_Arrow != CLEAR)
 	{
 		double dCurrTime = GLUFGetTime();
-		if (PtInRect(&m_rcUpButton, m_LastMouse))
+		if (GLUFPtInRect(m_rcUpButton, m_LastMouse))
 		{
 			switch (m_Arrow)
 			{
@@ -4820,7 +4879,7 @@ void GLUFScrollBar::Render(_In_ float fElapsedTime)
 				break;
 			}
 		}
-		else if (PtInRect(&m_rcDownButton, m_LastMouse))
+		else if (GLUFPtInRect(m_rcDownButton, m_LastMouse))
 		{
 			switch (m_Arrow)
 			{
@@ -4862,34 +4921,34 @@ void GLUFScrollBar::Render(_In_ float fElapsedTime)
 
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcTrack, GLUF_FAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcTrack, GLUF_FAR_BUTTON_DEPTH);
 
 	// Up Arrow
 	pElement = m_Elements[1];
 
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcUpButton, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcUpButton, GLUF_NEAR_BUTTON_DEPTH);
 
 	// Down Arrow
 	pElement = m_Elements[2];
 
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcDownButton, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcDownButton, GLUF_NEAR_BUTTON_DEPTH);
 
 	// Thumb button
 	pElement = m_Elements[3];
 
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, &m_rcThumb, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcThumb, GLUF_NEAR_BUTTON_DEPTH);
 
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFScrollBar::SetTrackRange(_In_ int nStart, _In_ int nEnd)
+void GLUFScrollBar::SetTrackRange( int nStart,  int nEnd)
 {
 	m_nStart = nStart; m_nEnd = nEnd;
 	Cap();
@@ -4914,7 +4973,7 @@ void GLUFScrollBar::Cap()  // Clips position at boundaries. Ensures it stays wit
 // GLUFListBox class
 //======================================================================================
 
-GLUFListBox::GLUFListBox(_In_opt_ GLUFDialog* pDialog) : m_ScrollBar(pDialog)
+GLUFListBox::GLUFListBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
 {
 	m_Type = GLUF_CONTROL_LISTBOX;
 	m_pDialog = pDialog;
@@ -4944,17 +5003,17 @@ void GLUFListBox::UpdateRects()
 
 	m_rcSelection = m_rcBoundingBox;
 	m_rcSelection.right -= m_nSBWidth;
-	InflateRect(&m_rcSelection, -m_nBorder, -m_nBorder);
+	GLUFInflateRect(m_rcSelection, -m_nBorder, -m_nBorder);
 	m_rcText = m_rcSelection;
-	InflateRect(&m_rcText, -m_nMargin, 0);
+	GLUFInflateRect(m_rcText, -m_nMargin, 0);
 
 	// Update the scrollbar's rects
 	m_ScrollBar.SetLocation(m_rcBoundingBox.right - m_nSBWidth, m_rcBoundingBox.top);
 	m_ScrollBar.SetSize(m_nSBWidth, m_height);
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-	if (pFontNode && pFontNode->nHeight)
+	if (pFontNode && pFontNode->mSize)
 	{
-		m_ScrollBar.SetPageSize(RectHeight(m_rcText) / pFontNode->nHeight);
+		m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcText) / pFontNode->mSize);
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
@@ -4963,16 +5022,18 @@ void GLUFListBox::UpdateRects()
 }
 
 
-//--------------------------------------------------------------------------------------
-GLUFResult GLUFListBox::AddItem(const WCHAR* wszText, void* pData)
+//--------------------------------------------------------------------------------------
+
+GLUFResult GLUFListBox::AddItem(std::string wszText, void* pData)
 {
 	GLUFListBoxItem* pNewItem = new (std::nothrow) GLUFListBoxItem;
 	if (!pNewItem)
-		return E_OUTOFMEMORY;
+		return GR_OUTOFMEMORY;
 
-	wcscpy_s(pNewItem->strText, 256, wszText);
+	//wcscpy_s(pNewItem->strText, 256, wszText);
+	pNewItem->strText = wszText;
 	pNewItem->pData = pData;
-	SetRect(&pNewItem->rcActive, 0, 0, 0, 0);
+	GLUFSetRect(pNewItem->rcActive, 0, 0, 0, 0);
 	pNewItem->bSelected = false;
 
 	m_Items.push_back(pNewItem);
@@ -4982,16 +5043,18 @@ GLUFResult GLUFListBox::AddItem(const WCHAR* wszText, void* pData)
 }
 
 
-//--------------------------------------------------------------------------------------
-GLUFResult GLUFListBox::InsertItem(int nIndex, const WCHAR* wszText, void* pData)
+//--------------------------------------------------------------------------------------
+
+GLUFResult GLUFListBox::InsertItem(int nIndex, std::string wszText, void* pData)
 {
 	GLUFListBoxItem* pNewItem = new (std::nothrow) GLUFListBoxItem;
 	if (!pNewItem)
-		return E_OUTOFMEMORY;
+		return GR_OUTOFMEMORY;
 
-	wcscpy_s(pNewItem->strText, 256, wszText);
+	//wcscpy_s(pNewItem->strText, 256, wszText);
+	pNewItem->strText = wszText;
 	pNewItem->pData = pData;
-	SetRect(&pNewItem->rcActive, 0, 0, 0, 0);
+	GLUFSetRect(pNewItem->rcActive, 0, 0, 0, 0);
 	pNewItem->bSelected = false;
 
 	m_Items[nIndex] = pNewItem;
@@ -5002,7 +5065,7 @@ GLUFResult GLUFListBox::InsertItem(int nIndex, const WCHAR* wszText, void* pData
 
 
 //--------------------------------------------------------------------------------------
-void GLUFListBox::RemoveItem(_In_ int nIndex)
+void GLUFListBox::RemoveItem( int nIndex)
 {
 	if (nIndex < 0 || nIndex >= (int)m_Items.size())
 		return;
@@ -5015,7 +5078,7 @@ void GLUFListBox::RemoveItem(_In_ int nIndex)
 	if (m_nSelected >= (int)m_Items.size())
 		m_nSelected = int(m_Items.size()) - 1;
 
-	m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+	m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 }
 
 
@@ -5034,7 +5097,7 @@ void GLUFListBox::RemoveAllItems()
 
 
 //--------------------------------------------------------------------------------------
-GLUFListBoxItem* GLUFListBox::GetItem(_In_ int nIndex) const
+GLUFListBoxItem* GLUFListBox::GetItem( int nIndex)
 {
 	if (nIndex < 0 || nIndex >= (int)m_Items.size())
 		return nullptr;
@@ -5050,7 +5113,7 @@ GLUFListBoxItem* GLUFListBox::GetItem(_In_ int nIndex) const
 // subsequent searches, the app passes the returned index back to GetSelectedIndex as.
 // nPreviousSelected.
 // Returns -1 on error or if no item is selected.
-int GLUFListBox::GetSelectedIndex(_In_ int nPreviousSelected) const
+int GLUFListBox::GetSelectedIndex( int nPreviousSelected)
 {
 	if (nPreviousSelected < -1)
 		return -1;
@@ -5077,7 +5140,7 @@ int GLUFListBox::GetSelectedIndex(_In_ int nPreviousSelected) const
 
 
 //--------------------------------------------------------------------------------------
-void GLUFListBox::SelectItem(_In_ int nNewIndex)
+void GLUFListBox::SelectItem( int nNewIndex)
 {
 	// If no item exists, do nothing.
 	if (m_Items.size() == 0)
@@ -5108,11 +5171,12 @@ void GLUFListBox::SelectItem(_In_ int nNewIndex)
 		m_ScrollBar.ShowItem(m_nSelected);
 	}
 
-	m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+	m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFListBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (!m_bEnabled || !m_bVisible)
@@ -5202,7 +5266,7 @@ bool GLUFListBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 				// Send notification
 
-				m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
 			}
 			return true;
 		}
@@ -5210,7 +5274,7 @@ bool GLUFListBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			// Space is the hotkey for double-clicking an item.
 			//
 		case VK_SPACE:
-			m_pDialog->SendEvent(EVENT_LISTBOX_ITEM_DBLCLK, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTLISTBOX_ITEM_DBLCLK, true, this);
 			return true;
 		}
 		break;
@@ -5220,7 +5284,8 @@ bool GLUFListBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	if (!m_bEnabled || !m_bVisible)
@@ -5264,7 +5329,7 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 				// updating.
 				if (uMsg == WM_LBUTTONDBLCLK)
 				{
-					m_pDialog->SendEvent(EVENT_LISTBOX_ITEM_DBLCLK, true, this);
+					m_pDialog->SendEvent(GLUF_EVENTLISTBOX_ITEM_DBLCLK, true, this);
 					return true;
 				}
 
@@ -5357,7 +5422,7 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 					}
 				}  // End of multi-selection case
 
-				m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
 			}
 
 			return true;
@@ -5383,9 +5448,9 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 			// the user has dragged the mouse to make a selection.
 			// Notify the application of this.
 			if (m_nSelStart != m_nSelected)
-				m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
 
-			m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION_END, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION_END, true, this);
 		}
 		return false;
 	}
@@ -5408,14 +5473,14 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 				nItem < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
 			{
 				m_nSelected = nItem;
-				m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
 			}
 			else if (nItem < (int)m_ScrollBar.GetTrackPos())
 			{
 				// User drags the mouse above window top
 				m_ScrollBar.Scroll(-1);
 				m_nSelected = m_ScrollBar.GetTrackPos();
-				m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
 			}
 			else if (nItem >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
 			{
@@ -5423,7 +5488,7 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 				m_ScrollBar.Scroll(1);
 				m_nSelected = std::min((int)m_Items.size(), m_ScrollBar.GetTrackPos() +
 					m_ScrollBar.GetPageSize()) - 1;
-				m_pDialog->SendEvent(EVENT_LISTBOX_SELECTION, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
 			}
 		}
 		break;
@@ -5441,19 +5506,22 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 
 	return false;
 }
+*/
 
+//--------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------
-bool GLUFListBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+//--------------------------------------------------------------------------------------
+bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	UNREFERENCED_PARAMETER(wParam);
+	//TODO:
 
-	if (WM_CAPTURECHANGED == uMsg)
+	//UNREFERENCED_PARAMETER(wParam);
+
+	if (GM_FOCUS == msg && param1 == GL_FALSE)
 	{
 		// The application just lost mouse capture. We may not have gotten
 		// the WM_MOUSEUP message, so reset m_bDrag here.
-		if ((HWND)lParam != GLUFGetHWND())
-			m_bDrag = false;
+		m_bDrag = false;
 	}
 
 	return false;
@@ -5461,7 +5529,7 @@ bool GLUFListBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFListBox::Render(_In_ float fElapsedTime)
+void GLUFListBox::Render( float fElapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -5474,15 +5542,15 @@ void GLUFListBox::Render(_In_ float fElapsedTime)
 	pSelElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
 	pSelElement->FontColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
 
-	m_pDialog->DrawSprite(pElement, &m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
 
 	// Render the text
 	if (!m_Items.empty())
 	{
 		// Find out the height of a single line of text
-		RECT rc = m_rcText;
-		RECT rcSel = m_rcSelection;
-		rc.bottom = rc.top + m_pDialog->GetManager()->GetFontNode(pElement->iFont)->nHeight;
+		GLUFRect rc = m_rcText;
+		GLUFRect rcSel = m_rcSelection;
+		rc.bottom = rc.top + m_pDialog->GetManager()->GetFontNode(pElement->iFont)->mSize;
 
 		// Update the line height formation
 		m_nTextHeight = rc.bottom - rc.top;
@@ -5492,9 +5560,9 @@ void GLUFListBox::Render(_In_ float fElapsedTime)
 		{
 			// Update the page size of the scroll bar
 			if (m_nTextHeight)
-				m_ScrollBar.SetPageSize(RectHeight(m_rcText) / m_nTextHeight);
+				m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcText) / m_nTextHeight);
 			else
-				m_ScrollBar.SetPageSize(RectHeight(m_rcText));
+				m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcText));
 			bSBInit = true;
 		}
 
@@ -5525,13 +5593,13 @@ void GLUFListBox::Render(_In_ float fElapsedTime)
 			if (bSelectedStyle)
 			{
 				rcSel.top = rc.top; rcSel.bottom = rc.bottom;
-				m_pDialog->DrawSprite(pSelElement, &rcSel, GLUF_NEAR_BUTTON_DEPTH);
-				m_pDialog->DrawText(pItem->strText, pSelElement, &rc);
+				m_pDialog->DrawSprite(pSelElement, rcSel, GLUF_NEAR_BUTTON_DEPTH);
+				m_pDialog->DrawText(pItem->strText, pSelElement, rc);
 			}
 			else
-				m_pDialog->DrawText(pItem->strText, pElement, &rc);
+				m_pDialog->DrawText(pItem->strText, pElement, rc);
 
-			OffsetRect(&rc, 0, m_nTextHeight);
+			GLUFOffsetRect(rc, 0, m_nTextHeight);
 		}
 	}
 
@@ -5553,7 +5621,7 @@ bool GLUFEditBox::s_bHideCaret;   // If true, we don't render the caret.
 #define EDITBOX_SCROLLEXTENT 4
 
 //--------------------------------------------------------------------------------------
-GLUFEditBox::GLUFEditBox(_In_opt_ GLUFDialog* pDialog)
+GLUFEditBox::GLUFEditBox( GLUFDialog* pDialog)
 {
 	m_Type = GLUF_CONTROL_EDITBOX;
 	m_pDialog = pDialog;
@@ -5563,13 +5631,13 @@ GLUFEditBox::GLUFEditBox(_In_opt_ GLUFDialog* pDialog)
 
 	m_bCaretOn = true;
 	m_dfBlink = GetCaretBlinkTime() * 0.001f;
-	m_dfLastBlink = GLUFGetGlobalTimer()->GetAbsoluteTime();
+	m_dfLastBlink = glfwGetTime();
 	s_bHideCaret = false;
 	m_nFirstVisible = 0;
-	m_TextColor = D3DCOLOR_ARGB(255, 16, 16, 16);
-	m_SelTextColor = D3DCOLOR_ARGB(255, 255, 255, 255);
-	m_SelBkColor = D3DCOLOR_ARGB(255, 40, 50, 92);
-	m_CaretColor = D3DCOLOR_ARGB(255, 0, 0, 0);
+	m_TextColor = Color(16, 16, 16, 255);
+	m_SelTextColor = Color(255, 255, 255, 255);
+	m_SelBkColor = Color(40, 50, 92, 255);
+	m_CaretColor = Color(0, 0, 0, 255);
 	m_nCaret = m_nSelStart = 0;
 	m_bInsertMode = true;
 
@@ -5587,20 +5655,20 @@ GLUFEditBox::~GLUFEditBox()
 // PlaceCaret: Set the caret to a character position, and adjust the scrolling if
 //             necessary.
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::PlaceCaret(_In_ int nCP)
+void GLUFEditBox::PlaceCaret( int nCP)
 {
 	assert(nCP >= 0 && nCP <= m_Buffer.GetTextSize());
 	m_nCaret = nCP;
 
 	// Obtain the X offset of the character.
 	int nX1st, nX, nX2;
-	m_Buffer.CPtoX(m_nFirstVisible, FALSE, &nX1st);  // 1st visible char
-	m_Buffer.CPtoX(nCP, FALSE, &nX);  // LEAD
+	m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // 1st visible char
+	m_Buffer.CPtoX(nCP, false, &nX);  // LEAD
 	// If nCP is the nul terminator, get the leading edge instead of trailing.
 	if (nCP == m_Buffer.GetTextSize())
 		nX2 = nX;
 	else
-		m_Buffer.CPtoX(nCP, TRUE, &nX2);  // TRAIL
+		m_Buffer.CPtoX(nCP, true, &nX2);  // TRAIL
 
 	// If the left edge of the char is smaller than the left edge of the 1st visible char,
 	// we need to scroll left until this char is visible.
@@ -5611,25 +5679,27 @@ void GLUFEditBox::PlaceCaret(_In_ int nCP)
 	}
 	else // If the right of the character is bigger than the offset of the control's
 		// right edge, we need to scroll right to this character.
-		if (nX2 > nX1st + RectWidth(m_rcText))
+		if (nX2 > nX1st + GLUFRectWidth(m_rcText))
 		{
-		// Compute the X of the new left-most pixel
-		int nXNewLeft = nX2 - RectWidth(m_rcText);
+			// Compute the X of the new left-most pixel
+			int nXNewLeft = nX2 - GLUFRectWidth(m_rcText);
 
-		// Compute the char position of this character
-		int nCPNew1st, nNewTrail;
-		m_Buffer.XtoCP(nXNewLeft, &nCPNew1st, &nNewTrail);
+			// Compute the char position of this character
+			int nCPNew1st;
+			bool nNewTrail;
+			m_Buffer.XtoCP(nXNewLeft, &nCPNew1st, &nNewTrail);
 
-		// If this coordinate is not on a character border,
-		// start from the next character so that the caret
-		// position does not fall outside the text rectangle.
-		int nXNew1st;
-		m_Buffer.CPtoX(nCPNew1st, FALSE, &nXNew1st);
-		if (nXNew1st < nXNewLeft)
-			++nCPNew1st;
+			// If this coordinate is not on a character border,
+			// start from the next character so that the caret
+			// position does not fall outside the text rectangle.
+			int nXNew1st;
+			m_Buffer.CPtoX(nCPNew1st, false, &nXNew1st);
+			if (nXNew1st < nXNewLeft)
+				++nCPNew1st;
 
-		m_nFirstVisible = nCPNew1st;
+			m_nFirstVisible = nCPNew1st;
 		}
+
 }
 
 
@@ -5644,9 +5714,9 @@ void GLUFEditBox::ClearText()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::SetText(_In_z_ LPCWSTR wszText, _In_ bool bSelected)
+void GLUFEditBox::SetText( std::string wszText,  bool bSelected)
 {
-	assert(wszText);
+	//assert(wszText);
 
 	m_Buffer.SetText(wszText);
 	m_nFirstVisible = 0;
@@ -5656,13 +5726,15 @@ void GLUFEditBox::SetText(_In_z_ LPCWSTR wszText, _In_ bool bSelected)
 }
 
 
-//--------------------------------------------------------------------------------------
-GLUFResult GLUFEditBox::GetTextCopy(LPWSTR strDest, UINT bufferCount) const
+//--------------------------------------------------------------------------------------
+
+GLUFResult GLUFEditBox::GetTextCopy(std::string& strDest)
 {
-	assert(strDest);
+	//assert(strDest);
 
-	wcscpy_s(strDest, bufferCount, m_Buffer.GetBuffer());
-
+	//wcscpy_s(strDest, bufferCount, m_Buffer.GetBuffer());
+	strDest = m_Buffer.GetBuffer();
+	
 	return GR_SUCCESS;
 }
 
@@ -5689,21 +5761,21 @@ void GLUFEditBox::UpdateRects()
 	// Update the text rectangle
 	m_rcText = m_rcBoundingBox;
 	// First inflate by m_nBorder to compute render rects
-	InflateRect(&m_rcText, -m_nBorder, -m_nBorder);
+	GLUFInflateRect(m_rcText, -m_nBorder, -m_nBorder);
 
 	// Update the render rectangles
 	m_rcRender[0] = m_rcText;
-	SetRect(&m_rcRender[1], m_rcBoundingBox.left, m_rcBoundingBox.top, m_rcText.left, m_rcText.top);
-	SetRect(&m_rcRender[2], m_rcText.left, m_rcBoundingBox.top, m_rcText.right, m_rcText.top);
-	SetRect(&m_rcRender[3], m_rcText.right, m_rcBoundingBox.top, m_rcBoundingBox.right, m_rcText.top);
-	SetRect(&m_rcRender[4], m_rcBoundingBox.left, m_rcText.top, m_rcText.left, m_rcText.bottom);
-	SetRect(&m_rcRender[5], m_rcText.right, m_rcText.top, m_rcBoundingBox.right, m_rcText.bottom);
-	SetRect(&m_rcRender[6], m_rcBoundingBox.left, m_rcText.bottom, m_rcText.left, m_rcBoundingBox.bottom);
-	SetRect(&m_rcRender[7], m_rcText.left, m_rcText.bottom, m_rcText.right, m_rcBoundingBox.bottom);
-	SetRect(&m_rcRender[8], m_rcText.right, m_rcText.bottom, m_rcBoundingBox.right, m_rcBoundingBox.bottom);
-
+	GLUFSetRect(m_rcRender[1], m_rcBoundingBox.left, m_rcBoundingBox.top, m_rcText.left, m_rcText.top);
+	GLUFSetRect(m_rcRender[2], m_rcText.left, m_rcBoundingBox.top, m_rcText.right, m_rcText.top);
+	GLUFSetRect(m_rcRender[3], m_rcText.right, m_rcBoundingBox.top, m_rcBoundingBox.right, m_rcText.top);
+	GLUFSetRect(m_rcRender[4], m_rcBoundingBox.left, m_rcText.top, m_rcText.left, m_rcText.bottom);
+	GLUFSetRect(m_rcRender[5], m_rcText.right, m_rcText.top, m_rcBoundingBox.right, m_rcText.bottom);
+	GLUFSetRect(m_rcRender[6], m_rcBoundingBox.left, m_rcText.bottom, m_rcText.left, m_rcBoundingBox.bottom);
+	GLUFSetRect(m_rcRender[7], m_rcText.left, m_rcText.bottom, m_rcText.right, m_rcBoundingBox.bottom);
+	GLUFSetRect(m_rcRender[8], m_rcText.right, m_rcText.bottom, m_rcBoundingBox.right, m_rcBoundingBox.bottom);
+	
 	// Inflate further by m_nSpacing
-	InflateRect(&m_rcText, -m_nSpacing, -m_nSpacing);
+	GLUFInflateRect(m_rcText, -m_nSpacing, -m_nSpacing);
 }
 
 
@@ -5712,11 +5784,11 @@ void GLUFEditBox::UpdateRects()
 void GLUFEditBox::CopyToClipboard()
 {
 	// Copy the selection text to the clipboard
-	if (m_nCaret != m_nSelStart && OpenClipboard(nullptr))
+	if (m_nCaret != m_nSelStart/* && OpenClipboard(nullptr)*/)
 	{
-		EmptyClipboard();
+		//EmptyClipboard();
 
-		HGLOBAL hBlock = GlobalAlloc(GMEM_MOVEABLE, sizeof(WCHAR) * (m_Buffer.GetTextSize() + 1));
+		/*HGLOBAL hBlock = GlobalAlloc(GMEM_MOVEABLE, sizeof(WCHAR) * (m_Buffer.GetTextSize() + 1));
 		if (hBlock)
 		{
 			WCHAR* pwszText = (WCHAR*)GlobalLock(hBlock);
@@ -5736,7 +5808,17 @@ void GLUFEditBox::CopyToClipboard()
 		CloseClipboard();
 		// We must not free the object until CloseClipboard is called.
 		if (hBlock)
-			GlobalFree(hBlock);
+			GlobalFree(hBlock);*/
+
+		//glfw makes this easy
+		std::string str = "";
+		std::string strBuffer = m_Buffer.GetBuffer();
+		for (unsigned int i = m_nSelStart; i < m_nCaret; ++i)
+		{
+			str += strBuffer[i];
+		}
+
+		glfwSetClipboardString(g_pGLFWWindow, str.c_str());
 	}
 }
 
@@ -5745,7 +5827,7 @@ void GLUFEditBox::PasteFromClipboard()
 {
 	DeleteSelectionText();
 
-	if (OpenClipboard(nullptr))
+	/*if (OpenClipboard(nullptr))
 	{
 		HANDLE handle = GetClipboardData(CF_UNICODETEXT);
 		if (handle)
@@ -5763,12 +5845,21 @@ void GLUFEditBox::PasteFromClipboard()
 			}
 		}
 		CloseClipboard();
-	}
+	}*/
+
+	//glfw makes this easy
+	const char* str;
+	str = glfwGetClipboardString(g_pGLFWWindow);
+
+	m_Buffer.InsertString(m_nSelStart, str);
+
+	delete[] str;
 }
 #pragma warning(pop)
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+/*
 bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
@@ -5832,13 +5923,13 @@ bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (m_nCaret != m_nSelStart)
 			{
 				DeleteSelectionText();
-				m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 			else
 			{
 				// Deleting one character
 				if (m_Buffer.RemoveChar(m_nCaret))
-					m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+					m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 			ResetCaretBlink();
 			bHandled = true;
@@ -5896,7 +5987,8 @@ bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
@@ -5959,7 +6051,7 @@ bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 
 	return false;
 }
-
+*/
 
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::OnFocusIn()
@@ -5970,9 +6062,12 @@ void GLUFEditBox::OnFocusIn()
 }
 
 
-//--------------------------------------------------------------------------------------
-bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+//--------------------------------------------------------------------------------------
+
+bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
+	//TOOD:
+	/*
 	UNREFERENCED_PARAMETER(lParam);
 
 	if (!m_bEnabled || !m_bVisible)
@@ -5998,7 +6093,7 @@ bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (m_nCaret != m_nSelStart)
 			{
 				DeleteSelectionText();
-				m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 			else if (m_nCaret > 0)
 			{
@@ -6006,7 +6101,7 @@ bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				PlaceCaret(m_nCaret - 1);
 				m_nSelStart = m_nCaret;
 				m_Buffer.RemoveChar(m_nCaret);
-				m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 			ResetCaretBlink();
 			break;
@@ -6021,7 +6116,7 @@ bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if ((WCHAR)wParam == 24)
 			{
 				DeleteSelectionText();
-				m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 
 			break;
@@ -6031,7 +6126,7 @@ bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case 22:
 		{
 			PasteFromClipboard();
-			m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			break;
 		}
 
@@ -6046,7 +6141,7 @@ bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case VK_RETURN:
 			// Invoke the callback when the user presses Enter.
-			m_pDialog->SendEvent(EVENT_EDITBOX_STRING, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTEDITBOX_STRING, true, this);
 			break;
 
 			// Junk characters we don't want in the string
@@ -6102,18 +6197,18 @@ bool GLUFEditBox::MsgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 			}
 			ResetCaretBlink();
-			m_pDialog->SendEvent(EVENT_EDITBOX_CHANGE, true, this);
+			m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 		}
 		}
 		return true;
 	}
-	}
+	}*/
 	return false;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::Render(_In_ float fElapsedTime)
+void GLUFEditBox::Render( float fElapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -6134,28 +6229,28 @@ void GLUFEditBox::Render(_In_ float fElapsedTime)
 		pElement = m_Elements[e];
 		pElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
 
-		m_pDialog->DrawSprite(pElement, &m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
+		m_pDialog->DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
 	}
 
 	//
 	// Compute the X coordinates of the first visible character.
 	//
 	int nXFirst;
-	m_Buffer.CPtoX(m_nFirstVisible, FALSE, &nXFirst);
+	m_Buffer.CPtoX(m_nFirstVisible, false, &nXFirst);
 
 	//
 	// Compute the X coordinates of the selection rectangle
 	//
-	m_Buffer.CPtoX(m_nCaret, FALSE, &nCaretX);
+	m_Buffer.CPtoX(m_nCaret, false, &nCaretX);
 	if (m_nCaret != m_nSelStart)
-		m_Buffer.CPtoX(m_nSelStart, FALSE, &nSelStartX);
+		m_Buffer.CPtoX(m_nSelStart, false, &nSelStartX);
 	else
 		nSelStartX = nCaretX;
 
 	//
 	// Render the selection rectangle
 	//
-	RECT rcSelection;  // Make this available for rendering selected text
+	GLUFRect rcSelection;  // Make this available for rendering selected text
 	if (m_nCaret != m_nSelStart)
 	{
 		int nSelLeftX = nCaretX, nSelRightX = nSelStartX;
@@ -6165,11 +6260,11 @@ void GLUFEditBox::Render(_In_ float fElapsedTime)
 			int nTemp = nSelLeftX; nSelLeftX = nSelRightX; nSelRightX = nTemp;
 		}
 
-		SetRect(&rcSelection, nSelLeftX, m_rcText.top, nSelRightX, m_rcText.bottom);
-		OffsetRect(&rcSelection, m_rcText.left - nXFirst, 0);
-		IntersectRect(&rcSelection, &m_rcText, &rcSelection);
+		GLUFSetRect(rcSelection, nSelLeftX, m_rcText.top, nSelRightX, m_rcText.bottom);
+		GLUFOffsetRect(rcSelection, m_rcText.left - nXFirst, 0);
+		GLUFIntersectRect(rcSelection, m_rcText, rcSelection);
 
-		m_pDialog->DrawRect(&rcSelection, m_SelBkColor);
+		m_pDialog->DrawRect(rcSelection, m_SelBkColor);
 	}
 
 	//
@@ -6177,24 +6272,24 @@ void GLUFEditBox::Render(_In_ float fElapsedTime)
 	//
 	// Element 0 for text
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
-	m_pDialog->DrawText(m_Buffer.GetBuffer() + m_nFirstVisible, m_Elements[0], &m_rcText);
+	m_pDialog->DrawText(m_Buffer.GetBuffer(m_nFirstVisible), m_Elements[0], m_rcText);
 
 	// Render the selected text
 	if (m_nCaret != m_nSelStart)
 	{
 		int nFirstToRender = std::max(m_nFirstVisible, std::min(m_nSelStart, m_nCaret));
 		m_Elements[0]->FontColor.SetCurrent(m_SelTextColor);
-		m_pDialog->DrawText(m_Buffer.GetBuffer() + nFirstToRender,
-			m_Elements[0], &rcSelection, false);
+		m_pDialog->DrawText(m_Buffer.GetBuffer(nFirstToRender),
+			m_Elements[0], rcSelection, false);
 	}
 
 	//
 	// Blink the caret
 	//
-	if (GLUFGetGlobalTimer()->GetAbsoluteTime() - m_dfLastBlink >= m_dfBlink)
+	if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
 	{
 		m_bCaretOn = !m_bCaretOn;
-		m_dfLastBlink = GLUFGetGlobalTimer()->GetAbsoluteTime();
+		m_dfLastBlink = glfwGetTime();
 	}
 
 	//
@@ -6203,7 +6298,7 @@ void GLUFEditBox::Render(_In_ float fElapsedTime)
 	if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
 	{
 		// Start the rectangle with insert mode caret
-		RECT rcCaret =
+		GLUFRect rcCaret =
 		{
 			m_rcText.left - nXFirst + nCaretX - 1, m_rcText.top,
 			m_rcText.left - nXFirst + nCaretX + 1, m_rcText.bottom
@@ -6215,32 +6310,33 @@ void GLUFEditBox::Render(_In_ float fElapsedTime)
 		{
 			// Obtain the right edge X coord of the current character
 			int nRightEdgeX;
-			m_Buffer.CPtoX(m_nCaret, TRUE, &nRightEdgeX);
+			m_Buffer.CPtoX(m_nCaret, true, &nRightEdgeX);
 			rcCaret.right = m_rcText.left - nXFirst + nRightEdgeX;
 		}
 
-		m_pDialog->DrawRect(&rcCaret, m_CaretColor);
+		m_pDialog->DrawRect(rcCaret, m_CaretColor);
 	}
 }
 
 
 #define IN_FLOAT_CHARSET( c ) \
-    ( (c) == L'-' || (c) == L'.' || ( (c) >= L'0' && (c) <= L'9' ) )
-
+    ( (c) == '-' || (c) == '.' || ( (c) >= '0' && (c) <= '9' ) )
+
+
 void GLUFEditBox::ParseFloatArray(float* pNumbers, int nCount)
 {
 	int nWritten = 0;  // Number of floats written
-	const WCHAR* pToken, *pEnd;
-	WCHAR wszToken[60];
+	const char* pToken, *pEnd;
+	char wszToken[60];
 
-	pToken = m_Buffer.GetBuffer();
+	pToken = m_Buffer.GetBuffer().c_str();
 	while (nWritten < nCount && *pToken != L'\0')
 	{
 		// Skip leading spaces
-		while (*pToken == L' ')
+		while (*pToken == ' ')
 			++pToken;
 
-		if (*pToken == L'\0')
+		if (*pToken == '\0')
 			break;
 
 		// Locate the end of number
@@ -6250,8 +6346,8 @@ void GLUFEditBox::ParseFloatArray(float* pNumbers, int nCount)
 
 		// Copy the token to our buffer
 		int nTokenLen = std::min<int>(sizeof(wszToken) / sizeof(wszToken[0]) - 1, int(pEnd - pToken));
-		wcscpy_s(wszToken, nTokenLen, pToken);
-		*pNumbers = (float)wcstod(wszToken, nullptr);
+		strcpy_s(wszToken, nTokenLen, pToken);
+		*pNumbers = (float)strtod(wszToken, nullptr);
 		++nWritten;
 		++pNumbers;
 		pToken = pEnd;
@@ -6259,27 +6355,28 @@ void GLUFEditBox::ParseFloatArray(float* pNumbers, int nCount)
 }
 
 
-//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
+
 void GLUFEditBox::SetTextFloatArray(const float* pNumbers, int nCount)
 {
-	WCHAR wszBuffer[512] =
+	char wszBuffer[512] =
 	{
 		0
 	};
-	WCHAR wszTmp[64];
+	char wszTmp[64];
 
 	if (!pNumbers)
 		return;
 
 	for (int i = 0; i < nCount; ++i)
 	{
-		swprintf_s(wszTmp, 64, L"%.4f ", pNumbers[i]);
-		wcscat_s(wszBuffer, 512, wszTmp);
+		sprintf_s(wszTmp, 64, "%.4f ", pNumbers[i]);
+		strcat_s(wszBuffer, 512, wszTmp);
 	}
 
 	// Don't want the last space
-	if (nCount > 0 && wcslen(wszBuffer) > 0)
-		wszBuffer[wcslen(wszBuffer) - 1] = 0;
+	if (nCount > 0 && strlen(wszBuffer) > 0)
+		wszBuffer[strlen(wszBuffer) - 1] = 0;
 
 	SetText(wszBuffer);
 }
@@ -6289,17 +6386,18 @@ void GLUFEditBox::SetTextFloatArray(const float* pNumbers, int nCount)
 void GLUFEditBox::ResetCaretBlink()
 {
 	m_bCaretOn = true;
-	m_dfLastBlink = GLUFGetGlobalTimer()->GetAbsoluteTime();
+	m_dfLastBlink = glfwGetTime();
 }
 
 
 
 //======================================================================================
-// CUniBuffer
+// GLUFUniBuffer
 //======================================================================================
 
+/*  We do not need to set buffer size becuase std::string automatically expands
 //--------------------------------------------------------------------------------------
-bool CUniBuffer::SetBufferSize(_In_ int nNewSize)
+bool GLUFUniBuffer::SetBufferSize(int nNewSize)
 {
 	// If the current size is already the maximum allowed,
 	// we can't possibly allocate more.
@@ -6328,33 +6426,34 @@ bool CUniBuffer::SetBufferSize(_In_ int nNewSize)
 	m_pwszBuffer = pTempBuffer;
 	m_nBufferSize = nAllocateSize;
 	return true;
-}
+}*/
 
 
 //--------------------------------------------------------------------------------------
 // Uniscribe -- Analyse() analyses the string in the buffer
 //--------------------------------------------------------------------------------------
-GLUFResult CUniBuffer::Analyse()
+GLUFResult GLUFUniBuffer::Analyse()
 {
-	if (m_Analysis)
-		(void)ScriptStringFree(&m_Analysis);
+	
+	/*if (m_Analysis)
+		(void)ScriptStringFree(&m_Analysis);*/
 
-	SCRIPT_CONTROL ScriptControl; // For uniscribe
-	SCRIPT_STATE ScriptState;   // For uniscribe
-	ZeroMemory(&ScriptControl, sizeof(ScriptControl));
-	ZeroMemory(&ScriptState, sizeof(ScriptState));
+	//SCRIPT_CONTROL ScriptControl; // For uniscribe
+	//SCRIPT_STATE ScriptState;   // For uniscribe
+	//ZeroMemory(&ScriptControl, sizeof(ScriptControl));
+	//ZeroMemory(&ScriptState, sizeof(ScriptState));
 
 #pragma warning(push)
 #pragma warning(disable : 4616 6309 6387 )
-	GLUFResult hr = ScriptApplyDigitSubstitution(nullptr, &ScriptControl, &ScriptState);
-	if (FAILED(hr))
-		return hr;
+	//GLUFResult hr = ScriptApplyDigitSubstitution(nullptr, &ScriptControl, &ScriptState);
+	//if (FAILED(hr))
+	//	return hr;
 #pragma warning(pop)
 
 	if (!m_pFontNode)
-		return E_FAIL;
+		return GR_FAILURE;
 
-	HDC hDC = nullptr;
+	/*HDC hDC = nullptr;
 	hr = ScriptStringAnalyse(hDC,
 		m_pwszBuffer,
 		(int)wcslen(m_pwszBuffer) + 1,  // nul is also analyzed.
@@ -6367,52 +6466,60 @@ GLUFResult CUniBuffer::Analyse()
 		nullptr,
 		nullptr,
 		nullptr,
-		&m_Analysis);
-	if (SUCCEEDED(hr))
-		m_bAnalyseRequired = false;  // Analysis is up-to-date
-	return hr;
+		&m_Analysis);*/
+
+	//get a list of x values, each one is the leading x value for each control
+	m_CalcXValues.clear();
+
+	unsigned int currPos = 0;
+	for (unsigned int i = 0; i < m_Buffer.length(); ++i)
+	{
+		FT_Load_Char(m_pFontNode->m_pFontType->mFontFace, m_Buffer.length(), FT_LOAD_RENDER);
+		unsigned int currValue = m_pFontNode->m_pFontType->mFontFace->glyph->bitmap.width;
+		m_CalcXValues.push_back(currValue);
+		currPos += currValue;
+	}
+	//now add the last edge
+	m_CalcXValues.push_back(currPos);
+
+
+	m_bAnalyseRequired = false;  // Analysis is up-to-date
+
+	return GR_SUCCESS;
 }
 
 
 //--------------------------------------------------------------------------------------
-CUniBuffer::CUniBuffer(_In_ int nInitialSize)
+GLUFUniBuffer::GLUFUniBuffer( int nInitialSize)
 {
-	m_nBufferSize = 0;
-	m_pwszBuffer = nullptr;
+	//m_nBufferSize = 0;
+	m_Buffer = "";
+	m_Buffer.resize(nInitialSize);
 	m_bAnalyseRequired = true;
-	m_Analysis = nullptr;
+	//m_Analysis = nullptr;
 	m_pFontNode = nullptr;
 
-	if (nInitialSize > 0)
-		SetBufferSize(nInitialSize);
+	//if (nInitialSize > 0)
+	//	SetBufferSize(nInitialSize);
 }
 
 
 //--------------------------------------------------------------------------------------
-CUniBuffer::~CUniBuffer()
+GLUFUniBuffer::~GLUFUniBuffer()
 {
-	delete[] m_pwszBuffer;
+	/*delete[] m_pwszBuffer;
 	if (m_Analysis)
-		(void)ScriptStringFree(&m_Analysis);
+		(void)ScriptStringFree(&m_Analysis);*/
 }
 
 
-//--------------------------------------------------------------------------------------
-WCHAR& CUniBuffer::operator[](_In_ int n)  // No param checking
-{
-	// This version of operator[] is called only
-	// if we are asking for write access, so
-	// re-analysis is required.
-	m_bAnalyseRequired = true;
-	return m_pwszBuffer[n];
-}
-
 
 //--------------------------------------------------------------------------------------
-void CUniBuffer::Clear()
+void GLUFUniBuffer::Clear()
 {
-	*m_pwszBuffer = L'\0';
+	//*m_pwszBuffer = L'\0';
 	m_bAnalyseRequired = true;
+	m_Buffer.clear();
 }
 
 
@@ -6420,9 +6527,9 @@ void CUniBuffer::Clear()
 // Inserts the char at specified index.
 // If nIndex == -1, insert to the end.
 //--------------------------------------------------------------------------------------
-bool CUniBuffer::InsertChar(_In_ int nIndex, _In_ WCHAR wChar)
+bool GLUFUniBuffer::InsertChar( int nIndex,  char wChar)
 {
-	assert(nIndex >= 0);
+	/*assert(nIndex >= 0);
 
 	if (nIndex < 0 || nIndex >(int)wcslen(m_pwszBuffer))
 		return false;  // invalid index
@@ -6450,8 +6557,23 @@ bool CUniBuffer::InsertChar(_In_ int nIndex, _In_ WCHAR wChar)
 	}
 
 	// Set new character
-	m_pwszBuffer[nIndex] = wChar;
+	m_pwszBuffer[nIndex] = wChar;*/
 	m_bAnalyseRequired = true;
+
+	if ((m_Buffer.length() - 1) < nIndex)
+	{
+		m_Buffer.resize(nIndex + 1);
+		m_Buffer[nIndex] = wChar;
+	}
+	else if (nIndex == -1)
+	{
+		m_Buffer += wChar;
+	}
+	else
+	{
+		m_Buffer.insert(nIndex, 1, wChar);
+	}
+
 
 	return true;
 }
@@ -6461,14 +6583,18 @@ bool CUniBuffer::InsertChar(_In_ int nIndex, _In_ WCHAR wChar)
 // Removes the char at specified index.
 // If nIndex == -1, remove the last char.
 //--------------------------------------------------------------------------------------
-bool CUniBuffer::RemoveChar(_In_ int nIndex)
+bool GLUFUniBuffer::RemoveChar( int nIndex)
 {
-	if (!wcslen(m_pwszBuffer) || nIndex < 0 || nIndex >= (int)wcslen(m_pwszBuffer))
-		return false;  // Invalid index
-
-	MoveMemory(m_pwszBuffer + nIndex, m_pwszBuffer + nIndex + 1, sizeof(WCHAR) *
-		(wcslen(m_pwszBuffer) - nIndex));
 	m_bAnalyseRequired = true;
+	if (nIndex > m_Buffer.length())
+	{
+		return false;
+	}
+	else
+	{
+		m_Buffer.erase(nIndex);
+	}
+
 	return true;
 }
 
@@ -6477,10 +6603,11 @@ bool CUniBuffer::RemoveChar(_In_ int nIndex)
 // Inserts the first nCount characters of the string pStr at specified index.
 // If nCount == -1, the entire string is inserted.
 // If nIndex == -1, insert to the end.
-//--------------------------------------------------------------------------------------
-bool CUniBuffer::InsertString(int nIndex, const WCHAR* pStr, int nCount)
+//--------------------------------------------------------------------------------------
+
+bool GLUFUniBuffer::InsertString(int nIndex, std::string str)
 {
-	assert(nIndex >= 0);
+	/*assert(nIndex >= 0);
 	if (nIndex < 0)
 		return false;
 
@@ -6502,17 +6629,31 @@ bool CUniBuffer::InsertString(int nIndex, const WCHAR* pStr, int nCount)
 
 	MoveMemory(m_pwszBuffer + nIndex + nCount, m_pwszBuffer + nIndex, sizeof(WCHAR) *
 		(wcslen(m_pwszBuffer) - nIndex + 1));
-	memcpy(m_pwszBuffer + nIndex, pStr, nCount * sizeof(WCHAR));
+	memcpy(m_pwszBuffer + nIndex, pStr, nCount * sizeof(WCHAR));*/
 	m_bAnalyseRequired = true;
+
+	if ((m_Buffer.length() - 1) < nIndex)
+	{
+		m_Buffer.resize(nIndex + 1 + str.length());
+		m_Buffer.insert(nIndex, str);
+	}
+	else if (nIndex == -1)
+	{
+		m_Buffer += str.c_str();
+	}
+	else
+	{
+		m_Buffer.insert(nIndex, str);
+	}
 
 	return true;
 }
 
 
 //--------------------------------------------------------------------------------------
-bool CUniBuffer::SetText(_In_z_ LPCWSTR wszText)
+bool GLUFUniBuffer::SetText( std::string wszText)
 {
-	assert(wszText);
+	/*assert(wszText);
 
 	size_t nRequired = wcslen(wszText) + 1;
 
@@ -6531,57 +6672,76 @@ bool CUniBuffer::SetText(_In_z_ LPCWSTR wszText)
 		return true;
 	}
 	else
-		return false;
-}
+		return false;*/
 
+	m_bAnalyseRequired = true;
 
-//--------------------------------------------------------------------------------------
-bool CUniBuffer::CPtoX(int nCP, bool bTrail, int* pX)
-{
-	assert(pX);
-	*pX = 0;  // Default
-
-	GLUFResult hr = GR_SUCCESS;
-	if (m_bAnalyseRequired)
-		hr = Analyse();
-
-	if (SUCCEEDED(hr))
-		hr = ScriptStringCPtoX(m_Analysis, nCP, bTrail, pX);
-
-	if (FAILED(hr))
-	{
-		*pX = 0;
-		return false;
-	}
+	m_Buffer.clear();
+	m_Buffer = wszText;
 
 	return true;
 }
 
 
-//--------------------------------------------------------------------------------------
-bool CUniBuffer::XtoCP(int nX, int* pCP, int* pnTrail)
+//--------------------------------------------------------------------------------------
+
+GLUFResult GLUFUniBuffer::CPtoX(int nCP, bool bTrail, int* pX)
 {
-	assert(pCP && pnTrail);
-	*pCP = 0; *pnTrail = FALSE;  // Default
+	GLUF_ASSERT(pX);
+	*pX = 0;  // Default
+
+	if (nCP + 1 > m_Buffer.length())
+	{
+		return GR_INVALIDARG;
+	}
 
 	GLUFResult hr = GR_SUCCESS;
 	if (m_bAnalyseRequired)
 		hr = Analyse();
 
-	if (SUCCEEDED(hr))
+	if (GLUF_FAILED(hr))
+		return hr;
+	
+
+	if (bTrail)
 	{
-		hr = ScriptStringXtoCP(m_Analysis, nX, pCP, pnTrail);
-		if (FAILED(hr))
-		{
-			*pCP = 0; *pnTrail = FALSE;
-			return false;
-		}
+		nCP++;
 	}
+
+	*pX = m_CalcXValues[nCP];
+
+	return GR_SUCCESS;
+}
+
+
+//--------------------------------------------------------------------------------------
+
+GLUFResult GLUFUniBuffer::XtoCP(int nX, int* pCP, bool* pnTrail)
+{
+	GLUF_ASSERT(pCP && pnTrail);
+	*pCP = 0; *pnTrail = false;  // Default
+
+	GLUFResult hr = GR_SUCCESS;
+	if (m_bAnalyseRequired)
+		hr = Analyse();
+
+	if (GLUF_FAILED(hr))
+		return hr;
+
+	//if (SUCCEEDED(hr))
+	//{
+		//hr = ScriptStringXtoCP(m_Analysis, nX, pCP, pnTrail);
+		//if (FAILED(hr))
+	//	{
+	//		*pCP = 0; *pnTrail = FALSE;
+	//		return false;
+	//	}
+	//}
 
 	// If the coordinate falls outside the text region, we
 	// can get character positions that don't exist.  We must
 	// filter them here and convert them to those that do exist.
-	if (*pCP == -1 && *pnTrail == TRUE)
+	/*if (*pCP == -1 && *pnTrail == TRUE)
 	{
 		*pCP = 0; *pnTrail = FALSE;
 	}
@@ -6594,21 +6754,51 @@ bool CUniBuffer::XtoCP(int nX, int* pCP, int* pnTrail)
 	{
 		*pCP = 0; *pnTrail = FALSE;
 		return false;
+	}*/
+
+	unsigned int prev = 0;//the first element will ALWAYS be 0, so compensate
+	unsigned int curr = 0;
+	for (unsigned int i = 1; i < m_CalcXValues.size(); ++i)
+	{
+		curr = m_CalcXValues[i];
+
+		if (nX < curr)
+		{
+			if ((curr - prev) / 2 < curr - nX)
+			{
+				//this would lead us to to trailing edge
+				*pCP = i;
+				*pnTrail = true;
+
+				break;
+			}
+			else
+			{
+				*pCP = i - 1;
+				*pnTrail = false;
+
+				break;
+			}
+		}
+
+		prev = curr;
 	}
-	return true;
+
+	return GR_SUCCESS;
 }
 
 
-//--------------------------------------------------------------------------------------
-void CUniBuffer::GetPriorItemPos(int nCP, int* pPrior)
+//--------------------------------------------------------------------------------------
+
+void GLUFUniBuffer::GetPriorItemPos(int nCP, int* pPrior)
 {
 	*pPrior = nCP;  // Default is the char itself
 
 	if (m_bAnalyseRequired)
-		if (FAILED(Analyse()))
+		if (GLUF_FAILED(Analyse()))
 			return;
 
-	const SCRIPT_LOGATTR* pLogAttr = ScriptString_pLogAttr(m_Analysis);
+	/*const SCRIPT_LOGATTR* pLogAttr = ScriptString_pLogAttr(m_Analysis);
 	if (!pLogAttr)
 		return;
 
@@ -6626,16 +6816,25 @@ void CUniBuffer::GetPriorItemPos(int nCP, int* pPrior)
 		return;
 		}
 	// We have reached index 0.  0 is always a break point, so simply return it.
-	*pPrior = 0;
+	*pPrior = 0;*/
+
+	if (nCP = 0)
+	{
+		pPrior = 0;
+		return;
+	}
+
+	*pPrior = m_CalcXValues[nCP - 1];
 }
 
 
-//--------------------------------------------------------------------------------------
-void CUniBuffer::GetNextItemPos(int nCP, int* pPrior)
+//--------------------------------------------------------------------------------------
+
+void GLUFUniBuffer::GetNextItemPos(int nCP, int* pPrior)
 {
 	*pPrior = nCP;  // Default is the char itself
 
-	GLUFResult hr = GR_SUCCESS;
+	/*GLUFResult hr = GR_SUCCESS;
 	if (m_bAnalyseRequired)
 		hr = Analyse();
 	if (FAILED(hr))
@@ -6671,6 +6870,181 @@ void CUniBuffer::GetNextItemPos(int nCP, int* pPrior)
 		limit = *ScriptString_pcOutChars(m_Analysis);
 	}
 	// We have reached the end. It's always a word stop, so simply return it.
-	*pPrior = *ScriptString_pcOutChars(m_Analysis) - 1;
+	*pPrior = *ScriptString_pcOutChars(m_Analysis) - 1;*/
+
+	if (nCP == m_CalcXValues.size())
+	{
+		*pPrior = m_CalcXValues[nCP];
+		return;
+	}
+
+	*pPrior = m_CalcXValues[nCP + 1];
 }
 
+
+//======================================================================================
+// GLUF Text Operations
+//======================================================================================
+
+
+//--------------------------------------------------------------------------------------
+void BeginText11()
+{
+	g_FontVertices.clear();
+}
+
+
+//--------------------------------------------------------------------------------------
+void DrawText11DXUT(GLUFFontPtr font, std::string strText, GLUFRect rcScreen, Color vFontColor, GLUFFontSize size, bool bCenter)
+{
+	float fCharTexSizeX = 0.010526315f;
+	//float fGlyphSizeX = 14.0f / fBBWidth;
+	//float fGlyphSizeY = 32.0f / fBBHeight;
+	float fGlyphSizeX = 15.0f / fBBWidth;
+	float fGlyphSizeY = 42.0f / fBBHeight;
+
+
+	float fRectLeft = rcScreen.left / fBBWidth;
+	float fRectTop = 1.0f - rcScreen.top / fBBHeight;
+
+	fRectLeft = fRectLeft * 2.0f - 1.0f;
+	fRectTop = fRectTop * 2.0f - 1.0f;
+
+	int NumChars = (int)wcslen(strText);
+	if (bCenter) {
+		float fRectRight = rcScreen.right / fBBWidth;
+		fRectRight = fRectRight * 2.0f - 1.0f;
+		float fRectBottom = 1.0f - rcScreen.bottom / fBBHeight;
+		fRectBottom = fRectBottom * 2.0f - 1.0f;
+		float fcenterx = ((fRectRight - fRectLeft) - (float)NumChars*fGlyphSizeX) *0.5f;
+		float fcentery = ((fRectTop - fRectBottom) - (float)1 * fGlyphSizeY) *0.5f;
+		fRectLeft += fcenterx;
+		fRectTop -= fcentery;
+	}
+	float fOriginalLeft = fRectLeft;
+	float fTexTop = 0.0f;
+	float fTexBottom = 1.0f;
+
+	float fDepth = 0.5f;
+	for (int i = 0; i<NumChars; i++)
+	{
+		if (strText[i] == '\n')
+		{
+			fRectLeft = fOriginalLeft;
+			fRectTop -= fGlyphSizeY;
+
+			continue;
+		}
+		else if (strText[i] < 32 || strText[i] > 126)
+		{
+			continue;
+		}
+
+		// Add 6 sprite vertices
+		DXUTSpriteVertex SpriteVertex;
+		float fRectRight = fRectLeft + fGlyphSizeX;
+		float fRectBottom = fRectTop - fGlyphSizeY;
+		float fTexLeft = (strText[i] - 32) * fCharTexSizeX;
+		float fTexRight = fTexLeft + fCharTexSizeX;
+
+		// tri1
+		SpriteVertex.vPos = XMFLOAT3(fRectLeft, fRectTop, fDepth);
+		SpriteVertex.vTex = XMFLOAT2(fTexLeft, fTexTop);
+		SpriteVertex.vColor = vFontColor;
+		g_FontVertices.push_back(SpriteVertex);
+
+		SpriteVertex.vPos = XMFLOAT3(fRectRight, fRectTop, fDepth);
+		SpriteVertex.vTex = XMFLOAT2(fTexRight, fTexTop);
+		SpriteVertex.vColor = vFontColor;
+		g_FontVertices.push_back(SpriteVertex);
+
+		SpriteVertex.vPos = XMFLOAT3(fRectLeft, fRectBottom, fDepth);
+		SpriteVertex.vTex = XMFLOAT2(fTexLeft, fTexBottom);
+		SpriteVertex.vColor = vFontColor;
+		g_FontVertices.push_back(SpriteVertex);
+
+		// tri2
+		SpriteVertex.vPos = XMFLOAT3(fRectRight, fRectTop, fDepth);
+		SpriteVertex.vTex = XMFLOAT2(fTexRight, fTexTop);
+		SpriteVertex.vColor = vFontColor;
+		g_FontVertices.push_back(SpriteVertex);
+
+		SpriteVertex.vPos = XMFLOAT3(fRectRight, fRectBottom, fDepth);
+		SpriteVertex.vTex = XMFLOAT2(fTexRight, fTexBottom);
+		SpriteVertex.vColor = vFontColor;
+		g_FontVertices.push_back(SpriteVertex);
+
+		SpriteVertex.vPos = XMFLOAT3(fRectLeft, fRectBottom, fDepth);
+		SpriteVertex.vTex = XMFLOAT2(fTexLeft, fTexBottom);
+		SpriteVertex.vColor = vFontColor;
+		g_FontVertices.push_back(SpriteVertex);
+
+		fRectLeft += fGlyphSizeX;
+
+	}
+
+	// We have to end text after every line so that rendering order between sprites and fonts is preserved
+	EndText11(pd3dDevice, pd3d11DeviceContext);
+}
+
+_Use_decl_annotations_
+void EndText11(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3d11DeviceContext)
+{
+	if (g_FontVertices.empty())
+		return;
+
+	// ensure our buffer size can hold our sprites
+	UINT FontDataBytes = static_cast<UINT>(g_FontVertices.size() * sizeof(DXUTSpriteVertex));
+	if (g_FontBufferBytes11 < FontDataBytes)
+	{
+		SAFE_RELEASE(g_pFontBuffer11);
+		g_FontBufferBytes11 = FontDataBytes;
+
+		D3D11_BUFFER_DESC BufferDesc;
+		BufferDesc.ByteWidth = g_FontBufferBytes11;
+		BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		BufferDesc.MiscFlags = 0;
+
+		if (FAILED(pd3dDevice->CreateBuffer(&BufferDesc, nullptr, &g_pFontBuffer11)))
+		{
+			g_pFontBuffer11 = nullptr;
+			g_FontBufferBytes11 = 0;
+			return;
+		}
+		DXUT_SetDebugName(g_pFontBuffer11, "DXUT Text11");
+	}
+
+	// Copy the sprites over
+	D3D11_BOX destRegion;
+	destRegion.left = 0;
+	destRegion.right = FontDataBytes;
+	destRegion.top = 0;
+	destRegion.bottom = 1;
+	destRegion.front = 0;
+	destRegion.back = 1;
+	D3D11_MAPPED_SUBRESOURCE MappedResource;
+	if (S_OK == pd3d11DeviceContext->Map(g_pFontBuffer11, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource))
+	{
+		memcpy(MappedResource.pData, (void*)&g_FontVertices[0], FontDataBytes);
+		pd3d11DeviceContext->Unmap(g_pFontBuffer11, 0);
+	}
+
+	ID3D11ShaderResourceView* pOldTexture = nullptr;
+	pd3d11DeviceContext->PSGetShaderResources(0, 1, &pOldTexture);
+	pd3d11DeviceContext->PSSetShaderResources(0, 1, &g_pFont11);
+
+	// Draw
+	UINT Stride = sizeof(DXUTSpriteVertex);
+	UINT Offset = 0;
+	pd3d11DeviceContext->IASetVertexBuffers(0, 1, &g_pFontBuffer11, &Stride, &Offset);
+	pd3d11DeviceContext->IASetInputLayout(g_pInputLayout11);
+	pd3d11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pd3d11DeviceContext->Draw(static_cast<UINT>(g_FontVertices.size()), 0);
+
+	pd3d11DeviceContext->PSSetShaderResources(0, 1, &pOldTexture);
+	SAFE_RELEASE(pOldTexture);
+
+	g_FontVertices.clear();
+}
