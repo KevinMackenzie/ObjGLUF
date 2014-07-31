@@ -75,6 +75,7 @@ OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 
 #define GLUF_SAFE_DELETE(ptr) {delete(ptr); (ptr) = nullptr;}
 #define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))
+#define GLUF_UNREFERENCED_PARAMETER(value) (value)
 
 #define GLUFGetTime() glfwGetTime()
 
@@ -111,6 +112,9 @@ OBJGLUF_API bool GLUFInit();
 OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 
+//this loads an entire file into a binary array, path is input, rawSize and rawData are outputs
+OBJGLUF_API bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, unsigned char* rawData);
+
 typedef std::vector<glm::vec4> Vec4Array;
 typedef std::vector<glm::vec3> Vec3Array;
 typedef std::vector<glm::vec2> Vec2Array;
@@ -134,7 +138,10 @@ public:
 //REMEMBER: window positions is based from the "origin" of the window (upper-left)
 struct OBJGLUF_API GLUFRect
 {
-	long top, bottom, left, right;
+	long left;
+	long top;
+	long right;
+	long bottom;
 };
 
 struct OBJGLUF_API GLUFPoint
@@ -148,6 +155,8 @@ struct OBJGLUF_API GLUFPoint
 
 OBJGLUF_API bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
 OBJGLUF_API void GLUFSetRectEmpty(GLUFRect& rect);
+OBJGLUF_API void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom);
+OBJGLUF_API void GLUFOffsetRect(GLUFRect& rect, int x, int y);
 
 enum GLUFShaderType
 {
@@ -212,6 +221,7 @@ typedef std::vector<std::string> GLUFProgramNameList;
 typedef std::vector<GLUFShaderPtr> GLUFShaderPtrList;
 typedef std::vector<GLUFProgramPtr> GLUFProgramPtrList;
 typedef std::map<GLbitfield, GLUFProgramPtr> GLUFProgramPtrStagesMap;
+typedef std::pair<GLbitfield, GLUFProgramPtr> GLUFProgramPtrStagesPair;
 typedef std::map<GLUFShaderType, GLUFProgramPtr> GLUFProgramPtrMap;
 typedef std::vector<GLUFShaderPtrWeak> GLUFShaderPtrListWeak;
 typedef std::vector<GLUFProgramPtrWeak> GLUFProgramPtrListWeak;
@@ -625,6 +635,8 @@ public:
 	void LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format);
 
 	GLUFPoint GetTextureSize(GLUFTexturePtr texture);
+
+	bool CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1);
 
 	//void BufferTexture(GLUFTexturePtr texture, GLsizei length, GLvoid* data){};
 

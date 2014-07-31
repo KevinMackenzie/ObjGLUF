@@ -1,29 +1,37 @@
 #pragma once
 
 #include "ObjGLUF.h"
+//#include <Dimm.h>
+#include "usp10NoWindows.h"
+
+//TODO: create MsgProcs for all Controls
 
 //--------------------------------------------------------------------------------------
 // Macro definitions
 //--------------------------------------------------------------------------------------
-#define GT_CENTER 0x00000001
-#define GT_VCENTER 0X0000004
+#define GT_CENTER	0x000000001
+#define GT_LEFT		0x000000002
+#define GT_RIGHT    0x000000003
+
+#define GT_VCENTER	0x000000010
+#define GT_TOP      0x000000020
+#define GT_BOTTOM   0x000000030
+
+typedef unsigned long GLUFResult;
 
 //GLUFResult Values
-#define GR_SUCCESS 1
 #define GR_FAILURE 0
+#define GR_SUCCESS 1
+#define GR_OUTOFMEMORY 2
+#define GR_INVALIDARG 3
+#define GR_NOTIMPL
 
+#define GLUF_FAILED(result) ((result == GR_FAILURE) ? true : false)
+#define GLUF_V_RETURN(result) {if(result != GR_SUCCESS) return result;}
 
+#define GLUFTRACE_ERR(str, gr) GLUFTrace(__FILE__, __FUNCTION__, (unsigned long)__LINE__, gr, str);
 
-enum GLUF_INPUT_TYPE
-{
-	GLUF_INPUT_TYPE_MB = 0,
-	GLUF_INPUT_TYPE_CURSOR_POS,
-	GLUF_INPUT_TYPE_SCROLL,
-	GLUF_INPUT_TYPE_KEY//don't' support joysticks yet
-};
-
-typedef void(*PCALLBACKGLUFGUIEVENT)(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
-
+OBJGLUF_API GLUFResult GLUFTrace(const char*, const char*, unsigned long, GLUFResult, const char*);
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -46,6 +54,22 @@ struct GLUFTextureNode;
 struct GLUFFontNode;
 
 
+enum GLUF_MESSAGE_TYPE
+{
+	GM_MB = 0,
+	GM_CURSOR_POS,
+	GM_CURSOR_ENTER,
+	GM_SCROLL, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
+	GM_KEY,//don't' support joysticks yet
+	GM_UNICODE_CHAR,
+	GM_RESIZE,
+	GM_POS,
+	GM_CLOSE,
+	GM_REFRESH,
+	GM_FOCUS,
+	GM_ICONIFY,
+	GM_FRAMEBUFFER_SIZE
+};
 
 //--------------------------------------------------------------------------------------
 // Funcs and Enums for using fonts
@@ -54,16 +78,24 @@ struct GLUFFontNode;
 #define GLUF_POINTS_PER_PIXEL 1.333333f
 #define GLUF_POINTS_TO_PIXELS(points) (GLUFFontSize)((float)points * GLUF_POINTS_PER_PIXEL)
 
+typedef void(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 
-//this must be called AFTER GLUFInitOpenGLExtentions();
-void OBJGLUF_API GLUFInitGui();
+//this must be called AFTER GLUFInitOpenGLExtentions();  callbackFunc may do whatever it pleases, however;
+// callbackFunc must explicitly call the callback methods of the dialog manager and the dialog classes (and whatever else)
+// for full documentation on what each parameter is, consult the glfw input/window documentation.  For each value,
+// it will be truncated into a 32 bit integer (from a double if necessary) and put in order into the procedure.  If
+// a callback does not use the parameter, it will be 0, but this does not mean 0 is an invalid parameter for callbacks
+// that use it.  Other notes: when specifying hotkeys, always use the GLFW macros for specifying them.  Consult the GLFW
+// input documentation for more information.
+void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc);
 
 typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
 typedef uint16_t GLUFFontSize;
 
-GLUFFontPtr OBJGLUF_API GLUFLoadFont(char* rawData, uint64_t rawSize);
+OBJGLUF_API GLUFFontPtr GLUFLoadFont(unsigned char* rawData, uint64_t rawSize);
+OBJGLUF_API GLUFFontPtr GLUFLoadFont(std::string fontFaceName);//NOTE: this only works on windows
 
-//NOTE: not all fonts support all of these weights! the closest available will be chosen
+//NOTE: not all fonts support all of these weights! the closest available will be chosen (ALSO this does not work well with preinstalled fonts)
 enum GLUF_FONT_WEIGHT
 {
 	FONT_WEIGHT_HAIRLINE = 0,
@@ -129,6 +161,11 @@ enum GLUF_EVENT
 };
 
 
+
+
+typedef void(*PCALLBACKGLUFGUIEVENT)(GLUF_EVENT nEvent, int nControlID, GLUFControl* pControl);
+
+
 #define MAX_CONTROL_STATES 6
 
 struct GLUFBlendColor
@@ -142,7 +179,6 @@ struct GLUFBlendColor
 	Color		Current;
 };
 
-typedef unsigned long GLUFResult;
 typedef unsigned int GLUFTextureIndex;
 typedef unsigned int GLUFFontIndex;
 
@@ -184,66 +220,33 @@ public:
 	void                Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog = true);
 	void                Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog, unsigned int iTexture);
 
-	// message handler (this can handle any message type, where GLUF_INPUT_TYPE is what command it is actually responding from
-	bool                MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	// message handler (this can handle any message type, where GLUF_MESSAGE_TYPE is what command it is actually responding from
+	bool                MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	// Control creation
-	GLUFResult             AddStatic(int ID, std::string strText, int x, int y, int width, int height, bool bIsDefault = false,
-								GLUFStatic** ppCreated = NULL);
-	GLUFResult             AddButton(int ID, std::string strText, int x, int y, int width, int height, unsigned int nHotkey = 0,
-								bool bIsDefault = false, GLUFButton** ppCreated = NULL);
-	GLUFResult             AddCheckBox(int ID, std::string strText, int x, int y, int width, int height, bool bChecked = false,
-								unsigned int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
-	GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::string strText, int x, int y, int width,
-								int height, bool bChecked = false, unsigned int nHotkey = 0, bool bIsDefault = false,
-								GLUFRadioButton** ppCreated = NULL);
-	GLUFResult             AddComboBox(int ID, int x, int y, int width, int height, unsigned int nHotKey = 0, bool bIsDefault =
-								false, GLUFComboBox** ppCreated = NULL);
-	GLUFResult             AddSlider(int ID, int x, int y, int width, int height, int min = 0, int max = 100, int value = 50,
-								bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
-	GLUFResult             AddEditBox(int ID, std::string strText, int x, int y, int width, int height, bool bIsDefault =
-								false, GLUFEditBox** ppCreated = NULL);
-	GLUFResult             AddListBox(int ID, int x, int y, int width, int height, unsigned long dwStyle = 0,
-								GLUFListBox** ppCreated = NULL);
+	GLUFResult             AddStatic(int ID, std::string strText, int x, int y, int width, int height, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
+	GLUFResult             AddButton(int ID, std::string strText, int x, int y, int width, int height, int nHotkey = 0, bool bIsDefault = false, GLUFButton** ppCreated = NULL);
+	GLUFResult             AddCheckBox(int ID, std::string strText, int x, int y, int width, int height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
+	GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::string strText, int x, int y, int width, int height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
+	GLUFResult             AddComboBox(int ID, int x, int y, int width, int height, int nHotKey = 0, bool bIsDefault = false, GLUFComboBox** ppCreated = NULL);
+	GLUFResult             AddSlider(int ID, int x, int y, int width, int height, int min = 0, int max = 100, int value = 50, bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
+	GLUFResult             AddEditBox(int ID, std::string strText, int x, int y, int width, int height, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
+	GLUFResult             AddListBox(int ID, int x, int y, int width, int height, unsigned long dwStyle = 0, GLUFListBox** ppCreated = NULL);
 	GLUFResult             AddControl(GLUFControl* pControl);
 	GLUFResult             InitControl(GLUFControl* pControl);
 
 	// Control retrieval
-	GLUFStatic* GetStatic(int ID)
-	{
-		return (GLUFStatic*)GetControl(ID, GLUF_CONTROL_STATIC);
-	}
-	GLUFButton* GetButton(int ID)
-	{
-		return (GLUFButton*)GetControl(ID, GLUF_CONTROL_BUTTON);
-	}
-	GLUFCheckBox* GetCheckBox(int ID)
-	{
-		return (GLUFCheckBox*)GetControl(ID, GLUF_CONTROL_CHECKBOX);
-	}
-	GLUFRadioButton* GetRadioButton(int ID)
-	{
-		return (GLUFRadioButton*)GetControl(ID, GLUF_CONTROL_RADIOBUTTON);
-	}
-	GLUFComboBox* GetComboBox(int ID)
-	{
-		return (GLUFComboBox*)GetControl(ID, GLUF_CONTROL_COMBOBOX);
-	}
-	GLUFSlider* GetSlider(int ID)
-	{
-		return (GLUFSlider*)GetControl(ID, GLUF_CONTROL_SLIDER);
-	}
-	GLUFEditBox* GetEditBox(int ID)
-	{
-		return (GLUFEditBox*)GetControl(ID, GLUF_CONTROL_EDITBOX);
-	}
-	GLUFListBox* GetListBox(int ID)
-	{
-		return (GLUFListBox*)GetControl(ID, GLUF_CONTROL_LISTBOX);
-	}
+	GLUFStatic*			GetStatic(int ID)		{ return (GLUFStatic*)GetControl(ID, GLUF_CONTROL_STATIC);				}
+	GLUFButton*			GetButton(int ID)		{ return (GLUFButton*)GetControl(ID, GLUF_CONTROL_BUTTON);				}
+	GLUFCheckBox*		GetCheckBox(int ID)		{ return (GLUFCheckBox*)GetControl(ID, GLUF_CONTROL_CHECKBOX);			}
+	GLUFRadioButton*	GetRadioButton(int ID)	{ return (GLUFRadioButton*)GetControl(ID, GLUF_CONTROL_RADIOBUTTON);	}
+	GLUFComboBox*		GetComboBox(int ID)		{ return (GLUFComboBox*)GetControl(ID, GLUF_CONTROL_COMBOBOX);			}
+	GLUFSlider*			GetSlider(int ID)		{ return (GLUFSlider*)GetControl(ID, GLUF_CONTROL_SLIDER);				}
+	GLUFEditBox*		GetEditBox(int ID)		{ return (GLUFEditBox*)GetControl(ID, GLUF_CONTROL_EDITBOX);			}
+	GLUFListBox*		GetListBox(int ID)		{ return (GLUFListBox*)GetControl(ID, GLUF_CONTROL_LISTBOX);			}
 
 	GLUFControl* GetControl(int ID);
-	GLUFControl* GetControl(int ID, unsigned int nControlType);
+	GLUFControl* GetControl(int ID, GLUF_CONTROL_TYPE nControlType);
 	GLUFControl* GetControlAtPoint(GLUFPoint pt);
 
 	bool                GetControlEnabled(int ID);
@@ -253,85 +256,39 @@ public:
 	void                ClearComboBox(int ID);
 
 	// Access the default display Elements used when adding new controls
-	GLUFResult          SetDefaultElement(unsigned int nControlType, unsigned int iElement, GLUFElement* pElement);
-	GLUFElement*		GetDefaultElement(unsigned int nControlType, unsigned int iElement);
+	GLUFResult          SetDefaultElement(GLUF_CONTROL_TYPE nControlType, unsigned int iElement, GLUFElement* pElement);
+	GLUFElement*		GetDefaultElement(GLUF_CONTROL_TYPE nControlType, unsigned int iElement);
 
 	// Methods called by controls
 	void                SendEvent(GLUF_EVENT nEvent, bool bTriggeredByUser, GLUFControl* pControl);
 	void                RequestFocus(GLUFControl* pControl);
 
 	// Render helpers
-	GLUFResult          DrawGLUFRect(GLUFRect* pGLUFRect, Color color);
+	GLUFResult          DrawRect(GLUFRect pGLUFRect, Color color);
 	GLUFResult          DrawPolyLine(GLUFPoint* apPoints, unsigned int nNumPoints, Color color);
-	GLUFResult          DrawSprite(GLUFElement* pElement, GLUFRect* prcDest, float fDepth);
-	GLUFResult          CalcTextGLUFRect(std::string strText, GLUFElement* pElement, GLUFRect* prcDest, int nCount = -1);
-	GLUFResult          DrawText(std::string strText, GLUFElement* pElement, GLUFRect* prcDest, bool bShadow = false,
+	GLUFResult          DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth);
+	GLUFResult          CalcTextRect(std::string strText, GLUFElement* pElement, GLUFRect prcDest, int nCount = -1);
+	GLUFResult          DrawText(std::string strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow = false,
 		int nCount = -1, bool bCenter = false);
 
 	// Attributes
-	bool                GetVisible()
-	{
-		return m_bVisible;
-	}
-	void                SetVisible(bool bVisible)
-	{
-		m_bVisible = bVisible;
-	}
-	bool                GetMinimized()
-	{
-		return m_bMinimized;
-	}
-	void                SetMinimized(bool bMinimized)
-	{
-		m_bMinimized = bMinimized;
-	}
-	void                SetBackgroundColors(Color colorAllCorners)
-	{
-		SetBackgroundColors(colorAllCorners, colorAllCorners, colorAllCorners, colorAllCorners);
-	}
-	void                SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,
-		Color colorBottomRight);
-	void                EnableCaption(bool bEnable)
-	{
-		m_bCaption = bEnable;
-	}
-	int                 GetCaptionHeight() const
-	{
-		return m_nCaptionHeight;
-	}
-	void                SetCaptionHeight(int nHeight)
-	{
-		m_nCaptionHeight = nHeight;
-	}
-	void                SetCaptionText(std::string pwszText)
-	{
-		m_wszCaption = pwszText;
-	}
-	void                GetLocation(GLUFPoint& Pt) const
-	{
-		Pt.x = m_x; Pt.y = m_y;
-	}
-	void                SetLocation(int x, int y)
-	{
-		m_x = x; m_y = y;
-	}
-	void                SetSize(int width, int height)
-	{
-		m_width = width; m_height = height;
-	}
-	int                 GetWidth()
-	{
-		return m_width;
-	}
-	int                 GetHeight()
-	{
-		return m_height;
-	}
+	void                SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,	Color colorBottomRight);
+	bool                GetVisible()								{ return m_bVisible;																		}
+	void                SetVisible(bool bVisible)					{ m_bVisible = bVisible;																	}
+	bool                GetMinimized()								{ return m_bMinimized;																		}
+	void                SetMinimized(bool bMinimized)				{ m_bMinimized = bMinimized;																}
+	void                SetBackgroundColors(Color colorAllCorners)	{ SetBackgroundColors(colorAllCorners, colorAllCorners, colorAllCorners, colorAllCorners);	}
+	void                EnableCaption(bool bEnable)					{ m_bCaption = bEnable;																		}
+	int                 GetCaptionHeight() const					{ return m_nCaptionHeight;																	}
+	void                SetCaptionHeight(int nHeight)				{ m_nCaptionHeight = nHeight;																}
+	void                SetCaptionText(std::string pwszText)		{ m_wszCaption = pwszText;																	}
+	void                GetLocation(GLUFPoint& Pt) const			{ Pt.x = m_x; Pt.y = m_y;																	}
+	void                SetLocation(int x, int y)					{ m_x = x; m_y = y;																			}
+	void                SetSize(int width, int height)				{ m_width = width; m_height = height;														}
+	int                 GetWidth()									{ return m_width;																			}
+	int                 GetHeight()									{ return m_height;																			}
 
-	static void			SetRefreshTime(float fTime)
-	{
-		s_fTimeRefresh = fTime;
-	}
+	static void			SetRefreshTime(float fTime)					{ s_fTimeRefresh = fTime;																	}
 
 	static GLUFControl* GetNextControl(GLUFControl* pControl);
 	static GLUFControl* GetPrevControl(GLUFControl* pControl);
@@ -341,22 +298,10 @@ public:
 
 	// Sets the callback used to notify the app of control events
 	void                SetCallback(PCALLBACKGLUFGUIEVENT pCallback, void* pUserContext = NULL);
-	void                EnableNonUserEvents(bool bEnable)
-	{
-		m_bNonUserEvents = bEnable;
-	}
-	void                EnableKeyboardInput(bool bEnable)
-	{
-		m_bKeyboardInput = bEnable;
-	}
-	void                EnableMouseInput(bool bEnable)
-	{
-		m_bMouseInput = bEnable;
-	}
-	bool                IsKeyboardInputEnabled() const
-	{
-		return m_bKeyboardInput;
-	}
+	void                EnableNonUserEvents(bool bEnable)	{ m_bNonUserEvents = bEnable;	}
+	void                EnableKeyboardInput(bool bEnable)	{ m_bKeyboardInput = bEnable;	}
+	void                EnableMouseInput(bool bEnable)		{ m_bMouseInput = bEnable;		}
+	bool                IsKeyboardInputEnabled() const		{ return m_bKeyboardInput;		}
 
 	// Device state notification
 	void                Refresh();
@@ -364,16 +309,13 @@ public:
 
 	// Shared resource access. Fonts and textures are shared among
 	// all the controls.
-	GLUFResult          SetFont(GLUFFontIndex font, long height, long weight);
-	GLUFFontNode*		GetFont(unsigned int index);
+	GLUFResult          SetFont(GLUFFontIndex iFontIndex, GLUFFontIndex resManFontIndex); //NOTE: this requires the font already existing on the resource manager
+	GLUFFontNode*		GetFont(unsigned int index) const;
 
-	GLUFResult          SetTexture(GLUFTextureIndex texture);
-	GLUFTextureNode*	GetTexture(unsigned int index);
+	GLUFResult          SetTexture(GLUFTextureIndex iTexIndex, GLUFTextureIndex resManTexIndex); //NOTE: this requries the texture to already exist in the resource manager
+	GLUFTextureNode*	GetTexture(GLUFFontIndex index) const;
 
-	GLUFDialogResourceManager* GetManager()
-	{
-		return m_pManager;
-	}
+	GLUFDialogResourceManager* GetManager(){ return m_pManager; }
 
 	static void			ClearFocus();
 	void                FocusDefaultControl();
@@ -448,22 +390,25 @@ private:
 //--------------------------------------------------------------------------------------
 struct GLUFTextureNode
 {
-	GLuint m_pTextureElement;
+	GLUFTexturePtr m_pTextureElement;
 };
 
 //WIP, support more font options eg. stroke, italics, variable leading, etc.
 struct GLUFFontNode
 {
-	std::string strFace;
 	GLUFFontSize mSize;
+	GLUF_FONT_WEIGHT mWeight;
 	GLUFFontPtr m_pFontType;
 };
 
-struct GLUFSpriteVertex
+struct GLUFSpriteVertexArray
 {
-	glm::vec3 vPos;
-	Color vColor;
-	glm::vec2 vTex;
+	std::vector<glm::vec3> vPos;
+	std::vector<Color>     vColor;
+	std::vector<glm::vec2> vTex;
+
+	void clear(){ vPos.clear(); vColor.clear(); vTex.clear(); }
+	unsigned long size(){ return vPos.size(); }
 };
 
 //-----------------------------------------------------------------------------
@@ -475,7 +420,7 @@ public:
 	GLUFDialogResourceManager();
 	~GLUFDialogResourceManager();
 
-	bool    MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	bool    MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	// D3D9 specific
 	/*HRESULT OnD3D9CreateDevice( LPDIGLUFRect3DDEVICE9 pd3dDevice );
@@ -510,14 +455,8 @@ public:
 	return m_pd3d11DeviceContext;
 	}*/
 
-	GLUFFontNode* GetFontNode(int iIndex)
-	{
-		return m_FontCache[iIndex];
-	};
-	GLUFTextureNode* GetTextureNode(int iIndex)
-	{
-		return m_TextureCache[iIndex];
-	};
+	GLUFFontNode* GetFontNode(int iIndex)		{ return m_FontCache[iIndex];		}
+	GLUFTextureNode* GetTextureNode(int iIndex)	{ return m_TextureCache[iIndex];	}
 
 	int     AddFont(GLUFFontPtr font, GLUFFontSize size, GLUF_FONT_WEIGHT weight);
 	int     AddTexture(GLUFTexturePtr texture);
@@ -539,22 +478,22 @@ public:
 	//ID3D11VertexShader* m_pVSRenderUI11;
 	//ID3D11PixelShader* m_pPSRenderUI11;
 	//ID3D11PixelShader* m_pPSRenderUIUntex11;
-	GLUFProgramPtr m_pShader;
+	//GLUFProgramPtr m_pShader;
 
 	// States (these might be unnecessary)
-	GLbitfield* m_pDepthStencilStateUI11;
+	//GLbitfield m_pDepthStencilStateUI11;
 	//ID3D11RasterizerState* m_pRasterizerStateUI11;
-	GLbitfield* m_pBlendStateUI11;
-	GLbitfield* m_pSamplerStateUI11;
+	//GLbitfield m_pBlendStateUI11;
+	//GLbitfield m_pSamplerStateUI11;
 
 	// Stored states (again, might be unnecessary)
-	GLbitfield* m_pDepthStencilStateStored;
+	//GLbitfield* m_pDepthStencilStateStored;
 	//UINT m_StencilRefStored11;
 	//ID3D11RasterizerState* m_pRasterizerStateStored;
-	GLbitfield* m_pBlendStateStored;
+	//GLbitfield* m_pBlendStateStored;
 	//float m_BlendFactorStored[4];
 	//UINT m_SampleMaskStored11;
-	GLbitfield* m_pSamplerStateStored;
+	//GLbitfield m_pSamplerStateStored;
 
 
 	//ID3D11InputLayout* m_pInputLayout;
@@ -566,9 +505,11 @@ public:
 
 	// Sprite workaround (what does this mean? and why do I need it?)
 	//ID3D11Buffer* m_pSpriteBuffer;
-	GLuint m_SpriteBuffer;
-	unsigned int m_SpriteBufferBytes;
-	std::vector<GLUFSpriteVertex> m_SpriteVertices;
+	GLuint m_SpriteBufferVao;
+	GLuint m_SpriteBufferPos;
+	GLuint m_SpriteBufferColors;
+	GLuint m_SpriteBufferTexCoords;
+	GLUFSpriteVertexArray m_SpriteVertices;//unfortunately, we have to do a SoA, instead of an AoS
 
 	unsigned int m_nBackBufferWidth;
 	unsigned int m_nBackBufferHeight;
@@ -584,8 +525,8 @@ protected:
 	// D3D11 specific
 	//ID3D11Device* m_pd3d11Device;
 	//ID3D11DeviceContext* m_pd3d11DeviceContext;
-	GLUFResult CreateFont_(GLUFFontIndex index);
-	GLUFResult CreateTexture(GLUFTextureIndex index);
+	//GLUFResult CreateFont_(GLUFFontIndex index);
+	//GLUFResult CreateTexture(GLUFTextureIndex index);
 
 	std::vector <GLUFTextureNode*> m_TextureCache;   // Shared textures
 	std::vector <GLUFFontNode*> m_FontCache;         // Shared fonts
@@ -605,20 +546,12 @@ public:
 	GLUFControl(GLUFDialog* pDialog = NULL);
 	virtual         ~GLUFControl();
 
-	virtual GLUFResult OnInit()
-	{
-		return GR_SUCCESS;
-	}
+	virtual GLUFResult OnInit(){ return GR_SUCCESS; }
 	virtual void    Refresh();
-	virtual void    Render(float fElapsedTime)
-	{
-	};
+	virtual void    Render(float fElapsedTime){};
 
 	// message handler
-	virtual bool    MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
-	{
-		return false;
-	}
+	virtual bool    MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4){ return false; }
 
 	//these will be all handled by MsgProc
 	/*virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -630,99 +563,30 @@ public:
 		return false;
 	}*/
 
-	virtual bool    CanHaveFocus()
-	{
-		return false;
-	}
-	virtual void    OnFocusIn()
-	{
-		m_bHasFocus = true;
-	}
-	virtual void    OnFocusOut()
-	{
-		m_bHasFocus = false;
-	}
-	virtual void    OnMouseEnter()
-	{
-		m_bMouseOver = true;
-	}
-	virtual void    OnMouseLeave()
-	{
-		m_bMouseOver = false;
-	}
-	virtual void    OnHotkey()
-	{
-	}
+	virtual bool		CanHaveFocus()					{ return false;												}
+	virtual void		OnFocusIn()						{ m_bHasFocus = true;										}
+	virtual void		OnFocusOut()					{ m_bHasFocus = false;										}
+	virtual void		OnMouseEnter()					{ m_bMouseOver = true;										}
+	virtual void		OnMouseLeave()					{ m_bMouseOver = false;										}
+	virtual void		OnHotkey()						{															}
+	virtual bool		ContainsPoint(GLUFPoint pt)		{ return GLUFPtInRect(m_rcBoundingBox, pt);					}
+	virtual void		SetEnabled(bool bEnabled)		{ m_bEnabled = bEnabled;									}
+	virtual bool		GetEnabled()					{ return m_bEnabled;										}
+	virtual void		SetVisible(bool bVisible)		{ m_bVisible = bVisible;									}
+	virtual bool		GetVisible()					{ return m_bVisible;										}
+	int					GetID() const					{ return m_ID;												}
+	void				SetID(int ID)					{ m_ID = ID;												}
+	void				SetLocation(int x, int y)		{ m_x = x; m_y = y; UpdateRects();							}
+	void				SetSize(int width, int height)	{ m_width = width; m_height = height; UpdateRects();		}
+	void				SetHotkey(int nHotkey)			{ m_nHotkey = nHotkey;										}
+	int					GetHotkey()						{ return m_nHotkey;											}
+	void				SetUserData(void* pUserData)	{ m_pUserData = pUserData;									}
+	void*				GetUserData() const				{ return m_pUserData;										}
+	GLUF_CONTROL_TYPE	GetType() const					{ return m_Type;											}
+	GLUFElement*		GetElement(unsigned int iElement){return m_Elements[iElement];								}
 
-	virtual bool    ContainsPoint(GLUFPoint pt)
-	{
-		return GLUFPtInRect(m_rcBoundingBox, pt);
-	}
-
-	virtual void    SetEnabled(bool bEnabled)
-	{
-		m_bEnabled = bEnabled;
-	}
-	virtual bool    GetEnabled()
-	{
-		return m_bEnabled;
-	}
-	virtual void    SetVisible(bool bVisible)
-	{
-		m_bVisible = bVisible;
-	}
-	virtual bool    GetVisible()
-	{
-		return m_bVisible;
-	}
-
-	GLUF_CONTROL_TYPE GetType() const
-	{
-		return m_Type;
-	}
-
-	int             GetID() const
-	{
-		return m_ID;
-	}
-	void            SetID(int ID)
-	{
-		m_ID = ID;
-	}
-
-	void            SetLocation(int x, int y)
-	{
-		m_x = x; m_y = y; UpdateGLUFRects();
-	}
-	void            SetSize(int width, int height)
-	{
-		m_width = width; m_height = height; UpdateGLUFRects();
-	}
-
-	void            SetHotkey(int nHotkey)
-	{
-		m_nHotkey = nHotkey;
-	}
-	int            GetHotkey()
-	{
-		return m_nHotkey;
-	}
-
-	void            SetUserData(void* pUserData)
-	{
-		m_pUserData = pUserData;
-	}
-	void* GetUserData() const
-	{
-		return m_pUserData;
-	}
-
+	GLUFResult          SetElement(unsigned int iElement, GLUFElement* pElement);
 	virtual void    SetTextColor(Color Color);
-	GLUFElement* GetElement(unsigned int iElement)
-	{
-		return m_Elements[iElement];
-	}
-	GLUFResult         SetElement(unsigned int iElement, GLUFElement* pElement);
 
 	bool m_bVisible;                // Shown/hidden flag
 	bool m_bMouseOver;              // Mouse pointer is above control
@@ -740,7 +604,7 @@ public:
 	std::vector <GLUFElement*> m_Elements;  // All display elements
 
 protected:
-	virtual void    UpdateGLUFRects();
+	virtual void    UpdateRects();
 
 	int m_ID;                 // ID number
 	GLUF_CONTROL_TYPE m_Type;  // Control type, set once in constructor  
@@ -774,16 +638,10 @@ public:
 	GLUFStatic(GLUFDialog* pDialog = NULL);
 
 	virtual void    Render(float fElapsedTime);
-	virtual bool    ContainsPoint(GLUFPoint pt)
-	{
-		return false;
-	}
+	virtual bool    ContainsPoint(GLUFPoint pt){ return false; }
 
 	GLUFResult      GetTextCopy(std::string& strDest, unsigned int bufferCount);
-	std::string     GetText()
-	{
-		return m_strText;
-	}
+	std::string     GetText(){ return m_strText; }
 	GLUFResult      SetText(std::string strText);
 
 
@@ -800,23 +658,15 @@ class GLUFButton : public GLUFStatic
 public:
 	GLUFButton(GLUFDialog* pDialog = NULL);
 
-	virtual bool MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual void    OnHotkey()
-	{
-		if (m_pDialog->IsKeyboardInputEnabled()) m_pDialog->RequestFocus(this);
-		m_pDialog->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, this);
-	}
+	virtual void    OnHotkey(){ if (m_pDialog->IsKeyboardInputEnabled()) 
+									m_pDialog->RequestFocus(this);	
+								m_pDialog->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, this); }
 
-	virtual bool    ContainsPoint(GLUFPoint pt)
-	{
-		return GLUFPtInRect(m_rcBoundingBox, pt);
-	}
-	virtual bool    CanHaveFocus()
-	{
-		return (m_bVisible && m_bEnabled);
-	}
+	virtual bool    ContainsPoint(GLUFPoint pt)	{ return GLUFPtInRect(m_rcBoundingBox, pt); }
+	virtual bool    CanHaveFocus()				{ return (m_bVisible && m_bEnabled);		}
 
 	virtual void    Render(float fElapsedTime);
 
@@ -833,29 +683,21 @@ class GLUFCheckBox : public GLUFButton
 public:
 	GLUFCheckBox(GLUFDialog* pDialog = NULL);
 
-	virtual bool MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual void    OnHotkey()
-	{
-		if (m_pDialog->IsKeyboardInputEnabled()) m_pDialog->RequestFocus(this);
-		SetCheckedInternal(!m_bChecked, true);
-	}
+	virtual void    OnHotkey(){	if (m_pDialog->IsKeyboardInputEnabled()) 
+									m_pDialog->RequestFocus(this);
+								SetCheckedInternal(!m_bChecked, true);}
 
 	virtual bool    ContainsPoint(GLUFPoint pt);
-	virtual void    UpdateGLUFRects();
+	virtual void    UpdateRects();
 
 	virtual void    Render(float fElapsedTime);
 
-	bool            GetChecked()
-	{
-		return m_bChecked;
-	}
-	void            SetChecked(bool bChecked)
-	{
-		SetCheckedInternal(bChecked, false);
-	}
+	bool            GetChecked(){ return m_bChecked; }
+	void            SetChecked(bool bChecked){ SetCheckedInternal(bChecked, false); }
 
 protected:
 	virtual void    SetCheckedInternal(bool bChecked, bool bFromInput);
@@ -874,27 +716,19 @@ class GLUFRadioButton : public GLUFCheckBox
 public:
 	GLUFRadioButton(GLUFDialog* pDialog = NULL);
 
-	virtual bool MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
 	virtual void    OnHotkey()
 	{
-		if (m_pDialog->IsKeyboardInputEnabled()) m_pDialog->RequestFocus(this);
+		if (m_pDialog->IsKeyboardInputEnabled()) 
+			m_pDialog->RequestFocus(this);
 		SetCheckedInternal(true, true, true);
 	}
 
-	void            SetChecked(bool bChecked, bool bClearGroup = true)
-	{
-		SetCheckedInternal(bChecked, bClearGroup, false);
-	}
-	void            SetButtonGroup(unsigned int nButtonGroup)
-	{
-		m_nButtonGroup = nButtonGroup;
-	}
-	unsigned int    GetButtonGroup()
-	{
-		return m_nButtonGroup;
-	}
+	void            SetChecked(bool bChecked, bool bClearGroup = true){ SetCheckedInternal(bChecked, bClearGroup, false); }
+	void            SetButtonGroup(unsigned int nButtonGroup){ m_nButtonGroup = nButtonGroup; }
+	unsigned int    GetButtonGroup(){ return m_nButtonGroup; }
 
 protected:
 	virtual void    SetCheckedInternal(bool bChecked, bool bClearGroup, bool bFromInput);
@@ -913,28 +747,16 @@ public:
 
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual bool    MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool    MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	virtual void    Render(float fElapsedTime);
-	virtual void    UpdateGLUFRects();
+	virtual void    UpdateRects();
 
 	void            SetTrackRange(int nStart, int nEnd);
-	int             GetTrackPos()
-	{
-		return m_nPosition;
-	}
-	void            SetTrackPos(int nPosition)
-	{
-		m_nPosition = nPosition; Cap(); UpdateThumbGLUFRect();
-	}
-	int             GetPageSize()
-	{
-		return m_nPageSize;
-	}
-	void            SetPageSize(int nPageSize)
-	{
-		m_nPageSize = nPageSize; Cap(); UpdateThumbGLUFRect();
-	}
+	int             GetTrackPos()				{ return m_nPosition;									}
+	void            SetTrackPos(int nPosition)	{ m_nPosition = nPosition; Cap(); UpdateThumbGLUFRect(); }
+	int             GetPageSize()				{ return m_nPageSize;									 }
+	void            SetPageSize(int nPageSize)	{ m_nPageSize = nPageSize; Cap(); UpdateThumbGLUFRect(); }
 
 	void            Scroll(int nDelta);    // Scroll by nDelta items (plus or minus)
 	void            ShowItem(int nIndex);  // Ensure that item nIndex is displayed, scroll if necessary
@@ -992,56 +814,29 @@ public:
 	GLUFListBox(GLUFDialog* pDialog = NULL);
 	virtual         ~GLUFListBox();
 
-	virtual GLUFResult OnInit()
-	{
-		return m_pDialog->InitControl(&m_ScrollBar);
-	}
-	virtual bool    CanHaveFocus()
-	{
-		return (m_bVisible && m_bEnabled);
-	}
+	virtual GLUFResult OnInit()		{ return m_pDialog->InitControl(&m_ScrollBar);	}
+	virtual bool    CanHaveFocus()	{ return (m_bVisible && m_bEnabled);			}
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual bool    MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool    MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	virtual void    Render(float fElapsedTime);
-	virtual void    UpdateGLUFRects();
+	virtual void    UpdateRects();
 
-	long            GetStyle() const
-	{
-		return m_dwStyle;
-	}
-	int             GetSize() const
-	{
-		return m_Items.size();
-	}
-	void            SetStyle(long dwStyle)
-	{
-		m_dwStyle = dwStyle;
-	}
-	int             GetScrollBarWidth() const
-	{
-		return m_nSBWidth;
-	}
-	void            SetScrollBarWidth(int nWidth)
-	{
-		m_nSBWidth = nWidth; UpdateGLUFRects();
-	}
-	void            SetBorder(int nBorder, int nMargin)
-	{
-		m_nBorder = nBorder; m_nMargin = nMargin;
-	}
+	long            GetStyle() const					{ return m_dwStyle;							}
+	int             GetSize() const						{ return m_Items.size();					}
+	void            SetStyle(long dwStyle)				{ m_dwStyle = dwStyle;						}
+	int             GetScrollBarWidth() const			{ return m_nSBWidth;						}
+	void            SetScrollBarWidth(int nWidth)		{ m_nSBWidth = nWidth; UpdateRects();	}
+	void            SetBorder(int nBorder, int nMargin)	{ m_nBorder = nBorder; m_nMargin = nMargin; }
 	GLUFResult      AddItem(std::string wszText, void* pData);
 	GLUFResult      InsertItem(int nIndex, std::string wszText, void* pData);
 	void            RemoveItem(int nIndex);
 	void            RemoveAllItems();
 
 	GLUFListBoxItem* GetItem(int nIndex);
-	int             GetSelectedIndex(int nPreviousSelected = -1);
-	GLUFListBoxItem* GetSelectedItem(int nPreviousSelected = -1)
-	{
-		return GetItem(GetSelectedIndex(nPreviousSelected));
-	}
+	int              GetSelectedIndex(int nPreviousSelected = -1);
+	GLUFListBoxItem* GetSelectedItem(int nPreviousSelected = -1){ return GetItem(GetSelectedIndex(nPreviousSelected)); }
 	void            SelectItem(int nNewIndex);
 
 	enum STYLE
@@ -1086,61 +881,37 @@ public:
 	virtual         ~GLUFComboBox();
 
 	virtual void    SetTextColor(Color Color);
-	virtual GLUFResult OnInit()
-	{
-		return m_pDialog->InitControl(&m_ScrollBar);
-	}
+	virtual GLUFResult OnInit(){ return m_pDialog->InitControl(&m_ScrollBar); }
 
-	virtual bool MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
 	virtual void    OnHotkey();
 
-	virtual bool    CanHaveFocus()
-	{
-		return (m_bVisible && m_bEnabled);
-	}
+	virtual bool    CanHaveFocus(){ return (m_bVisible && m_bEnabled); }
 	virtual void    OnFocusOut();
 	virtual void    Render(float fElapsedTime);
 
-	virtual void    UpdateGLUFRects();
+	virtual void    UpdateRects();
 
 	GLUFResult      AddItem(std::string strText, void* pData);
 	void            RemoveAllItems();
 	void            RemoveItem(unsigned int index);
 	bool            ContainsItem(std::string strText, unsigned int iStart = 0);
 	int             FindItem(std::string strText, unsigned int iStart = 0);
-	void* GetItemData(std::string strText);
-	void* GetItemData(int nIndex);
-	void            SetDropHeight(unsigned int nHeight)
-	{
-		m_nDropHeight = nHeight; UpdateGLUFRects();
-	}
-	int             GetScrollBarWidth() const
-	{
-		return m_nSBWidth;
-	}
-	void            SetScrollBarWidth(int nWidth)
-	{
-		m_nSBWidth = nWidth; UpdateGLUFRects();
-	}
+	void*			GetItemData(std::string strText);
+	void*			GetItemData(int nIndex);
+	void            SetDropHeight(unsigned int nHeight)		{ m_nDropHeight = nHeight; UpdateRects();	}
+	int             GetScrollBarWidth() const				{ return m_nSBWidth;							}
+	void            SetScrollBarWidth(int nWidth)			{ m_nSBWidth = nWidth; UpdateRects();		}
 
-	int             GetSelectedIndex() const
-	{
-		return m_iSelected;
-	}
+	int             GetSelectedIndex() const				{ return m_iSelected;							}
 	void* GetSelectedData();
 	GLUFComboBoxItem* GetSelectedItem();
 
-	unsigned int      GetNumItems()
-	{
-		return m_Items.size();
-	}
-	GLUFComboBoxItem* GetItem(unsigned int index)
-	{
-		return m_Items[index];
-	}
+	unsigned int      GetNumItems()							{ return m_Items.size();						}
+	GLUFComboBoxItem* GetItem(unsigned int index)			{ return m_Items[index];						}
 
 	GLUFResult         SetSelectedByIndex(unsigned int index);
 	GLUFResult         SetSelectedByText(std::string strText);
@@ -1174,32 +945,20 @@ public:
 	GLUFSlider(GLUFDialog* pDialog = NULL);
 
 	virtual bool    ContainsPoint(GLUFPoint pt);
-	virtual bool    CanHaveFocus()
-	{
-		return (m_bVisible && m_bEnabled);
-	}
+	virtual bool    CanHaveFocus(){ return (m_bVisible && m_bEnabled); }
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
 
-	virtual bool	MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
+	virtual bool	MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
-	virtual void    UpdateGLUFRects();
+	virtual void    UpdateRects();
 
 	virtual void    Render(float fElapsedTime);
 
-	void            SetValue(int nValue)
-	{
-		SetValueInternal(nValue, false);
-	}
-	int             GetValue() const
-	{
-		return m_nValue;
-	};
+	void            SetValue(int nValue){ SetValueInternal(nValue, false); }
+	int             GetValue() const{ return m_nValue; };
 
-	void            GetRange(int& nMin, int& nMax) const
-	{
-		nMin = m_nMin; nMax = m_nMax;
-	}
+	void            GetRange(int& nMin, int& nMax) const{ nMin = m_nMin; nMax = m_nMax; }
 	void            SetRange(int nMin, int nMax);
 
 protected:
@@ -1220,6 +979,8 @@ protected:
 };
 
 
+//???
+
 //-----------------------------------------------------------------------------
 // CUniBuffer class for the edit control
 //-----------------------------------------------------------------------------
@@ -1232,32 +993,14 @@ public:
 	static void			    Initialize();
 	static void			    Uninitialize();
 
-	int                     GetBufferSize()
-	{
-		return m_pwszBuffer.size();
-	}
-	bool                    SetBufferSize(int nSize);
-	int                     GetTextSize()
-	{
-		return m_pwszBuffer.length();
-	}
-	std::string GetBuffer()
-	{
-		return m_pwszBuffer;
-	}
-	const char& operator[](int n) const
-	{
-		return m_pwszBuffer[n];
-	}
-	char& operator[](int n);
-	GLUFFontNode* GetFontNode()
-	{
-		return m_pFontNode;
-	}
-	void                    SetFontNode(GLUFFontNode* pFontNode)
-	{
-		m_pFontNode = pFontNode;
-	}
+	//int                     GetBufferSize(){ return 256; }
+	//bool                    SetBufferSize(int nSize);
+	int                     GetTextSize(){ return m_Buffer.length(); }
+	std::string				GetBuffer(){ return m_Buffer; }
+	const char&				operator[](int n) const{ return m_Buffer[n]; }
+	char&					operator[](int n){ return m_Buffer[n]; }
+	GLUFFontNode*			GetFontNode(){ return m_pFontNode; }
+	void                    SetFontNode(GLUFFontNode* pFontNode){ m_pFontNode = pFontNode; }
 	void                    Clear();
 
 	bool                    InsertChar(int nIndex, char wChar); // Inserts the char at specified index. If nIndex == -1, insert to the end.
@@ -1265,8 +1008,8 @@ public:
 	bool                    InsertString(int nIndex, std::string pStr, int nCount = -1);  // Inserts the first nCount characters of the string pStr at specified index.  If nCount == -1, the entire string is inserted. If nIndex == -1, insert to the end.
 	bool                    SetText(std::string wszText);
 
-	// Uniscribe (what is the purpose of this?) until I figure out: 
-	/*
+	// Uniscribe (what is the purpose of this?):  ???
+	
 	GLUFResult              CPtoX(int nCP, bool bTrail, int* pX);
 	GLUFResult              XtoCP(int nX, int* pCP, int* pnTrail);
 	void                    GetPriorItemPos(int nCP, int* pPrior);
@@ -1275,6 +1018,7 @@ public:
 private:
 	GLUFResult              Analyse();      // Uniscribe -- Analyse() analyses the string in the buffer
 
+	std::string m_Buffer; //buffer to hold the text
 
 	// Uniscribe-specific
 	GLUFFontNode* m_pFontNode;          // Font node for the font that this buffer uses
@@ -1283,42 +1027,40 @@ private:
 
 private:
 	// Empty implementation of the Uniscribe API
-	static HRESULT WINAPI   Dummy_ScriptApplyDigitSubstitution(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*,
-		SCRIPT_STATE*)
+	/*static GLUFResult       Dummy_ScriptApplyDigitSubstitution(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*, SCRIPT_STATE*)
 	{
-		return E_NOTIMPL;
+		return GR_NOTIMPL;
 	}
-	static HRESULT WINAPI   Dummy_ScriptStringAnalyse(HDC, const void*, int, int, int, DWORD, int, SCRIPT_CONTROL*,
+	static GLUFResult       Dummy_ScriptStringAnalyse(HDC, const void*, int, int, int, DWORD, int, SCRIPT_CONTROL*,
 		SCRIPT_STATE*, const int*, SCRIPT_TABDEF*, const BYTE*,
 		SCRIPT_STRING_ANALYSIS*)
 	{
-		return E_NOTIMPL;
+		return GR_NOTIMPL;
 	}
-	static HRESULT WINAPI   Dummy_ScriptStringCPtoX(SCRIPT_STRING_ANALYSIS, int, BOOL, int*)
+	static GLUFResult       Dummy_ScriptStringCPtoX(SCRIPT_STRING_ANALYSIS, int, BOOL, int*)
 	{
-		return E_NOTIMPL;
+		return GR_NOTIMPL;
 	}
-	static HRESULT WINAPI   Dummy_ScriptStringXtoCP(SCRIPT_STRING_ANALYSIS, int, int*, int*)
+	static GLUFResult       Dummy_ScriptStringXtoCP(SCRIPT_STRING_ANALYSIS, int, int*, int*)
 	{
-		return E_NOTIMPL;
+		return GR_NOTIMPL;
 	}
-	static HRESULT WINAPI   Dummy_ScriptStringFree(SCRIPT_STRING_ANALYSIS*)
+	static GLUFResult       Dummy_ScriptStringFree(SCRIPT_STRING_ANALYSIS*)
 	{
-		return E_NOTIMPL;
+		return GR_NOTIMPL;
 	}
-	static const SCRIPT_LOGATTR* WINAPI Dummy_ScriptString_pLogAttr(SCRIPT_STRING_ANALYSIS)
+	static const SCRIPT_LOGATTR* Dummy_ScriptString_pLogAttr(SCRIPT_STRING_ANALYSIS)
 	{
 		return NULL;
 	}
-	static const int* WINAPI Dummy_ScriptString_pcOutChars(SCRIPT_STRING_ANALYSIS)
+	static const int* Dummy_ScriptString_pcOutChars(SCRIPT_STRING_ANALYSIS)
 	{
 		return NULL;
 	}
 
 	// Function pointers
-	static                  HRESULT(WINAPI* _ScriptApplyDigitSubstitution)(const SCRIPT_DIGITSUBSTITUTE*,
-		SCRIPT_CONTROL*, SCRIPT_STATE*);
-	static                  HRESULT(WINAPI* _ScriptStringAnalyse)(HDC, const void*, int, int, int, DWORD, int,
+	static                  GLUFResult(*_ScriptApplyDigitSubstitution)(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*, SCRIPT_STATE*);
+	static                  GLUFResult(*_ScriptStringAnalyse)(HDC, const void*, int, int, int, DWORD, int,
 		SCRIPT_CONTROL*, SCRIPT_STATE*, const int*,
 		SCRIPT_TABDEF*, const BYTE*,
 		SCRIPT_STRING_ANALYSIS*);
@@ -1330,9 +1072,6 @@ private:
 
 	static HINSTANCE s_hDll;  // Uniscribe DLL handle
 	*/
-
-	GLUFFontNode* m_pFontNode;          // Font node for the font that this buffer uses
-	std::string m_pwszBuffer;    // Buffer to hold text
 };
 
 //-----------------------------------------------------------------------------
@@ -1346,50 +1085,23 @@ public:
 
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual bool    MsgProc(GLUF_INPUT_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4);
-	virtual void    UpdateGLUFRects();
-	virtual bool    CanHaveFocus()
-	{
-		return (m_bVisible && m_bEnabled);
-	}
+	virtual bool    MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
+	virtual void    UpdateRects();
+	virtual bool    CanHaveFocus(){ return (m_bVisible && m_bEnabled); }
 	virtual void    Render(float fElapsedTime);
 	virtual void    OnFocusIn();
 
 	void            SetText(std::string wszText, bool bSelected = false);
-	std::string     GetText()
-	{
-		return m_Buffer.GetBuffer();
-	}
-	int             GetTextLength()
-	{
-		return m_Buffer.GetTextSize();
-	}  // Returns text length in chars excluding NULL.
+	std::string     GetText(){ return m_Buffer.GetBuffer(); }
+	int             GetTextLength(){ return m_Buffer.GetTextSize(); }  // Returns text length in chars excluding NULL.
 	GLUFResult      GetTextCopy(std::string& strDest);
 	void            ClearText();
-	virtual void    SetTextColor(Color Color)
-	{
-		m_TextColor = Color;
-	}  // Text color
-	void            SetSelectedTextColor(Color Color)
-	{
-		m_SelTextColor = Color;
-	}  // Selected text color
-	void            SetSelectedBackColor(Color Color)
-	{
-		m_SelBkColor = Color;
-	}  // Selected background color
-	void            SetCaretColor(Color Color)
-	{
-		m_CaretColor = Color;
-	}  // Caret color
-	void            SetBorderWidth(int nBorder)
-	{
-		m_nBorder = nBorder; UpdateGLUFRects();
-	}  // Border of the window
-	void            SetSpacing(int nSpacing)
-	{
-		m_nSpacing = nSpacing; UpdateGLUFRects();
-	}
+	virtual void    SetTextColor(Color Color){ m_TextColor = Color; }  // Text color
+	void            SetSelectedTextColor(Color Color){ m_SelTextColor = Color; }  // Selected text color
+	void            SetSelectedBackColor(Color Color){ m_SelBkColor = Color; }  // Selected background color
+	void            SetCaretColor(Color Color){ m_CaretColor = Color; }  // Caret color
+	void            SetBorderWidth(int nBorder){ m_nBorder = nBorder; UpdateRects(); }  // Border of the window
+	void            SetSpacing(int nSpacing){ m_nSpacing = nSpacing; UpdateRects(); }
 	void            ParseFloatArray(float* pNumbers, int nCount);
 	void            SetTextFloatArray(const float* pNumbers, int nCount);
 

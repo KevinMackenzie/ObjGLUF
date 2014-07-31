@@ -60,6 +60,35 @@ bool GLUFInitOpenGLExtentions()
 	return true;
 }
 
+bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, unsigned char* rawData)
+{
+	GLUF_ASSERT(path);
+	GLUF_ASSERT(rawSize);
+
+	std::ifstream inFile(path, std::ios::binary);
+	inFile.seekg(0, std::ios::end);
+	*rawSize = inFile.tellg();
+	inFile.seekg(0, std::ios::beg);
+
+	char* SrawData = (char*)malloc(*rawSize);
+	if (sizeof(SrawData) != *rawSize)
+		return false;
+
+	if (inFile.read(SrawData, *rawSize))
+	{
+		rawData = reinterpret_cast<unsigned char*>(SrawData);
+		return true;
+	}
+	else
+	{
+		GLUF_ERROR("Failed to load file into memory");
+		free(SrawData);
+		rawData = nullptr;
+		*rawSize = 0;
+		return false;
+	}
+	
+}
 
 void GLUFMatrixStack::Push(const glm::mat4& matrix)
 {
@@ -108,6 +137,22 @@ bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
 void GLUFSetRectEmpty(GLUFRect& rect)
 {
 	rect.top = rect.bottom = rect.left = rect.right = 0;
+}
+
+void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom)
+{
+	rect.top = top;
+	rect.bottom = bottom;
+	rect.left = left;
+	rect.right = right;
+}
+
+void GLUFOffsetRect(GLUFRect& rect, int x, int y)
+{
+	rect.top += y;
+	rect.bottom += y;
+	rect.left += x;
+	rect.right += x;
 }
 
 class GLUFUniformBuffer
@@ -624,6 +669,11 @@ GLUFPoint GLUFBufferManager::GetTextureSize(GLUFTexturePtr texture)
 	return GLUFPoint(texture->mWidth, texture->mHeight);
 }
 
+bool GLUFBufferManager::CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1)
+{
+	return (texture->mTextureId == texture1->mTextureId);
+}
+
 ////////////////////////////
 //
 //Shader Stuff
@@ -697,10 +747,12 @@ class GLUFSeperateProgram
 	friend GLUFShaderManager;
 	GLuint mPPOId;
 
+	GLUFProgramPtrStagesMap m_Programs;//so the programs don't go deleting themselves until the PPO is destroyed
+
 public:
 	void Init(){ glGenProgramPipelines(1, &mPPOId); }
 	
-	void AttachProgram(GLUFProgramPtr program, GLbitfield stages){ glUseProgramStages(mPPOId, stages, program->GetId()); }
+	void AttachProgram(GLUFProgramPtr program, GLbitfield stages){ m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); glUseProgramStages(mPPOId, stages, program->GetId()); }
 
 };
 
