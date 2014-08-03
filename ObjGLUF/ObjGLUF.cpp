@@ -20,7 +20,7 @@ void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 void GLFWErrorMethod(int error, const char* description)
 {
 	std::stringstream ss;
-	ss << "GLFW ERROR: Error Code:" << error << "; " << description;
+	ss << "GLFW ERROR: Error Code:" << error << "; " << description << std::endl;
 	GLUF_ERROR(ss.str().c_str());
 }
 
@@ -62,7 +62,7 @@ bool GLUFInitOpenGLExtentions()
 	return true;
 }
 
-bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, char* rawData)
+char* GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize)
 {
 	GLUF_ASSERT(path);
 	GLUF_ASSERT(rawSize);
@@ -72,13 +72,14 @@ bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, char* rawD
 	*rawSize = inFile.tellg();
 	inFile.seekg(0, std::ios::beg);
 
+	char* rawData;
 	rawData = (char*)malloc(*rawSize);
-	if (sizeof(rawData) != *rawSize)
-		return false;
+	//if (sizeof(rawData) != *rawSize)
+	//	return false;
 
 	if (inFile.read(rawData, *rawSize))
 	{
-		return true;
+		return rawData;
 	}
 	else
 	{
@@ -86,7 +87,7 @@ bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, char* rawD
 		free(rawData);
 		rawData = nullptr;
 		*rawSize = 0;
-		return false;
+		return nullptr;
 	}
 	
 }
@@ -234,6 +235,12 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 
 GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords)
 {
+
+	screenCoords.left = screenCoords.left * 2.0f;
+	screenCoords.bottom = screenCoords.bottom * 2.0f;
+	screenCoords.top = 1.0f - ((1.0f - screenCoords.top) * 2.0f);
+	screenCoords.right = 1.0f - ((1.0f - screenCoords.right) * 2.0f);
+
 	screenCoords.left -= 1.0f;
 	screenCoords.bottom -= 1.0f;
 
@@ -257,6 +264,16 @@ void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp)
 	rect.right /= xClamp;
 	rect.top /= yClamp;
 	rect.bottom /= yClamp;
+}
+
+Color4f GLUFColorToFloat(Color color)
+{
+	Color4f col;
+	col.x = (float)color.x / 255.0f;
+	col.y = (float)color.y / 255.0f;
+	col.z = (float)color.z / 255.0f;
+	col.w = (float)color.w / 255.0f;
+	return col;
 }
 
 class GLUFUniformBuffer
@@ -313,10 +330,6 @@ class GLUFTextureBuffer
 {
 	friend GLUFBufferManager;
 	GLuint mTextureId;
-
-	//in pixels
-	long mHeight;
-	long mWidth;
 
 public:
 
@@ -719,6 +732,11 @@ void GLUFBufferManager::LoadTextureFromFile(GLUFTexturePtr texture, std::string 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+GLuint GLUFBufferManager::GetTextureBufferId(GLUFTexturePtr texture)
+{
+	return texture->mTextureId;
+}
+
 void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format)
 {
 	gli::texture2D Texture(gli::load_dds_memory(data, length));
@@ -766,11 +784,6 @@ void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-GLUFPoint GLUFBufferManager::GetTextureSize(GLUFTexturePtr texture)
-{
-	return GLUFPoint((float)texture->mWidth, (float)texture->mHeight);
 }
 
 bool GLUFBufferManager::CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1)

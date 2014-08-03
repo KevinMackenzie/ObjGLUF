@@ -76,7 +76,7 @@ typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 // a callback does not use the parameter, it will be 0, but this does not mean 0 is an invalid parameter for callbacks
 // that use it.  Other notes: when specifying hotkeys, always use the GLFW macros for specifying them.  Consult the GLFW
 // input documentation for more information.
-void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc);
+void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLUFTexturePtr controltex);
 
 typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
 typedef uint16_t GLUFFontSize;
@@ -104,6 +104,8 @@ enum GLUF_FONT_WEIGHT
 	FONT_WEIGHT_ULTRA_BLACK
 };
 
+
+extern OBJGLUF_API GLUFProgramPtr g_UIProgram;
 
 
 //--------------------------------------------------------------------------------------
@@ -393,9 +395,20 @@ struct GLUFFontNode
 
 struct GLUFSpriteVertexArray
 {
+private:
 	std::vector<glm::vec3> vPos;
-	std::vector<Color>     vColor;
+	std::vector<Color4f>   vColor;
 	std::vector<glm::vec2> vTex;
+public:
+
+	glm::vec3* data_pos()  { if (size() > 0) return &vPos[0]; }
+	Color4f*   data_color(){ if (size() > 0) return &vColor[0]; }
+	glm::vec2* data_tex()  { if (size() > 0) return &vTex[0]; }
+
+	void push_back(glm::vec3 pos, Color color, glm::vec2 tex)
+	{
+		vPos.push_back(pos);	vColor.push_back(GLUFColorToFloat(color));	vTex.push_back(tex);
+	}
 
 	void clear(){ vPos.clear(); vColor.clear(); vTex.clear(); }
 	unsigned long size(){ return vPos.size(); }
@@ -448,6 +461,9 @@ public:
 	GLUFFontNode* GetFontNode(int iIndex)		{ return m_FontCache[iIndex];		}
 	GLUFTextureNode* GetTextureNode(int iIndex)	{ return m_TextureCache[iIndex];	}
 
+	int		GetTextureCount(){ return m_TextureCache.size(); }
+	int     GetFontCount()   { return m_FontCache.size(); }
+
 	int     AddFont(GLUFFontPtr font, GLUFFontSize size, GLUF_FONT_WEIGHT weight);
 	int     AddTexture(GLUFTexturePtr texture);
 
@@ -488,6 +504,7 @@ public:
 
 	//ID3D11InputLayout* m_pInputLayout;
 	GLuint m_pVBScreenQuadVAO;
+	GLuint m_pVBScreenQuadIndicies;
 	GLuint m_pVBScreenQuadPositions;
 	GLuint m_pVBScreenQuadColor;
 	GLuint m_pVBScreenQuadUVs;
@@ -499,6 +516,7 @@ public:
 	GLuint m_SpriteBufferPos;
 	GLuint m_SpriteBufferColors;
 	GLuint m_SpriteBufferTexCoords;
+	GLuint m_SpriteBufferIndices;
 	GLUFSpriteVertexArray m_SpriteVertices;//unfortunately, we have to do a SoA, instead of an AoS
 
 	//unsigned int m_nBackBufferWidth;
@@ -509,6 +527,8 @@ public:
 	std::vector <GLUFDialog*> m_Dialogs;            // Dialogs registered
 
 protected:
+	void ApplyOrtho();
+
 	// D3D9 specific
 	/*IDiGLUFRect3DDevice9* m_pd3d9Device;
 	HRESULT CreateFont9( UINT index );
@@ -520,7 +540,7 @@ protected:
 	//GLUFResult CreateFont_(GLUFFontIndex index);
 	//GLUFResult CreateTexture(GLUFTextureIndex index);
 
-	GLUFPoint wndSize;
+	GLUFPoint m_WndSize;
 
 	std::vector <GLUFTextureNode*> m_TextureCache;   // Shared textures
 	std::vector <GLUFFontNode*> m_FontCache;         // Shared fonts

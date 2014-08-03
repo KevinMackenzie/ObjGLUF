@@ -98,6 +98,7 @@ OBJGLUF_API GLUFResult GLUFTrace(const char*, const char*, unsigned long, GLUFRe
 
 typedef glm::u8vec4 Color;//only accepts numbers from 0 to 255
 typedef glm::vec3 Color3f;
+typedef glm::vec4 Color4f;
 
 
 //a little treat for initializing streambuf's with existing data
@@ -130,7 +131,7 @@ OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 
 //this loads an entire file into a binary array, path is input, rawSize and rawData are outputs
-OBJGLUF_API bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, char* rawData);
+OBJGLUF_API char* GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize);
 
 typedef std::vector<glm::vec4> Vec4Array;
 typedef std::vector<glm::vec3> Vec3Array;
@@ -178,6 +179,8 @@ OBJGLUF_API GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords);//this is used
 OBJGLUF_API void GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
 OBJGLUF_API void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
 OBJGLUF_API void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
+
+OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
 
 enum GLUFShaderType
 {
@@ -647,6 +650,8 @@ public:
 	//texture methods
 	GLUFTexturePtr CreateTextureBuffer();
 
+	GLuint GetTextureBufferId(GLUFTexturePtr texture);
+
 	void UseTexture(GLUFTexturePtr texture, GLuint samplerLocation, GLenum bindingPoint);
 
 	//NOTE: call CreateTextureBuffer() FIRST
@@ -654,8 +659,6 @@ public:
 
 	//NOTE: call CreateTextureBuffer() FIRST
 	void LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format);
-
-	GLUFPoint GetTextureSize(GLUFTexturePtr texture);
 
 	bool CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1);
 
