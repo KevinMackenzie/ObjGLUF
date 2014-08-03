@@ -130,13 +130,12 @@ OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 
 //this loads an entire file into a binary array, path is input, rawSize and rawData are outputs
-OBJGLUF_API bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, unsigned char* rawData);
+OBJGLUF_API bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, char* rawData);
 
 typedef std::vector<glm::vec4> Vec4Array;
 typedef std::vector<glm::vec3> Vec3Array;
 typedef std::vector<glm::vec2> Vec2Array;
 typedef std::vector<GLushort>  IndexArray;
-typedef glm::vec4 Color;
 
 #include <stack>
 
@@ -152,32 +151,33 @@ public:
 };
 
 
-//REMEMBER: window positions is based from the "origin" of the window (upper-left)
+//this rect is supposed to be used where the origin is bottom left, and upper left corner is (1,1)
 struct OBJGLUF_API GLUFRect
 {
-	long left;
-	long top;
-	long right;
-	long bottom;
+	float left, top, right, bottom;
 };
 
 struct OBJGLUF_API GLUFPoint
 {
-	union{ long x, width;  };
-	union{ long y, height; };
+	union{ float x, width;  };
+	union{ float y, height; };
 
-	GLUFPoint(long val1, long val2) : x(val1), y(val2){}
+	GLUFPoint(float val1, float val2) : x(val1), y(val2){}
 	GLUFPoint() : x(0), y(0){}
 };
 
 OBJGLUF_API bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
 OBJGLUF_API void GLUFSetRectEmpty(GLUFRect& rect);
-OBJGLUF_API void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom);
-OBJGLUF_API void GLUFOffsetRect(GLUFRect& rect, int x, int y);
-OBJGLUF_API int  GLUFRectHeight(GLUFRect rect);
-OBJGLUF_API int  GLUFRectWidth(GLUFRect rect);
-OBJGLUF_API void GLUFInflateRect(GLUFRect& rect, int dx, int dy);
+OBJGLUF_API void GLUFSetRect(GLUFRect& rect, float left, float top, float right, float bottom);
+OBJGLUF_API void GLUFOffsetRect(GLUFRect& rect, float x, float y);
+OBJGLUF_API float GLUFRectHeight(GLUFRect rect);
+OBJGLUF_API float GLUFRectWidth(GLUFRect rect);
+OBJGLUF_API void GLUFInflateRect(GLUFRect& rect, float dx, float dy);
 OBJGLUF_API bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect);
+OBJGLUF_API GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords);//this is used to tranlate screen coordinates (where origin is bottom left and 1,1 is upper left) to clip space (where origin is the middle, and 1,1 is still upper left)
+OBJGLUF_API void GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
+OBJGLUF_API void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
+OBJGLUF_API void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
 
 enum GLUFShaderType
 {
@@ -208,7 +208,7 @@ struct OBJGLUF_API GLUFShaderInfoStruct
 {
 	bool mSuccess = false;
 
-	std::vector<char> mLog;
+	char* mLog;
 
 	operator bool() const
 	{

@@ -7,10 +7,12 @@
 #include <assimp/postprocess.h>
 #define USING_ASSIMP
 #define SUPPRESS_RADIAN_ERROR
-#include "../ObjGLUF/ObjGLUF.h"
-#include <GLFW/glfw3.h>
+#include "../ObjGLUF/GLUFGui.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+
+GLFWwindow* window;
 
 static void error_callback(int error, const char* description)
 {
@@ -26,11 +28,25 @@ void ErrorMethod(const char* message, const char* func, const char* file, unsign
 	printf(message);
 }
 
+bool MsgProc(GLUF_MESSAGE_TYPE type, int param1, int param2, int param3, int param4)
+{
+	if (type == GM_KEY)
+	{
+		if (param1 == GLFW_KEY_ESCAPE && param3 == GLFW_PRESS)
+			glfwSetWindowShouldClose(window, GL_TRUE);
+	}
+	return false;
+}
+
+void CtrlMsgProc(GLUF_EVENT evt, int controlId, GLUFControl* pControl)
+{
+
+}
+
 int main(void)
 {
+	GLUFRegisterErrorMethod(ErrorMethod);
 	GLUFInit();
-
-	GLFWwindow* window;
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
@@ -47,15 +63,16 @@ int main(void)
 	glfwMakeContextCurrent(window);
 
 	GLUFInitOpenGLExtentions();
+	GLUFInitGui(window, MsgProc);
 
-	glfwSetKeyCallback(window, key_callback);
+	//glfwSetKeyCallback(window, key_callback);
 
 	printf((const char*)glGetString(GL_VERSION));
 
 
-	GLUFRegisterErrorMethod(ErrorMethod);
+	//GLUFRegisterErrorMethod(ErrorMethod);
 
-	GLUFBufferManager buffManager;
+	/*GLUFBufferManager buffManager;
 
 	//load the test object
 	Assimp::Importer importer;
@@ -71,7 +88,7 @@ int main(void)
 	const aiMesh* mesh = scene->mMeshes[0];
 
 	GLUFShaderManager shadMan;
-	GLUFBufferManager buffMan;
+	GLUFBufferManager buffMan;*/
 
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -89,10 +106,10 @@ int main(void)
 	//glBindVertexArray(VertexArrayID);
 
 	// Create and compile our GLSL program from the shaders
-	GLUFShaderPathList shaderSources;
+	/*GLUFShaderPathList shaderSources;
 	shaderSources.insert(std::pair<GLUFShaderType, std::string>(SH_VERTEX_SHADER, "StandardShadingVert.glsl"));
 	shaderSources.insert(std::pair<GLUFShaderType, std::string>(SH_FRAGMENT_SHADER, "StandardShadingFrag.glsl"));
-	GLUFProgramPtr program = shadMan.CreateProgram(shaderSources);
+	GLUFProgramPtr program = shadMan.CreateProgram(shaderSources);*/
 
 	// Get a handle for our "MVP" uniform
 	//GLuint MatrixID = glGetUniformLocation(shadMan.GetProgramId(program), "MVP");
@@ -101,14 +118,14 @@ int main(void)
 
 	// Load the texture
 	//GLuint Texture = loadDDS("uvmap.DDS");
-	GLUFTexturePtr texture = buffMan.CreateTextureBuffer();
-	buffMan.LoadTextureFromFile(texture, "uvmap.dds", TFF_DDS);
+	//GLUFTexturePtr texture = buffMan.CreateTextureBuffer();
+	//buffMan.LoadTextureFromFile(texture, "uvmap.dds", TFF_DDS);
 
 	// Get a handle for our "myTextureSampler" uniform
 	//GLuint TextureID = glGetUniformLocation(programID, "myTextureSampler");
 
 	// Read our .obj file
-	std::vector<glm::vec3> vertices;
+	/*std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
 	std::vector<glm::vec3> normals;
 	std::vector<GLushort> indicies;
@@ -138,16 +155,31 @@ int main(void)
 
 	// Get a handle for our "LightPosition" uniform
 	glUseProgram(shadMan.GetProgramId(program));
-	GLuint LightID = glGetUniformLocation(shadMan.GetProgramId(program), "LightPosition_worldspace");
+	GLuint LightID = glGetUniformLocation(shadMan.GetProgramId(program), "LightPosition_worldspace");*/
 
+	GLUFDialogResourceManager resMan;
+	GLUFDialog dlg;
+	dlg.Init(&resMan);
+	dlg.SetCallback(CtrlMsgProc);
+	dlg.SetSize(1.0f, 1.0f);
+	dlg.SetBackgroundColors(Color(0, 255, 0, 255));
+	//dlg.AddStatic(0, "", 0.25f, 0.25f, 0.5f, 0.3f);
+
+	float ellapsedTime = 0.0f;
+	float prevTime = 0.0f;
+	float currTime = 0.0f;
 
 	do{
+
+		currTime = (float)glfwGetTime();
+		ellapsedTime = currTime - prevTime;
 
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		dlg.OnRender(ellapsedTime);
 
-		float ratio;
+		/*float ratio;
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
 		ratio = width / (float)height;
@@ -179,12 +211,14 @@ int main(void)
 
 		buffMan.UseTexture(texture, 5, GL_TEXTURE0);
 
-		buffManager.DrawVertexArray(vertArray);
+		buffManager.DrawVertexArray(vertArray);*/
 
 
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		prevTime = currTime;
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
@@ -198,3 +232,66 @@ int main(void)
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
 }
+/*
+static void error_callback(int error, const char* description)
+{
+	fputs(description, stderr);
+}
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+}
+int main(void)
+{
+	GLFWwindow* window;
+	glfwSetErrorCallback(error_callback);
+	if (!glfwInit())
+		exit(EXIT_FAILURE);
+	window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		exit(EXIT_FAILURE);
+	}
+
+	double x, y;
+	x = 0.0;
+	y = 0.0;
+
+	glfwMakeContextCurrent(window);
+	glfwSetKeyCallback(window, key_callback);
+	while (!glfwWindowShouldClose(window))
+	{
+		float ratio;
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		ratio = width / (float)height;
+		glViewport(0, 0, width, height);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glRotatef((float)glfwGetTime() * 50.f, 0.f, 0.f, 1.f);
+		glBegin(GL_TRIANGLES);
+		glColor3f(1.f, 0.f, 0.f);
+		glVertex3f(-0.6f, -0.4f, 0.f);
+		glColor3f(0.f, 1.f, 0.f);
+		glVertex3f(0.6f, -0.4f, 0.f);
+		glColor3f(0.f, 0.f, 1.f);
+		glVertex3f(0.f, 0.6f, 0.f);
+		glEnd();
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+
+		glfwGetCursorPos(window, &x, &y);
+		printf("%f,%f \n", x, y);
+
+		Sleep(200);
+	}
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	exit(EXIT_SUCCESS);
+}*/

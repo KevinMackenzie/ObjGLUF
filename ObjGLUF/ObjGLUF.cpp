@@ -9,6 +9,8 @@
 #include <GLFW/glfw3.h>
 
 GLUFErrorMethod ErrorMethod;
+GLUFBufferManager g_BufferManager;
+GLUFShaderManager g_ShaderManager;
 
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 {
@@ -60,7 +62,7 @@ bool GLUFInitOpenGLExtentions()
 	return true;
 }
 
-bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, unsigned char* rawData)
+bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, char* rawData)
 {
 	GLUF_ASSERT(path);
 	GLUF_ASSERT(rawSize);
@@ -70,19 +72,18 @@ bool GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize, unsigned c
 	*rawSize = inFile.tellg();
 	inFile.seekg(0, std::ios::beg);
 
-	char* SrawData = (char*)malloc(*rawSize);
-	if (sizeof(SrawData) != *rawSize)
+	rawData = (char*)malloc(*rawSize);
+	if (sizeof(rawData) != *rawSize)
 		return false;
 
-	if (inFile.read(SrawData, *rawSize))
+	if (inFile.read(rawData, *rawSize))
 	{
-		rawData = reinterpret_cast<unsigned char*>(SrawData);
 		return true;
 	}
 	else
 	{
 		GLUF_ERROR("Failed to load file into memory");
-		free(SrawData);
+		free(rawData);
 		rawData = nullptr;
 		*rawSize = 0;
 		return false;
@@ -129,8 +130,8 @@ void GLUFMatrixStack::Empty(void)
 bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
 {
 	//for the first comparison, it is impossible for both statements to be false, 
-	//because if the y is less than the top, it is automatically less than the bottom, and vise versa
-	return	(pt.y < rect.bottom && pt.y > rect.top) &&
+	//because if the y is greater than the top, it is automatically greater than the bottom, and vise versa
+	return	(pt.y > rect.bottom && pt.y < rect.top) &&
 		(pt.x < rect.right && pt.x > rect.left);
 }
 
@@ -139,7 +140,7 @@ void GLUFSetRectEmpty(GLUFRect& rect)
 	rect.top = rect.bottom = rect.left = rect.right = 0;
 }
 
-void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom)
+void GLUFSetRect(GLUFRect& rect, float left, float top, float right, float bottom)
 {
 	rect.top = top;
 	rect.bottom = bottom;
@@ -147,7 +148,7 @@ void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom)
 	rect.right = right;
 }
 
-void GLUFOffsetRect(GLUFRect& rect, int x, int y)
+void GLUFOffsetRect(GLUFRect& rect, float x, float y)
 {
 	rect.top += y;
 	rect.bottom += y;
@@ -155,26 +156,26 @@ void GLUFOffsetRect(GLUFRect& rect, int x, int y)
 	rect.right += x;
 }
 
-int GLUFRectHeight(GLUFRect rect)
+float GLUFRectHeight(GLUFRect rect)
 {
-	return rect.bottom - rect.top;
+	return rect.top - rect.bottom;
 }
 
-int GLUFRectWidth(GLUFRect rect)
+float GLUFRectWidth(GLUFRect rect)
 {
 	return rect.right - rect.left;
 }
 
 
-void GLUFInflateRect(GLUFRect& rect, int dx, int dy)
+void GLUFInflateRect(GLUFRect& rect, float dx, float dy)
 {
-	float dx2 = (float)dx / 2.0f;
-	float dy2 = (float)dy / 2.0f;
+	float dx2 = dx / 2.0f;
+	float dy2 = dy / 2.0f;
 	rect.left -= dx2;
 	rect.right += dx2;//remember to have opposites
 
-	rect.top -= dy2;
-	rect.bottom += dy2;
+	rect.top += dy2;
+	rect.bottom -= dy2;
 }
 
 bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
@@ -202,7 +203,7 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 
 
 	//Top
-	if (rect0.top > rect1.top)
+	if (rect0.top < rect1.top)
 	{
 		rectIntersect.top = rect0.top;
 	}
@@ -212,7 +213,7 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 	}
 
 	//Bottom
-	if (rect0.bottom < rect1.bottom)
+	if (rect0.bottom > rect1.bottom)
 	{
 		rectIntersect.bottom = rect0.bottom;
 	}
@@ -222,13 +223,40 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 	}
 
 	//this will ONLY happen if the do NOT intersect
-	if (rectIntersect.left > rectIntersect.right || rectIntersect.top > rectIntersect.bottom)
+	if (rectIntersect.left > rectIntersect.right || rectIntersect.top < rectIntersect.bottom)
 	{
 		GLUFSetRectEmpty(rectIntersect);
 		return false;
 	}
 
 	return true;
+}
+
+GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords)
+{
+	screenCoords.left -= 1.0f;
+	screenCoords.bottom -= 1.0f;
+
+	return screenCoords;
+}
+
+void GLUFFlipPoint(GLUFPoint& pt)
+{
+	pt.y = 1.0f - pt.y;
+}
+
+void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max)
+{
+	pt.x = pt.x / max.x;
+	pt.y = pt.y / max.y;
+}
+
+void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp)
+{
+	rect.left /= xClamp;
+	rect.right /= xClamp;
+	rect.top /= yClamp;
+	rect.bottom /= yClamp;
 }
 
 class GLUFUniformBuffer
@@ -742,7 +770,7 @@ void GLUFBufferManager::LoadTextureFromMemory(GLUFTexturePtr texture, char* data
 
 GLUFPoint GLUFBufferManager::GetTextureSize(GLUFTexturePtr texture)
 {
-	return GLUFPoint(texture->mWidth, texture->mHeight);
+	return GLUFPoint((float)texture->mWidth, (float)texture->mHeight);
 }
 
 bool GLUFBufferManager::CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1)
@@ -826,6 +854,8 @@ class GLUFSeperateProgram
 	GLUFProgramPtrStagesMap m_Programs;//so the programs don't go deleting themselves until the PPO is destroyed
 
 public:
+	~GLUFSeperateProgram(){ glDeleteProgramPipelines(1, &mPPOId); }
+
 	void Init(){ glGenProgramPipelines(1, &mPPOId); }
 	
 	void AttachProgram(GLUFProgramPtr program, GLbitfield stages){ m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); glUseProgramStages(mPPOId, stages, program->GetId()); }
@@ -926,7 +956,7 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 	if (mShaderId != 0)
 	{
 		returnStruct.mSuccess = false;
-		returnStruct.mLog.push_back(FAILED_COMPILE);
+		returnStruct.mLog = "F";
 		return;
 	}
 
@@ -955,8 +985,8 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 	glGetShaderiv(mShaderId, GL_INFO_LOG_LENGTH, &maxLength);
 
 	//The maxLength includes the NULL character
-	returnStruct.mLog.resize(maxLength);
-	glGetShaderInfoLog(mShaderId, maxLength, &maxLength, &returnStruct.mLog[0]);
+	returnStruct.mLog = (char*)malloc(maxLength);
+	glGetShaderInfoLog(mShaderId, maxLength, &maxLength, returnStruct.mLog);
 
 	//Provide the infolog in whatever manor you deem best.
 	//Exit with failure.
@@ -1029,8 +1059,8 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 	glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
 
 	//The maxLength includes the NULL character
-	retStruct.mLog.resize(maxLength);
-	glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &retStruct.mLog[0]);
+	retStruct.mLog = (char*)malloc(maxLength);
+	glGetProgramInfoLog(mProgramId, maxLength, &maxLength, retStruct.mLog);
 
 	if (!retStruct.mSuccess)
 	{
@@ -1075,7 +1105,7 @@ GLUFShaderPtr GLUFShaderManager::CreateShader(std::string shad, GLUFShaderType t
 	if (!output)
 	{
 		std::stringstream ss;
-		ss << "Shader Compilation Failed: \n" << output.mLog.data();
+		ss << "Shader Compilation Failed: \n" << output.mLog;
 		GLUF_ERROR(ss.str().c_str());
 	}
 
@@ -1111,7 +1141,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool 
 	if (!out)
 	{
 		std::stringstream ss;
-		ss << "Program Link Failed: \n" << out.mLog.data();
+		ss << "Program Link Failed: \n" << out.mLog;
 		GLUF_ERROR(ss.str().c_str());
 	}
 
