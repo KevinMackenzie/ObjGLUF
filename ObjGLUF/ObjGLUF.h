@@ -179,6 +179,7 @@ OBJGLUF_API GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords);//this is used
 OBJGLUF_API void GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
 OBJGLUF_API void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
 OBJGLUF_API void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
+OBJGLUF_API GLUFPoint GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
 
 OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
 

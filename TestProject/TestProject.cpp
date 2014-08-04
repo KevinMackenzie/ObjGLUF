@@ -31,7 +31,7 @@ void ErrorMethod(const char* message, const char* func, const char* file, unsign
 	printf(message);
 }
 
-bool MsgProc(GLUF_MESSAGE_TYPE type, int param1, int param2, int param3, int param4)
+bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 {
 	if (type == GM_KEY)
 	{
@@ -39,7 +39,14 @@ bool MsgProc(GLUF_MESSAGE_TYPE type, int param1, int param2, int param3, int par
 			glfwSetWindowShouldClose(window, GL_TRUE);
 	}
 
-	resMan->MsgProc(type, param1, param2, param3, param4);
+	if (type == GM_MB)
+	{
+		int i = 0;
+		i++;
+	}
+
+	resMan->MsgProc(GLUF_PASS_CALLBACK_PARAM);
+	dlg->MsgProc(GLUF_PASS_CALLBACK_PARAM);
 
 	return false;
 }
@@ -71,12 +78,12 @@ int main(void)
 
 
 	GLUFTexturePtr texPtr = GLUFBUFFERMANAGER.CreateTextureBuffer();
-	GLUFBUFFERMANAGER.LoadTextureFromFile(texPtr, "glufcontrols.dds", TFF_DDS);
+	GLUFBUFFERMANAGER.LoadTextureFromFile(texPtr, "dxutcontrolstest.dds", TFF_DDS);
 	GLUFInitGui(window, MsgProc, texPtr);
 
 	//glfwSetKeyCallback(window, key_callback);
 
-	printf((const char*)glGetString(GL_VERSION));
+	//printf((const char*)glGetString(GL_VERSION));
 
 
 	//GLUFRegisterErrorMethod(ErrorMethod);
@@ -201,10 +208,11 @@ int main(void)
 	dlg->SetCallback(CtrlMsgProc);
 	dlg->SetSize(0.8f, 0.8f);
 	dlg->SetLocation(0.1f, 0.1f);
-	dlg->SetBackgroundColors(Color(0, 0, 56, 255));
+	dlg->SetBackgroundColors(Color(0, 128, 0, 255));
 	
-	GLUFButton* btn;
-	dlg->AddButton(0, "", 0.0f, 0.0f, 0.125f, 0.0625f, 0, false, &btn);
+
+	dlg->AddButton(0, "", 0.1f, 0.1f, 0.125f, 0.03625f);
+	dlg->AddComboBox(1, 0.2f, 0.2f, 0.125f, 0.03625f);
 
 	// Our vertices. Tree consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
 	// A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices
@@ -308,10 +316,7 @@ int main(void)
 	// Dark blue background
 	//glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-	// Enable depth test
-	glEnable(GL_DEPTH_TEST);
-	// Accept fragment if it closer to the camera than the former one
-	glDepthFunc(GL_LESS);
+
 
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);
@@ -329,7 +334,7 @@ int main(void)
 		glfwGetFramebufferSize(window, &width, &height);
 		ratio = width / (float)height;
 		glViewport(0, 0, width, height);
-		static const GLfloat black[] = { 0.0f, 1.0f, 0.0f, 1.0f };
+		static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		static const GLfloat one = 1.0f;
 
 		glClearBufferfv(GL_COLOR, 0, black);

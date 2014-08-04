@@ -69,6 +69,9 @@ enum GLUF_MESSAGE_TYPE
 
 typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 
+#define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE type, int param1, int param2, int param3, int param4
+#define GLUF_PASS_CALLBACK_PARAM type, param1, param2, param3, param4
+
 //this must be called AFTER GLUFInitOpenGLExtentions();  callbackFunc may do whatever it pleases, however;
 // callbackFunc must explicitly call the callback methods of the dialog manager and the dialog classes (and whatever else)
 // for full documentation on what each parameter is, consult the glfw input/window documentation.  For each value,
@@ -526,6 +529,8 @@ public:
 
 	std::vector <GLUFDialog*> m_Dialogs;            // Dialogs registered
 
+	GLUFPoint GetOrthoPoint();
+
 protected:
 	void ApplyOrtho();
 
@@ -917,8 +922,8 @@ public:
 	void*			GetItemData(std::string strText);
 	void*			GetItemData(int nIndex);
 	void            SetDropHeight(float nHeight)			{ m_fDropHeight = nHeight; UpdateRects();		}
-	int             GetScrollBarWidth() const				{ return m_nSBWidth;							}
-	void            SetScrollBarWidth(int nWidth)			{ m_nSBWidth = nWidth; UpdateRects();			}
+	float           GetScrollBarWidth() const				{ return m_fSBWidth;							}
+	void            SetScrollBarWidth(float nWidth)			{ m_fSBWidth = nWidth; UpdateRects();			}
 
 	int             GetSelectedIndex() const				{ return m_iSelected;							}
 	void* GetSelectedData();
@@ -936,7 +941,7 @@ protected:
 	int m_iFocused;
 	float m_fDropHeight;//normalized
 	GLUFScrollBar m_ScrollBar;
-	int m_nSBWidth;
+	float m_fSBWidth;
 
 	bool m_bOpened;
 

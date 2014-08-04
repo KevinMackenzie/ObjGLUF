@@ -276,6 +276,14 @@ Color4f GLUFColorToFloat(Color color)
 	return col;
 }
 
+GLUFPoint GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1)
+{
+	pt0.x *= pt1.x;
+	pt0.y *= pt1.y;
+
+	return pt0;
+}
+
 class GLUFUniformBuffer
 {
 

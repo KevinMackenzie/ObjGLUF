@@ -77,11 +77,11 @@ void GLFWWindowCloseCallback(GLFWwindow*)
 {
 	MessageProcedure(GM_CLOSE, 0, 0, 0, 0);
 }
-
+/*
 void GLFWWindowRefreshCallback(GLFWwindow*)
 {
 	MessageProcedure(GM_REFRESH, 0, 0, 0, 0);
-}
+}*/
 
 void GLFWWindowFocusCallback(GLFWwindow*, int focused)
 {
@@ -195,7 +195,7 @@ const char* g_UIShaderVert =
 "{ \n"\
 "	gl_Position = vec4(_Position, 1.0f) * _Ortho; \n"\
 "	vs_out.Color = _Color; \n"\
-"   vs_out.uvCoord = vec2(1.0f, 1.0f) - _UV; \n"\
+"   vs_out.uvCoord = abs(vec2(0.0f, 1.0f) - _UV); \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
 "} \n";
 
 const char* g_UIShaderFrag =
@@ -211,7 +211,8 @@ const char* g_UIShaderFrag =
 "{ \n"\
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
 "	//Color = fs_in.Color; \n"\
-"	Color = texture2D(TextureSampler, fs_in.uvCoord); \n"\
+"   Color = texture(TextureSampler, fs_in.uvCoord); \n" \
+"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, pow(fs_in.Color.a, 1.3) / 2.5f), Color.a); \n"\
 "} \n";
 
 const char* g_UIShaderFragUntex =
@@ -253,7 +254,7 @@ void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLU
 	glfwSetWindowPosCallback(g_pGLFWWindow, GLFWWindowPosCallback);
 	glfwSetWindowSizeCallback(g_pGLFWWindow, GLFWWindowSizeCallback);
 	glfwSetWindowCloseCallback(g_pGLFWWindow, GLFWWindowCloseCallback);
-	glfwSetWindowRefreshCallback(g_pGLFWWindow, GLFWWindowRefreshCallback);
+	//glfwSetWindowRefreshCallback(g_pGLFWWindow, GLFWWindowRefreshCallback); huge performace overhead
 	glfwSetWindowFocusCallback(g_pGLFWWindow, GLFWWindowFocusCallback);
 	glfwSetWindowIconifyCallback(g_pGLFWWindow, GLFWWindowIconifyCallback);
 	glfwSetFramebufferSizeCallback(g_pGLFWWindow, GLFWFrameBufferSizeCallback);
@@ -645,6 +646,14 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 		(m_bMinimized && !m_bCaption))
 		return GR_SUCCESS;
 
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	//ID3D11Device* pd3dDevice = m_pManager->GetD3D11Device();
 	//ID3D11DeviceContext* pd3dDeviceContext = m_pManager->GetD3D11DeviceContext();
 
@@ -796,7 +805,6 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 		m_pManager->EndSprites();
 		EndText();
 	}*/
-	m_pManager->EndSprites();
 	//m_pManager->RestoreD3D11State(pd3dDeviceContext);
 
 	return GR_SUCCESS;
@@ -917,9 +925,51 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 	glfwGetCursorPos(g_pGLFWWindow, &x, &y);
 	GLUFPoint mousePos((float)x, (float)y);
 
-	//normalize and flip it
+	//reverse orthographic TODO:
+	/*GLUFPoint orthoPt = m_pManager->GetOrthoPoint();
 	GLUFNormPoint(mousePos, m_pManager->GetWindowSize());
 	GLUFFlipPoint(mousePos);
+	if (orthoPt.x == 1.0f && orthoPt.y == 1.0f)
+	{ }
+	else if (orthoPt.y == 1.0f)
+	{
+		//Offset = (orthoPt.x - 1.0f) / 2;
+		mousePos.x -= ((orthoPt.x - 1.0f));
+	}
+	else if (orthoPt.x == 1.0f)
+	{
+		//Offset = (orthoPt.y - 1.0f) / 2;
+		mousePos.y -= ((orthoPt.y - 1.0f) / 2.0f);
+	}*/
+
+	//TODO: make this more efficient
+	GLUFPoint screenPt = m_pManager->GetWindowSize();
+	//mousePos.x += screenPt.x / 2;
+	mousePos.y = (screenPt.y - mousePos.y);// +screenPt.y / 2;
+
+	if (screenPt.x >= screenPt.y)
+	{
+		//mousePos.y /= screenPt.y / 2;
+		//mousePos.x /= screenPt.y / 2;
+		float diff = (screenPt.x - screenPt.y);
+		float diff2 = diff / 2.0f;
+		mousePos.x -= diff2;
+		mousePos.x /= screenPt.x - diff;
+		mousePos.y /= screenPt.y;
+	}
+	else
+	{
+		//mousePos.y /= screenPt.x / 2;
+		//mousePos.x /= screenPt.x / 2;
+		float diff = (screenPt.y - screenPt.x);
+		float diff2 = diff / 2.0f;
+		mousePos.y -= diff2;
+		mousePos.y /= screenPt.y - diff;
+		mousePos.x /= screenPt.x;
+	}
+
+
+	//mousePos = GLUFMultPoints(mousePos, m_pManager->GetOrthoPoint());
 
 	bool bHandled = false;
 
@@ -1100,9 +1150,9 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 	//case WM_RBUTTONDBLCLK:
 	//case WM_XBUTTONDBLCLK:
 	//case WM_MOUSEWHEEL:
+	case GM_MB:
 	case GM_SCROLL:
 	case GM_CURSOR_POS:
-	case GM_MB:
 	{
 		// If not accepting mouse input, return false to indicate the message should still 
 		// be handled by the application (usually to move the camera).
@@ -1727,8 +1777,8 @@ GLUFResult GLUFDialog::DrawRect(GLUFRect pRect, Color color)
 GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth)
 {
 	// No need to draw fully transparent layers
-	if (pElement->TextureColor.Current.w == 0)
-		return GR_SUCCESS;
+	//if (pElement->TextureColor.Current.w == 0)
+	//	return GR_SUCCESS;
 
 	GLUFRect rcTexture = pElement->rcTexture;
 
@@ -1763,16 +1813,6 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	//float fRectTop = 0.2625f;
 	//float fRectRight = 0.325f;
 	//float fRectBottom = 0.2f;
-	
-	float fRectLeft = rcScreen.left;
-	float fRectTop = rcScreen.top;
-	float fRectRight = rcScreen.right;
-	float fRectBottom = rcScreen.bottom;
-
-	float fTexLeft = rcTexture.left;
-	float fTexTop = rcTexture.top;
-	float fTexRight = rcTexture.right;
-	float fTexBottom = rcTexture.bottom;
 
 	// Add 6 sprite vertices
 	//GLUFSpriteVertex SpriteVertex;
@@ -1829,24 +1869,24 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 
 
 	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(fRectLeft, fRectTop, fDepth),
+		glm::vec3(rcScreen.left, rcScreen.top, fDepth),
 		pElement->TextureColor.Current,
-		glm::vec2(fTexLeft, fTexTop));
+		glm::vec2(rcTexture.left, rcTexture.top));
 
 	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(fRectRight, fRectTop, fDepth),
+		glm::vec3(rcScreen.right, rcScreen.top, fDepth),
 		pElement->TextureColor.Current,
-		glm::vec2(fTexRight, fTexTop));
+		glm::vec2(rcTexture.right, rcTexture.top));
 
 	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(fRectLeft, fRectBottom, fDepth),
+		glm::vec3(rcScreen.left, rcScreen.bottom, fDepth),
 		pElement->TextureColor.Current,
-		glm::vec2(fTexLeft, fTexBottom));
+		glm::vec2(rcTexture.left, rcTexture.bottom));
 
 	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(fRectRight, fRectBottom, fDepth),
+		glm::vec3(rcScreen.right, rcScreen.bottom, fDepth),
 		pElement->TextureColor.Current,
-		glm::vec2(fTexRight, fTexBottom));
+		glm::vec2(rcTexture.right, rcTexture.bottom));
 
 
 	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
@@ -2140,7 +2180,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFButton - Button
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 1.0f, 1.0f, 0.53125f, 0.7890625f);
+	GLUFSetRect(rcTexture, 0.0f, 1.0f, 0.53125f, 0.7890625f);
+	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, &rcTexture);
 	Element.SetFont(0);
 	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
@@ -2154,9 +2195,9 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFButton - Fill layer
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.53125f, 0.0f, 0.984375f, 0.7890625f);
+	GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, &rcTexture, Color(255, 255, 255, 0));
-	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 160);
+	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 100);
 	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(0, 0, 0, 60);
 	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 30);
 
@@ -2239,6 +2280,7 @@ void GLUFDialog::InitDefaultElements()
 	GLUFSetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
 	Element.SetTexture(0, &rcTexture);
 	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
+	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 200);
 	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(150, 150, 150, 255);
 	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 200);
 	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 70);
@@ -2808,8 +2850,7 @@ void GLUFDialogResourceManager::ApplyRenderUIUntex()
 	//pd3dImmediateContext->PSSetSamplers(0, 1, &m_pSamplerStateUI11);
 }
 
-
-void GLUFDialogResourceManager::ApplyOrtho()
+GLUFPoint GLUFDialogResourceManager::GetOrthoPoint()
 {
 	GLUFPoint pt = GetWindowSize();
 	if (pt.x >= pt.y)
@@ -2822,6 +2863,13 @@ void GLUFDialogResourceManager::ApplyOrtho()
 		pt.y = pt.y / pt.x;
 		pt.x = 1.0f;
 	}
+
+	return pt;
+}
+
+void GLUFDialogResourceManager::ApplyOrtho()
+{
+	GLUFPoint pt = GetOrthoPoint();
 
 	glm::mat4 mat = glm::ortho(-pt.x, pt.x, -pt.y, pt.y);
 	glUniformMatrix4fv(0, 1, GL_FALSE, &mat[0][0]);
@@ -2901,10 +2949,10 @@ void GLUFDialogResourceManager::EndSprites()
 	//pd3dImmediateContext->Draw(static_cast<UINT>(m_SpriteVertices.size()), 0);
 
 	ApplyRenderUI();
-
+	/*
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, GLUFBUFFERMANAGER.GetTextureBufferId(g_pControlTexturePtr));
-	glUniform1f(m_pSamplerLocation, 0);
+	glUniform1f(m_pSamplerLocation, 0);*/
 
 	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
@@ -3452,21 +3500,21 @@ void GLUFButton::Render(float fElapsedTime)
 		iState = GLUF_STATE_FOCUS;
 	}
 
-	// Background fill layer
-	GLUFElement* pElement = m_Elements[0];
-
 	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
 
 	GLUFRect rcWindow = m_rcBoundingBox;
 	GLUFOffsetRect(rcWindow, nOffsetX, nOffsetY);
 
 
+	// Background fill layer
+	GLUFElement* pElement = m_Elements[0];
+
 	// Blend current color
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
 	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
 
 	m_pDialog->DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
-	m_pDialog->DrawText(m_strText, pElement, rcWindow, false, true);
+	//m_pDialog->DrawText(m_strText, pElement, rcWindow, false, true);
 
 	// Main button
 	pElement = m_Elements[1];
@@ -3803,7 +3851,7 @@ GLUFComboBox::GLUFComboBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
 
 	m_fDropHeight = 100.0f / m_pDialog->GetManager()->GetWindowSize().y;
 
-	m_nSBWidth = 16;
+	m_fSBWidth = 16.0f / m_pDialog->GetManager()->GetWindowSize().x;
 	m_bOpened = false;
 	m_iSelected = -1;
 	m_iFocused = -1;
@@ -3847,7 +3895,7 @@ void GLUFComboBox::UpdateRects()
 	m_rcDropdown = m_rcText;
 	GLUFOffsetRect(m_rcDropdown, 0, (0.90f * GLUFRectHeight(m_rcText)));
 	m_rcDropdown.bottom += m_fDropHeight;
-	m_rcDropdown.right -= m_nSBWidth;
+	m_rcDropdown.right -= m_fSBWidth;
 
 	m_rcDropdownText = m_rcDropdown;
 	m_rcDropdownText.left += (0.1f * GLUFRectWidth(m_rcDropdown));
@@ -3857,7 +3905,7 @@ void GLUFComboBox::UpdateRects()
 
 	// Update the scrollbar's rects
 	m_ScrollBar.SetLocation(m_rcDropdown.right, m_rcDropdown.top + 2);
-	m_ScrollBar.SetSize(m_nSBWidth, GLUFRectHeight(m_rcDropdown) - 2);
+	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcDropdown) - 2);
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[2]->iFont);
 	if (pFontNode && pFontNode->mSize)
 	{
@@ -4182,62 +4230,65 @@ void GLUFComboBox::Render( float fElapsedTime)
 		bSBInit = true;
 	}
 
-	// Scroll bar
+	// Scroll bar --EDITED, only render any of this stuff if OPENED
 	if (m_bOpened)
+	{
 		m_ScrollBar.Render(fElapsedTime);
 
-	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime);
-	pElement->FontColor.Blend(iState, fElapsedTime);
+		// Blend current color
+		pElement->TextureColor.Blend(iState, fElapsedTime);
+		pElement->FontColor.Blend(iState, fElapsedTime);
 
-	m_pDialog->DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
+		m_pDialog->DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
 
-	// Selection outline
-	GLUFElement* pSelectionElement = m_Elements[3];
-	pSelectionElement->TextureColor.Current = pElement->TextureColor.Current;
-	pSelectionElement->FontColor.SetCurrent(pSelectionElement->FontColor.States[GLUF_STATE_NORMAL]);
 
-	GLUFFontNode* pFont = m_pDialog->GetFont(pElement->iFont);
-	if (pFont)
-	{
-		float curY = m_rcDropdownText.top;
-		float nRemainingHeight = GLUFRectHeight(m_rcDropdownText);
-		//WCHAR strDropdown[4096] = {0};
+		// Selection outline
+		GLUFElement* pSelectionElement = m_Elements[3];
+		pSelectionElement->TextureColor.Current = pElement->TextureColor.Current;
+		pSelectionElement->FontColor.SetCurrent(pSelectionElement->FontColor.States[GLUF_STATE_NORMAL]);
 
-		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
+		GLUFFontNode* pFont = m_pDialog->GetFont(pElement->iFont);
+		if (pFont)
 		{
-			GLUFComboBoxItem* pItem = m_Items[i];
+			float curY = m_rcDropdownText.top;
+			float nRemainingHeight = GLUFRectHeight(m_rcDropdownText);
+			//WCHAR strDropdown[4096] = {0};
 
-			// Make sure there's room left in the dropdown
-			nRemainingHeight -= pFont->mSize / m_pDialog->GetManager()->GetWindowSize().y;
-			if (nRemainingHeight < 0)
+			for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
 			{
-				pItem->bVisible = false;
-				continue;
-			}
+				GLUFComboBoxItem* pItem = m_Items[i];
 
-			GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY + pFont->mSize, m_rcDropdownText.right, curY);
-			curY -= pFont->mSize / m_pDialog->GetManager()->GetWindowSize().y;
-
-			//debug
-			//int blue = 50 * i;
-			//m_pDialog->DrawRect( &pItem->rcActive, 0xFFFF0000 | blue );
-
-			pItem->bVisible = true;
-
-			if (m_bOpened)
-			{
-				if ((int)i == m_iFocused)
+				// Make sure there's room left in the dropdown
+				nRemainingHeight -= pFont->mSize / m_pDialog->GetManager()->GetWindowSize().y;
+				if (nRemainingHeight < 0)
 				{
-					GLUFRect rc;
-					GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top + (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
-						pItem->rcActive.bottom - (2 / m_pDialog->GetManager()->GetWindowSize().y));
-					m_pDialog->DrawSprite(pSelectionElement, rc, GLUF_NEAR_BUTTON_DEPTH);
-					m_pDialog->DrawText(pItem->strText, pSelectionElement, pItem->rcActive);
+					pItem->bVisible = false;
+					continue;
 				}
-				else
+
+				GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY + pFont->mSize, m_rcDropdownText.right, curY);
+				curY -= pFont->mSize / m_pDialog->GetManager()->GetWindowSize().y;
+
+				//debug
+				//int blue = 50 * i;
+				//m_pDialog->DrawRect( &pItem->rcActive, 0xFFFF0000 | blue );
+
+				pItem->bVisible = true;
+
+				if (m_bOpened)
 				{
-					m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
+					if ((int)i == m_iFocused)
+					{
+						GLUFRect rc;
+						GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top + (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
+							pItem->rcActive.bottom - (2 / m_pDialog->GetManager()->GetWindowSize().y));
+						m_pDialog->DrawSprite(pSelectionElement, rc, GLUF_NEAR_BUTTON_DEPTH);
+						m_pDialog->DrawText(pItem->strText, pSelectionElement, pItem->rcActive);
+					}
+					else
+					{
+						m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
+					}
 				}
 			}
 		}
