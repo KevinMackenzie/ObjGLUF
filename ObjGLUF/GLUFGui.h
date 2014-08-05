@@ -993,9 +993,9 @@ protected:
 	float m_fMin;
 	float m_fMax;
 
-	float m_fDragY;      // Mouse position at start of drag
+	float m_fDragX;      // Mouse position at start of drag
 	float m_fDragOffset; // Drag offset from the center of the button
-	float m_fButtonY;
+	float m_fButtonX;
 
 	bool m_bPressed;
 	GLUFRect m_rcButton;

@@ -34,6 +34,7 @@
 #define GLUF_FAR_BUTTON_DEPTH -0.8f
 
 #define GLUF_MAX_GUI_SPRITES 500
+#define WHEEL_DELTA 120//TODO:
 
 // GLUF_MAX_EDITBOXLENGTH is the maximum string length allowed in edit boxes,
 // including the nul terminator.
@@ -214,7 +215,7 @@ const char* g_UIShaderFrag =
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
 "	//Color = fs_in.Color; \n"\
 "   Color = texture(TextureSampler, fs_in.uvCoord); \n" \
-"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
+"	//Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
 "} \n";
 
 const char* g_UIShaderFragUntex =
@@ -1786,7 +1787,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 		return GR_SUCCESS;*/
 
 	//set the blend color
-	Color4f colf = GLUFColorToFloat(pElement->TextureColor.Current);
+	//Color4f colf = GLUFColorToFloat(pElement->TextureColor.Current);
 
 	//glBlendFunc(GL_SRC_COLOR, GL_SOURCE0_ALPHA);
 	//glBlendColor(colf.x, colf.y, colf.z, colf.a);
@@ -2330,9 +2331,9 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.00390625f, 0.26953125f, 0.36328125f, 0.109375f);
 	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 200);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 70);
+	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
+	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 35);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SLIDER, 0, &Element);
@@ -3732,108 +3733,6 @@ GLUFRadioButton::GLUFRadioButton( GLUFDialog* pDialog)
 	m_pDialog = pDialog;
 }
 
-/*
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFRadioButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-	{
-		switch (wParam)
-		{
-		case VK_SPACE:
-			m_bPressed = true;
-			return true;
-		}
-	}
-
-	case WM_KEYUP:
-	{
-		switch (wParam)
-		{
-		case VK_SPACE:
-			if (m_bPressed == true)
-			{
-				m_bPressed = false;
-
-				m_pDialog->ClearRadioButtonGroup(m_nButtonGroup);
-				m_bChecked = !m_bChecked;
-
-				m_pDialog->SendEvent(GLUF_EVENTRADIOBUTTON_CHANGED, true, this);
-			}
-			return true;
-		}
-	}
-	}
-	return false;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFRadioButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(wParam);
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-	{
-		if (ContainsPoint(pt))
-		{
-			// Pressed while inside the control
-			m_bPressed = true;
-			SetCapture(GLUFGetHWND());
-
-			if (!m_bHasFocus)
-				m_pDialog->RequestFocus(this);
-
-			return true;
-		}
-
-		break;
-	}
-
-	case WM_LBUTTONUP:
-	{
-		if (m_bPressed)
-		{
-			m_bPressed = false;
-			ReleaseCapture();
-
-			// Button click
-			if (ContainsPoint(pt))
-			{
-				m_pDialog->ClearRadioButtonGroup(m_nButtonGroup);
-				m_bChecked = !m_bChecked;
-
-				m_pDialog->SendEvent(GLUF_EVENTRADIOBUTTON_CHANGED, true, this);
-			}
-
-			return true;
-		}
-
-		break;
-	}
-	};
-
-	return false;
-}
-*/
-
 //--------------------------------------------------------------------------------------
 bool GLUFRadioButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
@@ -4685,8 +4584,8 @@ void GLUFSlider::UpdateRects()
 	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
 	GLUFOffsetRect(m_rcButton, -GLUFRectWidth(m_rcButton) / 2, 0);
 
-	m_fButtonY = ((m_fValue - m_fMin) * GLUFRectWidth(m_rcBoundingBox) / (m_fMax - m_fMin));
-	GLUFOffsetRect(m_rcButton, 0.0f, m_fButtonY);
+	m_fButtonX = (float)((m_fValue - m_fMin) * GLUFRectWidth(m_rcBoundingBox) / (m_fMax - m_fMin));
+	GLUFOffsetRect(m_rcButton, m_fButtonX, 0);
 }
 
 
@@ -4695,7 +4594,7 @@ float GLUFSlider::ValueFromPos(float x)
 {
 	//this name is not accurate
 	float fValuePerPixel = (m_fMax - m_fMin) / GLUFRectWidth(m_rcBoundingBox);
-	return (0.5f + m_fMin + fValuePerPixel * (x - m_rcBoundingBox.left));
+	return (m_fMin + fValuePerPixel * (x - m_rcBoundingBox.left));
 }
 
 
@@ -4849,7 +4748,118 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 //--------------------------------------------------------------------------------------
 bool GLUFSlider::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	//TODO:
+	if (!m_bEnabled || !m_bVisible)
+		return false;
+
+	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
+
+	switch (msg)
+	{
+		case GM_MB:
+			if (param2 == GLFW_PRESS)
+			{
+				if (GLUFPtInRect(m_rcButton, pt))
+				{
+					// Pressed while inside the control
+					m_bPressed = true;
+					//SetCapture(GLUFGetHWND());
+
+					m_fDragX = pt.x;
+					//m_nDragY = pt.y;
+					m_fDragOffset = m_fButtonX - m_fDragX;
+
+					//m_nDragValue = m_nValue;
+
+					if (!m_bHasFocus)
+						m_pDialog->RequestFocus(this);
+
+					return true;
+				}
+
+				if (GLUFPtInRect(m_rcBoundingBox, pt))
+				{
+
+					if (!m_bHasFocus)
+						m_pDialog->RequestFocus(this);
+
+					SetValueInternal(ValueFromPos(pt.x), true);
+
+					return true;
+				}
+			}
+			else if (param2 == GLFW_RELEASE)
+			{
+				if (m_bPressed)
+				{
+					m_bPressed = false;
+					//ReleaseCapture();
+					m_pDialog->SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, this);
+
+					return true;
+				}
+
+				break;
+
+			}
+			break;
+	
+		case GM_CURSOR_POS:
+		{
+
+			if (m_bPressed)
+			{
+				SetValueInternal(ValueFromPos(m_x + pt.x + m_fDragOffset), true);
+				return true;
+			}
+
+			break;
+		}
+
+		case GM_SCROLL:
+		{
+			int nScrollAmount = param2 / WHEEL_DELTA;
+			SetValueInternal(m_fValue - nScrollAmount, true);
+			return true;
+		}
+		case GM_KEY:
+		{
+			if (param3 == GLFW_RELEASE)
+				break;
+
+			switch (param1)
+			{
+			case GLFW_KEY_HOME:
+				SetValueInternal(m_fMin, true);
+				return true;
+
+			case GLFW_KEY_END:
+				SetValueInternal(m_fMax, true);
+				return true;
+
+			case GLFW_KEY_LEFT:
+			case GLFW_KEY_DOWN:
+				SetValueInternal(m_fValue - 0.03, true);
+				return true;
+
+			case GLFW_KEY_RIGHT:
+			case GLFW_KEY_UP:
+				SetValueInternal(m_fValue + 0.03, true);
+				return true;
+
+			case GLFW_KEY_PAGE_DOWN:
+				SetValueInternal(m_fValue - (0.01 > (m_fMax - m_fMin) / 8 ? 8 : (m_fMax - m_fMin) / 8),
+					true);
+				return true;
+
+			case GLFW_KEY_PAGE_UP:
+				SetValueInternal(m_fValue + (0.01 > (m_fMax - m_fMin) / 8 ? 8 : (m_fMax - m_fMin) / 8),
+					true);
+				return true;
+			}
+			break;
+		}
+	};
+
 	return false;
 }
 
