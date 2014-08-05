@@ -53,7 +53,10 @@ bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 
 void CtrlMsgProc(GLUF_EVENT evt, int controlId, GLUFControl* pControl)
 {
-
+	if (evt == GLUF_EVENT_BUTTON_CLICKED)
+	{
+		printf("HORRAY\n");
+	}
 }
 
 
@@ -213,6 +216,12 @@ int main(void)
 
 	dlg->AddButton(0, "", 0.1f, 0.1f, 0.125f, 0.03625f);
 	dlg->AddComboBox(1, 0.2f, 0.2f, 0.125f, 0.03625f);
+	dlg->AddCheckBox(2, "", 0.3f, 0.3f, 0.03625f, 0.03625f);
+	dlg->AddRadioButton(3, 0, "", 0.4, 0.4, 0.03625, 0.03625, true);
+	dlg->AddRadioButton(4, 0, "", 0.4, 0.45, 0.03625, 0.03625);
+	dlg->AddRadioButton(4, 0, "", 0.4, 0.5, 0.03625, 0.03625);
+
+	//TODO: fix blending issues
 
 	// Our vertices. Tree consecutive floats give a 3D vertex; Three consecutive vertices give a triangle.
 	// A cube has 6 faces with 2 triangles each, so this makes 6*2=12 triangles, and 12*3 vertices

@@ -53,6 +53,8 @@ double                 GLUFDialog::s_fTimeRefresh = 0.0f;
 GLUFControl*           GLUFDialog::s_pControlFocus = nullptr;        // The control which has focus
 GLUFControl*           GLUFDialog::s_pControlPressed = nullptr;      // The control currently pressed
 
+
+
 //======================================================================================
 // GLFWCallback methods that ALL redirect to a universal callback
 //======================================================================================
@@ -205,14 +207,14 @@ const char* g_UIShaderFrag =
 "	vec4 Color; \n"\
 "	vec2 uvCoord; \n"\
 "} fs_in; \n"\
-"out vec4 Color; \n"\
+"layout(location = 0) out vec4 Color; \n"\
 "layout(location = 1) uniform sampler2D TextureSampler; \n"\
 "void main(void) \n"\
 "{ \n"\
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
 "	//Color = fs_in.Color; \n"\
 "   Color = texture(TextureSampler, fs_in.uvCoord); \n" \
-"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, pow(fs_in.Color.a, 1.3) / 2.5f), Color.a); \n"\
+"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
 "} \n";
 
 const char* g_UIShaderFragUntex =
@@ -222,7 +224,7 @@ const char* g_UIShaderFragUntex =
 "	vec4 Color; \n"\
 "	vec2 uvCoord; \n"\
 "} fs_in; \n"\
-"out vec4 Color; \n"\
+"layout(location = 0) out vec4 Color; \n"\
 "void main(void) \n"\
 "{ \n"\
 "	Color = fs_in.Color; \n"\
@@ -923,7 +925,7 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 	//first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
 	double x, y;
 	glfwGetCursorPos(g_pGLFWWindow, &x, &y);
-	GLUFPoint mousePos((float)x, (float)y);
+	m_MousePosition = GLUFPoint((float)x, (float)y);
 
 	//reverse orthographic TODO:
 	/*GLUFPoint orthoPt = m_pManager->GetOrthoPoint();
@@ -945,7 +947,7 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 	//TODO: make this more efficient
 	GLUFPoint screenPt = m_pManager->GetWindowSize();
 	//mousePos.x += screenPt.x / 2;
-	mousePos.y = (screenPt.y - mousePos.y);// +screenPt.y / 2;
+	m_MousePosition.y = (screenPt.y - m_MousePosition.y);// +screenPt.y / 2;
 
 	if (screenPt.x >= screenPt.y)
 	{
@@ -953,9 +955,9 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		//mousePos.x /= screenPt.y / 2;
 		float diff = (screenPt.x - screenPt.y);
 		float diff2 = diff / 2.0f;
-		mousePos.x -= diff2;
-		mousePos.x /= screenPt.x - diff;
-		mousePos.y /= screenPt.y;
+		m_MousePosition.x -= diff2;
+		m_MousePosition.x /= screenPt.x - diff;
+		m_MousePosition.y /= screenPt.y;
 	}
 	else
 	{
@@ -963,11 +965,14 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		//mousePos.x /= screenPt.x / 2;
 		float diff = (screenPt.y - screenPt.x);
 		float diff2 = diff / 2.0f;
-		mousePos.y -= diff2;
-		mousePos.y /= screenPt.y - diff;
-		mousePos.x /= screenPt.x;
+		m_MousePosition.y -= diff2;
+		m_MousePosition.y /= screenPt.y - diff;
+		m_MousePosition.x /= screenPt.x;
 	}
 
+
+	m_MousePositionDialogSpace.x = m_MousePosition.x - m_x;
+	m_MousePositionDialogSpace.y = m_MousePosition.y - m_y;
 
 	//mousePos = GLUFMultPoints(mousePos, m_pManager->GetOrthoPoint());
 
@@ -993,8 +998,8 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 			((param2 == GLFW_PRESS) == true) )
 		{
 
-			if (mousePos.x >= m_x && mousePos.x < m_x + m_width &&
-				mousePos.y >= m_y && mousePos.y < m_y + m_nCaptionHeight)
+			if (m_MousePosition.x >= m_x && m_MousePosition.x < m_x + m_width &&
+				m_MousePosition.y >= m_y && m_MousePosition.y < m_y + m_nCaptionHeight)
 			{
 				m_bDrag = true;
 				//SetCapture(GLUFGetHWND());
@@ -1006,8 +1011,8 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 				(param2 == GLFW_RELEASE) == true && 
 				(m_bDrag))
 		{
-			if (mousePos.x >= m_x && mousePos.x < m_x + m_width &&
-				mousePos.y >= m_y && mousePos.y < m_y + m_nCaptionHeight)
+			if (m_MousePosition.x >= m_x && m_MousePosition.x < m_x + m_width &&
+				m_MousePosition.y >= m_y && m_MousePosition.y < m_y + m_nCaptionHeight)
 			{
 				//ReleaseCapture();
 				m_bDrag = false;
@@ -1159,13 +1164,10 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		if (!m_bMouseInput)
 			return false;
 
-		
-		mousePos.x -= m_x;
-		mousePos.y -= m_y;
 
 		// If caption is enabled, offset the Y coordinate by its height.
-		if (m_bCaption)
-			mousePos.y += m_nCaptionHeight;
+		//if (m_bCaption)
+		//	m_MousePosition.y += m_nCaptionHeight;
 
 		// If a control is in focus, it belongs to this dialog, and it's enabled, then give
 		// it the first chance at handling the message.
@@ -1178,7 +1180,7 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		}
 
 		// Not yet handled, see if the mouse is over any controls
-		GLUFControl* pControl = GetControlAtPoint(mousePos);
+		GLUFControl* pControl = GetControlAtPoint(m_MousePositionDialogSpace);
 		if (pControl && pControl->GetEnabled())
 		{
 			bHandled = pControl->MsgProc(msg, param1, param2, param3, param4);
@@ -1204,7 +1206,7 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		switch (msg)
 		{
 		case GM_CURSOR_POS:
-			OnMouseMove(mousePos);
+			OnMouseMove(m_MousePositionDialogSpace);
 			return false;
 		}
 
@@ -1779,6 +1781,17 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	// No need to draw fully transparent layers
 	//if (pElement->TextureColor.Current.w == 0)
 	//	return GR_SUCCESS;
+	/*
+	if (pElement->TextureColor.Current == pElement->TextureColor.States[GLUF_STATE_HIDDEN])
+		return GR_SUCCESS;*/
+
+	//set the blend color
+	Color4f colf = GLUFColorToFloat(pElement->TextureColor.Current);
+
+	//glBlendFunc(GL_SRC_COLOR, GL_SOURCE0_ALPHA);
+	//glBlendColor(colf.x, colf.y, colf.z, colf.a);
+	//glEnablei(GL_BLEND, 0);
+	//glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
 
 	GLUFRect rcTexture = pElement->rcTexture;
 
@@ -2184,9 +2197,9 @@ void GLUFDialog::InitDefaultElements()
 	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, &rcTexture);
 	Element.SetFont(0);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 200);
-	Element.FontColor.States[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
+	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 100);
+	Element.FontColor.States[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 50);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, &Element);
@@ -2197,9 +2210,9 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, &rcTexture, Color(255, 255, 255, 0));
-	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 100);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(0, 0, 0, 60);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 30);
+	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(200, 200, 200, 40);
+	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(0, 0, 0, 30);
+	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 15);
 
 
 	// Assign the Element
@@ -2212,10 +2225,10 @@ void GLUFDialog::InitDefaultElements()
 	GLUFSetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
 	Element.SetTexture(0, &rcTexture);
 	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_VCENTER);
-	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 200);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 255);
+	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 100);
+	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
+	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 0, &Element);
@@ -2237,10 +2250,10 @@ void GLUFDialog::InitDefaultElements()
 	GLUFSetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
 	Element.SetTexture(0, &rcTexture);
 	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_VCENTER);
-	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 200);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 255);
+	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 100);
+	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
+	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 0, &Element);
@@ -2251,6 +2264,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.31640625f, 0.7890625f, 0.421875f, 0.68359375f);
 	Element.SetTexture(0, &rcTexture);
+	//Element.TextureColor.States[GLUF_STATE_HIDDEN] = Color(255, 255, 255, 255);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 1, &Element);
@@ -2279,11 +2293,11 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
 	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 150);
-	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 200);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(150, 150, 150, 255);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 200);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 70);
+	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 100);
+	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(150, 150, 150, 127);
+	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
+	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 35);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 1, &Element);
@@ -3367,99 +3381,100 @@ GLUFButton::GLUFButton(GLUFDialog* pDialog)
 }
 
 //--------------------------------------------------------------------------------------
-/*
-bool GLUFButton::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
-
+bool GLUFButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	UNREFERENCED_PARAMETER(lParam);
-
 	if (!m_bEnabled || !m_bVisible)
 		return false;
 
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-	{
-		switch (wParam)
-		{
-		case VK_SPACE:
-			m_bPressed = true;
-			return true;
-		}
-	}
+	GLUFPoint mousePos = m_pDialog->m_MousePositionDialogSpace;
 
-	case WM_KEYUP:
+	switch (msg)
 	{
-		switch (wParam)
-		{
-		case VK_SPACE:
-			if (m_bPressed == true)
+
+		case GM_CURSOR_POS:
+
+			if (m_bPressed)
 			{
-				m_bPressed = false;
-				m_pDialog->SendEvent(GLUF_EVENTBUTTON_CLICKED, true, this);
+				//if the button is pressed and the mouse is moved off, then unpress it
+				if (!ContainsPoint(mousePos))
+				{
+					m_bPressed = false;
+
+					ContainsPoint(mousePos);
+
+					if (!m_pDialog->m_bKeyboardInput)
+						m_pDialog->ClearFocus();
+				}
 			}
-			return true;
-		}
-	}
-	}
-	return false;
-}
 
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(wParam);
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-	{
-		if (ContainsPoint(pt))
+			break;
+		case GM_MB:
 		{
-			// Pressed while inside the control
-			m_bPressed = true;
-			SetCapture(GLUFGetHWND());
+			if (param2 == GLFW_PRESS)
+			{
+				if (ContainsPoint(mousePos))
+				{
+					// Pressed while inside the control
+					m_bPressed = true;
+					//SetCapture(GLUFGetHWND());
 
-			if (!m_bHasFocus)
-				m_pDialog->RequestFocus(this);
+					if (!m_bHasFocus)
+						m_pDialog->RequestFocus(this);
 
-			return true;
+					return true;
+
+				}
+			}
+			else if (param2 == GLFW_RELEASE)
+			{
+				if (m_bPressed)
+				{
+					m_bPressed = false;
+					//ReleaseCapture();
+
+					if (!m_pDialog->m_bKeyboardInput)
+						m_pDialog->ClearFocus();
+
+					// Button click
+					if (ContainsPoint(mousePos))
+						m_pDialog->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, this);
+
+					return true;
+				}
+
+			}
 		}
-
 		break;
-	}
 
-	case WM_LBUTTONUP:
-	{
-		if (m_bPressed)
+		case GM_KEY:
 		{
-			m_bPressed = false;
-			ReleaseCapture();
 
-			if (!m_pDialog->m_bKeyboardInput)
-				m_pDialog->ClearFocus();
+			if (param1 = GLFW_KEY_SPACE)
+			{
+				if (param3 == GLFW_PRESS)
+				{
+					m_bPressed = true;
+				}
+				if (param3 == GLFW_RELEASE)
+				{
+					m_bPressed = false;
 
-			// Button click
-			if (ContainsPoint(pt))
-				m_pDialog->SendEvent(GLUF_EVENTBUTTON_CLICKED, true, this);
+					m_pDialog->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, this);
+				}
 
-			return true;
+				return true;
+			}
+
+
+				return true;
+
+			break;
 		}
-
-		break;
-	}
 	};
 
 	return false;
 }
-*/
+
 //--------------------------------------------------------------------------------------
 void GLUFButton::Render(float fElapsedTime)
 {
@@ -3541,102 +3556,99 @@ GLUFCheckBox::GLUFCheckBox(GLUFDialog* pDialog)
 	m_bChecked = false;
 }
 
-
 //--------------------------------------------------------------------------------------
-/*
-bool GLUFCheckBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
 
+bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+{
 	if (!m_bEnabled || !m_bVisible)
 		return false;
 
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-	{
-		switch (wParam)
-		{
-		case VK_SPACE:
-			m_bPressed = true;
-			return true;
-		}
-	}
+	GLUFPoint mousePos = m_pDialog->m_MousePositionDialogSpace;
 
-	case WM_KEYUP:
+	switch (msg)
 	{
-		switch (wParam)
+
+	case GM_CURSOR_POS:
+
+		if (m_bPressed)
 		{
-		case VK_SPACE:
-			if (m_bPressed == true)
+			//if the button is pressed and the mouse is moved off, then unpress it
+			if (!ContainsPoint(mousePos))
 			{
 				m_bPressed = false;
-				SetCheckedInternal(!m_bChecked, true);
+
+				ContainsPoint(mousePos);
+
+				if (!m_pDialog->m_bKeyboardInput)
+					m_pDialog->ClearFocus();
 			}
-			return true;
-		}
-	}
-	}
-	return false;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFCheckBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(wParam);
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-	{
-		if (ContainsPoint(pt))
-		{
-			// Pressed while inside the control
-			m_bPressed = true;
-			SetCapture(GLUFGetHWND());
-
-			if (!m_bHasFocus)
-				m_pDialog->RequestFocus(this);
-
-			return true;
 		}
 
 		break;
-	}
-
-	case WM_LBUTTONUP:
+	case GM_MB:
 	{
-		if (m_bPressed)
+		if (param2 == GLFW_PRESS)
 		{
-			m_bPressed = false;
-			ReleaseCapture();
+			if (ContainsPoint(mousePos))
+			{
+				// Pressed while inside the control
+				m_bPressed = true;
+				//SetCapture(GLUFGetHWND());
 
-			// Button click
-			if (ContainsPoint(pt))
+				if (!m_bHasFocus)
+					m_pDialog->RequestFocus(this);
+
+				return true;
+
+			}
+		}
+		else if (param2 == GLFW_RELEASE)
+		{
+			if (m_bPressed)
+			{
+				m_bPressed = false;
+				//ReleaseCapture();
+
+				if (!m_pDialog->m_bKeyboardInput)
+					m_pDialog->ClearFocus();
+
+				// Button click
+				if (ContainsPoint(mousePos))
+					SetCheckedInternal(!m_bChecked, true);
+
+				return true;
+			}
+
+		}
+	}
+		break;
+
+	case GM_KEY:
+	{
+
+		if (param1 = GLFW_KEY_SPACE)
+		{
+			if (param3 == GLFW_PRESS)
+			{
+				m_bPressed = true;
+			}
+			if (param3 == GLFW_RELEASE)
+			{
+				m_bPressed = false;
+
 				SetCheckedInternal(!m_bChecked, true);
+			}
 
 			return true;
 		}
+
+
+		return true;
 
 		break;
 	}
 	};
 
-	return false;
-}
-
-*/
-//--------------------------------------------------------------------------------------
-
-bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
-{
 	return false;
 }
 
@@ -3697,16 +3709,16 @@ void GLUFCheckBox::Render( float fElapsedTime)
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
 	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
 
-	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_FAR_BUTTON_DEPTH);
 	m_pDialog->DrawText(m_strText, pElement, m_rcText, false, false);
 
-	if (!m_bChecked)
+	if (m_bChecked)//TODO: how do i blend properly?
 		iState = GLUF_STATE_HIDDEN;
 
 	pElement = m_Elements[1];
 
 	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_FAR_BUTTON_DEPTH);
+	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
 }
 
 
@@ -3825,6 +3837,93 @@ bool GLUFRadioButton::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPA
 //--------------------------------------------------------------------------------------
 bool GLUFRadioButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
+	if (!m_bEnabled || !m_bVisible)
+		return false;
+
+	GLUFPoint mousePos = m_pDialog->m_MousePositionDialogSpace;
+
+	switch (msg)
+	{
+
+	case GM_CURSOR_POS:
+
+		if (m_bPressed)
+		{
+			//if the button is pressed and the mouse is moved off, then unpress it
+			if (!ContainsPoint(mousePos))
+			{
+				m_bPressed = false;
+
+				ContainsPoint(mousePos);
+
+				if (!m_pDialog->m_bKeyboardInput)
+					m_pDialog->ClearFocus();
+			}
+		}
+
+		break;
+	case GM_MB:
+	{
+		if (param2 == GLFW_PRESS)
+		{
+			if (ContainsPoint(mousePos))
+			{
+				// Pressed while inside the control
+				m_bPressed = true;
+				//SetCapture(GLUFGetHWND());
+
+				if (!m_bHasFocus)
+					m_pDialog->RequestFocus(this);
+
+				return true;
+
+			}
+		}
+		else if (param2 == GLFW_RELEASE)
+		{
+			if (m_bPressed || !m_bChecked)
+			{
+				if (ContainsPoint(mousePos))
+				{
+					m_bPressed = false;
+					//ReleaseCapture();
+
+					SetCheckedInternal(true, true, true);
+					return true;
+				}
+			}
+
+		}
+	}
+		break;
+
+	case GM_KEY:
+	{
+
+		if (param1 = GLFW_KEY_SPACE)
+		{
+			if (param3 == GLFW_PRESS)
+			{
+				m_bPressed = true;
+			}
+			else if (param3 == GLFW_RELEASE)
+			{
+				if (m_bChecked)
+					return false;
+
+				m_bPressed = false;
+
+				SetCheckedInternal(true, true, true);
+			}
+		}
+
+
+		return true;
+
+		break;
+	}
+	};
+
 	return false;
 }
 

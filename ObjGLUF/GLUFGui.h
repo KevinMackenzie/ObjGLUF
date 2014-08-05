@@ -318,6 +318,10 @@ public:
 	bool m_bKeyboardInput;
 	bool m_bMouseInput;
 
+	//this is the current mouse cursor position
+	GLUFPoint m_MousePosition;
+	GLUFPoint m_MousePositionDialogSpace;
+
 private:
 	int m_nDefaultControlID;
 
@@ -676,7 +680,7 @@ class GLUFButton : public GLUFStatic
 public:
 	GLUFButton(GLUFDialog* pDialog = NULL);
 
-	virtual bool MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4){ return false; };
+	virtual bool MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	//virtual bool    HandleMouse(UINT uMsg, GLUFPoint pt, WPARAM wParam, LPARAM lParam);
 	virtual void    OnHotkey(){ if (m_pDialog->IsKeyboardInputEnabled()) 
