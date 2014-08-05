@@ -176,6 +176,7 @@ OBJGLUF_API float GLUFRectWidth(GLUFRect rect);
 OBJGLUF_API void GLUFInflateRect(GLUFRect& rect, float dx, float dy);
 OBJGLUF_API bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect);
 OBJGLUF_API GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords);//this is used to tranlate screen coordinates (where origin is bottom left and 1,1 is upper left) to clip space (where origin is the middle, and 1,1 is still upper left)
+OBJGLUF_API glm::vec3 GLUFScreenToClipspace(glm::vec3 vec);//same as above
 OBJGLUF_API void GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
 OBJGLUF_API void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
 OBJGLUF_API void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);

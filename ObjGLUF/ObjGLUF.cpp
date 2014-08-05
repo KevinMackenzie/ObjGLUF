@@ -247,6 +247,11 @@ GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords)
 	return screenCoords;
 }
 
+glm::vec3 GLUFScreenToClipspace(glm::vec3 vec)
+{
+	return glm::vec3(1.0f - ((1.0f - vec.x) * 2.0f), 1.0f - ((1.0f - vec.y) * 2.0f), 1.0f - ((1.0f - vec.z) * 2.0f));
+}
+
 void GLUFFlipPoint(GLUFPoint& pt)
 {
 	pt.y = 1.0f - pt.y;

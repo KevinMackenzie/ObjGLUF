@@ -82,7 +82,7 @@ typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLUFTexturePtr controltex);
 
 typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
-typedef uint16_t GLUFFontSize;
+typedef float GLUFFontSize;//this is in normalized screencoords
 
 //NOTE: i am no longer using freetype, it is just more than is necisary right now
 OBJGLUF_API GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize);
@@ -534,6 +534,7 @@ public:
 	std::vector <GLUFDialog*> m_Dialogs;            // Dialogs registered
 
 	GLUFPoint GetOrthoPoint();
+	glm::mat4 GetOrthoMatrix();
 
 protected:
 	void ApplyOrtho();
@@ -555,9 +556,11 @@ protected:
 	std::vector <GLUFFontNode*> m_FontCache;         // Shared fonts
 };
 
-void BeginText();
+void BeginText(glm::mat4 orthoMatrix);
+
+//NOTE: this only supports char values, yes newlines, and only ASCII characters
 void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter);
-void EndText();
+void EndText(GLUFFontPtr font);
 
 //-----------------------------------------------------------------------------
 // Base class for controls

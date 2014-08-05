@@ -167,6 +167,32 @@ struct GLUFScreenVertexUntex
 	Color     color;
 };
 
+struct GLUFTextVertexArray
+{
+private:
+	std::vector<glm::vec3> vPos;
+	Color4f                vColor;
+	std::vector<glm::vec2> vTex;
+public:
+
+	glm::vec3* data_pos()  { if (size() > 0) return &vPos[0];	}
+	glm::vec2* data_tex()  { if (size() > 0) return &vTex[0];	}
+	Color4f    get_color() { return vColor;						}
+
+	void push_back(glm::vec3 pos, glm::vec2 tex)
+	{
+		vPos.push_back(/*GLUFScreenToClipspace(pos)*/pos);	vTex.push_back(tex);
+	}
+
+	void set_color(Color col)
+	{
+		vColor = GLUFColorToFloat(col);
+	}
+
+	void clear(){ vPos.clear(); vColor = Color4f(); vTex.clear(); }
+	unsigned long size(){ return vPos.size(); }
+};
+
 //======================================================================================
 // Initialization and globals
 //======================================================================================
@@ -175,10 +201,12 @@ struct GLUFScreenVertexUntex
 GLUFProgramPtr g_UIProgram;
 GLUFProgramPtr g_UIProgramUntex;
 GLUFProgramPtr g_TextProgram;
-GLUFSpriteVertexArray g_TextVerticies;
+GLUFTextVertexArray g_TextVerticies;
 GLuint g_TextVAO;
 GLuint g_TextPos;
 GLuint g_TextTexCoords;
+GLuint g_TextIndices;
+
 GLFWwindow* g_pGLFWWindow;
 GLUFTexturePtr g_pControlTexturePtr;
 int g_ControlTextureResourceManLocation = -1;
@@ -215,7 +243,7 @@ const char* g_UIShaderFrag =
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
 "	//Color = fs_in.Color; \n"\
 "   Color = texture(TextureSampler, fs_in.uvCoord); \n" \
-"	//Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
+"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
 "} \n";
 
 const char* g_UIShaderFragUntex =
@@ -230,15 +258,40 @@ const char* g_UIShaderFragUntex =
 "{ \n"\
 "	Color = fs_in.Color; \n"\
 "} \n";
-/*
+
 const char* g_TextShaderVert =
-"#version 430 core" \
-"";
+"#version 430 core \n" \
+"layout(location = 0) in vec3 _Position; \n"\
+"layout(location = 1) in vec2 _UV; \n" \
+"layout(location = 0) uniform mat4 _MV;\n"\
+"out VS_OUT \n"\
+"{\n"\
+"	vec2 uvCoord;\n"\
+"} vs_out;\n"\
+"void main(void)\n"\
+"{\n"\
+"   vs_out.uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/; \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
+"	gl_Position = vec4(_Position, 1.0f) * _MV; \n"\
+"} \n";
 
 const char* g_TextShaderFrag =
-"#version 430 core" \
-"";
-*/
+"#version 430 core \n" \
+"layout(location = 2) uniform vec4 _Color; \n"\
+"layout(location = 1) uniform sampler2D TextureSampler; \n"\
+"layout(location = 0) out vec4 Color; \n"\
+"in VS_OUT \n"\
+"{\n"\
+"	vec2 uvCoord;\n"\
+"} fs_in;\n"\
+"void main(void)\n"\
+"{\n"\
+"	Color.a = texture(TextureSampler, fs_in.uvCoord).a;\n"\
+"	Color.rgb = _Color.rgb; \n"\
+"	//Color.a = 1.0f;\n"\
+"	Color.a *= _Color.a;\n"\
+"	//Color = vec4(1.0f, 0.0f, 0.0f, 1.0f); \n"\
+"} \n";
+
 
 
 void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLUFTexturePtr controltex)
@@ -278,11 +331,10 @@ void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLU
 	g_UIProgramUntex = GLUFSHADERMANAGER.CreateProgram(sources);
 	sources.clear();
 
-	/*progs.clear();
 
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, g_TextShaderVert));
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_TextShaderFrag));
-	g_TextProgram = GLUFSHADERMANAGER.CreateProgram(sources);*/
+	g_TextProgram = GLUFSHADERMANAGER.CreateProgram(sources);
 
 
 	//create the text arrrays
@@ -290,6 +342,13 @@ void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLU
 	glBindVertexArray(g_TextVAO);
 	glGenBuffers(1, &g_TextPos);
 	glGenBuffers(1, &g_TextTexCoords);
+
+	glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
 	glBindVertexArray(0);
 
 
@@ -320,13 +379,13 @@ typedef struct
 
 class GLUFFont
 {	
+public:
 	int CellX, CellY, YOffset, RowPitch;
 	char Base;
 	char Width[256];
 	GLuint TexID;
 	float RowFactor, ColFactor;
 	int RenderStyle;
-public:
 
 
 	bool Init(char* data, uint64_t rawSize);
@@ -337,7 +396,126 @@ public:
 
 bool GLUFFont::Init(char* data, uint64_t rawSize)
 {
-	//m_pFontData.Load(data, rawSize);
+	MemStreamBuf buf(data, rawSize);
+
+	char *dat, *img;
+	std::istream in(&buf);
+	char bpp;
+	int ImgX, ImgY;
+
+	//in.open(fname, ios_base::binary | ios_base::in);
+
+	if (in.fail())
+		return false;
+
+
+	// allocate space for file data
+	dat = new char[rawSize];
+
+	// Read filedata
+	if (!dat)
+		return false;
+
+	in.read(dat, rawSize);
+
+	if (in.fail())
+	{
+		delete[] dat;
+		return false;
+	}
+
+
+	// Check ID is 'BFF2'
+	if ((unsigned char)dat[0] != 0xBF || (unsigned char)dat[1] != 0xF2)
+	{
+		delete[] dat;
+		return false;
+	}
+
+	// Grab the rest of the header
+	memcpy(&ImgX, &dat[2], sizeof(int));
+	memcpy(&ImgY, &dat[6], sizeof(int));
+	memcpy(&CellX, &dat[10], sizeof(int));
+	memcpy(&CellY, &dat[14], sizeof(int));
+	bpp = dat[18];
+	Base = dat[19];
+
+	// Check filesize
+	if (rawSize != ((MAP_DATA_OFFSET)+((ImgX*ImgY)*(bpp / 8))))
+		return false;
+
+	// Calculate font params
+	RowPitch = ImgX / CellX;
+	ColFactor = (float)CellX / (float)ImgX;
+	RowFactor = (float)CellY / (float)ImgY;
+	YOffset = CellY;
+
+	// Determine blending options based on BPP
+	switch (bpp)
+	{
+	case 8: // Greyscale
+		RenderStyle = BFG_RS_ALPHA;
+		break;
+
+	case 24: // RGB
+		RenderStyle = BFG_RS_RGB;
+		break;
+
+	case 32: // RGBA
+		RenderStyle = BFG_RS_RGBA;
+		break;
+
+	default: // Unsupported BPP
+		delete[] dat;
+		return false;
+		break;
+	}
+
+	// Allocate space for image
+	img = new char[(ImgX*ImgY)*(bpp / 8)];
+
+	if (!img)
+	{
+		delete[] dat;
+		return false;
+	}
+
+	// Grab char widths
+	memcpy(Width, &dat[WIDTH_DATA_OFFSET], 256);
+
+	// Grab image data
+	memcpy(img, &dat[MAP_DATA_OFFSET], (ImgX*ImgY)*(bpp / 8));
+
+	// Create Texture
+	glGenTextures(1, &TexID);
+	glBindTexture(GL_TEXTURE_2D, TexID);
+	// Fonts should be rendered at native resolution so no need for texture filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// Stop chararcters from bleeding over edges
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// Tex creation params are dependent on BPP
+	switch (RenderStyle)
+	{
+	case BFG_RS_ALPHA:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, ImgX, ImgY, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img);
+		break;
+
+	case BFG_RS_RGB:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ImgX, ImgY, 0, GL_RGB, GL_UNSIGNED_BYTE, img);
+		break;
+
+	case BFG_RS_RGBA:
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ImgX, ImgY, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
+		break;
+	}
+
+	// Clean up
+	delete[] img;
+	delete[] dat;
+
 	return true;
 }
 
@@ -765,7 +943,7 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 	// Sort depth back to front
 	m_pManager->BeginSprites();
-	//BeginText();
+	BeginText(m_pManager->GetOrthoMatrix());
 
 	m_pManager->ApplyRenderUI();
 
@@ -1959,8 +2137,12 @@ GLUFResult GLUFDialog::DrawText(std::string strText, GLUFElement* pElement, GLUF
 
 	}
 
-	Color vFontColor(pElement->FontColor.Current.x, pElement->FontColor.Current.y, pElement->FontColor.Current.z, 1.0f);
+	Color vFontColor = pElement->FontColor.Current;
 	DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcScreen, vFontColor, bCenter);
+
+	//reenable the control texture
+	GLUFTextureNode* pTextureNode = GetTexture(0);
+	GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
 
 	return GR_SUCCESS;
 }
@@ -2160,8 +2342,14 @@ void GLUFDialog::InitDefaultElements()
 {
 	//TODO: make this less "Windows" dependent and ship with a font
 	//GLUFFontPtr font = GLUFLoadFont("arial");
-	GLUFFontPtr font = GLUFFontPtr(new GLUFFont);
-	int fontIndex = m_pManager->AddFont(font, 15, FONT_WEIGHT_NORMAL);
+	char* rawData;
+	unsigned long rawSize = 0;
+
+	rawData = GLUFLoadFileIntoMemory("default.bff", &rawSize);
+	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize);
+	free(rawData);
+
+	int fontIndex = m_pManager->AddFont(font, 0.0625, FONT_WEIGHT_NORMAL);
 	SetFont(0, fontIndex);
 
 
@@ -2882,11 +3070,15 @@ GLUFPoint GLUFDialogResourceManager::GetOrthoPoint()
 	return pt;
 }
 
-void GLUFDialogResourceManager::ApplyOrtho()
+glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix()
 {
 	GLUFPoint pt = GetOrthoPoint();
+	return glm::ortho(-pt.x, pt.x, -pt.y, pt.y);
+}
 
-	glm::mat4 mat = glm::ortho(-pt.x, pt.x, -pt.y, pt.y);
+void GLUFDialogResourceManager::ApplyOrtho()
+{
+	glm::mat4 mat = GetOrthoMatrix();
 	glUniformMatrix4fv(0, 1, GL_FALSE, &mat[0][0]);
 }
 
@@ -3681,7 +3873,7 @@ void GLUFCheckBox::UpdateRects()
 	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
 
 	m_rcText = m_rcBoundingBox;
-	m_rcText.left += (1.25f * GLUFRectWidth(m_rcButton));
+	GLUFOffsetRect(m_rcText, GLUFRectWidth(m_rcButton)*1.25, 0.0f);
 }
 
 
@@ -7262,10 +7454,13 @@ void GLUFUniBuffer::GetNextItemPos(int nCP, int* pPrior)
 // GLUF Text Operations
 //======================================================================================
 
+glm::mat4 g_TextOrtho;
+glm::mat4 g_TextModelMatrix;
 
 //--------------------------------------------------------------------------------------
-void BeginText()
+void BeginText(glm::mat4 orthoMatrix)
 {
+	g_TextOrtho = orthoMatrix;
 	g_TextVerticies.clear();
 }
 
@@ -7273,241 +7468,175 @@ void BeginText()
 //--------------------------------------------------------------------------------------
 void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter)
 {
+	//TODO: support centering (vertical AND horizontal, or both)
+	//TODO: make another text method for text boxes (constraints i mean)
 
-	//float fCharTexSizeX = 0.010526315f;
-	//float fGlyphSizeX = 14.0f / fBBWidth;
-	//float fGlyphSizeY = 32.0f / fBBHeight;
+	//if (font.mSize > GLUFRectHeight(rcScreen))
+	//	return;//no sense rendering if it is too big
 
-	//to be safe, make the calculations based on a large characeter that always takes up a lot of space: "X"
-	/*FT_Load_Char(font.m_pFontType->mFontFace, 'X', FT_LOAD_RENDER);
-	float fGlyphSizeX = font.m_pFontType->mFontFace->glyph->bitmap.width;
-	float fGlyphSizeY = font.m_pFontType->mFontFace->glyph->bitmap.rows;
+	rcScreen = GLUFScreenToClipspace(rcScreen);
 
+	g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(rcScreen.left, rcScreen.top, 0.0f));
 
-	float fRectLeft = rcScreen.left;
-	float fRectTop = 1.0f - rcScreen.top;
+	int Row, Col;
+	float U, V, U1, V1;
 
-	fRectLeft = fRectLeft * 2.0f - 1.0f;
-	fRectTop = fRectTop * 2.0f - 1.0f;
+	float CurX = 0.0f;
+	float CurY = 0.0f;
 
-	int NumChars = strText.size();
-	if (bCenter) 
+	//glBegin(GL_QUADS);
+	float z = GLUF_NEAR_BUTTON_DEPTH;
+	for (auto ch : strText)
 	{
-		float fRectRight = rcScreen.right;
-		fRectRight = fRectRight * 2.0f - 1.0f;
-		float fRectBottom = 1.0f - rcScreen.bottom;
-		fRectBottom = fRectBottom * 2.0f - 1.0f;
-		float fcenterx = ((fRectRight - fRectLeft) - (float)NumChars*fGlyphSizeX) *0.5f;
-		float fcentery = ((fRectTop - fRectBottom) - (float)1 * fGlyphSizeY) *0.5f;
-		fRectLeft += fcenterx;
-		fRectTop -= fcentery;
+		float widthConverted = (font.m_pFontType->CellX * font.mSize) / font.m_pFontType->CellY;
+
+		//lets support newlines :) (or if the nex char will go outside the rect)
+		if (ch == '\n'/* || CurX + widthConverted > GLUFRectWidth(rcScreen)*/)
+		{
+			CurX = z;
+			CurY += font.mSize * 1.1f;//assume a reasonible leding
+
+			//if the next line will go off of the page, then don't draw it
+			if (CurY + font.mSize > GLUFRectHeight(rcScreen))
+				break;
+		}
+
+
+		Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
+		Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
+
+		U = Col*font.m_pFontType->ColFactor;
+		V = Row*font.m_pFontType->RowFactor;
+		U1 = U + font.m_pFontType->ColFactor;
+		V1 = V + font.m_pFontType->RowFactor;
+
+		//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
+		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
+		//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
+		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
+
+
+		//triangle 1
+		g_TextVerticies.push_back(
+			glm::vec3(CurX, CurY, z),
+			glm::vec2(U, V));
+			//glm::vec2(z, 1.0f));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX + widthConverted,CurY - font.mSize, z),
+			glm::vec2(U1, V1));
+			//glm::vec2(z, 1.0f));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX + widthConverted, CurY, z),
+			glm::vec2(U1, V));
+			//glm::vec2(1.0f, 1.0f));
+
+		//triangle 2
+		g_TextVerticies.push_back(
+			glm::vec3(CurX, CurY, z),
+			glm::vec2(U, V));
+			//glm::vec2(z, 1.0f));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX, CurY - font.mSize, z),
+			glm::vec2(U, V1));
+			//glm::vec2(z, z));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX + widthConverted, CurY - font.mSize, z),
+			glm::vec2(U1, V1));
+			//glm::vec2(1.0f, z));
+
+
+
+		/*CurX += 0.05;
+
+		//triangle 1
+		g_TextVerticies.push_back(
+			glm::vec3(CurX, CurY, z),
+			glm::vec2(U, V));
+		//glm::vec2(z, 1.0f));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX + widthConverted, CurY - font.mSize, z),
+			glm::vec2(U1, V1));
+		//glm::vec2(z, 1.0f));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX + widthConverted, CurY, z),
+			glm::vec2(U1, V));
+		//glm::vec2(1.0f, 1.0f));
+
+		//triangle 2
+		g_TextVerticies.push_back(
+			glm::vec3(CurX, CurY, z),
+			glm::vec2(U, V));
+		//glm::vec2(z, 1.0f));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX, CurY - font.mSize, z),
+			glm::vec2(U, V1));
+		//glm::vec2(z, z));
+
+		g_TextVerticies.push_back(
+			glm::vec3(CurX + widthConverted, CurY - font.mSize, z),
+			glm::vec2(U1, V1));
+		//glm::vec2(1.0f, z));*/
+
+
+		CurX += ((float)font.m_pFontType->Width[ch] * font.mSize) / font.m_pFontType->CellY;
+
+		z += 0.000001f;//to solve the depth problem
 	}
-	float fOriginalLeft = fRectLeft;
-	float fTexTop = 0.0f;
-	float fTexBottom = 1.0f;
-
-	float fDepth = 0.5f;
-	for (int i = 0; i<NumChars; i++)
-	{
-		if (strText[i] == '\n')
-		{
-			fRectLeft = fOriginalLeft;
-			fRectTop -= fGlyphSizeY;
-
-			continue;
-		}
-		else if (strText[i] < 32 || strText[i] > 126)
-		{
-			continue;
-		}
-
-		// Add 6 sprite vertices
-		//DXUTSpriteVertex SpriteVertex;
-		float fRectRight = fRectLeft + fGlyphSizeX;
-		float fRectBottom = fRectTop - fGlyphSizeY;
-		//float fTexLeft = (strText[i] - 32) * fCharTexSizeX;
-		//float fTexRight = fTexLeft + fCharTexSizeX;
-
-		// tri1
-		//SpriteVertex.vPos = XMFLOAT3(fRectLeft, fRectTop, fDepth);
-		//SpriteVertex.vTex = XMFLOAT2(fTexLeft, fTexTop);
-		//SpriteVertex.vColor = vFontColor;
-		
-		g_TextVerticies.vPos.push_back(glm::vec3(fRectLeft, fRectTop, fDepth));
-		g_TextVerticies.vTex.push_back(glm::vec2(0.0f, 1.0f));
-		g_TextVerticies.vColor.push_back(vFontColor);
-
-		//SpriteVertex.vPos = XMFLOAT3(fRectRight, fRectTop, fDepth);
-		//SpriteVertex.vTex = XMFLOAT2(fTexRight, fTexTop);
-		//SpriteVertex.vColor = vFontColor;
-		//g_FontVertices.push_back(SpriteVertex);
-
-		g_TextVerticies.vPos.push_back(glm::vec3(fRectRight, fRectTop, fDepth));
-		g_TextVerticies.vTex.push_back(glm::vec2(1.0f, 1.0f));
-		g_TextVerticies.vColor.push_back(vFontColor);
-
-		//SpriteVertex.vPos = XMFLOAT3(fRectLeft, fRectBottom, fDepth);
-		//SpriteVertex.vTex = XMFLOAT2(fTexLeft, fTexBottom);
-		//SpriteVertex.vColor = vFontColor;
-		//g_FontVertices.push_back(SpriteVertex);
-
-		g_TextVerticies.vPos.push_back(glm::vec3(fRectLeft, fRectBottom, fDepth));
-		g_TextVerticies.vTex.push_back(glm::vec2(0.0f, 0.0f));
-		g_TextVerticies.vColor.push_back(vFontColor);
-
-		// tri2
-		//SpriteVertex.vPos = XMFLOAT3(fRectRight, fRectTop, fDepth);
-		//SpriteVertex.vTex = XMFLOAT2(fTexRight, fTexTop);
-		//SpriteVertex.vColor = vFontColor;
-		//g_FontVertices.push_back(SpriteVertex);
-
-		g_TextVerticies.vPos.push_back(glm::vec3(fRectRight, fRectTop, fDepth));
-		g_TextVerticies.vTex.push_back(glm::vec2(1.0f, 1.0f));
-		g_TextVerticies.vColor.push_back(vFontColor);
+	//glEnd();
 	
-		//SpriteVertex.vPos = XMFLOAT3(fRectRight, fRectBottom, fDepth);
-		//SpriteVertex.vTex = XMFLOAT2(fTexRight, fTexBottom);
-		//SpriteVertex.vColor = vFontColor;
-		//g_FontVertices.push_back(SpriteVertex);
+	g_TextVerticies.set_color(vFontColor);
 
-		g_TextVerticies.vPos.push_back(glm::vec3(fRectRight, fRectBottom, fDepth));
-		g_TextVerticies.vTex.push_back(glm::vec2(1.0f, 0.0f));
-		g_TextVerticies.vColor.push_back(vFontColor);
-
-		//SpriteVertex.vPos = XMFLOAT3(fRectLeft, fRectBottom, fDepth);
-		//SpriteVertex.vTex = XMFLOAT2(fTexLeft, fTexBottom);
-		//SpriteVertex.vColor = vFontColor;
-		//g_FontVertices.push_back(SpriteVertex);
-
-		g_TextVerticies.vPos.push_back(glm::vec3(fRectLeft, fRectBottom, fDepth));
-		g_TextVerticies.vTex.push_back(glm::vec2(0.0f, 0.0f));
-		g_TextVerticies.vColor.push_back(vFontColor);
-
-		fRectLeft += fGlyphSizeX;
-
-	}
-
-	// We have to end text after every line so that rendering order between sprites and fonts is preserved
-	EndText();*/
-//-------------------------------------------------------------------------------------------------------------
-
-
-	//update the font size within FreeType
-	/*FT_Set_Char_Size(font.m_pFontType->mFontFace, 0, font.mSize * 64, 96, 96);
-
-	float x = rcScreen.left;
-	float y = rcScreen.top;
-
-	if (bCenter)
-	{
-		FT_Load_Char(font.m_pFontType->mFontFace, 'X', FT_LOAD_NO_BITMAP);
-
-		//TODO: CENTER TEXT AND FINISH RENDERER
-		x += (strText.length() * (font.m_pFontType->mFontFace->glyph->advance.x * 64));
-	}
-
-	glBindVertexArray(g_TextVAO);
-
-	for (auto p : strText) 
-	{
-		if (FT_Load_Char(font.m_pFontType->mFontFace, p, FT_LOAD_RENDER))
-			continue;
-
-
-
-
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_ALPHA,
-			g->bitmap.width,
-			g->bitmap.rows,
-			0,
-			GL_ALPHA,
-			GL_UNSIGNED_BYTE,
-			g->bitmap.buffer
-			);
-
-		float x2 = x + g->bitmap_left * sx;
-		float y2 = -y - g->bitmap_top * sy;
-		float w = g->bitmap.width * sx;
-		float h = g->bitmap.rows * sy;
-
-		GLfloat box[4][4] = {
-				{ x2, -y2, 0, 0 },
-				{ x2 + w, -y2, 1, 0 },
-				{ x2, -y2 - h, 0, 1 },
-				{ x2 + w, -y2 - h, 1, 1 },
-		};
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof box, box, GL_DYNAMIC_DRAW);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		x += (g->advance.x >> 6) * sx;
-		y += (g->advance.y >> 6) * sy;
-	}*/
+	EndText(font.m_pFontType);
 
 }
 
 
-void EndText()
+void EndText(GLUFFontPtr font)
 {
-	/*
-	if (g_FontVertices.empty())
-		return;
+	
+	//get the currently bound texture to rebind later
+	//GLint tmpTexId;
+	//glGetIntegerv(GL_TEXTURE_BINDING_2D, &tmpTexId);
+	//GLUF_ASSERT(tmpTexId >= 0);
 
-	// ensure our buffer size can hold our sprites
-	UINT FontDataBytes = static_cast<UINT>(g_FontVertices.size() * sizeof(DXUTSpriteVertex));
-	if (g_FontBufferBytes11 < FontDataBytes)
-	{
-		SAFE_RELEASE(g_pFontBuffer11);
-		g_FontBufferBytes11 = FontDataBytes;
+	//buffer the data
+	glBindVertexArray(g_TextVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
+	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec3), g_TextVerticies.data_pos(), GL_STREAM_DRAW);
 
-		D3D11_BUFFER_DESC BufferDesc;
-		BufferDesc.ByteWidth = g_FontBufferBytes11;
-		BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		BufferDesc.MiscFlags = 0;
+	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
+	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec2), g_TextVerticies.data_tex(), GL_STREAM_DRAW);
 
-		if (FAILED(pd3dDevice->CreateBuffer(&BufferDesc, nullptr, &g_pFontBuffer11)))
-		{
-			g_pFontBuffer11 = nullptr;
-			g_FontBufferBytes11 = 0;
-			return;
-		}
-		DXUT_SetDebugName(g_pFontBuffer11, "DXUT Text11");
-	}
+	GLUFSHADERMANAGER.UseProgram(g_TextProgram);
 
-	// Copy the sprites over
-	D3D11_BOX destRegion;
-	destRegion.left = 0;
-	destRegion.right = FontDataBytes;
-	destRegion.top = 0;
-	destRegion.bottom = 1;
-	destRegion.front = 0;
-	destRegion.back = 1;
-	D3D11_MAPPED_SUBRESOURCE MappedResource;
-	if (S_OK == pd3d11DeviceContext->Map(g_pFontBuffer11, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource))
-	{
-		memcpy(MappedResource.pData, (void*)&g_FontVertices[0], FontDataBytes);
-		pd3d11DeviceContext->Unmap(g_pFontBuffer11, 0);
-	}
+	//first uniform: model-view matrix
+	glm::mat4 mv = g_TextOrtho * g_TextModelMatrix;
+	glUniformMatrix4fv(0, 1, GL_FALSE, &mv[0][0]);
 
-	ID3D11ShaderResourceView* pOldTexture = nullptr;
-	pd3d11DeviceContext->PSGetShaderResources(0, 1, &pOldTexture);
-	pd3d11DeviceContext->PSSetShaderResources(0, 1, &g_pFont11);
+	//second, the sampler
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, font->TexID);
+	glUniform1f(1, 0);
 
-	// Draw
-	UINT Stride = sizeof(DXUTSpriteVertex);
-	UINT Offset = 0;
-	pd3d11DeviceContext->IASetVertexBuffers(0, 1, &g_pFontBuffer11, &Stride, &Offset);
-	pd3d11DeviceContext->IASetInputLayout(g_pInputLayout11);
-	pd3d11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	pd3d11DeviceContext->Draw(static_cast<UINT>(g_FontVertices.size()), 0);
+	//third, the color
+	Color4f color = g_TextVerticies.get_color();
+	glUniform4f(2, color.r, color.g, color.b, color.a);
 
-	pd3d11DeviceContext->PSSetShaderResources(0, 1, &pOldTexture);
-	SAFE_RELEASE(pOldTexture);
+	glEnableVertexAttribArray(0);//positions
+	glEnableVertexAttribArray(1);//uvs
 
-	g_FontVertices.clear();*/
+	glDrawArrays(GL_TRIANGLES, 0, g_TextVerticies.size());
+
+	g_TextVerticies.clear();
+	glBindVertexArray(0);
+
+	//lastly, rebind the old texture
+	//glBindTexture(GL_TEXTURE_BINDING_2D, tmpTexId);
 }
