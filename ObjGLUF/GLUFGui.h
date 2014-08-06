@@ -69,8 +69,8 @@ enum GLUF_MESSAGE_TYPE
 
 typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 
-#define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE type, int param1, int param2, int param3, int param4
-#define GLUF_PASS_CALLBACK_PARAM type, param1, param2, param3, param4
+#define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4
+#define GLUF_PASS_CALLBACK_PARAM msg, param1, param2, param3, param4
 
 //this must be called AFTER GLUFInitOpenGLExtentions();  callbackFunc may do whatever it pleases, however;
 // callbackFunc must explicitly call the callback methods of the dialog manager and the dialog classes (and whatever else)
@@ -408,9 +408,9 @@ private:
 	std::vector<glm::vec2> vTex;
 public:
 
-	glm::vec3* data_pos()  { if (size() > 0) return &vPos[0]; }
-	Color4f*   data_color(){ if (size() > 0) return &vColor[0]; }
-	glm::vec2* data_tex()  { if (size() > 0) return &vTex[0]; }
+	glm::vec3* data_pos()  { if (size() > 0) return &vPos[0]; else return nullptr; }
+	Color4f*   data_color(){ if (size() > 0) return &vColor[0]; else return nullptr; }
+	glm::vec2* data_tex()  { if (size() > 0) return &vTex[0]; else return nullptr; }
 
 	void push_back(glm::vec3 pos, Color color, glm::vec2 tex)
 	{

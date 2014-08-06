@@ -33,16 +33,11 @@ void ErrorMethod(const char* message, const char* func, const char* file, unsign
 
 bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 {
-	if (type == GM_KEY)
+	if (msg == GM_KEY)
 	{
 		if (param1 == GLFW_KEY_ESCAPE && param3 == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, GL_TRUE);
-	}
-
-	if (type == GM_MB)
-	{
-		int i = 0;
-		i++;
+		return true;
 	}
 
 	resMan->MsgProc(GLUF_PASS_CALLBACK_PARAM);
@@ -214,13 +209,19 @@ int main(void)
 	dlg->SetBackgroundColors(Color(0, 128, 0, 255));
 	
 
-	//dlg->AddButton(0, "Button", 0.1f, 0.1f, 0.125f, 0.03625f);
-	dlg->AddComboBox(1, 0.2f, 0.2f, 0.125f, 0.03625f);
+	dlg->AddButton(0, "Button", 0.05f, 0.01f, 0.125f, 0.03625f);
+
+	GLUFComboBox* box;
+	dlg->AddComboBox(1, 0.2f, 0.2f, 0.125f, 0.03625f, 0, false, &box);
 	dlg->AddCheckBox(2, "", 0.3f, 0.1f, 0.03625f, 0.03625f);
 	dlg->AddRadioButton(3, 0, "", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
 	dlg->AddRadioButton(4, 0, "", 0.4f, 0.45f, 0.03625f, 0.03625f);
 	dlg->AddRadioButton(5, 0, "", 0.4f, 0.5f, 0.03625f, 0.03625f);
 	//dlg->AddSlider (6, 0.1f, 0.3f, 0.4f, 0.03625f, 0.0f, 1.0f, 0.25f);
+
+	box->AddItem("Test", nullptr);
+	box->AddItem("Test1", nullptr);
+	box->AddItem("Test2", nullptr);
 
 	//TODO: fix blending issues
 
