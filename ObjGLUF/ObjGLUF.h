@@ -29,6 +29,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <vector>
 #include <memory>
@@ -181,6 +182,9 @@ OBJGLUF_API void GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
 OBJGLUF_API void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
 OBJGLUF_API void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
 OBJGLUF_API GLUFPoint GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
+
+//used for getting vertices from rects
+OBJGLUF_API glm::vec2 GLUFGetPointFromRect(GLUFRect rect, bool x, bool y);//0,0 is bottom left
 
 OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
 

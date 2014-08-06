@@ -285,7 +285,7 @@ const char* g_TextShaderFrag =
 "} fs_in;\n"\
 "void main(void)\n"\
 "{\n"\
-"	Color.a = texture(TextureSampler, fs_in.uvCoord).a;\n"\
+"	Color.a = texture(TextureSampler, fs_in.uvCoord).r;\n"\
 "	Color.rgb = _Color.rgb; \n"\
 "	//Color.a = 1.0f;\n"\
 "	Color.a *= _Color.a;\n"\
@@ -2349,7 +2349,7 @@ void GLUFDialog::InitDefaultElements()
 	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize);
 	free(rawData);
 
-	int fontIndex = m_pManager->AddFont(font, 0.0625, FONT_WEIGHT_NORMAL);
+	int fontIndex = m_pManager->AddFont(font, 0.04, FONT_WEIGHT_NORMAL);
 	SetFont(0, fontIndex);
 
 
@@ -2389,6 +2389,7 @@ void GLUFDialog::InitDefaultElements()
 	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
 	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 100);
 	Element.FontColor.States[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 50);
+	Element.FontColor.States[GLUF_STATE_NORMAL] = Color(0, 0, 0, 255);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, &Element);
@@ -7476,22 +7477,34 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 
 	rcScreen = GLUFScreenToClipspace(rcScreen);
 
-	g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(rcScreen.left, rcScreen.top, 0.0f));
 
 	int Row, Col;
 	float U, V, U1, V1;
 
-	float CurX = 0.0f;
-	float CurY = 0.0f;
+	float CurX = rcScreen.left;
+	float CurY = rcScreen.top;
+
+	if (bCenter)
+	{
+		CurY -= (GLUFRectHeight(rcScreen) / 2) - (font.mSize / 2);
+		
+		//calc widths
+		float tmp = 0.0f;
+		for (auto it : strText)
+		{
+			tmp += (font.m_pFontType->CellX * font.mSize) / font.m_pFontType->CellY;
+		}
+		CurX += (GLUFRectWidth(rcScreen) - tmp);
+	}
 
 	//glBegin(GL_QUADS);
-	float z = GLUF_NEAR_BUTTON_DEPTH;
+	float z = GLUF_NEAR_BUTTON_DEPTH + 0.00005f;
 	for (auto ch : strText)
 	{
 		float widthConverted = (font.m_pFontType->CellX * font.mSize) / font.m_pFontType->CellY;
 
 		//lets support newlines :) (or if the nex char will go outside the rect)
-		if (ch == '\n'/* || CurX + widthConverted > GLUFRectWidth(rcScreen)*/)
+		/*if (ch == '\n'/* || CurX + widthConverted > GLUFRectWidth(rcScreen))
 		{
 			CurX = z;
 			CurY += font.mSize * 1.1f;//assume a reasonible leding
@@ -7500,99 +7513,76 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 			if (CurY + font.mSize > GLUFRectHeight(rcScreen))
 				break;
 		}
+		else*/
+		{
+
+			Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
+			Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
+
+			U = Col*font.m_pFontType->ColFactor;
+			V = Row*font.m_pFontType->RowFactor;
+			U1 = U + font.m_pFontType->ColFactor;
+			V1 = V + font.m_pFontType->RowFactor;
+
+			//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
+			//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
+			//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
+			//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
+
+			GLUFRect glyph;
+			glyph.left = CurX;
+			glyph.right = CurX + widthConverted;
+			glyph.top = CurY;
+			glyph.bottom = CurY - font.mSize;
 
 
-		Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
-		Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
-
-		U = Col*font.m_pFontType->ColFactor;
-		V = Row*font.m_pFontType->RowFactor;
-		U1 = U + font.m_pFontType->ColFactor;
-		V1 = V + font.m_pFontType->RowFactor;
-
-		//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
-		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
-		//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
-		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
-
-
-		//triangle 1
-		g_TextVerticies.push_back(
-			glm::vec3(CurX, CurY, z),
-			glm::vec2(U, V));
+			//triangle 1
+			g_TextVerticies.push_back(
+				glm::vec3(GLUFGetPointFromRect(glyph, false, true), z),
+				glm::vec2(U, V));
 			//glm::vec2(z, 1.0f));
 
-		g_TextVerticies.push_back(
-			glm::vec3(CurX + widthConverted,CurY - font.mSize, z),
-			glm::vec2(U1, V1));
-			//glm::vec2(z, 1.0f));
-
-		g_TextVerticies.push_back(
-			glm::vec3(CurX + widthConverted, CurY, z),
-			glm::vec2(U1, V));
-			//glm::vec2(1.0f, 1.0f));
-
-		//triangle 2
-		g_TextVerticies.push_back(
-			glm::vec3(CurX, CurY, z),
-			glm::vec2(U, V));
-			//glm::vec2(z, 1.0f));
-
-		g_TextVerticies.push_back(
-			glm::vec3(CurX, CurY - font.mSize, z),
-			glm::vec2(U, V1));
+			g_TextVerticies.push_back(
+				glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
+				glm::vec2(U, V1));
 			//glm::vec2(z, z));
 
-		g_TextVerticies.push_back(
-			glm::vec3(CurX + widthConverted, CurY - font.mSize, z),
-			glm::vec2(U1, V1));
+			g_TextVerticies.push_back(
+				glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
+				glm::vec2(U1, V));
+			//glm::vec2(1.0f, 1.0f));
+
+
+			//triangle 2
+
+			g_TextVerticies.push_back(
+				glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
+				glm::vec2(U, V1));
+			//glm::vec2(z, z));
+
+			g_TextVerticies.push_back(
+				glm::vec3(GLUFGetPointFromRect(glyph, true, false), z),
+				glm::vec2(U1, V1));
 			//glm::vec2(1.0f, z));
 
+			g_TextVerticies.push_back(
+				glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
+				glm::vec2(U1, V));
+			//glm::vec2(1.0f, 1.0f));
 
 
-		/*CurX += 0.05;
+			CurX += ((float)font.m_pFontType->Width[ch] * font.mSize) / font.m_pFontType->CellY;
+			//CurX += 0.05;
 
-		//triangle 1
-		g_TextVerticies.push_back(
-			glm::vec3(CurX, CurY, z),
-			glm::vec2(U, V));
-		//glm::vec2(z, 1.0f));
-
-		g_TextVerticies.push_back(
-			glm::vec3(CurX + widthConverted, CurY - font.mSize, z),
-			glm::vec2(U1, V1));
-		//glm::vec2(z, 1.0f));
-
-		g_TextVerticies.push_back(
-			glm::vec3(CurX + widthConverted, CurY, z),
-			glm::vec2(U1, V));
-		//glm::vec2(1.0f, 1.0f));
-
-		//triangle 2
-		g_TextVerticies.push_back(
-			glm::vec3(CurX, CurY, z),
-			glm::vec2(U, V));
-		//glm::vec2(z, 1.0f));
-
-		g_TextVerticies.push_back(
-			glm::vec3(CurX, CurY - font.mSize, z),
-			glm::vec2(U, V1));
-		//glm::vec2(z, z));
-
-		g_TextVerticies.push_back(
-			glm::vec3(CurX + widthConverted, CurY - font.mSize, z),
-			glm::vec2(U1, V1));
-		//glm::vec2(1.0f, z));*/
-
-
-		CurX += ((float)font.m_pFontType->Width[ch] * font.mSize) / font.m_pFontType->CellY;
-
-		z += 0.000001f;//to solve the depth problem
+			z += 0.00005f;//to solve the depth problem
+		}
 	}
 	//glEnd();
 	
 	g_TextVerticies.set_color(vFontColor);
 
+	//g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
+	
 	EndText(font.m_pFontType);
 
 }
@@ -7617,8 +7607,8 @@ void EndText(GLUFFontPtr font)
 	GLUFSHADERMANAGER.UseProgram(g_TextProgram);
 
 	//first uniform: model-view matrix
-	glm::mat4 mv = g_TextOrtho * g_TextModelMatrix;
-	glUniformMatrix4fv(0, 1, GL_FALSE, &mv[0][0]);
+	glm::mat4 mv = g_TextOrtho;
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mv));
 
 	//second, the sampler
 	glActiveTexture(GL_TEXTURE0);

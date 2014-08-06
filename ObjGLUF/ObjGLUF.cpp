@@ -289,6 +289,21 @@ GLUFPoint GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1)
 	return pt0;
 }
 
+
+glm::vec2 GLUFGetPointFromRect(GLUFRect rect, bool x, bool y)
+{
+	if (x)
+		if (y)
+			return glm::vec2(rect.right, rect.top);
+		else
+			return glm::vec2(rect.right, rect.bottom);
+	else
+		if (y)
+			return glm::vec2(rect.left, rect.top);
+		else
+			return glm::vec2(rect.left, rect.bottom);
+}
+
 class GLUFUniformBuffer
 {
 

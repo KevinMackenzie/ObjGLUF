@@ -183,7 +183,7 @@ class GLUFElement
 {
 public:
 	void    SetTexture(GLUFTextureIndex iTexture, GLUFRect* prcTexture, Color defaultTextureColor = Color(255, 255, 255, 255));
-	void    SetFont(GLUFFontIndex iFont, Color defaultFontColor = Color(255, 255, 255, 255), unsigned int dwTextFormat = GT_CENTER | GT_VCENTER);
+	void    SetFont(GLUFFontIndex iFont, Color defaultFontColor = Color(0, 0, 0, 255), unsigned int dwTextFormat = GT_CENTER | GT_VCENTER);
 
 	void    Refresh();
 
