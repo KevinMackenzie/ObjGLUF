@@ -71,6 +71,10 @@ typedef void(*GLUFErrorMethod)(const char* message, const char* funcName, const 
 OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
 OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 
+#ifndef __FUNCTION__
+#define __FUNCTION__ __func__//not always defined on non-windows systems
+#endif
+
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { GLUF_ERROR(#expr) } }
 

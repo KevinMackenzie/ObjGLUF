@@ -243,8 +243,8 @@ const char* g_UIShaderFrag =
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
 "	//Color = fs_in.Color; \n"\
 "   Color = texture(TextureSampler, fs_in.uvCoord); \n" \
-"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
-"} \n";
+"	//Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
+"} \n"; 
 
 const char* g_UIShaderFragUntex =
 "#version 430 core \n"\
@@ -2539,9 +2539,9 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFScrollBar - Track
 	//-------------------------------------
-	float nScrollBarStartX = 0.765625f;
-	float nScrollBarStartY = 0.234375f;
-	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY - 0.08203125f, nScrollBarStartX + 0.0859375f, nScrollBarStartY - 0.125f);
+	float nScrollBarStartX = 0.76470588f;
+	float nScrollBarStartY = 0.046875f;
+	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
 	Element.SetTexture(0, &rcTexture);
 	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
 
@@ -2549,20 +2549,9 @@ void GLUFDialog::InitDefaultElements()
 	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 0, &Element);
 
 	//-------------------------------------
-	// GLUFScrollBar - Up Arrow
-	//-------------------------------------
-	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY - 0.00390625f, nScrollBarStartX + 0.0859375f, nScrollBarStartY - 0.08203125f);
-	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
-
-
-	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 1, &Element);
-
-	//-------------------------------------
 	// GLUFScrollBar - Down Arrow
 	//-------------------------------------
-	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY - 0.125f, nScrollBarStartX + 0.0859375f, nScrollBarStartY - 0.20703125f);
+	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
 	Element.SetTexture(0, &rcTexture);
 	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
 
@@ -2571,9 +2560,20 @@ void GLUFDialog::InitDefaultElements()
 	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 2, &Element);
 
 	//-------------------------------------
+	// GLUFScrollBar - Up Arrow
+	//-------------------------------------
+	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
+	Element.SetTexture(0, &rcTexture);
+	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
+
+
+	// Assign the Element
+	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 1, &Element);
+
+	//-------------------------------------
 	// GLUFScrollBar - Button
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.859375f, 0.75f, 0.9296875f, 0.9140625f);
+	GLUFSetRect(rcTexture, 0.859375f, 0.25f, 0.9296875f, 0.0859375f);
 	Element.SetTexture(0, &rcTexture);
 
 	// Assign the Element
@@ -4084,8 +4084,8 @@ void GLUFComboBox::UpdateRects()
 	m_rcText.right = m_rcButton.left;
 
 	m_rcDropdown = m_rcText;
-	GLUFOffsetRect(m_rcDropdown, 0, (0.90f * GLUFRectHeight(m_rcText)));
-	m_rcDropdown.bottom += m_fDropHeight;
+	GLUFOffsetRect(m_rcDropdown, 0, (-0.05 * GLUFRectHeight(m_rcText)));
+	m_rcDropdown.bottom -= m_fDropHeight;
 	m_rcDropdown.right -= m_fSBWidth;
 
 	m_rcDropdownText = m_rcDropdown;
@@ -4095,8 +4095,9 @@ void GLUFComboBox::UpdateRects()
 	m_rcDropdownText.bottom -= (0.1f * GLUFRectHeight(m_rcDropdown));
 
 	// Update the scrollbar's rects
-	m_ScrollBar.SetLocation(m_rcDropdown.right, m_rcDropdown.top + 2);
-	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcDropdown) - 2);
+	m_ScrollBar.SetLocation(m_rcDropdown.right, m_rcDropdown.bottom);
+	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcDropdown) - 0.025);
+	m_ScrollBar.m_y = m_rcText.top;
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[2]->iFont);
 	if (pFontNode && pFontNode->mSize)
 	{
@@ -4368,7 +4369,232 @@ bool GLUFComboBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM
 //--------------------------------------------------------------------------------------
 bool GLUFComboBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	//TODO:
+	if (!m_bEnabled || !m_bVisible)
+		return false;
+
+	// Let the scroll bar handle it first.
+	if (m_ScrollBar.MsgProc(msg, param1, param2, param3, param4))
+		return true;
+
+	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
+
+	switch (msg)
+	{
+		case GM_CURSOR_POS:
+		{
+			/*if (m_bPressed)
+			{
+				//if the button is pressed and the mouse is moved off, then unpress it
+				if (!ContainsPoint(pt))
+				{
+					m_bPressed = false;
+
+					ContainsPoint(pt);
+
+					if (!m_pDialog->m_bKeyboardInput)
+						m_pDialog->ClearFocus();
+				}
+			}*/
+
+			if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
+			{
+				// Determine which item has been selected
+				for (size_t i = 0; i < m_Items.size(); i++)
+				{
+					GLUFComboBoxItem* pItem = m_Items[i];
+					if (pItem->bVisible &&
+						GLUFPtInRect(pItem->rcActive, pt))
+					{
+						m_iFocused = static_cast<int>(i);
+					}
+				}
+				return true;
+			}
+			break;
+		}
+
+		case GM_MB:
+			if (param2 == GLFW_PRESS)
+			{
+				if (ContainsPoint(pt))
+				{
+					// Pressed while inside the control
+					m_bPressed = true;
+					//SetCapture(GLUFGetHWND());
+
+					if (!m_bHasFocus)
+						m_pDialog->RequestFocus(this);
+
+					return true;
+				}
+				
+				// Perhaps this click is within the dropdown
+				if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
+				{
+					// Determine which item has been selected
+					for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
+					{
+						GLUFComboBoxItem* pItem = m_Items[i];
+						if (pItem->bVisible &&
+							GLUFPtInRect(pItem->rcActive, pt))
+						{
+							m_iFocused = m_iSelected = static_cast<int>(i);
+							m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+							m_bOpened = false;
+
+							if (!m_pDialog->m_bKeyboardInput)
+								m_pDialog->ClearFocus();
+
+							break;
+						}
+					}
+
+					return true;
+				}
+
+				// Mouse click not on main control or in dropdown, fire an event if needed
+				if (m_bOpened)
+				{
+					m_iFocused = m_iSelected;
+
+					m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					m_bOpened = false;
+				}
+					
+
+				break;
+			}
+			else if (param2 == GLFW_RELEASE)
+			{
+				if (m_bPressed && ContainsPoint(pt))
+				{
+					// Button click
+					m_bPressed = false;
+
+					// Toggle dropdown
+					if (m_bHasFocus)
+					{
+						m_bOpened = !m_bOpened;
+
+						if (!m_bOpened)
+						{
+							if (!m_pDialog->m_bKeyboardInput)
+								m_pDialog->ClearFocus();
+						}
+					}
+
+					//ReleaseCapture();
+					return true;
+				}
+
+				break;
+			}
+
+		case GM_SCROLL:
+		{
+			int zDelta = (param2) / WHEEL_DELTA;
+			if (m_bOpened)
+			{
+				//UINT uLines = 0;
+				//if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
+				//	uLines = 0;
+				m_ScrollBar.Scroll(-zDelta/* * uLines*/);
+			}
+			else
+			{
+				if (zDelta > 0)
+				{
+					if (m_iFocused > 0)
+					{
+						m_iFocused--;
+						m_iSelected = m_iFocused;
+
+						if (!m_bOpened)
+							m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					}
+				}
+				else
+				{
+					if (m_iFocused + 1 < (int)GetNumItems())
+					{
+						m_iFocused++;
+						m_iSelected = m_iFocused;
+
+						if (!m_bOpened)
+							m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					}
+				}
+			}
+			return true;
+		}
+		case GM_KEY:
+		{
+			switch (param1)
+			{
+			case GLFW_KEY_ENTER:
+				if (m_bOpened)
+				{
+					if (m_iSelected != m_iFocused)
+					{
+						m_iSelected = m_iFocused;
+						m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+					}
+					m_bOpened = false;
+
+					if (!m_pDialog->m_bKeyboardInput)
+						m_pDialog->ClearFocus();
+
+					return true;
+				}
+				break;
+
+			case GLFW_KEY_F4:
+				// Filter out auto-repeats
+				if (param3 == GLFW_REPEAT)
+					return true;
+
+				m_bOpened = !m_bOpened;
+
+				if (!m_bOpened)
+				{
+					m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+
+					if (!m_pDialog->m_bKeyboardInput)
+						m_pDialog->ClearFocus();
+				}
+
+				return true;
+
+			case GLFW_KEY_UP:
+			case GLFW_KEY_LEFT:
+				if (m_iFocused > 0)
+				{
+					m_iFocused--;
+					m_iSelected = m_iFocused;
+
+					if (!m_bOpened)
+						m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+				}
+
+				return true;
+
+			case GLFW_KEY_RIGHT:
+			case GLFW_KEY_DOWN:
+				if (m_iFocused + 1 < (int)GetNumItems())
+				{
+					m_iFocused++;
+					m_iSelected = m_iFocused;
+
+					if (!m_bOpened)
+						m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+				}
+
+				return true;
+			}
+			break;
+		}
+	};
+
 	return false;
 }
 
@@ -4526,22 +4752,25 @@ void GLUFComboBox::Render( float fElapsedTime)
 	if (m_bOpened)
 		iState = GLUF_STATE_PRESSED;
 
-	// Main text box
-	pElement = m_Elements[0];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
-
-	m_pDialog->DrawSprite(pElement, m_rcText, GLUF_NEAR_BUTTON_DEPTH);
-
-	if (m_iSelected >= 0 && m_iSelected < (int)m_Items.size())
+	if (!m_bOpened) //only render the main box if it is NOT opened
 	{
-		GLUFComboBoxItem* pItem = m_Items[m_iSelected];
-		if (pItem)
-		{
-			m_pDialog->DrawText(pItem->strText, pElement, m_rcText, false, true);
+		// Main text box
+		pElement = m_Elements[0];
 
+		// Blend current color
+		pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
+		pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
+
+		m_pDialog->DrawSprite(pElement, m_rcText, GLUF_NEAR_BUTTON_DEPTH);
+
+		if (m_iSelected >= 0 && m_iSelected < (int)m_Items.size())
+		{
+			GLUFComboBoxItem* pItem = m_Items[m_iSelected];
+			if (pItem)
+			{
+				m_pDialog->DrawText(pItem->strText, pElement, m_rcText, false, true);
+
+			}
 		}
 	}
 }
@@ -5177,11 +5406,17 @@ void GLUFScrollBar::UpdateRects()
 	// Make the buttons square
 
 	GLUFSetRect(m_rcUpButton, m_rcBoundingBox.left, m_rcBoundingBox.top,
-		m_rcBoundingBox.right, m_rcBoundingBox.top + GLUFRectWidth(m_rcBoundingBox));
-	GLUFSetRect(m_rcDownButton, m_rcBoundingBox.left, m_rcBoundingBox.bottom - GLUFRectWidth(m_rcBoundingBox),
+		m_rcBoundingBox.right, m_rcBoundingBox.top - GLUFRectWidth(m_rcBoundingBox));
+	//GLUFOffsetRect(m_rcDownButton, 0.0f, GLUFRectHeight(m_rcDownButton));
+
+	GLUFSetRect(m_rcDownButton, m_rcBoundingBox.left, m_rcBoundingBox.bottom + GLUFRectWidth(m_rcBoundingBox),
 		m_rcBoundingBox.right, m_rcBoundingBox.bottom);
+	//GLUFOffsetRect(m_rcDownButton, 0.0f, GLUFRectHeight(m_rcDownButton));
+
 	GLUFSetRect(m_rcTrack, m_rcUpButton.left, m_rcUpButton.bottom,
 		m_rcDownButton.right, m_rcDownButton.top);
+	//GLUFOffsetRect(m_rcDownButton, 0.0f, GLUFRectHeight(m_rcDownButton));
+
 	m_rcThumb.left = m_rcUpButton.left;
 	m_rcThumb.right = m_rcUpButton.right;
 
@@ -5207,8 +5442,9 @@ void GLUFScrollBar::UpdateThumbRect()
 	else
 	{
 		// No content to scroll
-		m_rcThumb.bottom = m_rcThumb.top;
-		m_bShowThumb = false;
+		m_rcThumb.bottom = m_rcTrack.bottom;
+		m_rcThumb.top = m_rcTrack.top;
+		m_bShowThumb = true;//still draw it though
 	}
 }
 
@@ -5391,6 +5627,114 @@ bool GLUFScrollBar::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int p
 		//if ((HWND)lParam != GLUFGetHWND())
 		m_bDrag = false;
 	}
+
+	static int ThumbOffsetY;
+
+	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
+	m_LastMouse = pt;
+	switch (msg)
+	{
+	case GM_MB:
+		if (param2 == GLFW_PRESS)
+		{
+			// Check for click on up button
+
+			if (GLUFPtInRect(m_rcUpButton, pt))
+			{
+				//SetCapture(GLUFGetHWND());
+				if (m_nPosition > m_nStart)
+					--m_nPosition;
+
+				UpdateThumbRect();
+				m_Arrow = CLICKED_UP;
+				m_dArrowTS = GLUFGetTime();
+				return true;
+			}
+
+			// Check for click on down button
+
+			if (GLUFPtInRect(m_rcDownButton, pt))
+			{
+				//SetCapture(GLUFGetHWND());
+				if (m_nPosition + m_nPageSize <= m_nEnd)
+					++m_nPosition;
+
+				UpdateThumbRect();
+				m_Arrow = CLICKED_DOWN;
+				m_dArrowTS = GLUFGetTime();
+				return true;
+			}
+
+			// Check for click on thumb
+
+			if (GLUFPtInRect(m_rcThumb, pt))
+			{
+				//SetCapture(GLUFGetHWND());
+				m_bDrag = true;
+				ThumbOffsetY = pt.y - m_rcThumb.top;
+				return true;
+			}
+
+			// Check for click on track
+
+			if (m_rcThumb.left <= pt.x &&
+				m_rcThumb.right > pt.x)
+			{
+				//SetCapture(GLUFGetHWND());
+				if (m_rcThumb.top > pt.y &&
+					m_rcTrack.top <= pt.y)
+				{
+					Scroll(-(m_nPageSize - 1));
+					return true;
+				}
+				else if (m_rcThumb.bottom <= pt.y &&
+					m_rcTrack.bottom > pt.y)
+				{
+					Scroll(m_nPageSize - 1);
+					return true;
+				}
+			}
+
+			break;
+		}
+		else if (param2 == GLFW_RELEASE)
+		{
+			m_bDrag = false;
+			//ReleaseCapture();
+			UpdateThumbRect();
+			m_Arrow = CLEAR;
+			break;
+		}
+
+		case GM_CURSOR_POS:
+		{
+			if (m_bDrag)
+			{
+				m_rcThumb.bottom += pt.y - ThumbOffsetY - m_rcThumb.top;
+				m_rcThumb.top = pt.y - ThumbOffsetY;
+				if (m_rcThumb.top < m_rcTrack.top)
+					GLUFOffsetRect(m_rcThumb, 0, m_rcTrack.top - m_rcThumb.top);
+				else if (m_rcThumb.bottom > m_rcTrack.bottom)
+					GLUFOffsetRect(m_rcThumb, 0, m_rcTrack.bottom - m_rcThumb.bottom);
+
+				// Compute first item index based on thumb position
+
+				int nMaxFirstItem = m_nEnd - m_nStart - m_nPageSize + 1;  // Largest possible index for first item
+				int nMaxThumb = GLUFRectHeight(m_rcTrack) - GLUFRectHeight(m_rcThumb);  // Largest possible thumb position from the top
+
+				m_nPosition = m_nStart +
+					(m_rcThumb.top - m_rcTrack.top +
+					nMaxThumb / (nMaxFirstItem * 2)) * // Shift by half a row to avoid last row covered by only one pixel
+					nMaxFirstItem / nMaxThumb;
+
+				return true;
+			}
+
+			break;
+		}
+	}
+
+	return false;
 
 	return false;
 }
