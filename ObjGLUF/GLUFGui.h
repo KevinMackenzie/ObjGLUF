@@ -67,6 +67,9 @@ enum GLUF_MESSAGE_TYPE
 #define GLUF_POINTS_PER_PIXEL 1.333333f
 #define GLUF_POINTS_TO_PIXELS(points) (GLUFFontSize)((float)points * GLUF_POINTS_PER_PIXEL)
 
+//this is because when rendered the actual font height will be cut in half.  Use this when using font in NDC space
+#define GLUF_FONT_HEIGHT_NDC(size) (size * 2) 
+
 typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 
 #define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4

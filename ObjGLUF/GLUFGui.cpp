@@ -490,8 +490,11 @@ bool GLUFFont::Init(char* data, uint64_t rawSize)
 	glGenTextures(1, &TexID);
 	glBindTexture(GL_TEXTURE_2D, TexID);
 	// Fonts should be rendered at native resolution so no need for texture filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//float fLargest = 0.0f;
+	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
+//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Stop chararcters from bleeding over edges
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -829,8 +832,9 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
-	// Accept fragment if it closer to the camera than the former one
-	glDepthFunc(GL_LESS);
+
+	// Accept fragment if it closer OR THE SAME ( this works nicely with dialog elements )
+	glDepthFunc(GL_LEQUAL);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -2345,11 +2349,11 @@ void GLUFDialog::InitDefaultElements()
 	char* rawData;
 	unsigned long rawSize = 0;
 
-	rawData = GLUFLoadFileIntoMemory("default.bff", &rawSize);
+	rawData = GLUFLoadFileIntoMemory("Arial Unicode MS.bff", &rawSize);
 	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize);
 	free(rawData);
 
-	int fontIndex = m_pManager->AddFont(font, 0.04f, FONT_WEIGHT_NORMAL);
+	int fontIndex = m_pManager->AddFont(font, 0.025f, FONT_WEIGHT_NORMAL);
 	SetFont(0, fontIndex);
 
 
@@ -4662,13 +4666,13 @@ void GLUFComboBox::Render( float fElapsedTime)
 		// Selection outline
 		GLUFElement* pSelectionElement = m_Elements[3];
 		pSelectionElement->TextureColor.Current = pElement->TextureColor.Current;
-		pSelectionElement->FontColor.SetCurrent(pSelectionElement->FontColor.States[GLUF_STATE_NORMAL]);
+		pSelectionElement->FontColor.SetCurrent(/*pSelectionElement->FontColor.States[GLUF_STATE_NORMAL]*/Color(0,0,0,255));
 
 		GLUFFontNode* pFont = m_pDialog->GetFont(pElement->iFont);
 		if (pFont)
 		{
-			float curY = m_rcDropdownText.top;
-			float nRemainingHeight = GLUFRectHeight(m_rcDropdownText);
+			float curY = m_rcDropdownText.top - 0.02f;
+			float fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
 			//WCHAR strDropdown[4096] = {0};
 
 			for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
@@ -4676,15 +4680,15 @@ void GLUFComboBox::Render( float fElapsedTime)
 				GLUFComboBoxItem* pItem = m_Items[i];
 
 				// Make sure there's room left in the dropdown
-				nRemainingHeight -= pFont->mSize / m_pDialog->GetManager()->GetWindowSize().y;
-				if (nRemainingHeight < 0)
+				fRemainingHeight -= pFont->mSize;
+				if (fRemainingHeight <= 0.0f)
 				{
 					pItem->bVisible = false;
 					continue;
 				}
 
-				GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY + pFont->mSize, m_rcDropdownText.right, curY);
-				curY -= pFont->mSize / m_pDialog->GetManager()->GetWindowSize().y;
+				GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mSize);
+				curY -= pFont->mSize;
 
 				//debug
 				//int blue = 50 * i;
@@ -4692,29 +4696,23 @@ void GLUFComboBox::Render( float fElapsedTime)
 
 				pItem->bVisible = true;
 
-				if (m_bOpened)
+				//GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top - (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
+				//	pItem->rcActive.bottom + (2 / m_pDialog->GetManager()->GetWindowSize().y));
+				//GLUFSetRect(rc, m_rcDropdown.left + GLUFRectWidth(m_rcDropdown) / 12.0f, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
+				//	m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));
+
+				if ((int)i == m_iFocused)
 				{
-					GLUFRect rc;
 					//GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top - (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
 					//	pItem->rcActive.bottom + (2 / m_pDialog->GetManager()->GetWindowSize().y));
-					GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
-						m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));
-
-					if ((int)i == m_iFocused)
-					{
-						GLUFRect rc;
-						//GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top - (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
-						//	pItem->rcActive.bottom + (2 / m_pDialog->GetManager()->GetWindowSize().y));
-						GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
-							m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));
-						m_pDialog->DrawSprite(pSelectionElement, rc, GLUF_NEAR_BUTTON_DEPTH);
-						m_pDialog->DrawText(pItem->strText, pSelectionElement, rc);
-					}
-					else
-					{
-						m_pDialog->DrawText(pItem->strText, pElement, rc);
-					}
+					/*GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
+						m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));*/
+					//m_pDialog->DrawText(pItem->strText, pSelectionElement, rc);
+					m_pDialog->DrawSprite(pSelectionElement, pItem->rcActive, GLUF_NEAR_BUTTON_DEPTH);
 				}
+
+				m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
+				
 			}
 		}
 	}
@@ -4762,12 +4760,14 @@ void GLUFComboBox::Render( float fElapsedTime)
 
 	if (!m_bOpened) //only render the main box if it is NOT opened
 	{
+
 		// Main text box
 		pElement = m_Elements[0];
 
 		// Blend current color
 		pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
 		pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
+
 
 		m_pDialog->DrawSprite(pElement, m_rcText, GLUF_NEAR_BUTTON_DEPTH);
 
@@ -4780,7 +4780,8 @@ void GLUFComboBox::Render( float fElapsedTime)
 
 			}
 		}
-	}
+	}		
+
 }
 
 
@@ -8142,6 +8143,7 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 
 	rcScreen = GLUFScreenToClipspace(rcScreen);
 
+	GLUFFontSize tmpSize = GLUF_FONT_HEIGHT_NDC(font.mSize);
 
 	int Row, Col;
 	float U, V, U1, V1;
@@ -8151,96 +8153,95 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 
 	if (bCenter)
 	{
-		CurY -= (GLUFRectHeight(rcScreen) / 2) - (font.mSize / 2);
+		CurY -= (GLUFRectHeight(rcScreen) / 2) - (tmpSize / 2);
 		
 		//calc widths
 		float tmp = 0.0f;
 		for (auto it : strText)
 		{
-			tmp += (font.m_pFontType->CellX * font.mSize) / font.m_pFontType->CellY;
+			tmp += ((float)font.m_pFontType->Width[it] * tmpSize) / font.m_pFontType->CellY;
 		}
-		CurX += (GLUFRectWidth(rcScreen) - tmp);
+		CurX += fabsf((GLUFRectWidth(rcScreen) - tmp) / 2);
 	}
 
 	//glBegin(GL_QUADS);
 	float z = GLUF_NEAR_BUTTON_DEPTH + 0.00005f;
 	for (auto ch : strText)
 	{
-		float widthConverted = (font.m_pFontType->CellX * font.mSize) / font.m_pFontType->CellY;
+		float widthConverted = (font.m_pFontType->CellX * tmpSize) / font.m_pFontType->CellY;
 
 		//lets support newlines :) (or if the nex char will go outside the rect)
-		/*if (ch == '\n'/* || CurX + widthConverted > GLUFRectWidth(rcScreen))
+		if (ch == '\n'/* || CurX + widthConverted > GLUFRectWidth(rcScreen)*/)
 		{
-			CurX = z;
-			CurY += font.mSize * 1.1f;//assume a reasonible leding
+			CurX = rcScreen.left;
+			CurY -= tmpSize;// *1.1f;//assume a reasonible leding
 
 			//if the next line will go off of the page, then don't draw it
-			if (CurY + font.mSize > GLUFRectHeight(rcScreen))
-				break;
+			//if (CurY + tmpSize > GLUFRectHeight(rcScreen))
+			//	break;
+			continue;
 		}
-		else*/
-		{
 
-			Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
-			Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
+		Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
+		Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
 
-			U = Col*font.m_pFontType->ColFactor;
-			V = Row*font.m_pFontType->RowFactor;
-			U1 = U + font.m_pFontType->ColFactor;
-			V1 = V + font.m_pFontType->RowFactor;
+		U = Col*font.m_pFontType->ColFactor;
+		V = Row*font.m_pFontType->RowFactor;
+		U1 = U + font.m_pFontType->ColFactor;
+		V1 = V + font.m_pFontType->RowFactor;
 
-			//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
-			//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
-			//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
-			//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
+		//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
+		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
+		//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
+		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
 
-			GLUFRect glyph;
-			glyph.left = CurX;
-			glyph.right = CurX + widthConverted;
-			glyph.top = CurY;
-			glyph.bottom = CurY - font.mSize;
+		GLUFRect glyph;
+		glyph.left = CurX;
+		glyph.right = CurX + widthConverted;
+		glyph.top = CurY;
+		glyph.bottom = CurY - tmpSize;
 
 
-			//triangle 1
-			g_TextVerticies.push_back(
-				glm::vec3(GLUFGetPointFromRect(glyph, false, true), z),
-				glm::vec2(U, V));
-			//glm::vec2(z, 1.0f));
+		//triangle 1
+		g_TextVerticies.push_back(
+			glm::vec3(GLUFGetPointFromRect(glyph, false, true), z),
+			glm::vec2(U, V));
+		//glm::vec2(z, 1.0f));
 
-			g_TextVerticies.push_back(
-				glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
-				glm::vec2(U, V1));
-			//glm::vec2(z, z));
+		g_TextVerticies.push_back(
+			glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
+			glm::vec2(U, V1));
+		//glm::vec2(z, z));
 
-			g_TextVerticies.push_back(
-				glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
-				glm::vec2(U1, V));
-			//glm::vec2(1.0f, 1.0f));
-
-
-			//triangle 2
-
-			g_TextVerticies.push_back(
-				glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
-				glm::vec2(U, V1));
-			//glm::vec2(z, z));
-
-			g_TextVerticies.push_back(
-				glm::vec3(GLUFGetPointFromRect(glyph, true, false), z),
-				glm::vec2(U1, V1));
-			//glm::vec2(1.0f, z));
-
-			g_TextVerticies.push_back(
-				glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
-				glm::vec2(U1, V));
-			//glm::vec2(1.0f, 1.0f));
+		g_TextVerticies.push_back(
+			glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
+			glm::vec2(U1, V));
+		//glm::vec2(1.0f, 1.0f));
 
 
-			CurX += ((float)font.m_pFontType->Width[ch] * font.mSize) / font.m_pFontType->CellY;
-			//CurX += 0.05;
+		//triangle 2
 
-			z += 0.00005f;//to solve the depth problem
-		}
+		g_TextVerticies.push_back(
+			glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
+			glm::vec2(U, V1));
+		//glm::vec2(z, z));
+
+		g_TextVerticies.push_back(
+			glm::vec3(GLUFGetPointFromRect(glyph, true, false), z),
+			glm::vec2(U1, V1));
+		//glm::vec2(1.0f, z));
+
+		g_TextVerticies.push_back(
+			glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
+			glm::vec2(U1, V));
+		//glm::vec2(1.0f, 1.0f));
+
+
+		CurX += ((float)font.m_pFontType->Width[ch] * tmpSize) / font.m_pFontType->CellY;
+		//CurX += 0.05;
+
+		z += 0.00005f;//to solve the depth problem
+		
 	}
 	//glEnd();
 	

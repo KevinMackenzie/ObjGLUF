@@ -214,12 +214,19 @@ int main(void)
 	GLUFComboBox* box;
 	dlg->AddComboBox(1, 0.2f, 0.2f, 0.125f, 0.03625f, 0, false, &box);
 	dlg->AddCheckBox(2, "", 0.3f, 0.1f, 0.03625f, 0.03625f);
-	dlg->AddRadioButton(3, 0, "", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
+	dlg->AddRadioButton(3, 0, "Test", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
 	dlg->AddRadioButton(4, 0, "", 0.4f, 0.45f, 0.03625f, 0.03625f);
 	dlg->AddRadioButton(5, 0, "", 0.4f, 0.5f, 0.03625f, 0.03625f);
 	//dlg->AddSlider (6, 0.1f, 0.3f, 0.4f, 0.03625f, 0.0f, 1.0f, 0.25f);
 
-	box->AddItem("Test", nullptr);
+	box->AddItem("Test0", nullptr);
+	box->AddItem("Test1", nullptr);
+	box->AddItem("Test2", nullptr);
+	box->AddItem("Test1", nullptr);
+	box->AddItem("Test2", nullptr);
+	box->AddItem("Test0", nullptr);
+	box->AddItem("Test1", nullptr);
+	box->AddItem("Test2", nullptr);
 	box->AddItem("Test1", nullptr);
 	box->AddItem("Test2", nullptr);
 

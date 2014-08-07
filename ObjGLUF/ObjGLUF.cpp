@@ -138,7 +138,7 @@ bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
 
 void GLUFSetRectEmpty(GLUFRect& rect)
 {
-	rect.top = rect.bottom = rect.left = rect.right = 0;
+	rect.top = rect.bottom = rect.left = rect.right = 0.0f;
 }
 
 void GLUFSetRect(GLUFRect& rect, float left, float top, float right, float bottom)
