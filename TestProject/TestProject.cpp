@@ -37,7 +37,7 @@ bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 	{
 		if (param1 == GLFW_KEY_ESCAPE && param3 == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, GL_TRUE);
-		return true;
+		//return true;
 	}
 
 	resMan->MsgProc(GLUF_PASS_CALLBACK_PARAM);
@@ -207,12 +207,12 @@ int main(void)
 	dlg->SetSize(0.8f, 0.8f);
 	dlg->SetLocation(0.1f, 0.1f);
 	dlg->SetBackgroundColors(Color(0, 128, 0, 255));
-	
+	dlg->EnableKeyboardInput(true);
 
 	dlg->AddButton(0, "Button", 0.05f, 0.01f, 0.125f, 0.03625f);
 
 	GLUFComboBox* box;
-	dlg->AddComboBox(1, 0.2f, 0.2f, 0.125f, 0.03625f, 0, false, &box);
+	dlg->AddComboBox(1, 0.2f, 0.2f, 0.175f, 0.03625f, 0, false, &box);
 	dlg->AddCheckBox(2, "", 0.3f, 0.1f, 0.03625f, 0.03625f);
 	dlg->AddRadioButton(3, 0, "Test", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
 	dlg->AddRadioButton(4, 0, "", 0.4f, 0.45f, 0.03625f, 0.03625f);
@@ -222,13 +222,18 @@ int main(void)
 	box->AddItem("Test0", nullptr);
 	box->AddItem("Test1", nullptr);
 	box->AddItem("Test2", nullptr);
-	box->AddItem("Test1", nullptr);
-	box->AddItem("Test2", nullptr);
-	box->AddItem("Test0", nullptr);
-	box->AddItem("Test1", nullptr);
-	box->AddItem("Test2", nullptr);
-	box->AddItem("Test1", nullptr);
-	box->AddItem("Test2", nullptr);
+	box->AddItem("Test3", nullptr);
+	box->AddItem("Test4", nullptr);
+	box->AddItem("Test5", nullptr);
+	box->AddItem("Test6", nullptr);
+	box->AddItem("Test7", nullptr);
+	box->AddItem("Test8", nullptr);
+	box->AddItem("Test9", nullptr);
+	box->AddItem("Test10", nullptr);
+	box->AddItem("Test11", nullptr);
+	box->AddItem("Test12", nullptr);
+	box->AddItem("Test13", nullptr);
+	box->AddItem("Test14", nullptr);
 
 	//TODO: fix blending issues
 

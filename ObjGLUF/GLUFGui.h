@@ -185,7 +185,7 @@ typedef unsigned int GLUFFontIndex;
 class GLUFElement
 {
 public:
-	void    SetTexture(GLUFTextureIndex iTexture, GLUFRect* prcTexture, Color defaultTextureColor = Color(255, 255, 255, 255));
+	void    SetTexture(GLUFTextureIndex iTexture, GLUFRect* prcTexture, Color defaultTextureColor = Color(255, 255, 255, 0));
 	void    SetFont(GLUFFontIndex iFont, Color defaultFontColor = Color(0, 0, 0, 255), unsigned int dwTextFormat = GT_CENTER | GT_VCENTER);
 
 	void    Refresh();
@@ -947,6 +947,8 @@ public:
 	GLUFResult         SetSelectedByData(void* pData);
 
 protected:
+	void UpdateItemRects();
+
 	int m_iSelected;
 	int m_iFocused;
 	float m_fDropHeight;//normalized
