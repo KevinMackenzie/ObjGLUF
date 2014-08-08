@@ -387,12 +387,34 @@ public:
 	float RowFactor, ColFactor;
 	int RenderStyle;
 
-
+	float GetCharWidth(char ch, GLUFFontSize fSize);
+	float GetStringWidthNDC(std::string str, GLUFFontSize fSize);//this just automatically conversts the output to NDC space
+	float GetStringWidth(std::string str, GLUFFontSize fSize);
 	bool Init(char* data, uint64_t rawSize);
 
 	//font properties
 
 };
+
+float GLUFFont::GetCharWidth(char ch, GLUFFontSize fSize)
+{
+	return ((float)Width[ch] * fSize) / CellY;
+}
+
+float GLUFFont::GetStringWidth(std::string str, GLUFFontSize fSize)
+{
+	float tmp = 0.0f;
+	for (auto it : str)
+	{
+		tmp += ((float)Width[it] * fSize) / CellY;
+	}
+	return tmp;
+}
+
+float GLUFFont::GetStringWidthNDC(std::string str, GLUFFontSize fSize)
+{
+	return GLUF_FONT_HEIGHT_NDC(GetStringWidth(str, fSize));
+}
 
 bool GLUFFont::Init(char* data, uint64_t rawSize)
 {
@@ -2098,7 +2120,7 @@ GLUFResult GLUFDialog::CalcTextRect(std::string strText, GLUFElement* pElement, 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::DrawText(std::string strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow, bool bCenter)
+GLUFResult GLUFDialog::DrawText(std::string strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow, bool bCenter, bool bHardRect)
 {
 	// No need to draw fully transparent layers
 	if (pElement->FontColor.Current.w == 0)
@@ -2123,12 +2145,12 @@ GLUFResult GLUFDialog::DrawText(std::string strText, GLUFElement* pElement, GLUF
 		GLUFOffsetRect(rcShadow, 1 / m_pManager->GetWindowSize().x, 1 / m_pManager->GetWindowSize().y);
 
 		Color vShadowColor(0, 0, 0, 255);
-		DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcShadow, vShadowColor, bCenter);
+		DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcShadow, vShadowColor, bCenter, bHardRect);
 
 	}
 
 	Color vFontColor = pElement->FontColor.Current;
-	DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcScreen, vFontColor, bCenter);
+	DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcScreen, vFontColor, bCenter, bHardRect);
 
 	//reenable the control texture
 	GLUFTextureNode* pTextureNode = GetTexture(0);
@@ -2591,7 +2613,7 @@ void GLUFDialog::InitDefaultElements()
 	//   7 - lower border
 	//   8 - lower right border
 
-	/*Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
+	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
 	//TODO: this
 	// Assign the style
 	GLUFSetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
@@ -2628,7 +2650,7 @@ void GLUFDialog::InitDefaultElements()
 
 	GLUFSetRect(rcTexture, 0.94140625f, 0.55859375f, 0.9609375f, 0.52734375f);
 	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 8, &Element);*/
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 8, &Element);
 
 	//-------------------------------------
 	// GLUFListBox - Main
@@ -6717,6 +6739,7 @@ GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : m_Buffer(pDialog->GetManager())
 	m_nCaret = m_nSelStart = 0;
 	m_bInsertMode = true;
 
+	m_fSBWidth = 16.0f / m_pDialog->GetManager()->GetWindowSize().x;
 	m_bMouseDrag = false;
 }
 
@@ -6838,6 +6861,7 @@ void GLUFEditBox::UpdateRects()
 	m_rcText = m_rcBoundingBox;
 	// First inflate by m_nBorder to compute render rects
 	GLUFInflateRect(m_rcText, -m_fBorderX, -m_fBorderY);
+	
 
 	// Update the render rectangles
 	m_rcRender[0] = m_rcText;
@@ -6850,6 +6874,19 @@ void GLUFEditBox::UpdateRects()
 	GLUFSetRect(m_rcRender[7], m_rcText.left, m_rcText.bottom, m_rcText.right, m_rcBoundingBox.bottom);
 	GLUFSetRect(m_rcRender[8], m_rcText.right, m_rcText.bottom, m_rcBoundingBox.right, m_rcBoundingBox.bottom);
 	
+	m_ScrollBar.SetLocation(m_rcBoundingBox.right, m_rcBoundingBox.bottom);
+	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
+	m_ScrollBar.m_y = m_rcText.top;
+	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+	if (pFontNode && pFontNode->mSize)
+	{
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
+
+		// The selected item may have been scrolled off the page.
+		// Ensure that it is in page again.
+		//m_ScrollBar.ShowItem(m_Selected[m_Selected.size() - 1]);
+	}
+
 	// Inflate further by m_nSpacing
 	GLUFInflateRect(m_rcText, -m_fSpacingX, -m_fSpacingY);
 }
@@ -7348,7 +7385,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	//
 	// Element 0 for text
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
-	m_pDialog->DrawText(m_Buffer.GetBuffer(m_nFirstVisible), m_Elements[0], m_rcText);
+	m_pDialog->DrawText(m_Buffer.GetBuffer(m_nFirstVisible), m_Elements[0], m_rcText, false, false, true);
 
 	// Render the selected text
 	if (m_nCaret != m_nSelStart)
@@ -7356,7 +7393,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 		int nFirstToRender = std::max(m_nFirstVisible, std::min(m_nSelStart, m_nCaret));
 		m_Elements[0]->FontColor.SetCurrent(m_SelTextColor);
 		m_pDialog->DrawText(m_Buffer.GetBuffer(nFirstToRender),
-			m_Elements[0], rcSelection, false);
+			m_Elements[0], rcSelection, false, false, true);
 	}
 
 	//
@@ -7392,6 +7429,9 @@ void GLUFEditBox::Render( float fElapsedTime)
 
 		m_pDialog->DrawRect(rcCaret, m_CaretColor);
 	}
+
+	//render the scrollbar
+	m_ScrollBar.Render(fElapsedTime);
 }
 
 
@@ -7544,26 +7584,14 @@ GLUFResult GLUFUniBuffer::Analyse()
 		nullptr,
 		&m_Analysis);*/
 
-	//get a list of x values, each one is the leading x value for each control
-	/*m_CalcXValues.clear();
+	m_CalcXValues.clear();
 
-
-	//update the font size within FreeType
-	FT_Set_Char_Size(m_pFontNode->m_pFontType->mFontFace, 0, m_pFontNode->mSize * 64, 96, 96);
-
-	float currPos = 0.0f;
-	for (unsigned int i = 0; i < m_Buffer.length(); ++i)
+	//for each character, get the width, and add that to the width of the previous, also add initial 0
+	m_CalcXValues.push_back(0);
+	for (auto i : m_Buffer)
 	{
-		FT_Load_Char(m_pFontNode->m_pFontType->mFontFace, m_Buffer.length(), FT_LOAD_NO_BITMAP);
-		float currValue = float(m_pFontNode->m_pFontType->mFontFace->glyph->advance.x / 64.0f);
-		currValue /= m_pResMan->GetWindowSize().x;
-		m_CalcXValues.push_back(currPos);
-		currPos += currValue;
+		m_CalcXValues.push_back(m_CalcXValues[m_CalcXValues.size() - 1] + m_pFontNode->m_pFontType->GetCharWidth(i, m_pFontNode->mSize));
 	}
-	//now add the last edge
-	m_CalcXValues.push_back(currPos);
-	*/
-
 	m_bAnalyseRequired = false;  // Analysis is up-to-date
 
 	return GR_SUCCESS;
@@ -7601,6 +7629,7 @@ void GLUFUniBuffer::Clear()
 	//*m_pwszBuffer = L'\0';
 	m_bAnalyseRequired = true;
 	m_Buffer.clear();
+	m_CalcXValues.clear();
 }
 
 
@@ -7639,6 +7668,7 @@ bool GLUFUniBuffer::InsertChar( int nIndex,  char wChar)
 
 	// Set new character
 	m_pwszBuffer[nIndex] = wChar;*/
+
 	m_bAnalyseRequired = true;
 
 	if ((m_Buffer.length() - 1) < nIndex)
@@ -7670,6 +7700,10 @@ bool GLUFUniBuffer::RemoveChar( int nIndex)
 	if (nIndex > m_Buffer.length())
 	{
 		return false;
+	}
+	else if (nIndex == -1)
+	{
+		m_Buffer.erase(m_Buffer.size() - 1);
 	}
 	else
 	{
@@ -7724,7 +7758,7 @@ bool GLUFUniBuffer::InsertString(int nIndex, std::string str)
 	}
 	else
 	{
-		m_Buffer.insert(nIndex, str);
+		m_Buffer.insert(nIndex, str.c_str());
 	}
 
 	return true;
@@ -7869,6 +7903,7 @@ GLUFResult GLUFUniBuffer::XtoCP(int nX, int* pCP, bool* pnTrail)
 }
 
 
+
 //--------------------------------------------------------------------------------------
 
 void GLUFUniBuffer::GetPriorItemPos(int nCP, int* pPrior)
@@ -7953,7 +7988,7 @@ void GLUFUniBuffer::GetNextItemPos(int nCP, int* pPrior)
 	// We have reached the end. It's always a word stop, so simply return it.
 	*pPrior = *ScriptString_pcOutChars(m_Analysis) - 1;*/
 
-	if (nCP == m_CalcXValues.size())
+	if (nCP == m_CalcXValues.size() - 1)
 	{
 		*pPrior = m_CalcXValues[nCP];
 		return;
@@ -7977,15 +8012,13 @@ void BeginText(glm::mat4 orthoMatrix)
 	g_TextVerticies.clear();
 }
 
-
 //--------------------------------------------------------------------------------------
-void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter)
+void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect)
 {
-	//TODO: support centering (vertical AND horizontal, or both)
-	//TODO: make another text method for text boxes (constraints i mean)
+	//TODO: make this split at word endings
 
-	//if (font.mSize > GLUFRectHeight(rcScreen))
-	//	return;//no sense rendering if it is too big
+	if (font.mSize > GLUFRectHeight(rcScreen) && bHardRect)
+		return;//no sense rendering if it is too big
 
 	rcScreen = GLUFScreenToClipspace(rcScreen);
 
@@ -8016,16 +8049,20 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 	{
 		float widthConverted = (font.m_pFontType->CellX * tmpSize) / font.m_pFontType->CellY;
 
-		//lets support newlines :) (or if the nex char will go outside the rect)
-		if (ch == '\n'/* || CurX + widthConverted > GLUFRectWidth(rcScreen)*/)
+		//lets support newlines :) (or if the next char will go outside the rect)
+		if (ch == '\n' || (CurX + widthConverted > rcScreen.right && bHardRect))
 		{
 			CurX = rcScreen.left;
 			CurY -= tmpSize;// *1.1f;//assume a reasonible leding
 
 			//if the next line will go off of the page, then don't draw it
-			//if (CurY + tmpSize > GLUFRectHeight(rcScreen))
-			//	break;
-			continue;
+			if (CurY - tmpSize < rcScreen.bottom && bHardRect)
+				break;
+
+			if (ch == '\n')
+			{
+				continue;
+			}
 		}
 
 		Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;

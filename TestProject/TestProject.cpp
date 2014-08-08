@@ -92,7 +92,9 @@ int main(void)
 
 	dlg->AddButton(0, "Button", 0.05f, 0.01f, 0.125f, 0.03625f);
 
-	GLUFListBox* box;
+	dlg->AddEditBox(1, "WordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWord", 0.1f, 0.1f, 0.5f, 0.5f);
+
+	/*GLUFListBox* box;
 	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);
 	dlg->AddCheckBox(2, "Check Box", 0.3f, 0.1f, 0.03625f, 0.03625f);
 	dlg->AddRadioButton(3, 0, "Button 1", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
@@ -130,7 +132,7 @@ int main(void)
 	box->AddItem("Item 26", nullptr);
 	box->AddItem("Item 27", nullptr);
 	box->AddItem("Item 28", nullptr);
-	box->AddItem("Item 29", nullptr);
+	box->AddItem("Item 29", nullptr);*/
 
 
 	float ellapsedTime = 0.0f;

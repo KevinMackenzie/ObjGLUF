@@ -266,7 +266,7 @@ public:
 	GLUFResult          DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth);
 	GLUFResult          CalcTextRect(std::string strText, GLUFElement* pElement, GLUFRect prcDest, int nCount = -1);
 	GLUFResult          DrawText(std::string strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow = false,
-		bool bCenter = false);
+		bool bCenter = false, bool bHardRect = false);
 
 	// Attributes
 	void                SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,	Color colorBottomRight);
@@ -562,7 +562,7 @@ protected:
 void BeginText(glm::mat4 orthoMatrix);
 
 //NOTE: this only supports char values, yes newlines, and only ASCII characters
-void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter);
+void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect = false);
 void EndText(GLUFFontPtr font);
 
 //-----------------------------------------------------------------------------
@@ -1017,7 +1017,7 @@ protected:
 //???
 
 //-----------------------------------------------------------------------------
-// GLUFUniBuffer class for the edit control
+// GLUFUniBuffer class for the edit control (this simulates a single line of text)
 //-----------------------------------------------------------------------------
 class GLUFUniBuffer
 {
@@ -1129,6 +1129,7 @@ public:
 	virtual bool    CanHaveFocus(){ return (m_bVisible && m_bEnabled); }
 	virtual void    Render(float fElapsedTime);
 	virtual void    OnFocusIn();
+	virtual GLUFResult OnInit(){ return m_pDialog->InitControl(&m_ScrollBar); }
 
 	void            SetText(std::string wszText, bool bSelected = false);
 	std::string     GetText(){ return m_Buffer.GetBuffer(); }
@@ -1168,6 +1169,9 @@ protected:
 	Color m_SelTextColor; // Selected text color
 	Color m_SelBkColor;   // Selected background color
 	Color m_CaretColor;   // Caret color
+
+	GLUFScrollBar m_ScrollBar;//TODO: impliment
+	float m_fSBWidth;
 
 	// Mouse-specific
 	bool m_bMouseDrag;       // True to indicate drag in progress
