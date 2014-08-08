@@ -2359,6 +2359,14 @@ void GLUFDialog::InitDefaultElements()
 	m_CapElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 	m_CapElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
+
+	//Element.FontColor.States[GLUF_STATE_NORMAL]		= Color(0, 0, 0, 255);
+	//Element.FontColor.States[GLUF_STATE_DISABLED]	= Color(0, 0, 0, 255);
+	//Element.FontColor.States[GLUF_STATE_HIDDEN]		= Color(0, 0, 0, 255);
+	//Element.FontColor.States[GLUF_STATE_FOCUS]		= Color(0, 0, 0, 255);
+	//Element.FontColor.States[GLUF_STATE_MOUSEOVER]	= Color(0, 0, 0, 255);
+	//Element.FontColor.States[GLUF_STATE_PRESSED]	= Color(0, 0, 0, 255);
+
 	//-------------------------------------
 	// GLUFStatic
 	//-------------------------------------
@@ -2404,7 +2412,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
 	Element.SetTexture(0, &rcTexture);
-	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_VCENTER);
+	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(80, 80, 80, 100);
 	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 20);
 	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 30);
@@ -2429,7 +2437,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
 	Element.SetTexture(0, &rcTexture);
-	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_VCENTER);
+	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(0, 0, 0, 255);
 	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
 	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
@@ -3788,7 +3796,7 @@ bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 		}
 		else if (param2 == GLFW_RELEASE)
 		{
-			if (m_bPressed)
+			if (m_bPressed && ContainsPoint(mousePos))
 			{
 				m_bPressed = false;
 				//ReleaseCapture();
@@ -3804,8 +3812,8 @@ bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 			}
 
 		}
-	}
 		break;
+	}
 
 	case GM_KEY:
 	{
@@ -4255,6 +4263,8 @@ bool GLUFComboBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 						{
 							if (!m_pDialog->m_bKeyboardInput)
 								m_pDialog->ClearFocus();
+
+							m_iFocused = m_iSelected;
 						}
 						
 						//setup the scroll bar to the correct position (if it is still within the range, it looks better to keep its old position)
@@ -5579,17 +5589,18 @@ GLUFListBox::GLUFListBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
 	m_Type = GLUF_CONTROL_LISTBOX;
 	m_pDialog = pDialog;
 
+
+
 	GLUFPoint pt = m_pDialog->GetManager()->GetWindowSize();
 
 	m_dwStyle = 0;
-	m_fSBWidth = 16 / pt.x;
+	m_fSBWidth = 16.0f / m_pDialog->GetManager()->GetWindowSize().x;
 	m_nSelected = -1;
 	m_nSelStart = 0;
 	m_bDrag = false;
-	m_fBorderX = 6 / pt.x;
-	m_fBorderY = 6 / pt.y;
-	m_fMargin = 5 / pt.x;
-	m_fTextHeight = 0;
+	m_fBorder = 6 / m_pDialog->GetManager()->GetWindowSize().y;
+	m_fMargin = 5 / m_pDialog->GetManager()->GetWindowSize().x;
+	m_fTextHeight = 0.02f;
 }
 
 
@@ -5602,8 +5613,7 @@ GLUFListBox::~GLUFListBox()
 void GLUFListBox::SetBorderPixels(int nBorder, int nMargin)
 {
 	GLUFPoint pt = m_pDialog->GetManager()->GetWindowSize();
-	m_fBorderX = (float)nBorder / pt.x;
-	m_fBorderY = (float)nBorder / pt.y;
+	m_fBorder = (float)nBorder / pt.y;
 
 	m_fMargin = (float)nMargin / pt.x;
 }
@@ -5614,15 +5624,21 @@ void GLUFListBox::UpdateRects()
 {
 	GLUFControl::UpdateRects();
 
+	m_fTextHeight = m_pDialog->GetFont(GetElement(0)->iFont)->mSize;
+
 	m_rcSelection = m_rcBoundingBox;
 	m_rcSelection.right -= m_fSBWidth;
-	GLUFInflateRect(m_rcSelection, -m_fBorderX, -m_fBorderY);
+	GLUFInflateRect(m_rcSelection, 0, -m_fBorder);
 	m_rcText = m_rcSelection;
 	GLUFInflateRect(m_rcText, -m_fMargin, 0);
 
 	// Update the scrollbar's rects
-	m_ScrollBar.SetLocation(m_rcBoundingBox.right - m_fSBWidth, m_rcBoundingBox.top);
-	m_ScrollBar.SetSize(m_fSBWidth, m_height);
+	//m_ScrollBar.SetLocation(m_rcBoundingBox.right - m_fSBWidth, m_rcBoundingBox.top);
+	//m_ScrollBar.SetSize(m_fSBWidth, m_height);
+
+	m_ScrollBar.SetLocation(m_rcBoundingBox.right, m_rcBoundingBox.bottom);
+	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
+	m_ScrollBar.m_y = m_rcText.top;
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pFontNode && pFontNode->mSize)
 	{
@@ -6256,15 +6272,13 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			{
 				// Compute the index of the clicked item
 
-				int nClicked;
-				if (m_fTextHeight > 0.0f)
-					nClicked = int(m_ScrollBar.GetTrackPos() + (pt.y - m_rcText.top) / m_fTextHeight);
-				else
-					nClicked = -1;
+				//int nClicked;
+				//m_pDialog->GetManager()->GetFontNode(p
+				//nClicked = int(m_ScrollBar.GetTrackPos() + (pt.y - m_rcText.top) / m_fTextHeight);
 
 				// Only proceed if the click falls on top of an item.
 
-				if (nClicked >= m_ScrollBar.GetTrackPos() &&
+				/*if (nClicked >= m_ScrollBar.GetTrackPos() &&
 					nClicked < (int)m_Items.size() &&
 					nClicked < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
 				{
@@ -6275,103 +6289,114 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					// since the first click would have taken care of the selection
 					// updating.
 					//TODO: handle doubleclicking
-					/*if (uMsg == WM_LBUTTONDBLCLK)
+					if (uMsg == WM_LBUTTONDBLCLK)
 					{
 						m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_ITEM_DBLCLK, true, this);
 						return true;
-					}*/
+					}
 
 					m_nSelected = nClicked;
 					if (!(param3 & GLFW_MOD_SHIFT))
-						m_nSelStart = m_nSelected;
+						m_nSelStart = m_nSelected;*/
 
 					// If this is a multi-selection listbox, update per-item
 					// selection data.
-
-					if (m_dwStyle & MULTISELECTION)
+				
+				//the easy way
+				for (unsigned int it = 0; it < m_Items.size(); ++it)
+				{
+					if (GLUFPtInRect(m_Items[it]->rcActive, pt))
 					{
-						// Determine behavior based on the state of Shift and Ctrl
-
-						GLUFListBoxItem* pSelItem = m_Items[m_nSelected];
-						if (param3 & GLFW_MOD_CONTROL)
-						{
-							// Control click. Reverse the selection of this item.
-
-							pSelItem->bSelected = !pSelItem->bSelected;
-						}
-						else if (param3 & GLFW_MOD_SHIFT)
-						{
-							// Shift click. Set the selection for all items
-							// from last selected item to the current item.
-							// Clear everything else.
-
-							int nBegin = std::min(m_nSelStart, m_nSelected);
-							int nEnd = std::max(m_nSelStart, m_nSelected);
-
-							for (int i = 0; i < nBegin; ++i)
-							{
-								GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = false;
-							}
-
-							for (int i = nEnd + 1; i < (int)m_Items.size(); ++i)
-							{
-								GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = false;
-							}
-
-							for (int i = nBegin; i <= nEnd; ++i)
-							{
-								GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = true;
-							}
-						}
-						else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL))
-						{
-							// Control-Shift-click.
-
-							// The behavior is:
-							//   Set all items from m_nSelStart to m_nSelected to
-							//     the same state as m_nSelStart, not including m_nSelected.
-							//   Set m_nSelected to selected.
-
-							int nBegin = std::min(m_nSelStart, m_nSelected);
-							int nEnd = std::max(m_nSelStart, m_nSelected);
-
-							// The two ends do not need to be set here.
-
-							bool bLastSelected = m_Items[m_nSelStart]->bSelected;
-							for (int i = nBegin + 1; i < nEnd; ++i)
-							{
-								GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = bLastSelected;
-							}
-
-							pSelItem->bSelected = true;
-
-							// Restore m_nSelected to the previous value
-							// This matches the Windows behavior
-
-							m_nSelected = m_nSelStart;
-						}
-						else
-						{
-							// Simple click.  Clear all items and select the clicked
-							// item.
-
-
-							for (int i = 0; i < (int)m_Items.size(); ++i)
-							{
-								GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = false;
-							}
-
-							pSelItem->bSelected = true;
-						}
-					}  // End of multi-selection case
-
-					m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
+						m_nSelected = it;
+						break;
+					}
 				}
+
+
+				if (m_dwStyle & MULTISELECTION)
+				{
+					// Determine behavior based on the state of Shift and Ctrl
+
+					GLUFListBoxItem* pSelItem = m_Items[m_nSelected];
+					if (param3 & GLFW_MOD_CONTROL)
+					{
+						// Control click. Reverse the selection of this item.
+
+						pSelItem->bSelected = !pSelItem->bSelected;
+					}
+					else if (param3 & GLFW_MOD_SHIFT)
+					{
+						// Shift click. Set the selection for all items
+						// from last selected item to the current item.
+						// Clear everything else.
+
+						int nBegin = std::min(m_nSelStart, m_nSelected);
+						int nEnd = std::max(m_nSelStart, m_nSelected);
+
+						for (int i = 0; i < nBegin; ++i)
+						{
+							GLUFListBoxItem* pItem = m_Items[i];
+							pItem->bSelected = false;
+						}
+
+						for (int i = nEnd + 1; i < (int)m_Items.size(); ++i)
+						{
+							GLUFListBoxItem* pItem = m_Items[i];
+							pItem->bSelected = false;
+						}
+
+						for (int i = nBegin; i <= nEnd; ++i)
+						{
+							GLUFListBoxItem* pItem = m_Items[i];
+							pItem->bSelected = true;
+						}
+					}
+					else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL))
+					{
+						// Control-Shift-click.
+
+						// The behavior is:
+						//   Set all items from m_nSelStart to m_nSelected to
+						//     the same state as m_nSelStart, not including m_nSelected.
+						//   Set m_nSelected to selected.
+
+						int nBegin = std::min(m_nSelStart, m_nSelected);
+						int nEnd = std::max(m_nSelStart, m_nSelected);
+
+						// The two ends do not need to be set here.
+
+						bool bLastSelected = m_Items[m_nSelStart]->bSelected;
+						for (int i = nBegin + 1; i < nEnd; ++i)
+						{
+							GLUFListBoxItem* pItem = m_Items[i];
+							pItem->bSelected = bLastSelected;
+						}
+
+						pSelItem->bSelected = true;
+
+						// Restore m_nSelected to the previous value
+						// This matches the Windows behavior
+
+						m_nSelected = m_nSelStart;
+					}
+					else
+					{
+						// Simple click.  Clear all items and select the clicked
+						// item.
+
+
+						for (int i = 0; i < (int)m_Items.size(); ++i)
+						{
+							GLUFListBoxItem* pItem = m_Items[i];
+							pItem->bSelected = false;
+						}
+
+						pSelItem->bSelected = true;
+					}
+				}  // End of multi-selection case
+
+				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
+				
 
 				return true;
 			}
@@ -6408,11 +6433,15 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		{
 			// Compute the index of the item below cursor
 
-			int nItem;
-			if (m_fTextHeight > 0.0f)
-				nItem =int( m_ScrollBar.GetTrackPos() + (pt.y - m_rcText.top) / m_fTextHeight);
-			else
-				nItem = -1;
+			int nItem = -1;
+			for (unsigned int it = 0; it < m_Items.size(); ++it)
+			{
+				if (GLUFPtInRect(m_Items[it]->rcActive, pt))
+				{
+					nItem = it;
+					break;
+				}
+			}
 
 			// Only proceed if the cursor is on top of an item.
 
@@ -6453,6 +6482,35 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 	return false;
 }
 
+//--------------------------------------------------------------------------------------
+void GLUFListBox::UpdateItemRects()
+{
+	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
+	if (pFont)
+	{
+		float curY = m_rcBoundingBox.top - m_fBorder;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
+		float fRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - m_fBorder;//subtract the font size initially too, because we do not want it hanging off the edge
+
+
+		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
+		{
+			GLUFListBoxItem* pItem = m_Items[i];
+
+			// Make sure there's room left in the box
+			fRemainingHeight -= pFont->mSize;
+			if (fRemainingHeight - m_fBorder <= 0.0f)
+			{
+				pItem->bVisible = false;
+				continue;
+			}
+
+			pItem->bVisible = true;
+
+			GLUFSetRect(pItem->rcActive, m_rcBoundingBox.left + m_fMargin, curY, m_rcBoundingBox.right - m_fMargin, curY - pFont->mSize);
+			curY -= pFont->mSize;
+		}
+	}
+}
 
 //--------------------------------------------------------------------------------------
 void GLUFListBox::Render( float fElapsedTime)
@@ -6470,35 +6528,31 @@ void GLUFListBox::Render( float fElapsedTime)
 
 	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
 
+		GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(pElement->iFont);
 	// Render the text
-	if (!m_Items.empty())
+	if (!m_Items.empty() && pFont)
 	{
-		// Find out the height of a single line of text
-		GLUFRect rc = m_rcText;
-		GLUFRect rcSel = m_rcSelection;
-		rc.bottom = rc.top - m_pDialog->GetManager()->GetFontNode(pElement->iFont)->mSize / m_pDialog->GetManager()->GetWindowSize().y;
 
-		// Update the line height formation
-		m_fTextHeight = rc.top - rc.bottom;
+		UpdateItemRects();
 
 		static bool bSBInit;
 		if (!bSBInit)
 		{
 			// Update the page size of the scroll bar
-			if (m_fTextHeight)
-				m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / m_fTextHeight));
+			if (m_fTextHeight > 0.0f)
+				m_ScrollBar.SetPageSize(int((GLUFRectHeight(m_rcBoundingBox) - (2 * m_fBorder)) / m_fTextHeight) + 1);
 			else
 				m_ScrollBar.SetPageSize((GLUFRectHeight(m_rcText)));
 			bSBInit = true;
 		}
 
-		rc.right = m_rcText.right;
 		for (int i = m_ScrollBar.GetTrackPos(); i < (int)m_Items.size(); ++i)
 		{
-			if (rc.bottom > m_rcText.bottom)
-				break;
 
 			GLUFListBoxItem* pItem = m_Items[i];
+
+			if (!pItem->bVisible)
+				continue;
 
 			// Determine if we need to render this item with the
 			// selected element.
@@ -6518,15 +6572,16 @@ void GLUFListBox::Render( float fElapsedTime)
 
 			if (bSelectedStyle)
 			{
-				rcSel.top = rc.top; rcSel.bottom = rc.bottom;
-				m_pDialog->DrawSprite(pSelElement, rcSel, GLUF_NEAR_BUTTON_DEPTH);
-				m_pDialog->DrawText(pItem->strText, pSelElement, rc);
+				//rcSel.top = rc.top; rcSel.bottom = rc.bottom;
+				m_pDialog->DrawSprite(pSelElement, pItem->rcActive, GLUF_NEAR_BUTTON_DEPTH);
+				m_pDialog->DrawText(pItem->strText, pSelElement, pItem->rcActive);
 			}
 			else
-				m_pDialog->DrawText(pItem->strText, pElement, rc);
+				m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
 
-			GLUFOffsetRect(rc, 0, m_fTextHeight);
+			//GLUFOffsetRect(rc, 0, m_fTextHeight);
 		}
+
 	}
 
 	// Render the scroll bar

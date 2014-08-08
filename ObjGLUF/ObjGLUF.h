@@ -36,6 +36,7 @@
 #include <map>
 #include <list>
 #include <string>
+#include <sstream>
 
 #ifndef OBJGLUF_EXPORTS
 #ifndef SUPPRESS_RADIAN_ERROR
@@ -76,7 +77,7 @@ OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 #endif
 
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
-#define GLUF_ASSERT(expr)	{ if (!(expr)) { GLUF_ERROR(#expr) } }
+#define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE:" << #expr; GLUF_ERROR(ss.str().c_str()) } }
 
 #define GLUF_SAFE_DELETE(ptr) {delete(ptr); (ptr) = nullptr;}
 #define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))

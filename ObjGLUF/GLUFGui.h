@@ -167,7 +167,7 @@ typedef void(*PCALLBACKGLUFGUIEVENT)(GLUF_EVENT nEvent, int nControlID, GLUFCont
 
 struct GLUFBlendColor
 {
-	void        Init(Color defaultColor, Color disabledColor = Color(200, 128, 128, 128), Color hiddenColor = Color(1.0f, 1.0f, 1.0f, 0.0f)/*Transparent*/);
+	void        Init(Color defaultColor, Color disabledColor = Color(200, 128, 128, 100), Color hiddenColor = Color(0, 0, 0, 0));
 	void        Blend(GLUF_CONTROL_STATE iState, float fElapsedTime, float fRate = 0.7f);
 	void		SetCurrent(Color current);
 	void		SetCurrent(GLUF_CONTROL_STATE state);
@@ -831,6 +831,7 @@ struct GLUFListBoxItem
 	std::string strText;
 	void* pData;
 
+	bool bVisible;
 	GLUFRect rcActive;
 	bool bSelected;
 };
@@ -857,7 +858,7 @@ public:
 	void            SetScrollBarWidth(float nWidth)		{ m_fSBWidth = nWidth; UpdateRects(); }
 	//This should be in PIXELS
 	void            SetBorderPixels(int nBorder, int nMargin);
-	void            SetBorder(float fBorderX, float fBorderY, float fMargin){ m_fBorderX = fBorderX; m_fBorderY = fBorderY; m_fMargin = fMargin; }
+	void            SetBorder(float fBorder, float fMargin){ m_fBorder = fBorder; m_fMargin = fMargin; }
 	GLUFResult      AddItem(std::string wszText, void* pData);
 	GLUFResult      InsertItem(int nIndex, std::string wszText, void* pData);
 	void            RemoveItem(int nIndex);
@@ -873,13 +874,15 @@ public:
 		MULTISELECTION = 1
 	};
 
+	virtual bool ContainsPoint(GLUFPoint pt){ return GLUFControl::ContainsPoint(pt) || m_ScrollBar.ContainsPoint(pt); }
+
 protected:
 	GLUFRect m_rcText;      // Text rendering bound
 	GLUFRect m_rcSelection; // Selection box bound
 	GLUFScrollBar m_ScrollBar;
 	float m_fSBWidth;
-	float m_fBorderX, m_fBorderY;
-	float m_fMargin;
+	float m_fBorder; //top / bottom
+	float m_fMargin;	//left / right
 	float m_fTextHeight;  // Height of a single line of text
 	long m_dwStyle;     // List box style
 	int m_nSelected;    // Index of the selected item for single selection list box
@@ -887,6 +890,8 @@ protected:
 	bool m_bDrag;       // Whether the user is dragging the mouse to select
 
 	std::vector <GLUFListBoxItem*> m_Items;
+
+	void UpdateItemRects();
 };
 
 
