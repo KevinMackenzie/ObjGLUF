@@ -93,7 +93,7 @@ int main(void)
 	dlg->AddButton(0, "Button", 0.05f, 0.01f, 0.125f, 0.03625f);
 
 	GLUFListBox* box;
-	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, 0UL, &box);
+	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);
 	dlg->AddCheckBox(2, "Check Box", 0.3f, 0.1f, 0.03625f, 0.03625f);
 	dlg->AddRadioButton(3, 0, "Button 1", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
 	dlg->AddRadioButton(4, 0, "Button 2", 0.4f, 0.45f, 0.03625f, 0.03625f);

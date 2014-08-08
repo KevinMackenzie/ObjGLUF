@@ -833,7 +833,7 @@ struct GLUFListBoxItem
 
 	bool bVisible;
 	GLUFRect rcActive;
-	bool bSelected;
+	//bool bSelected;
 };
 
 class GLUFListBox : public GLUFControl
@@ -885,8 +885,7 @@ protected:
 	float m_fMargin;	//left / right
 	float m_fTextHeight;  // Height of a single line of text
 	long m_dwStyle;     // List box style
-	int m_nSelected;    // Index of the selected item for single selection list box
-	int m_nSelStart;    // Index of the item where selection starts (for handling multi-selection)
+	std::vector<int> m_Selected;//this has a size of 1 for single selected boxes
 	bool m_bDrag;       // Whether the user is dragging the mouse to select
 
 	std::vector <GLUFListBoxItem*> m_Items;

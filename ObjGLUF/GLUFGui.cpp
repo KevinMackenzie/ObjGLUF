@@ -5595,8 +5595,7 @@ GLUFListBox::GLUFListBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
 
 	m_dwStyle = 0;
 	m_fSBWidth = 16.0f / m_pDialog->GetManager()->GetWindowSize().x;
-	m_nSelected = -1;
-	m_nSelStart = 0;
+	m_Selected.push_back(-1);
 	m_bDrag = false;
 	m_fBorder = 6 / m_pDialog->GetManager()->GetWindowSize().y;
 	m_fMargin = 5 / m_pDialog->GetManager()->GetWindowSize().x;
@@ -5646,7 +5645,7 @@ void GLUFListBox::UpdateRects()
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
-		m_ScrollBar.ShowItem(m_nSelected);
+		m_ScrollBar.ShowItem(m_Selected[m_Selected.size()-1]);
 	}
 }
 
@@ -5659,11 +5658,15 @@ GLUFResult GLUFListBox::AddItem(std::string wszText, void* pData)
 	if (!pNewItem)
 		return GR_OUTOFMEMORY;
 
+	//clear the selection vector
+	m_Selected.clear();//this makes it so we do not have to offset the selection
+	m_Selected.push_back(-1);
+
 	//wcscpy_s(pNewItem->strText, 256, wszText);
 	pNewItem->strText = wszText;
 	pNewItem->pData = pData;
 	GLUFSetRect(pNewItem->rcActive, 0, 0, 0, 0);
-	pNewItem->bSelected = false;
+	//pNewItem->bSelected = false;
 
 	m_Items.push_back(pNewItem);
 	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
@@ -5680,11 +5683,16 @@ GLUFResult GLUFListBox::InsertItem(int nIndex, std::string wszText, void* pData)
 	if (!pNewItem)
 		return GR_OUTOFMEMORY;
 
+	//clear the selection vector
+	m_Selected.clear();//this makes it so we do not have to offset the selection
+	m_Selected.push_back(-1);
+
 	//wcscpy_s(pNewItem->strText, 256, wszText);
 	pNewItem->strText = wszText;
 	pNewItem->pData = pData;
 	GLUFSetRect(pNewItem->rcActive, 0, 0, 0, 0);
-	pNewItem->bSelected = false;
+	//pNewItem->bSelected = false;
+
 
 	m_Items[nIndex] = pNewItem;
 	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
@@ -5704,8 +5712,8 @@ void GLUFListBox::RemoveItem( int nIndex)
 	delete pItem;
 	m_Items.erase(it);
 	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
-	if (m_nSelected >= (int)m_Items.size())
-		m_nSelected = int(m_Items.size()) - 1;
+	if (m_Selected[0] >= (int)m_Items.size())
+		m_Selected[0] = int(m_Items.size()) - 1;
 
 	m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 }
@@ -5722,6 +5730,8 @@ void GLUFListBox::RemoveAllItems()
 
 	m_Items.clear();
 	m_ScrollBar.SetTrackRange(0, 1);
+	m_Selected.clear();
+	m_Selected.push_back(-1);
 }
 
 
@@ -5750,20 +5760,23 @@ int GLUFListBox::GetSelectedIndex( int nPreviousSelected)
 	if (m_dwStyle & MULTISELECTION)
 	{
 		// Multiple selection enabled. Search for the next item with the selected flag.
-		for (int i = nPreviousSelected + 1; i < (int)m_Items.size(); ++i)
+		/*for (int i = nPreviousSelected + 1; i < (int)m_Items.size(); ++i)
 		{
 			GLUFListBoxItem* pItem = m_Items[i];
 
 			if (pItem->bSelected)
 				return i;
-		}
+		}*/
+
+		//TODO: does this work?
+		int in = *(std::find(m_Selected.begin(), m_Selected.end(), nPreviousSelected) + 1);
 
 		return -1;
 	}
 	else
 	{
 		// Single selection
-		return m_nSelected;
+		return m_Selected[0];
 	}
 }
 
@@ -5775,29 +5788,32 @@ void GLUFListBox::SelectItem( int nNewIndex)
 	if (m_Items.size() == 0)
 		return;
 
-	int nOldSelected = m_nSelected;
+	int nOldSelected = m_Selected[0];
 
 	// Adjust m_nSelected
-	m_nSelected = nNewIndex;
+	m_Selected[0] = nNewIndex;
 
 	// Perform capping
-	if (m_nSelected < 0)
-		m_nSelected = 0;
-	if (m_nSelected >= (int)m_Items.size())
-		m_nSelected = int(m_Items.size()) - 1;
+	if (m_Selected[0] < 0)
+		m_Selected[0] = 0;
+	if (m_Selected[0] >= (int)m_Items.size())
+		m_Selected[0] = int(m_Items.size()) - 1;
 
-	if (nOldSelected != m_nSelected)
+	if (nOldSelected != m_Selected[0])
 	{
-		if (m_dwStyle & MULTISELECTION)
+		/*if (m_dwStyle & MULTISELECTION)
 		{
-			m_Items[m_nSelected]->bSelected = true;
-		}
+			//m_Items[m_Selected[0]]->bSelected = true;
+		}*/
 
+		nNewIndex = m_Selected[0];
+		m_Selected.clear();
+		m_Selected.push_back(nNewIndex);
 		// Update selection start
-		m_nSelStart = m_nSelected;
+		//m_nSelStart = m_nSelected;
 
 		// Adjust scroll bar
-		m_ScrollBar.ShowItem(m_nSelected);
+		m_ScrollBar.ShowItem(m_Selected[m_Selected.size() - 1]);
 	}
 
 	m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
@@ -6185,67 +6201,73 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				if (m_Items.size() == 0)
 					return true;
 
-				int nOldSelected = m_nSelected;
+				int nOldSelected = m_Selected[0];
+				m_Selected.clear();
+				m_Selected.push_back(nOldSelected);
 
 				// Adjust m_nSelected
 				switch (param1)
 				{
 				case GLFW_KEY_UP:
-					--m_nSelected; break;
+					--m_Selected[0]; break;
 				case GLFW_KEY_DOWN:
-					++m_nSelected; break;
+					++m_Selected[0]; break;
 				case GLFW_KEY_PAGE_DOWN:
-					m_nSelected += m_ScrollBar.GetPageSize() - 1; break;
+					m_Selected[0] += m_ScrollBar.GetPageSize() - 1; break;
 				case GLFW_KEY_PAGE_UP:
-					m_nSelected -= m_ScrollBar.GetPageSize() - 1; break;
+					m_Selected[0] -= m_ScrollBar.GetPageSize() - 1; break;
 				case GLFW_KEY_HOME:
-					m_nSelected = 0; break;
+					m_Selected[0] = 0; break;
 				case GLFW_KEY_END:
-					m_nSelected = int(m_Items.size()) - 1; break;
+					m_Selected[0] = int(m_Items.size()) - 1; break;
 				}
 
 				// Perform capping
-				if (m_nSelected < 0)
-					m_nSelected = 0;
-				if (m_nSelected >= (int)m_Items.size())
-					m_nSelected = int(m_Items.size()) - 1;
+				if (m_Selected[0] < 0)
+					m_Selected[0] = 0;
+				if (m_Selected[0] >= (int)m_Items.size())
+					m_Selected[0] = int(m_Items.size()) - 1;
 
-				if (nOldSelected != m_nSelected)
+				if (nOldSelected != m_Selected[0])
 				{
 					if (m_dwStyle & MULTISELECTION)
 					{
 						// Multiple selection
 
 						// Clear all selection
-						for (int i = 0; i < (int)m_Items.size(); ++i)
+						/*for (int i = 0; i < (int)m_Items.size(); ++i)
 						{
 							GLUFListBoxItem* pItem = m_Items[i];
 							pItem->bSelected = false;
 						}
 
+						m_Selected.clear();
+
 						if (param4 & GLFW_MOD_SHIFT)
 						{
 							// Select all items from m_nSelStart to
 							// m_nSelected
-							int nEnd = std::max(m_nSelStart, m_nSelected);
+							int nEnd = m_Selected[m_Selected.size() - 1];//std::max(m_nSelStart, m_nSelected);
 
-							for (int n = std::min(m_nSelStart, m_nSelected); n <= nEnd; ++n)
+							for (int n = m_Selected[0]; n <= nEnd; ++n)
 								m_Items[n]->bSelected = true;
 						}
 						else
 						{
-							m_Items[m_nSelected]->bSelected = true;
+							m_Items[m_Selected[0]]->bSelected = true;
 
 							// Update selection start
-							m_nSelStart = m_nSelected;
-						}
+							//m_nSelStart = m_nSelected;
+						}*/
+
+						//TODO: key callback
 					}
-					else
-						m_nSelStart = m_nSelected;
+					else;
+						//m_nSelStart = m_nSelected;
 
 					// Adjust scroll bar
 
-					m_ScrollBar.ShowItem(m_nSelected);
+					m_ScrollBar.ShowItem(m_Selected[0]);
 
 					// Send notification
 
@@ -6301,28 +6323,44 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 					// If this is a multi-selection listbox, update per-item
 					// selection data.
-				
+
+				int currSelectedIndex = -1;
+
 				//the easy way
 				for (unsigned int it = 0; it < m_Items.size(); ++it)
 				{
 					if (GLUFPtInRect(m_Items[it]->rcActive, pt))
 					{
-						m_nSelected = it;
+						currSelectedIndex = it;
 						break;
 					}
 				}
-
 
 				if (m_dwStyle & MULTISELECTION)
 				{
 					// Determine behavior based on the state of Shift and Ctrl
 
-					GLUFListBoxItem* pSelItem = m_Items[m_nSelected];
+					//GLUFListBoxItem* pSelItem = m_Items[currSelectedIndex];
 					if (param3 & GLFW_MOD_CONTROL)
 					{
 						// Control click. Reverse the selection of this item.
 
-						pSelItem->bSelected = !pSelItem->bSelected;
+						//pSelItem->bSelected = !pSelItem->bSelected;
+						std::vector<int>::iterator it = std::find(m_Selected.begin(), m_Selected.end(), currSelectedIndex);
+						if (it == m_Selected.end())
+						{
+							m_Selected.push_back(currSelectedIndex);
+						}							
+						else
+						{
+							m_Selected.erase(it);//this should never fail
+
+							//make sure that if it is the last one, then add the -1
+							if (m_Selected.size() == 0)
+							{
+								m_Selected.push_back(-1);
+							}
+						}
 					}
 					else if (param3 & GLFW_MOD_SHIFT)
 					{
@@ -6330,10 +6368,15 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 						// from last selected item to the current item.
 						// Clear everything else.
 
-						int nBegin = std::min(m_nSelStart, m_nSelected);
-						int nEnd = std::max(m_nSelStart, m_nSelected);
+						if (m_Selected[0] == -1)
+							m_Selected[0] = 0;//this just fixes any issues with accidently keeping -1 in here
 
-						for (int i = 0; i < nBegin; ++i)
+						int nBegin = m_Selected[0];
+						int nEnd = currSelectedIndex;
+
+						m_Selected.clear();
+
+						/*for (int i = 0; i < nBegin; ++i)
 						{
 							GLUFListBoxItem* pItem = m_Items[i];
 							pItem->bSelected = false;
@@ -6343,16 +6386,37 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 						{
 							GLUFListBoxItem* pItem = m_Items[i];
 							pItem->bSelected = false;
-						}
+						}*/
 
-						for (int i = nBegin; i <= nEnd; ++i)
+						if (nBegin < nEnd)
 						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = true;
+							for (int i = nBegin; i <= nEnd; ++i)
+							{
+								/*GLUFListBoxItem* pItem = m_Items[i];
+								pItem->bSelected = true;
+								*/
+								m_Selected.push_back(i);
+							}
+						}
+						else if (nBegin > nEnd)
+						{
+							for (int i = nBegin; i >= nEnd; --i)
+							{
+								/*GLUFListBoxItem* pItem = m_Items[i];
+								pItem->bSelected = true;
+								*/
+								m_Selected.push_back(i);
+							}
+						}
+						else
+						{
+							m_Selected.push_back(-1);
 						}
 					}
 					else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL))
 					{
+						//No one uses shift control anyway (i see no use in it
+
 						// Control-Shift-click.
 
 						// The behavior is:
@@ -6360,24 +6424,27 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 						//     the same state as m_nSelStart, not including m_nSelected.
 						//   Set m_nSelected to selected.
 
-						int nBegin = std::min(m_nSelStart, m_nSelected);
-						int nEnd = std::max(m_nSelStart, m_nSelected);
+						/*int nBegin = m_Selected[0];
+						int nEnd = currSelectedIndex;
+						m_Selected.clear();
 
 						// The two ends do not need to be set here.
 
-						bool bLastSelected = m_Items[m_nSelStart]->bSelected;
+						bool bLastSelected = m_Items[nBegin]->bSelected;
 						for (int i = nBegin + 1; i < nEnd; ++i)
 						{
 							GLUFListBoxItem* pItem = m_Items[i];
 							pItem->bSelected = bLastSelected;
+
+							m_Selected.push_back(i);
 						}
 
-						pSelItem->bSelected = true;
+						pSelItem->bSelected = true;*/
 
 						// Restore m_nSelected to the previous value
 						// This matches the Windows behavior
 
-						m_nSelected = m_nSelStart;
+						//m_nSelected = m_nSelStart;
 					}
 					else
 					{
@@ -6385,15 +6452,32 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 						// item.
 
 
-						for (int i = 0; i < (int)m_Items.size(); ++i)
+						/*for (int i = 0; i < (int)m_Items.size(); ++i)
 						{
 							GLUFListBoxItem* pItem = m_Items[i];
 							pItem->bSelected = false;
 						}
 
 						pSelItem->bSelected = true;
+						*/
+
+						m_Selected.clear();
+						m_Selected.push_back(currSelectedIndex);
+
+						//NOTE: clicking not on an item WILL lead to a clearing of the selection
 					}
 				}  // End of multi-selection case
+				else
+				{
+					m_Selected[0] = currSelectedIndex;
+				}
+
+				//always make sure we have one
+				if (m_Selected.size() == 0)
+					m_Selected.push_back(-1);
+
+				//sort it for proper functionality when using shift-clicking (NOT HELPFUL)
+				//std::sort(m_Selected.begin(), m_Selected.end());
 
 				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 				
@@ -6404,32 +6488,33 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		}
 		else
 		{
+			//TODO: drag click
 			//ReleaseCapture();
-			m_bDrag = false;
+			/*m_bDrag = false;
 
-			if (m_nSelected != -1)
+			if (m_Selected[0] != -1)
 			{
 				// Set all items between m_nSelStart and m_nSelected to
 				// the same state as m_nSelStart
-				int nEnd = std::max(m_nSelStart, m_nSelected);
+				int nEnd = m_Selected[m_Selected.size() - 1];
 
-				for (int n = std::min(m_nSelStart, m_nSelected) + 1; n < nEnd; ++n)
-					m_Items[n]->bSelected = m_Items[m_nSelStart]->bSelected;
-				m_Items[m_nSelected]->bSelected = m_Items[m_nSelStart]->bSelected;
+				for (int n = m_Selected[0] + 1; n < nEnd; ++n)
+					m_Items[n]->bSelected = m_Items[m_Selected[0]]->bSelected;
+				m_Items[m_Selected[0]]->bSelected = m_Items[m_Selected[0]]->bSelected;
 
 				// If m_nSelStart and m_nSelected are not the same,
 				// the user has dragged the mouse to make a selection.
 				// Notify the application of this.
-				if (m_nSelStart != m_nSelected)
+				if (m_Selected[0] != m_Selected[m_Selected.size() - 1])
 					m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 
 				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION_END, true, this);
-			}
+			}*/
 			return false;
 		}
 
 	case GM_CURSOR_POS:
-		if (m_bDrag)
+		/*if (m_bDrag)
 		{
 			// Compute the index of the item below cursor
 
@@ -6449,25 +6534,25 @@ bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				nItem < (int)m_Items.size() &&
 				nItem < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
 			{
-				m_nSelected = nItem;
+				m_Selected[0] = nItem;
 				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 			}
 			else if (nItem < (int)m_ScrollBar.GetTrackPos())
 			{
 				// User drags the mouse above window top
 				m_ScrollBar.Scroll(-1);
-				m_nSelected = m_ScrollBar.GetTrackPos();
+				m_Selected[0] = m_ScrollBar.GetTrackPos();
 				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 			}
 			else if (nItem >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
 			{
 				// User drags the mouse below window bottom
 				m_ScrollBar.Scroll(1);
-				m_nSelected = std::min((int)m_Items.size(), m_ScrollBar.GetTrackPos() +
+				m_Selected[0] = std::min((int)m_Items.size(), m_ScrollBar.GetTrackPos() +
 					m_ScrollBar.GetPageSize()) - 1;
 				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
 			}
-		}
+		}*/
 		break;
 
 	case GM_SCROLL:
@@ -6558,18 +6643,26 @@ void GLUFListBox::Render( float fElapsedTime)
 			// selected element.
 			bool bSelectedStyle = false;
 
-			if (!(m_dwStyle & MULTISELECTION) && i == m_nSelected)
+			//m_Items[i]->bSelected = false;
+
+			if (!(m_dwStyle & MULTISELECTION) && i == m_Selected[0])
 				bSelectedStyle = true;
 			else if (m_dwStyle & MULTISELECTION)
 			{
-				if (m_bDrag &&
-					((i >= m_nSelected && i < m_nSelStart) ||
-					(i <= m_nSelected && i > m_nSelStart)))
-					bSelectedStyle = m_Items[m_nSelStart]->bSelected;
+				for (auto it : m_Selected)
+					if (i == it)
+						bSelectedStyle = true;
+
+					
+				/*if (m_bDrag &&
+					((i >= m_Selected[0] && i < m_Selected[0]) ||
+					(i <= m_Selected[0] && i > m_Selected[0])))
+					bSelectedStyle = m_Items[m_Selected[0]]->bSelected;
 				else if (pItem->bSelected)
-					bSelectedStyle = true;
+					bSelectedStyle = true;*/
 			}
 
+			//bSelectedStyle = m_Items[i]->bSelected;
 			if (bSelectedStyle)
 			{
 				//rcSel.top = rc.top; rcSel.bottom = rc.bottom;

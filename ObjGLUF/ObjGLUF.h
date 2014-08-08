@@ -173,20 +173,26 @@ struct OBJGLUF_API GLUFPoint
 	GLUFPoint() : x(0), y(0){}
 };
 
-OBJGLUF_API bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
-OBJGLUF_API void GLUFSetRectEmpty(GLUFRect& rect);
-OBJGLUF_API void GLUFSetRect(GLUFRect& rect, float left, float top, float right, float bottom);
-OBJGLUF_API void GLUFOffsetRect(GLUFRect& rect, float x, float y);
-OBJGLUF_API float GLUFRectHeight(GLUFRect rect);
-OBJGLUF_API float GLUFRectWidth(GLUFRect rect);
-OBJGLUF_API void GLUFInflateRect(GLUFRect& rect, float dx, float dy);
-OBJGLUF_API bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect);
-OBJGLUF_API GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords);//this is used to tranlate screen coordinates (where origin is bottom left and 1,1 is upper left) to clip space (where origin is the middle, and 1,1 is still upper left)
-OBJGLUF_API glm::vec3 GLUFScreenToClipspace(glm::vec3 vec);//same as above
-OBJGLUF_API void GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
-OBJGLUF_API void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
-OBJGLUF_API void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
-OBJGLUF_API GLUFPoint GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
+OBJGLUF_API bool		GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
+OBJGLUF_API void		GLUFSetRectEmpty(GLUFRect& rect);
+OBJGLUF_API void		GLUFSetRect(GLUFRect& rect, float left, float top, float right, float bottom);
+OBJGLUF_API void		GLUFOffsetRect(GLUFRect& rect, float x, float y);
+OBJGLUF_API float		GLUFRectHeight(GLUFRect rect);
+OBJGLUF_API float		GLUFRectWidth(GLUFRect rect);
+OBJGLUF_API void		GLUFInflateRect(GLUFRect& rect, float dx, float dy);
+OBJGLUF_API bool		GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect);
+OBJGLUF_API GLUFRect	GLUFScreenToClipspace(GLUFRect screenCoords);//this is used to tranlate screen coordinates (where origin is bottom left and 1,1 is upper left) to clip space (where origin is the middle, and 1,1 is still upper left)
+OBJGLUF_API glm::vec3	GLUFScreenToClipspace(glm::vec3 vec);//same as above
+OBJGLUF_API void		GLUFFlipPoint(GLUFPoint& pt);//this expects a normalized value
+OBJGLUF_API void		GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point that contains the values to normalize by.  i.e. screen size
+OBJGLUF_API void		GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
+OBJGLUF_API GLUFPoint	GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
+
+template<typename T>
+OBJGLUF_API inline size_t GLUFGetVectorSize(std::vector<T> vec)
+{
+	return vec.size();
+}
 
 //used for getting vertices from rects
 OBJGLUF_API glm::vec2 GLUFGetPointFromRect(GLUFRect rect, bool x, bool y);//0,0 is bottom left
