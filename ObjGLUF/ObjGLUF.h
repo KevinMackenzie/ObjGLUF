@@ -213,8 +213,12 @@ OBJGLUF_API inline size_t GLUFGetVectorSize(std::vector<T> vec)
 	return vec.size();
 }
 
-//used for getting vertices from rects
-OBJGLUF_API glm::vec2 GLUFGetPointFromRect(GLUFRect rect, bool x, bool y);//0,0 is bottom left
+//used for getting vertices from rects 0,0 is bottom left
+OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y);
+
+//used for getting vertices from rects 0,0 is bottom left
+OBJGLUF_API GLUFPoint GLUFGetPointFromRect(GLUFRect rect, bool x, bool y);
+
 
 OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
 

@@ -1019,7 +1019,7 @@ protected:
 //-----------------------------------------------------------------------------
 // GLUFUniBuffer class for the edit control (this simulates a single line of text)
 //-----------------------------------------------------------------------------
-class GLUFUniBuffer
+/*class GLUFUniBuffer
 {
 public:
 	GLUFUniBuffer(GLUFDialogResourceManager *resMan, int nInitialSize = 1);
@@ -1066,7 +1066,7 @@ private:
 
 private:
 	// Empty implementation of the Uniscribe API
-	/*static GLUFResult       Dummy_ScriptApplyDigitSubstitution(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*, SCRIPT_STATE*)
+	static GLUFResult       Dummy_ScriptApplyDigitSubstitution(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*, SCRIPT_STATE*)
 	{
 		return GR_NOTIMPL;
 	}
@@ -1110,11 +1110,11 @@ private:
 	static const int* (WINAPI*_ScriptString_pcOutChars)(SCRIPT_STRING_ANALYSIS);
 
 	static HINSTANCE s_hDll;  // Uniscribe DLL handle
-	*/
-};
+	
+};*/
 
 //-----------------------------------------------------------------------------
-// EditBox control TODO: fix
+// EditBox control TODO: make text insertion AND fix things
 //-----------------------------------------------------------------------------
 class GLUFEditBox : public GLUFControl
 {
@@ -1132,18 +1132,19 @@ public:
 	virtual GLUFResult OnInit(){ return m_pDialog->InitControl(&m_ScrollBar); }
 
 	void            SetText(std::string wszText, bool bSelected = false);
-	std::string     GetText(){ return m_Buffer.GetBuffer(); }
-	int             GetTextLength(){ return m_Buffer.GetTextSize(); }  // Returns text length in chars excluding NULL.
-	GLUFResult      GetTextCopy(std::string& strDest);
+	std::string     GetText(){ return m_strBuffer; }
+	int             GetTextLength(){ return m_strBuffer.length(); }  // Returns text length in chars excluding NULL.
+	std::string     GetTextClamped();//this gets the text, but clamped to the bounding box, (NOTE: this will overflow off the bottom);
 	void            ClearText();
 	virtual void    SetTextColor(Color Color){ m_TextColor = Color; }  // Text color
 	void            SetSelectedTextColor(Color Color){ m_SelTextColor = Color; }  // Selected text color
 	void            SetSelectedBackColor(Color Color){ m_SelBkColor = Color; }  // Selected background color
 	void            SetCaretColor(Color Color){ m_CaretColor = Color; }  // Caret color
-	void            SetBorderWidth(float fBorderX, float fBorderY){ m_fBorderX = fBorderX; m_fBorderY = fBorderY; UpdateRects(); }  // Border of the window
-	void            SetSpacing(float fSpacingX, float fSpacingY){ m_fSpacingX = fSpacingX; m_fSpacingY = fSpacingY; UpdateRects(); }
+	void            SetBorderWidth(float fBorderX, float fBorderY){ m_fBorderX = fBorderX; m_fBorderY = fBorderY; UpdateRects(); m_bAnalyseRequired = true; }  // Border of the window
+	void            SetSpacing(float fSpacingX, float fSpacingY){ m_fSpacingX = fSpacingX; m_fSpacingY = fSpacingY; UpdateRects(); m_bAnalyseRequired = true; }
 	//void            ParseFloatArray(float* pNumbers, int nCount);
 	//void            SetTextFloatArray(const float* pNumbers, int nCount);
+
 
 protected:
 	void            PlaceCaret(int nCP);
@@ -1152,10 +1153,40 @@ protected:
 	void            CopyToClipboard();
 	void            PasteFromClipboard();
 
-	int             GetLineNumberFromCharPos(int nCP);
+	int             GetLineNumberFromCharPos(int nCP);//given in m_strBuffer space
 
+	int				GetStrIndexFromStrRenderIndex(int strRenderIndex);//this is used to convert an index of an object that was clicked on the screen to the index of the real string
+	int             GetStrRenderIndexFromStrIndex(int strIndex);//just the opposite
 
-	GLUFUniBuffer m_Buffer;     // Buffer to hold text
+	//former CUniBuffer Methods
+	void Analyse();
+	
+	//NOTE: input the cursor position in m_strBuffer space
+	bool CPtoPT(int nCP, bool bTrail, GLUFPoint *pPt);
+
+	//NOTE: outputs the cursor position in m_strBuffer space
+	bool PTtoCP(GLUFPoint pt, int* pCP, bool* bTrail);
+	void InsertString(unsigned int pos, std::string str);
+	void InsertChar(unsigned int pos, char ch);
+
+	void RemoveString(unsigned int pos, int len);
+	void RemoveChar(unsigned int pos);
+
+	void GetNextItemPos(int pos, int& next);
+	void GetPriorItemPos(int pos, int& prior);
+
+	int GetNumNewlines();
+
+	//GLUFUniBuffer m_Buffer;     // Buffer to hold text
+
+	std::string m_strBuffer; //buffer to hold the text
+	std::string m_strRenderBuffer;//this stores the string that will be rendered, this inclues newlines inserted at the end of the rect
+	unsigned int m_strRenderBufferOffset;//the distance between the start of the string buffer, and the start of the render string buffer
+	std::vector<size_t> m_strInsertedNewlineLocations;//the location of all of the newlines that were inserted into the render string
+
+	std::vector<GLUFRect> m_CharBoundingBoxes;//a buffer to hold all of the rects of the chars. the origin is the botom left of the text region also, this is based on m_strRenderBuffer, NOT m_strBuffer
+	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
+
 	float m_fBorderX, m_fBorderY;      // Border of the window
 	float m_fSpacingX, m_fSpacingY;     // Spacing between the text and the edge of border
 	GLUFRect m_rcText;       // Bounding GLUFRectangle for the text
@@ -1171,7 +1202,7 @@ protected:
 	Color m_SelTextColor; // Selected text color
 	Color m_SelBkColor;   // Selected background color
 	Color m_CaretColor;   // Caret color
-	std::vector<int> m_CharLineBreaks;//a vector of the positions of line breaks
+	//std::vector<int> m_CharLineBreaks;//a vector of the positions of line breaks
 
 	GLUFScrollBar m_ScrollBar;//TODO: impliment
 	float m_fSBWidth;

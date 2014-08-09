@@ -6726,7 +6726,7 @@ bool GLUFEditBox::s_bHideCaret;   // If true, we don't render the caret.
 #define EDITBOX_SCROLLEXTENT 4
 
 //--------------------------------------------------------------------------------------
-GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : GLUFControl(pDialog), m_Buffer(pDialog->GetManager()), m_ScrollBar(pDialog)
+GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : GLUFControl(pDialog), m_ScrollBar(pDialog)
 {
 	m_Type = GLUF_CONTROL_EDITBOX;
 	m_pDialog = pDialog;
@@ -6750,6 +6750,8 @@ GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : GLUFControl(pDialog), m_Buffer(p
 
 	m_fSBWidth = 16.0f / m_pDialog->GetManager()->GetWindowSize().x;
 	m_bMouseDrag = false;
+
+	m_bAnalyseRequired = true;
 }
 
 
@@ -6765,7 +6767,7 @@ GLUFEditBox::~GLUFEditBox()
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::PlaceCaret( int nCP)
 {
-	GLUF_ASSERT(nCP >= 0 && nCP <= m_Buffer.GetTextSize());
+	GLUF_ASSERT(nCP >= 0 && nCP <= GetTextLength());
 	m_nCaret = nCP;
 
 	// Obtain the X offset of the character.
@@ -6813,26 +6815,35 @@ void GLUFEditBox::PlaceCaret( int nCP)
 
 int GLUFEditBox::GetLineNumberFromCharPos(int nCP)
 {
-	int prev = 0;
-	int it = 0;
-	for (unsigned int i = 0; i < m_CharLineBreaks.size(); ++i)
+	int cpRenderPos = GetStrRenderIndexFromStrIndex(nCP);
+	if (cpRenderPos < 0)
+		return -1;
+
+	//the number of newlines
+	unsigned int lin = -1;
+	for (unsigned int i = 0; i < cpRenderPos; ++i)
 	{
-		it = m_CharLineBreaks[i];
-
-		if (nCP > prev && nCP < it)
-			return i;
-
-		prev = it;
+		if (m_strRenderBuffer[i] == '\n')
+			++lin;
 	}
+
+	//offset by the scroll value
+	lin -= m_ScrollBar.GetTrackPos();
+
+	return lin;
 }
+
+
 
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::ClearText()
 {
-	m_Buffer.Clear();
+	m_strBuffer.clear();
 	m_nFirstVisible = 0;
 	PlaceCaret(0);
 	m_nSelStart = 0;
+
+	m_bAnalyseRequired = true;
 }
 
 
@@ -6841,24 +6852,14 @@ void GLUFEditBox::SetText( std::string wszText,  bool bSelected)
 {
 	//assert(wszText);
 
-	m_Buffer.SetText(wszText);
+	m_strBuffer = wszText;
 	m_nFirstVisible = 0;
 	// Move the caret to the end of the text
-	PlaceCaret(m_Buffer.GetTextSize());
+	PlaceCaret(GetTextLength());
 	m_nSelStart = bSelected ? 0 : m_nCaret;
-}
 
 
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFEditBox::GetTextCopy(std::string& strDest)
-{
-	//assert(strDest);
-
-	//wcscpy_s(strDest, bufferCount, m_Buffer.GetBuffer());
-	strDest = m_Buffer.GetBuffer();
-	
-	return GR_SUCCESS;
+	m_bAnalyseRequired = true;
 }
 
 
@@ -6872,7 +6873,9 @@ void GLUFEditBox::DeleteSelectionText()
 	m_nSelStart = m_nCaret;
 	// Remove the characters
 	for (int i = nFirst; i < nLast; ++i)
-		m_Buffer.RemoveChar(nFirst);
+		RemoveChar(nFirst);
+
+
 }
 
 
@@ -6902,81 +6905,7 @@ void GLUFEditBox::UpdateRects()
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 
 	// Inflate further by m_nSpacing
-	GLUFInflateRect(m_rcText, -m_fSpacingX, -m_fSpacingY);
-
-
-
-	//reanalyze the position of the character's line breaks
-	m_CharLineBreaks.clear();
-
-	float currXPos = 0.0f;
-	int charIndex = 0;//one offset to keep true because we are adding the size, so that offsets automatically
-	float fTextWidth = GLUFRectWidth(m_rcText);
-
-
-
-	//split the string into words but keep the space element for proper width calculations
-	//TODO: add existing newlines to the line break vector, and replace with spaces
-
-	/*std::string tmpBuf = m_Buffer.GetBuffer();
-	for (unsigned int i = 0; i < tmpBuf.length(); ++i)
-	{
-		if (tmpBuf[i] == '\n')
-		{
-			tmpBuf.erase(i, i);
-			tmpBuf.insert(i, 1, ' ');//replace newlines with spaces to preservere string length
-
-			m_CharLineBreaks.push_back(i);
-		}
-	}*/
-
-	std::vector<std::string> strings = GLUFSplitStr(m_Buffer.GetBuffer(), ' ', true);
-	for (auto it : strings)
-	{
-		float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
-
-		//if the current word width is bigger than the whole line, then newline at the box width
-		if (fWordWidth > fTextWidth)
-		{
-			//float charXPos = 0.0f;
-			int chIndex = 0;
-
-			for (auto itch : it)
-			{
-				currXPos += pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
-
-				if (currXPos > fTextWidth)
-				{
-					m_CharLineBreaks.push_back(charIndex + chIndex);
-					//charXPos = 0.0f;
-					currXPos = 0.0f;
-				}
-
-				chIndex++;
-			}
-
-		}
-		else
-		{
-			currXPos += fWordWidth;
-		}
-
-		if (currXPos/* + 0.0125f/*a little buffer*/ > fTextWidth)
-		{
-
-			//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
-			
-			m_CharLineBreaks.push_back(charIndex /*+ 1*/);
-			currXPos = fWordWidth;
-		}
-
-		//if (charIndex == 0)
-		//	--charIndex;
-
-		charIndex += it.size();
-	}
-	//lastly sort it
-	std::sort(m_CharLineBreaks.begin(), m_CharLineBreaks.end());
+	GLUFInflateRect(m_rcText, -m_fSpacingX, -m_fSpacingY);	
 
 
 	//recalculate scroll bar
@@ -6986,12 +6915,14 @@ void GLUFEditBox::UpdateRects()
 	if (pFontNode && pFontNode->mSize)
 	{
 		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
-		m_ScrollBar.SetTrackRange(0, m_CharLineBreaks.size());
+		m_ScrollBar.SetTrackRange(0, GetNumNewlines());
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
 		//m_ScrollBar.ShowItem(GetLineNumberFromCharPos(m_nCaret));
 	}
+
+	Analyse();
 }
 
 
@@ -7028,7 +6959,7 @@ void GLUFEditBox::CopyToClipboard()
 
 		//glfw makes this easy
 		std::string str = "";
-		std::string strBuffer = m_Buffer.GetBuffer();
+		std::string strBuffer = m_strBuffer;
 		for (int i = m_nSelStart; i < m_nCaret; ++i)
 		{
 			str += strBuffer[i];
@@ -7067,16 +6998,91 @@ void GLUFEditBox::PasteFromClipboard()
 	const char* str;
 	str = glfwGetClipboardString(g_pGLFWWindow);
 
-	m_Buffer.InsertString(m_nSelStart, str);
+	InsertString(m_nSelStart, str);
 	
 	//when pasting, set the cursor to the end
-	m_nCaret = m_Buffer.GetBuffer().length() - 1;
+	m_nCaret = m_strBuffer.length() - 1;
 	m_nSelStart = m_nCaret;
 
+	m_bAnalyseRequired = true;
 	//delete str;
 }
 #pragma warning(pop)
 
+
+void GLUFEditBox::InsertString(unsigned int pos, std::string str)
+{
+	GLUF_ASSERT(pos < GetTextLength() - 1);
+
+	m_strBuffer.insert(pos, str.c_str(), str.size());
+
+	m_bAnalyseRequired = true;
+}
+
+void GLUFEditBox::RemoveString(unsigned int pos, int len)
+{
+	GLUF_ASSERT(pos + len < GetTextLength()-1);
+
+	m_strBuffer.erase(pos, len);
+
+	m_bAnalyseRequired = true;
+}
+
+void GLUFEditBox::InsertChar(unsigned int pos, char ch)
+{
+	GLUF_ASSERT(pos < GetTextLength() - 1);
+
+	m_strBuffer.insert(pos, ch, 1);
+
+	m_bAnalyseRequired = true;
+}
+
+void GLUFEditBox::RemoveChar(unsigned int pos)
+{
+	GLUF_ASSERT(pos < GetTextLength() - 1);
+
+	m_strBuffer.erase(pos, 1);
+
+	m_bAnalyseRequired = true;
+}
+
+void GLUFEditBox::GetNextItemPos(int pos, int& next)
+{
+	if (pos == m_strBuffer.size())
+		next = pos;
+	else
+		next = pos + 1;
+}
+
+void GLUFEditBox::GetPriorItemPos(int pos, int& prior)
+{
+	if (pos == 0)
+		prior = pos;
+	else
+		prior = pos - 1;
+}
+
+int GLUFEditBox::GetNumNewlines()
+{
+	int ret = 0;
+	for (auto it : m_strBuffer)
+	{
+		if (it == '\n')
+			ret++;
+	}
+	ret += m_strInsertedNewlineLocations.size();
+	return ret;
+}
+
+int GLUFEditBox::GetStrIndexFromStrRenderIndex(int strRenderIndex)
+{
+	return -1;//TODO:
+}
+
+int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
+{
+	return -1;//TODO:
+}
 
 //--------------------------------------------------------------------------------------
 /*
@@ -7279,6 +7285,8 @@ void GLUFEditBox::OnFocusIn()
 	GLUFControl::OnFocusIn();
 
 	ResetCaretBlink();
+
+	m_bAnalyseRequired = true;
 }
 
 
@@ -7286,7 +7294,6 @@ void GLUFEditBox::OnFocusIn()
 
 bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	//TOOD:
 
 	// Let the scroll bar have a chance to handle it first
 	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM))
@@ -7315,13 +7322,14 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 			if (!ContainsPoint(pt))
 				return false;
+			m_bAnalyseRequired = true;
 
 			m_bMouseDrag = true;
 			//SetCapture(GLUFGetHWND());
 			// Determine the character corresponding to the coordinates.
 			int nCP, nX1st;
 			bool bTrail;
-			m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+			/*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
 			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
 			{
 				// Cap at the nul character.
@@ -7331,7 +7339,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					PlaceCaret(nCP);
 				m_nSelStart = m_nCaret;
 				ResetCaretBlink();
-			}
+			}*/
 			return true;
 		}
 		else
@@ -7346,7 +7354,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			// Determine the character corresponding to the coordinates.
 			int nCP, nX1st;
 			bool bTrail;
-			m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+			/*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
 			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
 			{
 				// Cap at the nul character.
@@ -7354,7 +7362,9 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					PlaceCaret(nCP + 1);
 				else
 					PlaceCaret(nCP);
-			}
+			}*/
+
+			m_bAnalyseRequired = true;
 		}
 		break;
 	case GM_SCROLL:
@@ -7363,10 +7373,13 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			m_pDialog->RequestFocus(this);
 
 		m_ScrollBar.Scroll(-(param2 / WHEEL_DELTA) / 2);
+		m_bAnalyseRequired = true;
 
 		break;
 	case GM_KEY:
 	{
+		m_bAnalyseRequired = true;
+
 		if (param3 == GLFW_PRESS)
 		{
 			switch (param1)
@@ -7387,7 +7400,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				break;
 
 			case GLFW_KEY_END:
-				PlaceCaret(m_Buffer.GetTextSize());
+				PlaceCaret(GetTextLength());
 				if (!param4 & GLFW_MOD_SHIFT)
 					// Shift is not down. Update selection
 					// start along with the caret.
@@ -7424,8 +7437,8 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				else
 				{
 					// Deleting one character
-					if (m_Buffer.RemoveChar(m_nCaret))
-						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+					//if (m_Buffer.RemoveChar(m_nCaret))
+					//	m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 				}
 				ResetCaretBlink();
 				bHandled = true;
@@ -7436,7 +7449,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				{
 					// Control is down. Move the caret to a new item
 					// instead of a character.
-					m_Buffer.GetPriorItemPos(m_nCaret, &m_nCaret);
+					GetPriorItemPos(m_nCaret, m_nCaret);
 					PlaceCaret(m_nCaret);
 				}
 				else if (m_nCaret > 0)
@@ -7454,10 +7467,10 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				{
 					// Control is down. Move the caret to a new item
 					// instead of a character.
-					m_Buffer.GetNextItemPos(m_nCaret, &m_nCaret);
+					GetNextItemPos(m_nCaret, m_nCaret);
 					PlaceCaret(m_nCaret);
 				}
-				else if (m_nCaret < m_Buffer.GetTextSize())
+				else if (m_nCaret < GetTextLength())
 					PlaceCaret(m_nCaret + 1);
 				if (!param4 & GLFW_MOD_SHIFT)
 					// Shift is not down. Update selection
@@ -7493,6 +7506,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 	case GM_KEY:
 	//	return true;
 
+		m_bAnalyseRequired = true;
 	//case GM_UNICODE_CHAR: (suprisingly, the GM_KEY will work better, because at this time I do not support unicode chars)
 	{
 		if (param1 <= 255 &&  param1 >= 32 &&  param1 != 127/*DEL*/ && (param4 == 0x0000 || param4 & GLFW_MOD_SHIFT))
@@ -7589,7 +7603,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			// If we are in overwrite mode and there is already
 			// a char at the caret's position, simply replace it.
 			// Otherwise, we insert the char as normal.
-			if (!m_bInsertMode && m_nCaret < m_Buffer.GetTextSize())
+			/*if (!m_bInsertMode && m_nCaret < GetTextLength())
 			{
 				m_Buffer.RemoveChar(m_nCaret);
 				m_Buffer.InsertChar(m_nCaret, param1);
@@ -7604,7 +7618,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					PlaceCaret(m_nCaret + 1);
 					m_nSelStart = m_nCaret;
 				}
-			}
+			}*/
 			ResetCaretBlink();
 			m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 			
@@ -7631,7 +7645,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 						// Move the caret, then delete the char.
 						PlaceCaret(m_nCaret - 1);
 						m_nSelStart = m_nCaret;
-						m_Buffer.RemoveChar(m_nCaret);
+						RemoveChar(m_nCaret);
 						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 					}
 					ResetCaretBlink();
@@ -7674,7 +7688,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					if (m_nSelStart == m_nCaret)
 					{
 						m_nSelStart = 0;
-						PlaceCaret(m_Buffer.GetTextSize());
+						PlaceCaret(GetTextLength());
 					}
 				}
 				break;
@@ -7682,7 +7696,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			case GLFW_KEY_ENTER:
 				// Invoke the callback when the user presses Enter.
 				//m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
-				m_Buffer.InsertChar(m_nCaret, '\n');
+				InsertChar(m_nCaret, '\n');
 				break;
 
 				// Junk characters we don't want in the string
@@ -7726,7 +7740,9 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::Render( float fElapsedTime)
 {
-	UpdateRects();
+	//UpdateRects();
+	if (m_bAnalyseRequired)
+		Analyse();
 
 	//TODO: don't render scrollbar UNLESS there is necessity to scroll, change this on ALL controls
 
@@ -7741,7 +7757,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	GLUFElement* pElement = GetElement(0);
 	if (pElement)
 	{
-		m_Buffer.SetFontNode(m_pDialog->GetFont(pElement->iFont));
+		//m_Buffer.SetFontNode(m_pDialog->GetFont(pElement->iFont));
 		PlaceCaret(m_nCaret);  // Call PlaceCaret now that we have the font info (node),
 		// so that scrolling can be handled.
 	}
@@ -7758,8 +7774,8 @@ void GLUFEditBox::Render( float fElapsedTime)
 	//
 	// Compute the X coordinates of the first visible character.
 	//
-	int nXFirst;
-	m_Buffer.CPtoX(m_nFirstVisible, false, &nXFirst);
+	int nXFirst = 0;
+	/*m_Buffer.CPtoX(m_nFirstVisible, false, &nXFirst);
 
 	//
 	// Compute the X coordinates of the selection rectangle
@@ -7768,7 +7784,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	if (m_nCaret != m_nSelStart)
 		m_Buffer.CPtoX(m_nSelStart, false, &nSelStartX);
 	else
-		nSelStartX = nCaretX;
+		nSelStartX = nCaretX;*/
 
 	//
 	// Render the selection rectangle
@@ -7795,68 +7811,23 @@ void GLUFEditBox::Render( float fElapsedTime)
 	//
 	// Element 0 for text
 	
-	//add line breaks
-	//unsigned int j = 0;
-	std::string buff = m_Buffer.GetBuffer();
-
-
-
-	if (m_CharLineBreaks.size() != 0)
-	{
-		unsigned int i = 0;//make sure to keep track of the offest caused by the other line breaks
-
-		GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-		for (auto it : m_CharLineBreaks)
-		{
-			/*//TODO: set this up with scroll bar instead of 0 as constant
-			if ((i+2/*cut one line short(fix this)) * pFont->mSize > GLUFRectHeight(m_rcText))
-			{
-			//don't draw anything past the last line.
-			//buff.erase(it + i, buff.size() - 1);
-			break;
-			}*/
-
-			buff.insert(it + i, 1, '\n');
-			++i;
-
-		}
-
-		//remove all of the text that will not be displayed
-		int beginIndex = 0;
-		int endIndex = 0;
-
-		if (m_ScrollBar.GetTrackPos() != 0)
-			beginIndex = m_CharLineBreaks[m_ScrollBar.GetTrackPos() - 1] + m_ScrollBar.GetTrackPos();
-		
-		if (m_ScrollBar.GetTrackPos() - 1 + m_ScrollBar.GetPageSize() != m_CharLineBreaks.size())
-			endIndex = m_CharLineBreaks[m_ScrollBar.GetTrackPos() - 1 + m_ScrollBar.GetPageSize()] + m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize();
-		else
-			endIndex = buff.length() - 1;
-
-		//always erase back first, because this does not effect the offset of the beginning
-		buff.erase(endIndex, buff.length() - 1);
-		buff.erase(0, beginIndex);
-	}
-	
-
-	
 
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
-	m_pDialog->DrawText(buff, m_Elements[0], m_rcText, false, false, false);//the hardrect feature is used only for discarding text off the bottom of the screen
+	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText, false, false, false);//the hardrect feature is used only for discarding text off the bottom of the screen
 
 	// Render the selected text
-	if (m_nCaret != m_nSelStart)
+	/*if (m_nCaret != m_nSelStart)
 	{
 		int nFirstToRender = std::max(m_nFirstVisible, std::min(m_nSelStart, m_nCaret));
 		m_Elements[0]->FontColor.SetCurrent(m_SelTextColor);
-		m_pDialog->DrawText(m_Buffer.GetBuffer(nFirstToRender),
+		m_pDialog->DrawText(GetBuffer(nFirstToRender),
 			m_Elements[0], rcSelection, false, false, true);
-	}
+	}*/
 
 	//
 	// Blink the caret
 	//
-	if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
+	/*if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
 	{
 		m_bCaretOn = !m_bCaretOn;
 		m_dfLastBlink = glfwGetTime();
@@ -7885,73 +7856,10 @@ void GLUFEditBox::Render( float fElapsedTime)
 		}
 
 		m_pDialog->DrawRect(rcCaret, m_CaretColor);
-	}
+	}*/
 
 
 }
-
-
-#define IN_FLOAT_CHARSET( c ) \
-    ( (c) == '-' || (c) == '.' || ( (c) >= '0' && (c) <= '9' ) )
-
-
-/*void GLUFEditBox::ParseFloatArray(float* pNumbers, int nCount)
-{
-	int nWritten = 0;  // Number of floats written
-	const char* pToken, *pEnd;
-	char wszToken[60];
-
-	pToken = m_Buffer.GetBuffer().c_str();
-	while (nWritten < nCount && *pToken != L'\0')
-	{
-		// Skip leading spaces
-		while (*pToken == ' ')
-			++pToken;
-
-		if (*pToken == '\0')
-			break;
-
-		// Locate the end of number
-		pEnd = pToken;
-		while (IN_FLOAT_CHARSET(*pEnd))
-			++pEnd;
-
-		// Copy the token to our buffer
-		int nTokenLen = std::min<int>(sizeof(wszToken) / sizeof(wszToken[0]) - 1, int(pEnd - pToken));
-		strcpy_s(wszToken, nTokenLen, pToken);
-		*pNumbers = (float)strtod(wszToken, nullptr);
-		++nWritten;
-		++pNumbers;
-		pToken = pEnd;
-	}
-}
-
-
-//--------------------------------------------------------------------------------------
-
-void GLUFEditBox::SetTextFloatArray(const float* pNumbers, int nCount)
-{
-	char wszBuffer[512] =
-	{
-		0
-	};
-	char wszTmp[64];
-
-	if (!pNumbers)
-		return;
-
-	for (int i = 0; i < nCount; ++i)
-	{
-		sprintf_s(wszTmp, 64, "%.4f ", pNumbers[i]);
-		strcat_s(wszBuffer, 512, wszTmp);
-	}
-
-	// Don't want the last space
-	if (nCount > 0 && strlen(wszBuffer) > 0)
-		wszBuffer[strlen(wszBuffer) - 1] = 0;
-
-	SetText(wszBuffer);
-}*/
 
 
 //--------------------------------------------------------------------------------------
@@ -7961,497 +7869,190 @@ void GLUFEditBox::ResetCaretBlink()
 	m_dfLastBlink = glfwGetTime();
 }
 
-
-
-//======================================================================================
-// GLUFUniBuffer
-//======================================================================================
-
-/*  We do not need to set buffer size becuase std::string automatically expands
 //--------------------------------------------------------------------------------------
-bool GLUFUniBuffer::SetBufferSize(int nNewSize)
+
+bool GLUFEditBox::CPtoPT(int nCP, bool bTrail, GLUFPoint *pPt)
 {
-	// If the current size is already the maximum allowed,
-	// we can't possibly allocate more.
-	if (m_nBufferSize >= GLUF_MAX_EDITBOXLENGTH)
-		return false;
+	/*GLUF_ASSERT(pPt);
+	*pPt = { 0.0f, 0.0f };
 
-	int nAllocateSize = (nNewSize == -1 || nNewSize < m_nBufferSize * 2) ? (m_nBufferSize ? m_nBufferSize *
-		2 : 256) : nNewSize * 2;
-
-	// Cap the buffer size at the maximum allowed.
-	if (nAllocateSize > GLUF_MAX_EDITBOXLENGTH)
-		nAllocateSize = GLUF_MAX_EDITBOXLENGTH;
-
-	WCHAR* pTempBuffer = new (std::nothrow) WCHAR[nAllocateSize];
-	if (!pTempBuffer)
-		return false;
-
-	ZeroMemory(pTempBuffer, sizeof(WCHAR) * nAllocateSize);
-
-	if (m_pwszBuffer)
-	{
-		memcpy(pTempBuffer, m_pwszBuffer, m_nBufferSize * sizeof(WCHAR));
-		delete[] m_pwszBuffer;
-	}
-
-	m_pwszBuffer = pTempBuffer;
-	m_nBufferSize = nAllocateSize;
-	return true;
-}*/
-
-
-//--------------------------------------------------------------------------------------
-// Uniscribe -- Analyse() analyses the string in the buffer
-//--------------------------------------------------------------------------------------
-GLUFResult GLUFUniBuffer::Analyse()
-{
-	
-	/*if (m_Analysis)
-		(void)ScriptStringFree(&m_Analysis);*/
-
-	//SCRIPT_CONTROL ScriptControl; // For uniscribe
-	//SCRIPT_STATE ScriptState;   // For uniscribe
-	//ZeroMemory(&ScriptControl, sizeof(ScriptControl));
-	//ZeroMemory(&ScriptState, sizeof(ScriptState));
-
-#pragma warning(push)
-#pragma warning(disable : 4616 6309 6387 )
-	//GLUFResult hr = ScriptApplyDigitSubstitution(nullptr, &ScriptControl, &ScriptState);
-	//if (FAILED(hr))
-	//	return hr;
-#pragma warning(pop)
-
-	if (!m_pFontNode)
-		return GR_FAILURE;
-
-	/*HDC hDC = nullptr;
-	hr = ScriptStringAnalyse(hDC,
-		m_pwszBuffer,
-		(int)wcslen(m_pwszBuffer) + 1,  // nul is also analyzed.
-		(int)wcslen(m_pwszBuffer) * 3 / 2 + 16,
-		-1,
-		SSA_BREAK | SSA_GLYPHS | SSA_FALLBACK | SSA_LINK,
-		0,
-		&ScriptControl,
-		&ScriptState,
-		nullptr,
-		nullptr,
-		nullptr,
-		&m_Analysis);*/
-
-	m_CalcXValues.clear();
-
-	//for each character, get the width, and add that to the width of the previous, also add initial 0
-	m_CalcXValues.push_back(0);
-	for (auto i : m_Buffer)
-	{
-		m_CalcXValues.push_back(m_CalcXValues[m_CalcXValues.size() - 1] + m_pFontNode->m_pFontType->GetCharWidth(i, m_pFontNode->mSize));
-	}
-	m_bAnalyseRequired = false;  // Analysis is up-to-date
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-GLUFUniBuffer::GLUFUniBuffer(GLUFDialogResourceManager *resMan, int nInitialSize) : m_pResMan(resMan)
-{
-	//m_nBufferSize = 0;
-	m_Buffer = "";
-	m_Buffer.resize(nInitialSize);
-	m_bAnalyseRequired = true;
-	//m_Analysis = nullptr;
-	m_pFontNode = nullptr;
-
-	//if (nInitialSize > 0)
-	//	SetBufferSize(nInitialSize);
-}
-
-
-//--------------------------------------------------------------------------------------
-GLUFUniBuffer::~GLUFUniBuffer()
-{
-	/*delete[] m_pwszBuffer;
-	if (m_Analysis)
-		(void)ScriptStringFree(&m_Analysis);*/
-}
-
-
-
-//--------------------------------------------------------------------------------------
-void GLUFUniBuffer::Clear()
-{
-	//*m_pwszBuffer = L'\0';
-	m_bAnalyseRequired = true;
-	m_Buffer.clear();
-	m_CalcXValues.clear();
-}
-
-
-//--------------------------------------------------------------------------------------
-// Inserts the char at specified index.
-// If nIndex == -1, insert to the end.
-//--------------------------------------------------------------------------------------
-bool GLUFUniBuffer::InsertChar( int nIndex,  char wChar)
-{
-	/*assert(nIndex >= 0);
-
-	if (nIndex < 0 || nIndex >(int)wcslen(m_pwszBuffer))
-		return false;  // invalid index
-
-	// Check for maximum length allowed
-	if (GetTextSize() + 1 >= GLUF_MAX_EDITBOXLENGTH)
-		return false;
-
-	if ((int)wcslen(m_pwszBuffer) + 1 >= m_nBufferSize)
-	{
-		if (!SetBufferSize(-1))
-			return false;  // out of memory
-	}
-
-	assert(m_nBufferSize >= 2);
-
-	// Shift the characters after the index, start by copying the null terminator
-	WCHAR* dest = m_pwszBuffer + wcslen(m_pwszBuffer) + 1;
-	WCHAR* stop = m_pwszBuffer + nIndex;
-	WCHAR* src = dest - 1;
-
-	while (dest > stop)
-	{
-		*dest-- = *src--;
-	}
-
-	// Set new character
-	m_pwszBuffer[nIndex] = wChar;*/
-
-	m_bAnalyseRequired = true;
-
-	if ((m_Buffer.length() - 1) < nIndex)
-	{
-		m_Buffer.resize(nIndex + 1);
-		m_Buffer[nIndex] = wChar;
-	}
-	else if (nIndex == -1)
-	{
-		m_Buffer += wChar;
-	}
-	else
-	{
-		m_Buffer.insert(nIndex, 1, wChar);
-	}
-
-
-	return true;
-}
-
-
-//--------------------------------------------------------------------------------------
-// Removes the char at specified index.
-// If nIndex == -1, remove the last char.
-//--------------------------------------------------------------------------------------
-bool GLUFUniBuffer::RemoveChar( int nIndex)
-{
-	m_bAnalyseRequired = true;
-	if (nIndex > m_Buffer.length())
+	if (nCP + 1 > m_strBuffer.length())
 	{
 		return false;
 	}
-	else if (nIndex == -1)
-	{
-		m_Buffer.erase(m_Buffer.size() - 1);
-	}
-	else
-	{
-		m_Buffer.erase(nIndex);
-	}
 
-	return true;
-}
-
-
-//--------------------------------------------------------------------------------------
-// Inserts the first nCount characters of the string pStr at specified index.
-// If nCount == -1, the entire string is inserted.
-// If nIndex == -1, insert to the end.
-//--------------------------------------------------------------------------------------
-
-bool GLUFUniBuffer::InsertString(int nIndex, std::string str)
-{
-	/*assert(nIndex >= 0);
-	if (nIndex < 0)
-		return false;
-
-	if (nIndex >(int)wcslen(m_pwszBuffer))
-		return false;  // invalid index
-
-	if (-1 == nCount)
-		nCount = (int)wcslen(pStr);
-
-	// Check for maximum length allowed
-	if (GetTextSize() + nCount >= GLUF_MAX_EDITBOXLENGTH)
-		return false;
-
-	if ((int)wcslen(m_pwszBuffer) + nCount >= m_nBufferSize)
-	{
-		if (!SetBufferSize((int)wcslen(m_pwszBuffer) + nCount + 1))
-			return false;  // out of memory
-	}
-
-	MoveMemory(m_pwszBuffer + nIndex + nCount, m_pwszBuffer + nIndex, sizeof(WCHAR) *
-		(wcslen(m_pwszBuffer) - nIndex + 1));
-	memcpy(m_pwszBuffer + nIndex, pStr, nCount * sizeof(WCHAR));*/
-	m_bAnalyseRequired = true;
-
-	if ((m_Buffer.length() - 1) < nIndex)
-	{
-		m_Buffer.resize(nIndex + 1 + str.length());
-		m_Buffer.insert(nIndex, str);
-	}
-	else if (nIndex == -1)
-	{
-		m_Buffer += str.c_str();
-	}
-	else
-	{
-		m_Buffer.insert(nIndex, str.c_str());
-	}
-
-	return true;
-}
-
-
-//--------------------------------------------------------------------------------------
-bool GLUFUniBuffer::SetText( std::string wszText)
-{
-	/*assert(wszText);
-
-	size_t nRequired = wcslen(wszText) + 1;
-
-	// Check for maximum length allowed
-	if (nRequired >= GLUF_MAX_EDITBOXLENGTH)
-		return false;
-
-	while (GetBufferSize() < nRequired)
-		if (!SetBufferSize(-1))
-			break;
-	// Check again in case out of memory occurred inside while loop.
-	if (GetBufferSize() >= nRequired)
-	{
-		wcscpy_s(m_pwszBuffer, GetBufferSize(), wszText);
-		m_bAnalyseRequired = true;
-		return true;
-	}
-	else
-		return false;*/
-
-	m_bAnalyseRequired = true;
-
-	m_Buffer.clear();
-	m_Buffer = wszText;
-
-	return true;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFUniBuffer::CPtoX(int nCP, bool bTrail, int* pX)
-{
-	GLUF_ASSERT(pX);
-	*pX = 0;  // Default
-
-	if (nCP + 1 > m_Buffer.length())
-	{
-		return GR_INVALIDARG;
-	}
-
-	GLUFResult hr = GR_SUCCESS;
 	if (m_bAnalyseRequired)
-		hr = Analyse();
+		Analyse();
 
-	if (GLUF_FAILED(hr))
-		return hr;
-	
 
 	if (bTrail)
 	{
 		nCP++;
 	}
 
-	*pX = m_CalcXValues[nCP];
+	*pPt = GLUFGetPointFromRect(m_CharBoundingBoxes[nCP], false, true);
 
-	return GR_SUCCESS;
+	return true;*/
+	return false;
 }
 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFUniBuffer::XtoCP(int nX, int* pCP, bool* pnTrail)
+bool GLUFEditBox::PTtoCP(GLUFPoint pt, int* pCP, bool* bTrail)
 {
-	GLUF_ASSERT(pCP && pnTrail);
-	*pCP = 0; *pnTrail = false;  // Default
+	/*GLUF_ASSERT(pCP && bTrail);
+	*pCP = 0; *bTrail = false;  // Default
 
-	GLUFResult hr = GR_SUCCESS;
 	if (m_bAnalyseRequired)
-		hr = Analyse();
+		Analyse();
 
-	if (GLUF_FAILED(hr))
-		return hr;
+	GLUFRect charRect = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-	//if (SUCCEEDED(hr))
-	//{
-		//hr = ScriptStringXtoCP(m_Analysis, nX, pCP, pnTrail);
-		//if (FAILED(hr))
-	//	{
-	//		*pCP = 0; *pnTrail = FALSE;
-	//		return false;
-	//	}
-	//}
-
-	// If the coordinate falls outside the text region, we
-	// can get character positions that don't exist.  We must
-	// filter them here and convert them to those that do exist.
-	/*if (*pCP == -1 && *pnTrail == TRUE)
+	for (auto it : m_CharBoundingBoxes)
 	{
-		*pCP = 0; *pnTrail = FALSE;
-	}
-	else if (*pCP > (int)wcslen(m_pwszBuffer) && *pnTrail == FALSE)
-	{
-		*pCP = (int)wcslen(m_pwszBuffer); *pnTrail = TRUE;
-	}
-
-	if (FAILED(hr))
-	{
-		*pCP = 0; *pnTrail = FALSE;
-		return false;
+		if (GLUFPtInRect(it, pt))
+			return true;
 	}*/
 
-	unsigned int prev = 0;//the first element will ALWAYS be 0, so compensate
-	unsigned int curr = 0;
-	for (unsigned int i = 1; i < m_CalcXValues.size(); ++i)
+	return false;
+}
+
+void GLUFEditBox::Analyse()
+{
+	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+	//split the string into words to make line breaks in between words
+
+	//first set the render buffer to the string
+	m_strRenderBuffer = m_strBuffer;
+
+	float fTextWidth = GLUFRectWidth(m_rcText);
+	float currXValue = 0.0f;
+	int charIndex = 0;
+
+	std::vector<std::string> strings = GLUFSplitStr(m_strRenderBuffer, ' ', true);
+	m_strInsertedNewlineLocations.clear();
+	for (auto it : strings)
 	{
-		curr = m_CalcXValues[i];
+		float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
 
-		if (nX < curr)
+		//if the current word width is bigger than the whole line, then newline at the box width
+		if (fWordWidth > fTextWidth)
 		{
-			if ((curr - prev) / 2 < curr - nX)
-			{
-				//this would lead us to to trailing edge
-				*pCP = i;
-				*pnTrail = true;
+			//float charXPos = 0.0f;
+			int chIndex = 0;
 
-				break;
+			for (auto itch : it)
+			{
+				float fCharWidth = pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
+				currXValue += fCharWidth;
+
+				if (currXValue > fTextWidth)
+				{
+					m_strRenderBuffer.insert(charIndex + chIndex, '\n', 1);
+					m_strInsertedNewlineLocations.push_back(charIndex + chIndex);
+					//charXPos = 0.0f;
+					currXValue = fCharWidth;
+				}
+
+				chIndex++;
 			}
+
+		}
+		else
+		{
+			currXValue += fWordWidth;
+		}
+
+		if (currXValue/* + 0.0125f/*a little buffer*/ > fTextWidth)
+		{
+
+			//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
+
+			m_strRenderBuffer.insert(charIndex, '\n', 1);
+			m_strInsertedNewlineLocations.push_back(charIndex);
+			currXValue = fWordWidth;
+		}
+
+		//if (charIndex == 0)
+		//	--charIndex;
+
+		charIndex += it.size();
+	}
+
+
+
+	//now get the char bounding boxes (this ALSO culls the characters that would go off screen, as well as offset for the scrollbar)
+
+	m_CharBoundingBoxes.clear();
+	m_strRenderBufferOffset = 0;
+
+	//for each character, get the width, and add that to the width of the previous, also add initial 0
+	//m_CalcXValues.push_back(0);
+
+	currXValue = 0.0f;
+	float distanceFromBottom = GLUFRectHeight(m_rcText);
+	float thisCharWidth = 0.0f;
+	float fontHeight = pFontNode->mSize;
+	GLUFRect rc;
+
+	bool topCulled = false;
+
+	std::string strRenderBufferTmp = "";
+	unsigned int i = 0;
+	for (auto it : m_strRenderBuffer)
+	{
+		if (it == '\n')
+		{
+			currXValue = 0.0f;
+			distanceFromBottom -= fontHeight;
+		}
+
+		thisCharWidth = pFontNode->m_pFontType->GetCharWidth(it, fontHeight);
+
+		GLUFSetRect(rc, currXValue, distanceFromBottom + fontHeight, currXValue + thisCharWidth, distanceFromBottom);
+
+		//offset the whole block by the scroll level
+		GLUFOffsetRect(rc, 0.0f, (m_ScrollBar.GetTrackPos() * fontHeight));
+
+		//cull the characters that will not fit on the page
+		if (!GLUFPtInRect(m_rcText, GLUFPoint(rc.left, rc.top)) || !GLUFPtInRect(m_rcText, GLUFPoint(rc.right, rc.bottom)))
+		{
+			if (topCulled)//this is called once the top has been culled, then the body has been added
+				break;
 			else
 			{
-				*pCP = i - 1;
-				*pnTrail = false;
-
-				break;
+				//if this IS NOT a inserted newline, then we can add it
+				if (it == '\n')
+					if (!*std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), i))
+					{
+						++m_strRenderBufferOffset;
+					}
+					else;
+				else
+					++m_strRenderBufferOffset;
 			}
 		}
-
-		prev = curr;
-	}
-
-	return GR_SUCCESS;
-}
-
-
-
-//--------------------------------------------------------------------------------------
-
-void GLUFUniBuffer::GetPriorItemPos(int nCP, int* pPrior)
-{
-	*pPrior = nCP;  // Default is the char itself
-
-	if (m_bAnalyseRequired)
-		if (GLUF_FAILED(Analyse()))
-			return;
-
-	/*const SCRIPT_LOGATTR* pLogAttr = ScriptString_pLogAttr(m_Analysis);
-	if (!pLogAttr)
-		return;
-
-	if (!ScriptString_pcOutChars(m_Analysis))
-		return;
-	int nInitial = *ScriptString_pcOutChars(m_Analysis);
-	if (nCP - 1 < nInitial)
-		nInitial = nCP - 1;
-	for (int i = nInitial; i > 0; --i)
-		if (pLogAttr[i].fWordStop ||       // Either the fWordStop flag is set
-			(!pLogAttr[i].fWhiteSpace &&  // Or the previous char is whitespace but this isn't.
-			pLogAttr[i - 1].fWhiteSpace))
+		else
 		{
-		*pPrior = i;
-		return;
-		}
-	// We have reached index 0.  0 is always a break point, so simply return it.
-	*pPrior = 0;*/
-
-	if (nCP = 0)
-	{
-		pPrior = 0;
-		return;
-	}
-
-	*pPrior = m_CalcXValues[nCP - 1];
-}
-
-
-//--------------------------------------------------------------------------------------
-
-void GLUFUniBuffer::GetNextItemPos(int nCP, int* pPrior)
-{
-	*pPrior = nCP;  // Default is the char itself
-
-	/*GLUFResult hr = GR_SUCCESS;
-	if (m_bAnalyseRequired)
-		hr = Analyse();
-	if (FAILED(hr))
-		return;
-
-	const SCRIPT_LOGATTR* pLogAttr = ScriptString_pLogAttr(m_Analysis);
-	if (!pLogAttr)
-		return;
-
-	if (!ScriptString_pcOutChars(m_Analysis))
-		return;
-	int nInitial = *ScriptString_pcOutChars(m_Analysis);
-	if (nCP + 1 < nInitial)
-		nInitial = nCP + 1;
-
-	int i = nInitial;
-	int limit = *ScriptString_pcOutChars(m_Analysis);
-	while (limit > 0 && i < limit - 1)
-	{
-		if (pLogAttr[i].fWordStop)      // Either the fWordStop flag is set
-		{
-			*pPrior = i;
-			return;
-		}
-		else if (pLogAttr[i].fWhiteSpace &&  // Or this whitespace but the next char isn't.
-			!pLogAttr[i + 1].fWhiteSpace)
-		{
-			*pPrior = i + 1;  // The next char is a word stop
-			return;
+			topCulled = true;
+			
+			//does fit on page
+			strRenderBufferTmp += it;
+			m_CharBoundingBoxes.push_back(rc);
 		}
 
+
+
+		currXValue += thisCharWidth;
 		++i;
-		limit = *ScriptString_pcOutChars(m_Analysis);
 	}
-	// We have reached the end. It's always a word stop, so simply return it.
-	*pPrior = *ScriptString_pcOutChars(m_Analysis) - 1;*/
+	m_strRenderBuffer = strRenderBufferTmp;
 
-	if (nCP == m_CalcXValues.size() - 1)
-	{
-		*pPrior = m_CalcXValues[nCP];
-		return;
-	}
+	m_bAnalyseRequired = false;  // Analysis is up-to-date
 
-	*pPrior = m_CalcXValues[nCP + 1];
 }
+
 
 
 //======================================================================================
@@ -8543,17 +8144,17 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 
 		//triangle 1
 		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetPointFromRect(glyph, false, true), z),
+			glm::vec3(GLUFGetVec2FromRect(glyph, false, true), z),
 			glm::vec2(U, V));
 		//glm::vec2(z, 1.0f));
 
 		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
+			glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
 			glm::vec2(U, V1));
 		//glm::vec2(z, z));
 
 		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
+			glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
 			glm::vec2(U1, V));
 		//glm::vec2(1.0f, 1.0f));
 
@@ -8561,17 +8162,17 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 		//triangle 2
 
 		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetPointFromRect(glyph, false, false), z),
+			glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
 			glm::vec2(U, V1));
 		//glm::vec2(z, z));
 
 		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetPointFromRect(glyph, true, false), z),
+			glm::vec3(GLUFGetVec2FromRect(glyph, true, false), z),
 			glm::vec2(U1, V1));
 		//glm::vec2(1.0f, z));
 
 		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetPointFromRect(glyph, true, true), z),
+			glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
 			glm::vec2(U1, V));
 		//glm::vec2(1.0f, 1.0f));
 

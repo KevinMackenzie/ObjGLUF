@@ -290,7 +290,7 @@ GLUFPoint GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1)
 }
 
 
-glm::vec2 GLUFGetPointFromRect(GLUFRect rect, bool x, bool y)
+glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y)
 {
 	if (x)
 		if (y)
