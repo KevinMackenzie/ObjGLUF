@@ -188,6 +188,25 @@ OBJGLUF_API void		GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point t
 OBJGLUF_API void		GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
 OBJGLUF_API GLUFPoint	GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
 
+OBJGLUF_API inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false) 
+{
+	std::stringstream ss(s);
+	std::string item;
+	while (std::getline(ss, item, delim)) 
+	{
+		item += delim;
+		elems.push_back(item);
+	}
+	return elems;
+}
+
+OBJGLUF_API inline std::vector<std::string> GLUFSplitStr(const std::string &s, char delim, bool keepDelim = false)
+{
+	std::vector<std::string> elems;
+	GLUFSplitStr(s, delim, elems, keepDelim);
+	return elems;
+}
+
 template<typename T>
 OBJGLUF_API inline size_t GLUFGetVectorSize(std::vector<T> vec)
 {

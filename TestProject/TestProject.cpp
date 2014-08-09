@@ -10,6 +10,7 @@
 #include "../ObjGLUF/GLUFGui.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <fstream>
 
 
 GLFWwindow* window;
@@ -92,7 +93,17 @@ int main(void)
 
 	dlg->AddButton(0, "Button", 0.05f, 0.01f, 0.125f, 0.03625f);
 
-	dlg->AddEditBox(1, "WordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWordWord", 0.1f, 0.1f, 0.5f, 0.5f);
+	std::ifstream t("text.txt");
+	std::string str;
+
+	t.seekg(0, std::ios::end);
+	str.reserve(t.tellg());
+	t.seekg(0, std::ios::beg);
+
+	str.assign((std::istreambuf_iterator<char>(t)),
+		std::istreambuf_iterator<char>());
+
+	dlg->AddEditBox(1, str, 0.1f, 0.1f, 0.5f, 0.5f);
 
 	/*GLUFListBox* box;
 	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);

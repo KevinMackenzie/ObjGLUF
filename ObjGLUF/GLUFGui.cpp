@@ -1987,6 +1987,8 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	GLUFRect rcTexture = pElement->rcTexture;
 
 	GLUFRect rcScreen = prcDest;
+	float testX = m_y;
+
 	GLUFOffsetRect(rcScreen, m_x, m_y);
 
 	// If caption is enabled, offset the Y position by its height.
@@ -2011,7 +2013,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	float fRectTop = 1.0f - rcScreen.top / fBBHeight;
 	float fRectRight = rcScreen.right / fBBWidth;
 	float fRectBottom = 1.0f - rcScreen.bottom / fBBHeight;
-	*/
+	
 	
 	//float fRectLeft = 0.2f;
 	//float fRectTop = 0.2625f;
@@ -2021,7 +2023,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	// Add 6 sprite vertices
 	//GLUFSpriteVertex SpriteVertex;
 
-	/*// tri1
+	// tri1
 	//SpriteVertex.vPos = glm::vec3(fRectLeft, fRectTop, fDepth);
 	//SpriteVertex.vTex = glm::vec2(fTexLeft, fTexTop);
 	//SpriteVertex.vColor = pElement->TextureColor.Current;
@@ -5560,7 +5562,7 @@ void GLUFScrollBar::Render( float fElapsedTime)
 
 	//similar with the bottom
 	iArrowState = iState;
-	if (m_nPosition + m_nPageSize - 1 == m_nEnd && iState != GLUF_STATE_HIDDEN)
+	if ((m_nPosition + m_nPageSize - 1 == m_nEnd && iState != GLUF_STATE_HIDDEN) || m_nEnd == 1/*when no scrolling is necesary*/)
 		iArrowState = GLUF_STATE_DISABLED;
 
 	// Down Arrow
@@ -6717,7 +6719,7 @@ bool GLUFEditBox::s_bHideCaret;   // If true, we don't render the caret.
 #define EDITBOX_SCROLLEXTENT 4
 
 //--------------------------------------------------------------------------------------
-GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : m_Buffer(pDialog->GetManager())
+GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : GLUFControl(pDialog), m_Buffer(pDialog->GetManager()), m_ScrollBar(pDialog)
 {
 	m_Type = GLUF_CONTROL_EDITBOX;
 	m_pDialog = pDialog;
@@ -6760,7 +6762,7 @@ void GLUFEditBox::PlaceCaret( int nCP)
 	m_nCaret = nCP;
 
 	// Obtain the X offset of the character.
-	int nX1st, nX, nX2;
+	/*int nX1st, nX, nX2;
 	m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // 1st visible char
 	m_Buffer.CPtoX(nCP, false, &nX);  // LEAD
 	// If nCP is the nul terminator, get the leading edge instead of trailing.
@@ -6797,10 +6799,25 @@ void GLUFEditBox::PlaceCaret( int nCP)
 				++nCPNew1st;
 
 			m_nFirstVisible = nCPNew1st;
-		}
+		}*/
 
+	
 }
 
+int GLUFEditBox::GetLineNumberFromCharPos(int nCP)
+{
+	int prev = 0;
+	int it = 0;
+	for (unsigned int i = 0; i < m_CharLineBreaks.size(); ++i)
+	{
+		it = m_CharLineBreaks[i];
+
+		if (nCP > prev && nCP < it)
+			return i;
+
+		prev = it;
+	}
+}
 
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::ClearText()
@@ -6889,6 +6906,72 @@ void GLUFEditBox::UpdateRects()
 
 	// Inflate further by m_nSpacing
 	GLUFInflateRect(m_rcText, -m_fSpacingX, -m_fSpacingY);
+	m_ScrollBar.SetTrackRange(0, 1);//TODO:
+
+
+
+	//reanalyze the position of the character's line breaks
+	m_CharLineBreaks.clear();
+
+	float currXPos = 0.0f;
+	int charIndex = 0;//one offset to keep true because we are adding the size, so that offsets automatically
+	float fTextWidth = GLUFRectWidth(m_rcText);
+
+
+
+	//split the string into words but keep the space element for proper width calculations
+	GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+
+	std::vector<std::string> strings = GLUFSplitStr(m_Buffer.GetBuffer(), ' ', true);
+	for (auto it : strings)
+	{
+		float fWordWidth = pFont->m_pFontType->GetStringWidth(it, pFont->mSize);
+
+		//if the current word width is bigger than the whole line, then newline at the box width
+		if (fWordWidth > fTextWidth)
+		{
+			//float charXPos = 0.0f;
+			int chIndex = 0;
+
+			for (auto itch : it)
+			{
+				currXPos += pFont->m_pFontType->GetCharWidth(itch, pFont->mSize);
+
+				if (currXPos > fTextWidth)
+				{
+					m_CharLineBreaks.push_back(charIndex + chIndex);
+					//charXPos = 0.0f;
+					currXPos = 0.0f;
+				}
+
+				chIndex++;
+			}
+
+		}
+		else
+		{
+			currXPos += fWordWidth;
+		}
+
+		if (currXPos/* + 0.0125f/*a little buffer*/ > fTextWidth)
+		{
+
+			//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
+			
+			m_CharLineBreaks.push_back(charIndex /*+ 1*/);
+			currXPos = fWordWidth;
+		}
+
+		//if (charIndex == 0)
+		//	--charIndex;
+
+		charIndex += it.size();
+	}
+
+
+	//recalculate scroll bar
+	m_ScrollBar.SetTrackRange(0, m_CharLineBreaks.size());
+	m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcText) / m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont)->mSize);
 }
 
 
@@ -7180,6 +7263,9 @@ void GLUFEditBox::OnFocusIn()
 bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
 	//TOOD:
+
+	m_ScrollBar.MsgProc(msg, param1, param2, param3, param4);
+
 	/*
 	UNREFERENCED_PARAMETER(lParam);
 
@@ -7316,6 +7402,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		return true;
 	}
 	}*/
+
 	return false;
 }
 
@@ -7323,6 +7410,13 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::Render( float fElapsedTime)
 {
+	UpdateRects();
+
+	//TODO: don't render scrollbar UNLESS there is necessity to scroll, change this on ALL controls
+
+	//render the scrollbar
+	m_ScrollBar.Render(fElapsedTime);
+
 	if (m_bVisible == false)
 		return;
 
@@ -7384,8 +7478,30 @@ void GLUFEditBox::Render( float fElapsedTime)
 	// Render the text
 	//
 	// Element 0 for text
+	
+	//add line breaks
+	unsigned int i = 0;//make sure to keep track of the offest caused by the other line breaks
+	std::string buff = m_Buffer.GetBuffer();
+
+	GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+	for (auto it : m_CharLineBreaks)
+	{
+		//TODO: set this up with scroll bar instead of 0 as constant
+		if ((i+2/*cut one line short(fix this)*/) * pFont->mSize > GLUFRectHeight(m_rcText))
+		{
+			//don't draw anything past the last line.
+			buff.erase(it + i, buff.size() - 1);
+			break;
+		}
+
+		buff.insert(it + i, 1, '\n');
+		
+		++i;
+
+	}
+
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
-	m_pDialog->DrawText(m_Buffer.GetBuffer(m_nFirstVisible), m_Elements[0], m_rcText, false, false, true);
+	m_pDialog->DrawText(buff, m_Elements[0], m_rcText, false, false, false);//the hardrect feature is used only for discarding text off the bottom of the screen
 
 	// Render the selected text
 	if (m_nCaret != m_nSelStart)
@@ -7430,8 +7546,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 		m_pDialog->DrawRect(rcCaret, m_CaretColor);
 	}
 
-	//render the scrollbar
-	m_ScrollBar.Render(fElapsedTime);
+
 }
 
 
@@ -7439,7 +7554,7 @@ void GLUFEditBox::Render( float fElapsedTime)
     ( (c) == '-' || (c) == '.' || ( (c) >= '0' && (c) <= '9' ) )
 
 
-void GLUFEditBox::ParseFloatArray(float* pNumbers, int nCount)
+/*void GLUFEditBox::ParseFloatArray(float* pNumbers, int nCount)
 {
 	int nWritten = 0;  // Number of floats written
 	const char* pToken, *pEnd;
@@ -7495,7 +7610,7 @@ void GLUFEditBox::SetTextFloatArray(const float* pNumbers, int nCount)
 		wszBuffer[strlen(wszBuffer) - 1] = 0;
 
 	SetText(wszBuffer);
-}
+}*/
 
 
 //--------------------------------------------------------------------------------------
@@ -8056,7 +8171,7 @@ void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Col
 			CurY -= tmpSize;// *1.1f;//assume a reasonible leding
 
 			//if the next line will go off of the page, then don't draw it
-			if (CurY - tmpSize < rcScreen.bottom && bHardRect)
+			if ((CurY - tmpSize < rcScreen.bottom) && bHardRect)
 				break;
 
 			if (ch == '\n')

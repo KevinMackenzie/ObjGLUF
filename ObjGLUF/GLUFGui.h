@@ -1142,8 +1142,8 @@ public:
 	void            SetCaretColor(Color Color){ m_CaretColor = Color; }  // Caret color
 	void            SetBorderWidth(float fBorderX, float fBorderY){ m_fBorderX = fBorderX; m_fBorderY = fBorderY; UpdateRects(); }  // Border of the window
 	void            SetSpacing(float fSpacingX, float fSpacingY){ m_fSpacingX = fSpacingX; m_fSpacingY = fSpacingY; UpdateRects(); }
-	void            ParseFloatArray(float* pNumbers, int nCount);
-	void            SetTextFloatArray(const float* pNumbers, int nCount);
+	//void            ParseFloatArray(float* pNumbers, int nCount);
+	//void            SetTextFloatArray(const float* pNumbers, int nCount);
 
 protected:
 	void            PlaceCaret(int nCP);
@@ -1151,6 +1151,8 @@ protected:
 	void            ResetCaretBlink();
 	void            CopyToClipboard();
 	void            PasteFromClipboard();
+
+	int             GetLineNumberFromCharPos(int nCP);
 
 
 	GLUFUniBuffer m_Buffer;     // Buffer to hold text
@@ -1169,6 +1171,7 @@ protected:
 	Color m_SelTextColor; // Selected text color
 	Color m_SelBkColor;   // Selected background color
 	Color m_CaretColor;   // Caret color
+	std::vector<int> m_CharLineBreaks;//a vector of the positions of line breaks
 
 	GLUFScrollBar m_ScrollBar;//TODO: impliment
 	float m_fSBWidth;
