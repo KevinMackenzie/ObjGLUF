@@ -5360,6 +5360,13 @@ bool GLUFScrollBar::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int p
 
 	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
 	m_LastMouse = pt;
+
+
+	//if the mousebutton is NOT PRESSED, the stop scrolling(since this does not get the mouse release button if it is not over the control)
+	//int mbPressed = glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT);
+	//if (mbPressed == GLFW_RELEASE)
+	//	m_bDrag = false;
+
 	switch (msg)
 	{
 	case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
@@ -6879,6 +6886,7 @@ void GLUFEditBox::UpdateRects()
 	// First inflate by m_nBorder to compute render rects
 	GLUFInflateRect(m_rcText, -m_fBorderX, -m_fBorderY);
 	
+	m_rcText.right -= m_fSBWidth;
 
 	// Update the render rectangles
 	m_rcRender[0] = m_rcText;
@@ -6890,23 +6898,11 @@ void GLUFEditBox::UpdateRects()
 	GLUFSetRect(m_rcRender[6], m_rcBoundingBox.left, m_rcText.bottom, m_rcText.left, m_rcBoundingBox.bottom);
 	GLUFSetRect(m_rcRender[7], m_rcText.left, m_rcText.bottom, m_rcText.right, m_rcBoundingBox.bottom);
 	GLUFSetRect(m_rcRender[8], m_rcText.right, m_rcText.bottom, m_rcBoundingBox.right, m_rcBoundingBox.bottom);
-	
-	m_ScrollBar.SetLocation(m_rcBoundingBox.right, m_rcBoundingBox.bottom);
-	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
-	m_ScrollBar.m_y = m_rcText.top;
-	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-	if (pFontNode && pFontNode->mSize)
-	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
 
-		// The selected item may have been scrolled off the page.
-		// Ensure that it is in page again.
-		//m_ScrollBar.ShowItem(m_Selected[m_Selected.size() - 1]);
-	}
+	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 
 	// Inflate further by m_nSpacing
 	GLUFInflateRect(m_rcText, -m_fSpacingX, -m_fSpacingY);
-	m_ScrollBar.SetTrackRange(0, 1);//TODO:
 
 
 
@@ -6920,12 +6916,24 @@ void GLUFEditBox::UpdateRects()
 
 
 	//split the string into words but keep the space element for proper width calculations
-	GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+	//TODO: add existing newlines to the line break vector, and replace with spaces
+
+	/*std::string tmpBuf = m_Buffer.GetBuffer();
+	for (unsigned int i = 0; i < tmpBuf.length(); ++i)
+	{
+		if (tmpBuf[i] == '\n')
+		{
+			tmpBuf.erase(i, i);
+			tmpBuf.insert(i, 1, ' ');//replace newlines with spaces to preservere string length
+
+			m_CharLineBreaks.push_back(i);
+		}
+	}*/
 
 	std::vector<std::string> strings = GLUFSplitStr(m_Buffer.GetBuffer(), ' ', true);
 	for (auto it : strings)
 	{
-		float fWordWidth = pFont->m_pFontType->GetStringWidth(it, pFont->mSize);
+		float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
 
 		//if the current word width is bigger than the whole line, then newline at the box width
 		if (fWordWidth > fTextWidth)
@@ -6935,7 +6943,7 @@ void GLUFEditBox::UpdateRects()
 
 			for (auto itch : it)
 			{
-				currXPos += pFont->m_pFontType->GetCharWidth(itch, pFont->mSize);
+				currXPos += pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
 
 				if (currXPos > fTextWidth)
 				{
@@ -6967,11 +6975,23 @@ void GLUFEditBox::UpdateRects()
 
 		charIndex += it.size();
 	}
+	//lastly sort it
+	std::sort(m_CharLineBreaks.begin(), m_CharLineBreaks.end());
 
 
 	//recalculate scroll bar
-	m_ScrollBar.SetTrackRange(0, m_CharLineBreaks.size());
-	m_ScrollBar.SetPageSize(GLUFRectHeight(m_rcText) / m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont)->mSize);
+	m_ScrollBar.SetLocation(m_rcText.right, m_rcBoundingBox.bottom);
+	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
+	m_ScrollBar.m_y = m_rcText.top;
+	if (pFontNode && pFontNode->mSize)
+	{
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
+		m_ScrollBar.SetTrackRange(0, m_CharLineBreaks.size());
+
+		// The selected item may have been scrolled off the page.
+		// Ensure that it is in page again.
+		//m_ScrollBar.ShowItem(GetLineNumberFromCharPos(m_nCaret));
+	}
 }
 
 
@@ -7048,8 +7068,12 @@ void GLUFEditBox::PasteFromClipboard()
 	str = glfwGetClipboardString(g_pGLFWWindow);
 
 	m_Buffer.InsertString(m_nSelStart, str);
+	
+	//when pasting, set the cursor to the end
+	m_nCaret = m_Buffer.GetBuffer().length() - 1;
+	m_nSelStart = m_nCaret;
 
-	delete[] str;
+	//delete str;
 }
 #pragma warning(pop)
 
@@ -7264,113 +7288,298 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 {
 	//TOOD:
 
-	m_ScrollBar.MsgProc(msg, param1, param2, param3, param4);
+	// Let the scroll bar have a chance to handle it first
+	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM))
+		return true;
 
-	/*
-	UNREFERENCED_PARAMETER(lParam);
+	
+	//UNREFERENCED_PARAMETER(lParam);
 
 	if (!m_bEnabled || !m_bVisible)
 		return false;
 
-	switch (uMsg)
+	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
+
+	bool bHandled = false;
+
+	switch (msg)
+	{
+	case GM_MB:
+		//case WM_LBUTTONDBLCLK:
+
+		if (!m_bHasFocus)
+			m_pDialog->RequestFocus(this);
+
+		if (param2 == GLFW_PRESS)
+		{
+
+			if (!ContainsPoint(pt))
+				return false;
+
+			m_bMouseDrag = true;
+			//SetCapture(GLUFGetHWND());
+			// Determine the character corresponding to the coordinates.
+			int nCP, nX1st;
+			bool bTrail;
+			m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
+			{
+				// Cap at the nul character.
+				if (bTrail && nCP < m_Buffer.GetTextSize())
+					PlaceCaret(nCP + 1);
+				else
+					PlaceCaret(nCP);
+				m_nSelStart = m_nCaret;
+				ResetCaretBlink();
+			}
+			return true;
+		}
+		else
+		{
+			//ReleaseCapture();
+			m_bMouseDrag = false;
+			break;
+		}
+	case GM_CURSOR_POS:
+		if (m_bMouseDrag)
+		{
+			// Determine the character corresponding to the coordinates.
+			int nCP, nX1st;
+			bool bTrail;
+			m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
+			{
+				// Cap at the nul character.
+				if (bTrail && nCP < m_Buffer.GetTextSize())
+					PlaceCaret(nCP + 1);
+				else
+					PlaceCaret(nCP);
+			}
+		}
+		break;
+	case GM_SCROLL:
+
+		if (!m_bHasFocus)
+			m_pDialog->RequestFocus(this);
+
+		m_ScrollBar.Scroll(-(param2 / WHEEL_DELTA) / 2);
+
+		break;
+	case GM_KEY:
+	{
+		if (param3 == GLFW_PRESS)
+		{
+			switch (param1)
+			{
+			case GLFW_KEY_TAB:
+				// We don't process Tab in case keyboard input is enabled and the user
+				// wishes to Tab to other controls.
+				break;
+
+			case GLFW_KEY_HOME:
+				PlaceCaret(0);
+				if (!param4 & GLFW_MOD_SHIFT)
+					// Shift is not down. Update selection
+					// start along with the caret.
+					m_nSelStart = m_nCaret;
+				ResetCaretBlink();
+				bHandled = true;
+				break;
+
+			case GLFW_KEY_END:
+				PlaceCaret(m_Buffer.GetTextSize());
+				if (!param4 & GLFW_MOD_SHIFT)
+					// Shift is not down. Update selection
+					// start along with the caret.
+					m_nSelStart = m_nCaret;
+				ResetCaretBlink();
+				bHandled = true;
+				break;
+
+			case GLFW_KEY_INSERT:
+				if (param4 & GLFW_MOD_CONTROL)
+				{
+					// Control Insert. Copy to clipboard
+					CopyToClipboard();
+				}
+				else if (param4 & GLFW_MOD_SHIFT)
+				{
+					// Shift Insert. Paste from clipboard
+					PasteFromClipboard();
+				}
+				else
+				{
+					// Toggle caret insert mode
+					m_bInsertMode = !m_bInsertMode;
+				}
+				break;
+
+			case GLFW_KEY_DELETE:
+				// Check if there is a text selection.
+				if (m_nCaret != m_nSelStart)
+				{
+					DeleteSelectionText();
+					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+				}
+				else
+				{
+					// Deleting one character
+					if (m_Buffer.RemoveChar(m_nCaret))
+						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+				}
+				ResetCaretBlink();
+				bHandled = true;
+				break;
+
+			case GLFW_KEY_LEFT:
+				if (param4 & GLFW_MOD_CONTROL)
+				{
+					// Control is down. Move the caret to a new item
+					// instead of a character.
+					m_Buffer.GetPriorItemPos(m_nCaret, &m_nCaret);
+					PlaceCaret(m_nCaret);
+				}
+				else if (m_nCaret > 0)
+					PlaceCaret(m_nCaret - 1);
+				if (!param4 & GLFW_MOD_SHIFT)
+					// Shift is not down. Update selection
+					// start along with the caret.
+					m_nSelStart = m_nCaret;
+				ResetCaretBlink();
+				bHandled = true;
+				break;
+
+			case GLFW_KEY_RIGHT:
+				if (param4 & GLFW_MOD_CONTROL)
+				{
+					// Control is down. Move the caret to a new item
+					// instead of a character.
+					m_Buffer.GetNextItemPos(m_nCaret, &m_nCaret);
+					PlaceCaret(m_nCaret);
+				}
+				else if (m_nCaret < m_Buffer.GetTextSize())
+					PlaceCaret(m_nCaret + 1);
+				if (!param4 & GLFW_MOD_SHIFT)
+					// Shift is not down. Update selection
+					// start along with the caret.
+					m_nSelStart = m_nCaret;
+				ResetCaretBlink();
+				bHandled = true;
+				break;
+
+			case GLFW_KEY_UP:
+			case GLFW_KEY_DOWN:
+				// Trap up and down arrows so that the dialog
+				// does not switch focus to another control.
+				bHandled = true;
+				break;
+
+			default:
+				bHandled = param1 != GLFW_KEY_ESCAPE;  // Let the application handle Esc.
+			}
+		}
+	}
+	}
+	
+	if (bHandled)
+		return true;
+
+
+
+	switch (msg)
 	{
 		// Make sure that while editing, the keyup and keydown messages associated with 
 		// WM_CHAR messages don't go to any non-focused controls or cameras
-	case WM_KEYUP:
-	case WM_KEYDOWN:
-		return true;
+	case GM_KEY:
+	//	return true;
 
-	case WM_CHAR:
+	//case GM_UNICODE_CHAR: (suprisingly, the GM_KEY will work better, because at this time I do not support unicode chars)
 	{
-		switch ((WCHAR)wParam)
-		{
-			// Backspace
-		case VK_BACK:
-		{
-			// If there's a selection, treat this
-			// like a delete key.
-			if (m_nCaret != m_nSelStart)
+		if (param1 <= 255 &&  param1 >= 32 &&  param1 != 127/*DEL*/ && (param4 == 0x0000 || param4 & GLFW_MOD_SHIFT))
+		{				
+			//printible chars
+
+			char ch = param1;
+
+			//apply shift modifier
+			if (param4 & GLFW_MOD_SHIFT)
 			{
-				DeleteSelectionText();
-				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
+				if (ch >= 65 && param4)
+				{
+					if (ch <= 90)
+					{
+						//if there is a shift, then subtract 32 to these characters (letters)
+						ch -= 32;
+					}
+					else if (ch >= 91 && ch <= 93)
+					{
+						//there are brackets and backslash, so here we add 32
+						ch += 32;
+					}
+				}
+				else
+				{
+					switch (ch)
+					{
+					case 48:		//0 (shift = '0')
+						ch = 41;	//)
+						break;
+					case 49:		//1
+						ch = 33;	//!
+						break;
+					case 50:		//2
+						ch = 64;	//@
+						break;
+					case 51:		//3
+						ch = 35;	//#
+						break;
+					case 52:		//4
+						ch = 36;	//$
+						break;
+					case 53:		//5
+						ch = 37;	//%
+						break;
+					case 54:		//6
+						ch = 94;	//^
+						break;
+					case 55:		//7
+						ch = 38;	//&
+						break;
+					case 56:		//8
+						ch = 42;	//*
+						break;
+					case 57:		//9
+						ch = 40;	//(
+						break;
+					case 59:		//;
+						ch--;		//:
+						break;
+					case 44:		//,
+						ch = 60;	//<
+						break;
+					case 61:		//=
+						ch = 43;	//+
+						break;
+					case 46:		//.
+						ch = 62;	//>
+						break;
+					case 47:		// '/'
+						ch = 63;	//?
+						break;
+					case 39:		//'
+						ch = 34;	//"
+						break;
+					case 45:		//-
+						ch = 95;	//_
+						break;
+					case 96:		//`
+						ch = 126;	//~
+						break;
+					}
+				}
 			}
-			else if (m_nCaret > 0)
-			{
-				// Move the caret, then delete the char.
-				PlaceCaret(m_nCaret - 1);
-				m_nSelStart = m_nCaret;
-				m_Buffer.RemoveChar(m_nCaret);
-				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
-			}
-			ResetCaretBlink();
-			break;
-		}
 
-		case 24:        // Ctrl-X Cut
-		case VK_CANCEL: // Ctrl-C Copy
-		{
-			CopyToClipboard();
-
-			// If the key is Ctrl-X, delete the selection too.
-			if ((WCHAR)wParam == 24)
-			{
-				DeleteSelectionText();
-				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
-			}
-
-			break;
-		}
-
-			// Ctrl-V Paste
-		case 22:
-		{
-			PasteFromClipboard();
-			m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
-			break;
-		}
-
-			// Ctrl-A Select All
-		case 1:
-			if (m_nSelStart == m_nCaret)
-			{
-				m_nSelStart = 0;
-				PlaceCaret(m_Buffer.GetTextSize());
-			}
-			break;
-
-		case VK_RETURN:
-			// Invoke the callback when the user presses Enter.
-			m_pDialog->SendEvent(GLUF_EVENTEDITBOX_STRING, true, this);
-			break;
-
-			// Junk characters we don't want in the string
-		case 26:  // Ctrl Z
-		case 2:   // Ctrl B
-		case 14:  // Ctrl N
-		case 19:  // Ctrl S
-		case 4:   // Ctrl D
-		case 6:   // Ctrl F
-		case 7:   // Ctrl G
-		case 10:  // Ctrl J
-		case 11:  // Ctrl K
-		case 12:  // Ctrl L
-		case 17:  // Ctrl Q
-		case 23:  // Ctrl W
-		case 5:   // Ctrl E
-		case 18:  // Ctrl R
-		case 20:  // Ctrl T
-		case 25:  // Ctrl Y
-		case 21:  // Ctrl U
-		case 9:   // Ctrl I
-		case 15:  // Ctrl O
-		case 16:  // Ctrl P
-		case 27:  // Ctrl [
-		case 29:  // Ctrl ]
-		case 28:  // Ctrl \ 
-			break;
-
-		default:
-		{
+			
 			// If there's a selection and the user
 			// starts to type, the selection should
 			// be deleted.
@@ -7382,26 +7591,133 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			// Otherwise, we insert the char as normal.
 			if (!m_bInsertMode && m_nCaret < m_Buffer.GetTextSize())
 			{
-				m_Buffer[m_nCaret] = (WCHAR)wParam;
+				m_Buffer.RemoveChar(m_nCaret);
+				m_Buffer.InsertChar(m_nCaret, param1);
 				PlaceCaret(m_nCaret + 1);
 				m_nSelStart = m_nCaret;
 			}
 			else
 			{
 				// Insert the char
-				if (m_Buffer.InsertChar(m_nCaret, (WCHAR)wParam))
+				if (m_Buffer.InsertChar(m_nCaret, param1))
 				{
 					PlaceCaret(m_nCaret + 1);
 					m_nSelStart = m_nCaret;
 				}
 			}
 			ResetCaretBlink();
-			m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
+			m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+			
 		}
+		else
+		{
+
+			switch (param1)
+			{
+				// Backspace
+			case GLFW_KEY_BACKSPACE:
+			{
+				if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
+				{
+					// If there's a selection, treat this
+					// like a delete key.
+					if (m_nCaret != m_nSelStart)
+					{
+						DeleteSelectionText();
+						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+					}
+					else if (m_nCaret > 0)
+					{
+						// Move the caret, then delete the char.
+						PlaceCaret(m_nCaret - 1);
+						m_nSelStart = m_nCaret;
+						m_Buffer.RemoveChar(m_nCaret);
+						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+					}
+					ResetCaretBlink();
+				}
+				break;
+			}
+
+			case GLFW_KEY_X:        // Ctrl-X Cut
+			case GLFW_KEY_C:		// Ctrl-C Copy
+			{
+				if (param4 & GLFW_MOD_CONTROL)
+				{
+					CopyToClipboard();
+
+					// If the key is Ctrl-X, delete the selection too.
+					if (param1 == GLFW_KEY_X)
+					{
+						DeleteSelectionText();
+						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+					}
+				}
+				break;
+			}
+
+				// Ctrl-V Paste
+			case GLFW_KEY_V:
+			{
+				if (param4 & GLFW_MOD_CONTROL)
+				{
+					PasteFromClipboard();
+					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+				}
+				break;
+			}
+
+				// Ctrl-A Select All
+			case GLFW_KEY_A:
+				if (param4 & GLFW_MOD_CONTROL)
+				{
+					if (m_nSelStart == m_nCaret)
+					{
+						m_nSelStart = 0;
+						PlaceCaret(m_Buffer.GetTextSize());
+					}
+				}
+				break;
+
+			case GLFW_KEY_ENTER:
+				// Invoke the callback when the user presses Enter.
+				//m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
+				m_Buffer.InsertChar(m_nCaret, '\n');
+				break;
+
+				// Junk characters we don't want in the string
+			/*case 26:  // Ctrl Z
+			case 2:   // Ctrl B
+			case 14:  // Ctrl N
+			case 19:  // Ctrl S
+			case 4:   // Ctrl D
+			case 6:   // Ctrl F
+			case 7:   // Ctrl G
+			case 10:  // Ctrl J
+			case 11:  // Ctrl K
+			case 12:  // Ctrl L
+			case 17:  // Ctrl Q
+			case 23:  // Ctrl W
+			case 5:   // Ctrl E
+			case 18:  // Ctrl R
+			case 20:  // Ctrl T
+			case 25:  // Ctrl Y
+			case 21:  // Ctrl U
+			case 9:   // Ctrl I
+			case 15:  // Ctrl O
+			case 16:  // Ctrl P
+			case 27:  // Ctrl [
+			case 29:  // Ctrl ]
+			case 28:  // Ctrl \ 
+				break;*/
+
+			default:
+				break;
+			}
 		}
 		return true;
 	}
-	}*/
+	}
 
 	return false;
 }
@@ -7480,25 +7796,50 @@ void GLUFEditBox::Render( float fElapsedTime)
 	// Element 0 for text
 	
 	//add line breaks
-	unsigned int i = 0;//make sure to keep track of the offest caused by the other line breaks
+	//unsigned int j = 0;
 	std::string buff = m_Buffer.GetBuffer();
 
-	GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-	for (auto it : m_CharLineBreaks)
+
+
+	if (m_CharLineBreaks.size() != 0)
 	{
-		//TODO: set this up with scroll bar instead of 0 as constant
-		if ((i+2/*cut one line short(fix this)*/) * pFont->mSize > GLUFRectHeight(m_rcText))
+		unsigned int i = 0;//make sure to keep track of the offest caused by the other line breaks
+
+		GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+		for (auto it : m_CharLineBreaks)
 		{
+			/*//TODO: set this up with scroll bar instead of 0 as constant
+			if ((i+2/*cut one line short(fix this)) * pFont->mSize > GLUFRectHeight(m_rcText))
+			{
 			//don't draw anything past the last line.
-			buff.erase(it + i, buff.size() - 1);
+			//buff.erase(it + i, buff.size() - 1);
 			break;
+			}*/
+
+			buff.insert(it + i, 1, '\n');
+			++i;
+
 		}
 
-		buff.insert(it + i, 1, '\n');
-		
-		++i;
+		//remove all of the text that will not be displayed
+		int beginIndex = 0;
+		int endIndex = 0;
 
+		if (m_ScrollBar.GetTrackPos() != 0)
+			beginIndex = m_CharLineBreaks[m_ScrollBar.GetTrackPos() - 1] + m_ScrollBar.GetTrackPos();
+		
+		if (m_ScrollBar.GetTrackPos() - 1 + m_ScrollBar.GetPageSize() != m_CharLineBreaks.size())
+			endIndex = m_CharLineBreaks[m_ScrollBar.GetTrackPos() - 1 + m_ScrollBar.GetPageSize()] + m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize();
+		else
+			endIndex = buff.length() - 1;
+
+		//always erase back first, because this does not effect the offset of the beginning
+		buff.erase(endIndex, buff.length() - 1);
+		buff.erase(0, beginIndex);
 	}
+	
+
+	
 
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
 	m_pDialog->DrawText(buff, m_Elements[0], m_rcText, false, false, false);//the hardrect feature is used only for discarding text off the bottom of the screen
