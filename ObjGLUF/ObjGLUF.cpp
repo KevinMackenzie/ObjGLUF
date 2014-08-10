@@ -132,8 +132,8 @@ bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
 {
 	//for the first comparison, it is impossible for both statements to be false, 
 	//because if the y is greater than the top, it is automatically greater than the bottom, and vise versa
-	return	(pt.y > rect.bottom && pt.y < rect.top) &&
-		(pt.x < rect.right && pt.x > rect.left);
+	return	(pt.y >= rect.bottom && pt.y <= rect.top) &&
+		(pt.x <= rect.right && pt.x >= rect.left);
 }
 
 void GLUFSetRectEmpty(GLUFRect& rect)

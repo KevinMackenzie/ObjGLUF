@@ -6907,22 +6907,13 @@ void GLUFEditBox::UpdateRects()
 	// Inflate further by m_nSpacing
 	GLUFInflateRect(m_rcText, -m_fSpacingX, -m_fSpacingY);	
 
-
-	//recalculate scroll bar
 	m_ScrollBar.SetLocation(m_rcText.right, m_rcBoundingBox.bottom);
 	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
 	m_ScrollBar.m_y = m_rcText.top;
-	if (pFontNode && pFontNode->mSize)
-	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
-		m_ScrollBar.SetTrackRange(0, GetNumNewlines());
 
-		// The selected item may have been scrolled off the page.
-		// Ensure that it is in page again.
-		//m_ScrollBar.ShowItem(GetLineNumberFromCharPos(m_nCaret));
-	}
 
-	Analyse();
+	//Analyse();
+	m_bAnalyseRequired = true;
 }
 
 
@@ -7297,8 +7288,10 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 	// Let the scroll bar have a chance to handle it first
 	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM))
+	{
+		m_bAnalyseRequired = true;
 		return true;
-
+	}
 	
 	//UNREFERENCED_PARAMETER(lParam);
 
@@ -7308,6 +7301,8 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
 
 	bool bHandled = false;
+
+	//TODO:
 
 	switch (msg)
 	{
@@ -7926,60 +7921,133 @@ void GLUFEditBox::Analyse()
 	//first set the render buffer to the string
 	m_strRenderBuffer = m_strBuffer;
 
-	float fTextWidth = GLUFRectWidth(m_rcText);
-	float currXValue = 0.0f;
-	int charIndex = 0;
-
-	std::vector<std::string> strings = GLUFSplitStr(m_strRenderBuffer, ' ', true);
-	m_strInsertedNewlineLocations.clear();
-	for (auto it : strings)
+	//take preexisting newlines, and make sure they have a space on either side, so they are their own words
+	unsigned int addedCharactersCount = 0;
+	for (unsigned int it = 0; it < m_strBuffer.length(); ++it)
 	{
-		float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
-
-		//if the current word width is bigger than the whole line, then newline at the box width
-		if (fWordWidth > fTextWidth)
+		if (m_strBuffer[it] == '\n')
 		{
-			//float charXPos = 0.0f;
-			int chIndex = 0;
 
-			for (auto itch : it)
+			if (it == 0) //if it is the first char
 			{
-				float fCharWidth = pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
-				currXValue += fCharWidth;
-
-				if (currXValue > fTextWidth)
+				if (m_strBuffer[it + 1] != ' ')
 				{
-					m_strRenderBuffer.insert(charIndex + chIndex, '\n', 1);
-					m_strInsertedNewlineLocations.push_back(charIndex + chIndex);
-					//charXPos = 0.0f;
-					currXValue = fCharWidth;
+					m_strRenderBuffer.insert(addedCharactersCount + it + 1, 1, ' ');//insert a space after
+					addedCharactersCount++;
+				}
+			}
+			else if (m_strBuffer.length() - 1)//if it is the last char
+			{
+				if (m_strBuffer[it - 1] != ' ')
+				{
+					m_strRenderBuffer.insert(addedCharactersCount + it - 1, 1, ' ');//insert a space before
+					addedCharactersCount++;
+				}
+			}
+			else//anything else
+			{
+				if (m_strBuffer[it - 1] != ' ')
+				{
+					m_strRenderBuffer.insert(addedCharactersCount + it - 1, 1, ' ');//insert a space before
+					addedCharactersCount++;
 				}
 
-				chIndex++;
+				if (m_strBuffer[it + 1] != ' ')										//AND
+				{
+					m_strRenderBuffer.insert(addedCharactersCount + it + 1, 1, ' ');//insert a space after
+					addedCharactersCount++;
+				}
 			}
-
 		}
-		else
-		{
-			currXValue += fWordWidth;
-		}
-
-		if (currXValue/* + 0.0125f/*a little buffer*/ > fTextWidth)
-		{
-
-			//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
-
-			m_strRenderBuffer.insert(charIndex, '\n', 1);
-			m_strInsertedNewlineLocations.push_back(charIndex);
-			currXValue = fWordWidth;
-		}
-
-		//if (charIndex == 0)
-		//	--charIndex;
-
-		charIndex += it.size();
 	}
 
+	{//new block just to remove these variables
+		float fTextWidth = GLUFRectWidth(m_rcText);
+		float currXValue = 0.0f;
+		int charIndex = 0;
+		addedCharactersCount = 0;
+
+		std::vector<std::string> strings = GLUFSplitStr(m_strRenderBuffer, ' ', true);
+		m_strInsertedNewlineLocations.clear();
+		for (auto it : strings)
+		{
+
+
+			float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
+
+			//these are natural newlines
+			if (it == "\n ")
+			{
+				currXValue = fWordWidth;
+				charIndex += it.length();
+				continue;
+			}
+
+			//if the current word width is bigger than the whole line, then newline at the box width
+			if (fWordWidth > fTextWidth)
+			{
+				//float charXPos = 0.0f;
+				int chIndex = 0;
+
+				for (auto itch : it)
+				{
+					float fCharWidth = pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
+					currXValue += fCharWidth;
+
+					if (currXValue > fTextWidth)
+					{
+						m_strRenderBuffer.insert(charIndex + chIndex + addedCharactersCount, 1, '\n');
+						m_strInsertedNewlineLocations.push_back(charIndex + chIndex);
+						//charXPos = 0.0f;
+						currXValue = fCharWidth;
+						++addedCharactersCount;
+					}
+
+					chIndex++;
+				}
+
+			}
+			else
+			{
+				currXValue += fWordWidth;
+			}
+
+			if (currXValue/* + 0.0125f/*a little buffer*/ > fTextWidth)
+			{
+
+				//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
+
+				//blank strings i.e. double spaces ( or more ) then we just keep those at the end of the line
+				if (it == " ")
+				{
+
+				}
+				else
+				{
+					m_strRenderBuffer.insert(charIndex + addedCharactersCount, 1, '\n');
+					m_strInsertedNewlineLocations.push_back(charIndex);
+					currXValue = fWordWidth;
+					++addedCharactersCount;
+				}
+			}
+
+			//if (charIndex == 0)
+			//	--charIndex;
+
+			charIndex += it.size();
+		}
+	}
+
+	//recalculate scroll bar (this has to be done in between analyzing steps)
+	if (pFontNode && pFontNode->mSize)
+	{
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
+		m_ScrollBar.SetTrackRange(0, GetNumNewlines());
+
+		// The selected item may have been scrolled off the page.
+		// Ensure that it is in page again.
+		//m_ScrollBar.ShowItem(GetLineNumberFromCharPos(m_nCaret));
+	}
 
 
 	//now get the char bounding boxes (this ALSO culls the characters that would go off screen, as well as offset for the scrollbar)
@@ -7989,65 +8057,70 @@ void GLUFEditBox::Analyse()
 
 	//for each character, get the width, and add that to the width of the previous, also add initial 0
 	//m_CalcXValues.push_back(0);
-
-	currXValue = 0.0f;
-	float distanceFromBottom = GLUFRectHeight(m_rcText);
-	float thisCharWidth = 0.0f;
-	float fontHeight = pFontNode->mSize;
-	GLUFRect rc;
-
-	bool topCulled = false;
-
-	std::string strRenderBufferTmp = "";
-	unsigned int i = 0;
-	for (auto it : m_strRenderBuffer)
 	{
-		if (it == '\n')
+		float currXValue = 0.0f;
+		float distanceFromBottom = GLUFRectHeight(m_rcText);
+		int   lineNum = 0;
+
+		float thisCharWidth = 0.0f;
+		float fontHeight = pFontNode->mSize;
+		float scrollbarOffset = m_ScrollBar.GetTrackPos() * fontHeight;
+		GLUFRect rc;
+
+		bool topCulled = false;
+
+		std::string strRenderBufferTmp = "";
+		unsigned int i = 0;
+		for (auto it : m_strRenderBuffer)
 		{
-			currXValue = 0.0f;
-			distanceFromBottom -= fontHeight;
-		}
 
-		thisCharWidth = pFontNode->m_pFontType->GetCharWidth(it, fontHeight);
+			thisCharWidth = pFontNode->m_pFontType->GetCharWidth(it, fontHeight);
 
-		GLUFSetRect(rc, currXValue, distanceFromBottom + fontHeight, currXValue + thisCharWidth, distanceFromBottom);
+			GLUFSetRect(rc, currXValue, distanceFromBottom, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
 
-		//offset the whole block by the scroll level
-		GLUFOffsetRect(rc, 0.0f, (m_ScrollBar.GetTrackPos() * fontHeight));
+			//offset the whole block by the scroll level
+			GLUFOffsetRect(rc, 0.0f, scrollbarOffset);
 
-		//cull the characters that will not fit on the page
-		if (!GLUFPtInRect(m_rcText, GLUFPoint(rc.left, rc.top)) || !GLUFPtInRect(m_rcText, GLUFPoint(rc.right, rc.bottom)))
-		{
-			if (topCulled)//this is called once the top has been culled, then the body has been added
-				break;
+			//cull the characters that will not fit on the page
+			if (lineNum > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1 || lineNum < m_ScrollBar.GetTrackPos())
+			{
+				if (topCulled)//this is called once the top has been culled, then the body has been added
+					break;
+				else
+				{
+					//if this IS NOT a inserted newline, then we can add it
+					if (it == '\n')
+						if (std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), i) == m_strInsertedNewlineLocations.end())
+						{
+							++m_strRenderBufferOffset;
+						}
+						else;
+					else
+						++m_strRenderBufferOffset;
+				}
+			}
 			else
 			{
-				//if this IS NOT a inserted newline, then we can add it
-				if (it == '\n')
-					if (!*std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), i))
-					{
-						++m_strRenderBufferOffset;
-					}
-					else;
-				else
-					++m_strRenderBufferOffset;
+				topCulled = true;
+
+				//does fit on page
+				strRenderBufferTmp += it;
+				m_CharBoundingBoxes.push_back(rc);
 			}
+
+			//this MUST go after the culling process, because the new line starts AFTER this character
+			if (it == '\n')
+			{
+				lineNum++;
+				currXValue = 0.0f;
+				distanceFromBottom -= fontHeight;
+			}
+
+			currXValue += thisCharWidth;
+			++i;
 		}
-		else
-		{
-			topCulled = true;
-			
-			//does fit on page
-			strRenderBufferTmp += it;
-			m_CharBoundingBoxes.push_back(rc);
-		}
-
-
-
-		currXValue += thisCharWidth;
-		++i;
+		m_strRenderBuffer = strRenderBufferTmp;
 	}
-	m_strRenderBuffer = strRenderBufferTmp;
 
 	m_bAnalyseRequired = false;  // Analysis is up-to-date
 
