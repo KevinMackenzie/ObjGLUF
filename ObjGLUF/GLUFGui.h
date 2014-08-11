@@ -1170,11 +1170,11 @@ protected:
 	
 	//NOTE: all methods referencing a position within the edit box will be done IN STRING  SPACE and will be converted appropriately to make it so
 
-	void InsertString(unsigned int pos, std::string str);
-	void InsertChar(unsigned int pos, char ch);
+	void InsertString(int pos, std::string str);
+	void InsertChar(int pos, char ch);
 
-	void RemoveString(unsigned int pos, int len);
-	void RemoveChar(unsigned int pos);
+	void RemoveString(int pos, int len);
+	void RemoveChar(int pos);
 
 	void GetNextItemPos(int pos, int& next);
 	void GetPriorItemPos(int pos, int& prior);

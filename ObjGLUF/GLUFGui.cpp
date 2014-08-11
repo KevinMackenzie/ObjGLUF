@@ -7028,38 +7028,82 @@ void GLUFEditBox::PasteFromClipboard()
 #pragma warning(pop)
 
 
-void GLUFEditBox::InsertString(unsigned int pos, std::string str)
+void GLUFEditBox::InsertString(int pos, std::string str)
 {
-	GLUF_ASSERT(pos < GetTextLength() - 1);
-
-	m_strBuffer.insert(pos, str.c_str(), str.size());
+	//GLUF_ASSERT(pos < GetTextLength() - 1);
+	if (pos < 0)
+	{
+		m_strBuffer.insert(0, str.c_str());
+	}
+	if (pos == GetTextLength())
+	{
+		m_strBuffer.append(str.c_str());
+	}
+	else
+	{
+		m_strBuffer.insert(pos, str);
+	}
 
 	m_bAnalyseRequired = true;
 }
 
-void GLUFEditBox::RemoveString(unsigned int pos, int len)
+void GLUFEditBox::RemoveString(int pos, int len)
 {
-	GLUF_ASSERT(pos + len < GetTextLength() - 1);
+	//GLUF_ASSERT(pos + len < GetTextLength() - 1);
 
-	m_strBuffer.erase(pos, len);
+	if (m_strBuffer.length() <= pos + len)
+	{
+		while (pos < m_strBuffer.length())
+		{
+			m_strBuffer.pop_back();//if len goes past the end, then just remove what we can
+		}
+	}
+	else if (pos < 0)
+	{
+
+	}
+	else
+	{
+		m_strBuffer.erase(pos, len);
+	}
+	m_bAnalyseRequired = true;
+}
+
+void GLUFEditBox::InsertChar(int pos, char ch)
+{
+	//GLUF_ASSERT(pos < GetTextLength() - 1);
+	if (pos < 0)
+	{
+		m_strBuffer.insert(0, 1, ch);
+	}
+	else if (pos == GetTextLength())
+	{
+		//append char
+		m_strBuffer += ch;
+	}
+	else
+	{
+		m_strBuffer.insert(pos, 1, ch);
+	}
 
 	m_bAnalyseRequired = true;
 }
 
-void GLUFEditBox::InsertChar(unsigned int pos, char ch)
+void GLUFEditBox::RemoveChar(int pos)
 {
-	GLUF_ASSERT(pos < GetTextLength() - 1);
-
-	m_strBuffer.insert(pos, ch, 1);
-
-	m_bAnalyseRequired = true;
-}
-
-void GLUFEditBox::RemoveChar(unsigned int pos)
-{
-	GLUF_ASSERT(pos < GetTextLength() - 1);
-
-	m_strBuffer.erase(pos, 1);
+	//GLUF_ASSERT(pos < GetTextLength() - 1);
+	if (pos < 0)
+	{
+		m_strBuffer.erase(0, 1);
+	}
+	else if (pos >= GetTextLength())
+	{
+		m_strBuffer.pop_back();
+	}
+	else
+	{
+		m_strBuffer.erase(pos, 1);
+	}
 
 	m_bAnalyseRequired = true;
 }
@@ -7564,9 +7608,9 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 	}
 	}
 	
-	if (bHandled)
-		return true;
-
+	/*if (bHandled)
+		return true;*/
+	//TODO: fix
 
 
 	switch (msg)
@@ -7578,6 +7622,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 		m_bAnalyseRequired = true;
 	//case GM_UNICODE_CHAR: (suprisingly, the GM_KEY will work better, because at this time I do not support unicode chars)
+	if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
 	{
 		if (param1 <= 255 &&  param1 >= 32 &&  param1 != 127/*DEL*/ && (param4 == 0x0000 || param4 & GLFW_MOD_SHIFT))
 		{				
@@ -7588,77 +7633,73 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			//apply shift modifier
 			if (param4 & GLFW_MOD_SHIFT)
 			{
-				if (ch >= 65 && param4)
+				switch (ch)
 				{
-					if (ch <= 90)
-					{
-						//if there is a shift, then subtract 32 to these characters (letters)
-						ch -= 32;
-					}
-					else if (ch >= 91 && ch <= 93)
-					{
-						//there are brackets and backslash, so here we add 32
-						ch += 32;
-					}
+				case 48:		//0 (shift = '0')
+					ch = 41;	//)
+					break;
+				case 49:		//1
+					ch = 33;	//!
+					break;
+				case 50:		//2
+					ch = 64;	//@
+					break;
+				case 51:		//3
+					ch = 35;	//#
+					break;
+				case 52:		//4
+					ch = 36;	//$
+					break;
+				case 53:		//5
+					ch = 37;	//%
+					break;
+				case 54:		//6
+					ch = 94;	//^
+					break;
+				case 55:		//7
+					ch = 38;	//&
+					break;
+				case 56:		//8
+					ch = 42;	//*
+					break;
+				case 57:		//9
+					ch = 40;	//(
+					break;
+				case 59:		//;
+					ch--;		//:
+					break;
+				case 44:		//,
+					ch = 60;	//<
+					break;
+				case 61:		//=
+					ch = 43;	//+
+					break;
+				case 46:		//.
+					ch = 62;	//>
+					break;
+				case 47:		// '/'
+					ch = 63;	//?
+					break;
+				case 39:		//'
+					ch = 34;	//"
+					break;
+				case 45:		//-
+					ch = 95;	//_
+					break;
+				case 96:		//`
+					ch = 126;	//~
+					break;
 				}
-				else
+				
+			}
+			else if (param4 == 0)
+			{
+				if (ch >= 65)
 				{
-					switch (ch)
+					if (ch <= 93)
 					{
-					case 48:		//0 (shift = '0')
-						ch = 41;	//)
-						break;
-					case 49:		//1
-						ch = 33;	//!
-						break;
-					case 50:		//2
-						ch = 64;	//@
-						break;
-					case 51:		//3
-						ch = 35;	//#
-						break;
-					case 52:		//4
-						ch = 36;	//$
-						break;
-					case 53:		//5
-						ch = 37;	//%
-						break;
-					case 54:		//6
-						ch = 94;	//^
-						break;
-					case 55:		//7
-						ch = 38;	//&
-						break;
-					case 56:		//8
-						ch = 42;	//*
-						break;
-					case 57:		//9
-						ch = 40;	//(
-						break;
-					case 59:		//;
-						ch--;		//:
-						break;
-					case 44:		//,
-						ch = 60;	//<
-						break;
-					case 61:		//=
-						ch = 43;	//+
-						break;
-					case 46:		//.
-						ch = 62;	//>
-						break;
-					case 47:		// '/'
-						ch = 63;	//?
-						break;
-					case 39:		//'
-						ch = 34;	//"
-						break;
-					case 45:		//-
-						ch = 95;	//_
-						break;
-					case 96:		//`
-						ch = 126;	//~
-						break;
+						//if there is NO shift, then add 32 to these characters
+						ch += 32;
 					}
 				}
 			}
@@ -7678,14 +7719,14 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				RemoveChar(m_nCaret);
 				InsertChar(m_nCaret, ch);
 				PlaceCaret(m_nCaret + 1);
-				//m_nSelStart = m_nCaret;
+				m_nSelStart = m_nCaret;
 			}
 			else
 			{
 				// Insert the char
-				InsertChar(m_nCaret, ch);
+				InsertChar(m_nCaret + 1, ch);
 				PlaceCaret(m_nCaret + 1);
-				//m_nSelStart = m_nCaret;
+				m_nSelStart = m_nCaret;
 				
 			}
 			ResetCaretBlink();
@@ -7709,12 +7750,12 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 						DeleteSelectionText();
 						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 					}
-					else if (m_nCaret > 0)
+					else if (m_nCaret >= 0)
 					{
 						// Move the caret, then delete the char.
 						PlaceCaret(m_nCaret - 1);
 						m_nSelStart = m_nCaret;
-						RemoveChar(m_nCaret);
+						RemoveChar(m_nCaret + 1);
 						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 					}
 					ResetCaretBlink();
@@ -7765,7 +7806,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			case GLFW_KEY_ENTER:
 				// Invoke the callback when the user presses Enter.
 				//m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
-				InsertChar(m_nCaret, '\n');
+				InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
 				break;
 
 				// Junk characters we don't want in the string
@@ -7859,7 +7900,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 			else
 			{
 				int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
-				if (rndCaret != -1 && rndCaret != -2)//don't render off-screen
+				if (rndCaret != -1 && rndCaret != -2 && !(rndCaret > m_strRenderBuffer.size()))//don't render off-screen
 				{
 					if (m_strRenderBuffer[rndCaret] == '\n')
 					{
