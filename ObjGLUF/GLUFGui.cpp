@@ -44,10 +44,10 @@
 // including the nul terminator.
 #define GLUF_MAX_EDITBOXLENGTH 0xFFFF
 
-//this is just a constant to be a little bit less windows api dependent
+//this is just a constant to be a little bit less windows api dependent (TODO: make this a setting)
 unsigned int GetCaretBlinkTime()
 {
-	return 1000;
+	return 400;
 }
 
 double                 GLUFDialog::s_fTimeRefresh = 0.0f;
@@ -1958,10 +1958,37 @@ void GLUFDialog::RequestFocus(GLUFControl* pControl)
 
 GLUFResult GLUFDialog::DrawRect(GLUFRect pRect, Color color)
 {
-	GLUF_UNREFERENCED_PARAMETER(pRect);
-	GLUF_UNREFERENCED_PARAMETER(color);
-	// TODO -
-	return GR_FAILURE;
+	GLUFRect rcScreen = pRect;
+	GLUFOffsetRect(rcScreen, m_x, m_y);
+
+	rcScreen = GLUFScreenToClipspace(rcScreen);
+
+	m_pManager->m_SpriteVertices.push_back(
+		glm::vec3(rcScreen.left, rcScreen.top, GLUF_NEAR_BUTTON_DEPTH),
+		color,
+		glm::vec2());
+
+	m_pManager->m_SpriteVertices.push_back(
+		glm::vec3(rcScreen.right, rcScreen.top, GLUF_NEAR_BUTTON_DEPTH),
+		color,
+		glm::vec2());
+
+	m_pManager->m_SpriteVertices.push_back(
+		glm::vec3(rcScreen.left, rcScreen.bottom, GLUF_NEAR_BUTTON_DEPTH),
+		color,
+		glm::vec2());
+
+	m_pManager->m_SpriteVertices.push_back(
+		glm::vec3(rcScreen.right, rcScreen.bottom, GLUF_NEAR_BUTTON_DEPTH),
+		color,
+		glm::vec2());
+
+
+	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
+	// draw a sprite every time to keep the order correct between sprites and text.
+	m_pManager->EndSprites(false);//render in untextured mode
+
+	return GR_SUCCESS;
 }
 
 
@@ -1987,13 +2014,12 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	GLUFRect rcTexture = pElement->rcTexture;
 
 	GLUFRect rcScreen = prcDest;
-	float testX = m_y;
 
 	GLUFOffsetRect(rcScreen, m_x, m_y);
 
 	// If caption is enabled, offset the Y position by its height.
-	if (m_bCaption)
-		GLUFOffsetRect(rcScreen, 0, -m_nCaptionHeight);
+	//if (m_bCaption)
+	//	GLUFOffsetRect(rcScreen, 0, -m_nCaptionHeight);
 
 	rcScreen = GLUFScreenToClipspace(rcScreen);
 
@@ -3114,7 +3140,7 @@ void GLUFDialogResourceManager::BeginSprites()
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialogResourceManager::EndSprites()
+void GLUFDialogResourceManager::EndSprites(bool textured)
 {
 	//this ensures we do not get a "vector subscript out of range"
 	if (m_SpriteVertices.size() == 0)
@@ -3165,8 +3191,11 @@ void GLUFDialogResourceManager::EndSprites()
 	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
 	glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(Color4f), m_SpriteVertices.data_color(), GL_STREAM_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
-	glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec2), m_SpriteVertices.data_tex(), GL_STREAM_DRAW);
+	if (textured)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
+		glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec2), m_SpriteVertices.data_tex(), GL_STREAM_DRAW);
+	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_SpriteBufferIndices);
 
@@ -3177,8 +3206,15 @@ void GLUFDialogResourceManager::EndSprites()
 	//pd3dImmediateContext->IASetInputLayout(m_pInputLayout11);
 	//pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//pd3dImmediateContext->Draw(static_cast<UINT>(m_SpriteVertices.size()), 0);
-
-	ApplyRenderUI();
+	
+	if (textured)
+	{
+		ApplyRenderUI();
+	}
+	else
+	{
+		ApplyRenderUIUntex();
+	}
 	/*
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, GLUFBUFFERMANAGER.GetTextureBufferId(g_pControlTexturePtr));
@@ -6767,68 +6803,57 @@ GLUFEditBox::~GLUFEditBox()
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::PlaceCaret( int nCP)
 {
-	GLUF_ASSERT(nCP >= 0 && nCP <= GetTextLength());
-	m_nCaret = nCP;
-
-	// Obtain the X offset of the character.
-	/*int nX1st, nX, nX2;
-	m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // 1st visible char
-	m_Buffer.CPtoX(nCP, false, &nX);  // LEAD
-	// If nCP is the nul terminator, get the leading edge instead of trailing.
-	if (nCP == m_Buffer.GetTextSize())
-		nX2 = nX;
-	else
-		m_Buffer.CPtoX(nCP, true, &nX2);  // TRAIL
-
-	// If the left edge of the char is smaller than the left edge of the 1st visible char,
-	// we need to scroll left until this char is visible.
-	if (nX < nX1st)
+	if (nCP == -1)
 	{
-		// Simply make the first visible character the char at the new caret position.
-		m_nFirstVisible = nCP;
+		m_ScrollBar.SetTrackPos(0);//top
+		m_nCaret = nCP;
 	}
-	else // If the right of the character is bigger than the offset of the control's
-		// right edge, we need to scroll right to this character.
-		if (nX2 > nX1st + GLUFRectWidth(m_rcText))
+	else if (nCP >= GetTextLength())
+	{
+		//anything past this, set to the max
+		m_nCaret = GetTextLength() - 1;
+	}
+	else
+	{
+		//GLUF_ASSERT(nCP >= 0 && nCP <= GetTextLength());
+		m_nCaret = nCP;
+
+		int rendCaret = GetStrRenderIndexFromStrIndex(nCP);
+		if (rendCaret == -2)
 		{
-			// Compute the X of the new left-most pixel
-			int nXNewLeft = nX2 - GLUFRectWidth(m_rcText);
+			rendCaret = m_strRenderBuffer.back();
+		}
 
-			// Compute the char position of this character
-			int nCPNew1st;
-			bool nNewTrail;
-			m_Buffer.XtoCP(nXNewLeft, &nCPNew1st, &nNewTrail);
+		while (rendCaret == -1)
+		{
+			m_ScrollBar.Scroll(m_ScrollBar.GetPageSize() - 1);
+			Analyse();
 
-			// If this coordinate is not on a character border,
-			// start from the next character so that the caret
-			// position does not fall outside the text rectangle.
-			int nXNew1st;
-			m_Buffer.CPtoX(nCPNew1st, false, &nXNew1st);
-			if (nXNew1st < nXNewLeft)
-				++nCPNew1st;
+			rendCaret = GetStrRenderIndexFromStrIndex(nCP);
+		}
 
-			m_nFirstVisible = nCPNew1st;
-		}*/
-
-	
+		int line = GetLineNumberFromCharPos(rendCaret);
+		m_ScrollBar.SetTrackPos(line);
+		/*if (line < m_ScrollBar.GetTrackPos() || line > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
+			m_ScrollBar.SetTrackPos(line);*/
+	}
 }
 
 int GLUFEditBox::GetLineNumberFromCharPos(int nCP)
 {
-	int cpRenderPos = GetStrRenderIndexFromStrIndex(nCP);
-	if (cpRenderPos < 0)
-		return -1;
-
-	//the number of newlines
-	unsigned int lin = -1;
-	for (unsigned int i = 0; i < cpRenderPos; ++i)
-	{
-		if (m_strRenderBuffer[i] == '\n')
+	int nCPModified = nCP;
+	int lin = 0;
+	for (auto it : m_strInsertedNewlineLocations)
+		if (nCP >= it)
+			--nCPModified;
+	
+	for (unsigned int i = 0; i < nCPModified + m_strRenderBufferOffset; ++i)
+		if (m_strBuffer[i] == '\n')
 			++lin;
-	}
 
-	//offset by the scroll value
-	lin -= m_ScrollBar.GetTrackPos();
+	for (auto it : m_strInsertedNewlineLocations)
+		if (nCP >= it)
+			++lin;
 
 	return lin;
 }
@@ -6854,8 +6879,10 @@ void GLUFEditBox::SetText( std::string wszText,  bool bSelected)
 
 	m_strBuffer = wszText;
 	m_nFirstVisible = 0;
+	Analyse();
+
 	// Move the caret to the end of the text
-	PlaceCaret(GetTextLength());
+	PlaceCaret(GetTextLength() - 1);
 	m_nSelStart = bSelected ? 0 : m_nCaret;
 
 
@@ -6980,17 +7007,17 @@ void GLUFEditBox::PasteFromClipboard()
 					PlaceCaret(m_nCaret + (int)wcslen(pwszText));
 				m_nSelStart = m_nCaret;
 				GlobalUnlock(handle);
-			}
-		}
-		CloseClipboard();
-	}*/
+				}
+				}
+				CloseClipboard();
+				}*/
 
 	//glfw makes this easy
 	const char* str;
 	str = glfwGetClipboardString(g_pGLFWWindow);
 
 	InsertString(m_nSelStart, str);
-	
+
 	//when pasting, set the cursor to the end
 	m_nCaret = m_strBuffer.length() - 1;
 	m_nSelStart = m_nCaret;
@@ -7012,7 +7039,7 @@ void GLUFEditBox::InsertString(unsigned int pos, std::string str)
 
 void GLUFEditBox::RemoveString(unsigned int pos, int len)
 {
-	GLUF_ASSERT(pos + len < GetTextLength()-1);
+	GLUF_ASSERT(pos + len < GetTextLength() - 1);
 
 	m_strBuffer.erase(pos, len);
 
@@ -7067,12 +7094,60 @@ int GLUFEditBox::GetNumNewlines()
 
 int GLUFEditBox::GetStrIndexFromStrRenderIndex(int strRenderIndex)
 {
-	return -1;//TODO:
+	GLUF_ASSERT(strRenderIndex < m_strRenderBuffer.length());
+
+	if (m_bAnalyseRequired)
+		Analyse();
+
+	int ret = strRenderIndex;
+
+	//first, offset by the offset
+	ret += m_strRenderBufferOffset;
+
+	//secondly, find all of the added newlines that are less than the index of the render index
+	for (auto it : m_strInsertedNewlineLocations)
+		if (it <= strRenderIndex)
+			--ret;
+
+	//next, find all of the other added characters that are less than the index of the render index
+	for (auto it : m_nAdditionalInsertedCharLocations)
+		if (it <= strRenderIndex)
+			--ret;
+
+	//is there anything else?
+	return ret;
 }
 
 int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 {
-	return -1;//TODO:
+	if (strIndex < m_strRenderBufferOffset)
+		return -2;
+
+	if (m_bAnalyseRequired)
+		Analyse();
+
+	int ret = strIndex;
+
+	//offset by the offset
+	ret -= m_strRenderBufferOffset;
+	if (ret < 0 || ret > m_strRenderBuffer.length())//if it is less than 0, then just return -1
+		return -1;
+
+
+	//this is a little more complex
+	int offset = 0;
+	for (unsigned int i = 0; i < ret && i+offset < m_strRenderBuffer.length()/*this is usually hit first*/; ++i)
+	{
+		//make sure to add an offset for each unmatching character
+		if (m_strRenderBuffer[i + offset] != m_strBuffer[i + m_strRenderBufferOffset])
+			++offset;
+	}
+
+	//offset by the number of different characters up to that point
+	ret += offset;
+
+	//is there anything else?
+	return ret;
 }
 
 //--------------------------------------------------------------------------------------
@@ -7375,7 +7450,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 	{
 		m_bAnalyseRequired = true;
 
-		if (param3 == GLFW_PRESS)
+		if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
 		{
 			switch (param1)
 			{
@@ -7385,7 +7460,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				break;
 
 			case GLFW_KEY_HOME:
-				PlaceCaret(0);
+				PlaceCaret(-1);
 				if (!param4 & GLFW_MOD_SHIFT)
 					// Shift is not down. Update selection
 					// start along with the caret.
@@ -7395,7 +7470,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				break;
 
 			case GLFW_KEY_END:
-				PlaceCaret(GetTextLength());
+				PlaceCaret(GetTextLength()-1);
 				if (!param4 & GLFW_MOD_SHIFT)
 					// Shift is not down. Update selection
 					// start along with the caret.
@@ -7447,7 +7522,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					GetPriorItemPos(m_nCaret, m_nCaret);
 					PlaceCaret(m_nCaret);
 				}
-				else if (m_nCaret > 0)
+				else if (m_nCaret >= 0)
 					PlaceCaret(m_nCaret - 1);
 				if (!param4 & GLFW_MOD_SHIFT)
 					// Shift is not down. Update selection
@@ -7598,22 +7673,21 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			// If we are in overwrite mode and there is already
 			// a char at the caret's position, simply replace it.
 			// Otherwise, we insert the char as normal.
-			/*if (!m_bInsertMode && m_nCaret < GetTextLength())
+			if (!m_bInsertMode && m_nCaret < GetTextLength())
 			{
-				m_Buffer.RemoveChar(m_nCaret);
-				m_Buffer.InsertChar(m_nCaret, param1);
+				RemoveChar(m_nCaret);
+				InsertChar(m_nCaret, ch);
 				PlaceCaret(m_nCaret + 1);
-				m_nSelStart = m_nCaret;
+				//m_nSelStart = m_nCaret;
 			}
 			else
 			{
 				// Insert the char
-				if (m_Buffer.InsertChar(m_nCaret, param1))
-				{
-					PlaceCaret(m_nCaret + 1);
-					m_nSelStart = m_nCaret;
-				}
-			}*/
+				InsertChar(m_nCaret, ch);
+				PlaceCaret(m_nCaret + 1);
+				//m_nSelStart = m_nCaret;
+				
+			}
 			ResetCaretBlink();
 			m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 			
@@ -7744,17 +7818,74 @@ void GLUFEditBox::Render( float fElapsedTime)
 	//render the scrollbar
 	m_ScrollBar.Render(fElapsedTime);
 
+
 	if (m_bVisible == false)
 		return;
 
-	int nSelStartX = 0, nCaretX = 0;  // Left and right X cordinates of the selection region
+
+	//
+	// Blink the caret
+	//
+	if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
+	{
+		m_bCaretOn = !m_bCaretOn;
+		m_dfLastBlink = glfwGetTime();
+	}
 
 	GLUFElement* pElement = GetElement(0);
+	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pElement)
 	{
-		//m_Buffer.SetFontNode(m_pDialog->GetFont(pElement->iFont));
-		PlaceCaret(m_nCaret);  // Call PlaceCaret now that we have the font info (node),
-		// so that scrolling can be handled.
+		if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
+		{
+			// Start the rectangle with insert mode caret
+			GLUFRect rcCaret;
+			if (m_nCaret == -1)//if it is -1, then the leading edge of the first character
+			{
+
+				// If we are in overwrite mode, adjust the caret rectangle
+				// to fill the entire character.
+				if (!m_bInsertMode)
+				{
+					if (m_CharBoundingBoxes.size())
+						rcCaret = m_CharBoundingBoxes[0];
+				}
+				else
+					GLUFSetRect(rcCaret, 0.0f, GLUFRectHeight(m_rcText), 0.002f, GLUFRectHeight(m_rcText) - pFontNode->mSize);
+
+				GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
+				m_pDialog->DrawRect(rcCaret, m_CaretColor);
+			}
+			else
+			{
+				int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
+				if (rndCaret != -1 && rndCaret != -2)//don't render off-screen
+				{
+					if (m_strRenderBuffer[rndCaret] == '\n')
+					{
+						//if it is a newline character, then give the leading edge of the first char of the line
+						GLUFSetRect(rcCaret, 0.0f, m_CharBoundingBoxes[rndCaret].bottom, 0.002f, m_CharBoundingBoxes[rndCaret].bottom - pFontNode->mSize);
+					}
+					else
+					{
+						GLUFSetRect(rcCaret,
+							m_CharBoundingBoxes[rndCaret].right, m_CharBoundingBoxes[rndCaret].top,
+							m_CharBoundingBoxes[rndCaret].right + 0.002f, m_CharBoundingBoxes[rndCaret].bottom);
+					}
+					// If we are in overwrite mode, adjust the caret rectangle
+					// to fill the entire character.
+					if (!m_bInsertMode)
+					{
+						if (rndCaret >= m_CharBoundingBoxes.size() - 1);
+						else
+							rcCaret.right = m_CharBoundingBoxes[rndCaret + 1].right;
+					}
+
+					GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
+					m_pDialog->DrawRect(rcCaret, m_CaretColor);
+				}
+			}
+		}
 	}
 
 	// Render the control graphics
@@ -7769,7 +7900,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	//
 	// Compute the X coordinates of the first visible character.
 	//
-	int nXFirst = 0;
+	//int nXFirst = 0;
 	/*m_Buffer.CPtoX(m_nFirstVisible, false, &nXFirst);
 
 	//
@@ -7784,7 +7915,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	//
 	// Render the selection rectangle
 	//
-	GLUFRect rcSelection;  // Make this available for rendering selected text
+	/*GLUFRect rcSelection;  // Make this available for rendering selected text
 	if (m_nCaret != m_nSelStart)
 	{
 		int nSelLeftX = nCaretX, nSelRightX = nSelStartX;
@@ -7799,7 +7930,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 		GLUFIntersectRect(rcSelection, m_rcText, rcSelection);
 
 		m_pDialog->DrawRect(rcSelection, m_SelBkColor);
-	}
+	}*/
 
 	//
 	// Render the text
@@ -7808,7 +7939,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	
 
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
-	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText, false, false, false);//the hardrect feature is used only for discarding text off the bottom of the screen
+	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText);
 
 	// Render the selected text
 	/*if (m_nCaret != m_nSelStart)
@@ -7819,30 +7950,23 @@ void GLUFEditBox::Render( float fElapsedTime)
 			m_Elements[0], rcSelection, false, false, true);
 	}*/
 
-	//
-	// Blink the caret
-	//
-	/*if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
-	{
-		m_bCaretOn = !m_bCaretOn;
-		m_dfLastBlink = glfwGetTime();
-	}
+
 
 	//
 	// Render the caret if this control has the focus
 	//
-	if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
-	{
+	//if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
+	//{
 		// Start the rectangle with insert mode caret
-		GLUFRect rcCaret =
-		{
-			m_rcText.left - nXFirst + nCaretX - 1, m_rcText.top,
-			m_rcText.left - nXFirst + nCaretX + 1, m_rcText.bottom
-		};
+		/*GLUFRect rcCaret;
+		GLUFSetRect(rcCaret,
+			m_CharBoundingBoxes[m_nCaret].right, m_CharBoundingBoxes[m_nCaret].top,
+			m_CharBoundingBoxes[m_nCaret].right + 0.00625f, m_CharBoundingBoxes[m_nCaret].top - pFontNode->mSize);
+		GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
 
 		// If we are in overwrite mode, adjust the caret rectangle
 		// to fill the entire character.
-		if (!m_bInsertMode)
+		/*if (!m_bInsertMode)
 		{
 			// Obtain the right edge X coord of the current character
 			int nRightEdgeX;
@@ -7851,7 +7975,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 		}
 
 		m_pDialog->DrawRect(rcCaret, m_CaretColor);
-	}*/
+	//}*/
 
 
 }
@@ -7866,10 +7990,10 @@ void GLUFEditBox::ResetCaretBlink()
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFEditBox::CPtoPT(int nCP, bool bTrail, GLUFPoint *pPt)
+bool GLUFEditBox::CPtoRC(int nCP, bool bTrail, GLUFRect *pRc)
 {
-	/*GLUF_ASSERT(pPt);
-	*pPt = { 0.0f, 0.0f };
+	/*GLUF_ASSERT(pRc);
+	*pRc = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	if (nCP + 1 > m_strBuffer.length())
 	{
@@ -7885,16 +8009,15 @@ bool GLUFEditBox::CPtoPT(int nCP, bool bTrail, GLUFPoint *pPt)
 		nCP++;
 	}
 
-	*pPt = GLUFGetPointFromRect(m_CharBoundingBoxes[nCP], false, true);
+	*pRc = m_CharBoundingBoxes[nCP];*/
 
-	return true;*/
 	return false;
 }
 
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFEditBox::PTtoCP(GLUFPoint pt, int* pCP, bool* bTrail)
+bool GLUFEditBox::PttoCP(GLUFPoint pt, int* pCP, bool* bTrail)
 {
 	/*GLUF_ASSERT(pCP && bTrail);
 	*pCP = 0; *bTrail = false;  // Default
@@ -7922,7 +8045,8 @@ void GLUFEditBox::Analyse()
 	m_strRenderBuffer = m_strBuffer;
 
 	//take preexisting newlines, and make sure they have a space on either side, so they are their own words
-	unsigned int addedCharactersCount = 0;
+	//unsigned int addedCharactersCount = 0;
+	m_nAdditionalInsertedCharLocations.clear();
 	for (unsigned int it = 0; it < m_strBuffer.length(); ++it)
 	{
 		if (m_strBuffer[it] == '\n')
@@ -7932,30 +8056,30 @@ void GLUFEditBox::Analyse()
 			{
 				if (m_strBuffer[it + 1] != ' ')
 				{
-					m_strRenderBuffer.insert(addedCharactersCount + it + 1, 1, ' ');//insert a space after
-					addedCharactersCount++;
+					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
+					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
 				}
 			}
 			else if (m_strBuffer.length() - 1)//if it is the last char
 			{
 				if (m_strBuffer[it - 1] != ' ')
 				{
-					m_strRenderBuffer.insert(addedCharactersCount + it - 1, 1, ' ');//insert a space before
-					addedCharactersCount++;
+					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
+					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
 				}
 			}
 			else//anything else
 			{
 				if (m_strBuffer[it - 1] != ' ')
 				{
-					m_strRenderBuffer.insert(addedCharactersCount + it - 1, 1, ' ');//insert a space before
-					addedCharactersCount++;
+					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
+					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
 				}
 
 				if (m_strBuffer[it + 1] != ' ')										//AND
 				{
-					m_strRenderBuffer.insert(addedCharactersCount + it + 1, 1, ' ');//insert a space after
-					addedCharactersCount++;
+					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
+					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
 				}
 			}
 		}
@@ -7965,7 +8089,7 @@ void GLUFEditBox::Analyse()
 		float fTextWidth = GLUFRectWidth(m_rcText);
 		float currXValue = 0.0f;
 		int charIndex = 0;
-		addedCharactersCount = 0;
+		int addedCharactersCount = 0;
 
 		std::vector<std::string> strings = GLUFSplitStr(m_strRenderBuffer, ' ', true);
 		m_strInsertedNewlineLocations.clear();
@@ -8025,7 +8149,7 @@ void GLUFEditBox::Analyse()
 				else
 				{
 					m_strRenderBuffer.insert(charIndex + addedCharactersCount, 1, '\n');
-					m_strInsertedNewlineLocations.push_back(charIndex);
+					m_strInsertedNewlineLocations.push_back(charIndex + addedCharactersCount);
 					currXValue = fWordWidth;
 					++addedCharactersCount;
 				}
@@ -8108,15 +8232,18 @@ void GLUFEditBox::Analyse()
 				m_CharBoundingBoxes.push_back(rc);
 			}
 
+			currXValue += thisCharWidth;
 			//this MUST go after the culling process, because the new line starts AFTER this character
 			if (it == '\n')
 			{
 				lineNum++;
 				currXValue = 0.0f;
 				distanceFromBottom -= fontHeight;
+				/*m_CharBoundingBoxes.pop_back();
+				GLUFSetRect(rc, 0.0f, distanceFromBottom, 0.0f, distanceFromBottom - fontHeight);
+				m_CharBoundingBoxes.push_back();*/
 			}
 
-			currXValue += thisCharWidth;
 			++i;
 		}
 		m_strRenderBuffer = strRenderBufferTmp;

@@ -458,7 +458,7 @@ public:
 	void    ApplyRenderUI();
 	void	ApplyRenderUIUntex();
 	void	BeginSprites();
-	void	EndSprites();
+	void	EndSprites(bool textured = true);
 	/*ID3D11Device* GetD3D11Device()
 	{
 	return m_pd3d11Device;
@@ -1153,7 +1153,8 @@ protected:
 	void            CopyToClipboard();
 	void            PasteFromClipboard();
 
-	int             GetLineNumberFromCharPos(int nCP);//given in m_strBuffer space
+	//NOTE: nCP must be the index from m_strRenderBuffer;
+	int             GetLineNumberFromCharPos(int nCP);//the value returned is the line number within the box, so even if it is scrolled, the top line is still 0
 
 	int				GetStrIndexFromStrRenderIndex(int strRenderIndex);//this is used to convert an index of an object that was clicked on the screen to the index of the real string
 	int             GetStrRenderIndexFromStrIndex(int strIndex);//just the opposite
@@ -1162,10 +1163,13 @@ protected:
 	void Analyse();
 	
 	//NOTE: input the cursor position in m_strBuffer space
-	bool CPtoPT(int nCP, bool bTrail, GLUFPoint *pPt);
+	bool CPtoRC(int nCP, bool bTrail, GLUFRect *pPt);
 
 	//NOTE: outputs the cursor position in m_strBuffer space
-	bool PTtoCP(GLUFPoint pt, int* pCP, bool* bTrail);
+	bool PttoCP(GLUFPoint pt, int* pCP, bool* bTrail);
+	
+	//NOTE: all methods referencing a position within the edit box will be done IN STRING  SPACE and will be converted appropriately to make it so
+
 	void InsertString(unsigned int pos, std::string str);
 	void InsertChar(unsigned int pos, char ch);
 
@@ -1183,6 +1187,7 @@ protected:
 	std::string m_strRenderBuffer;//this stores the string that will be rendered, this inclues newlines inserted at the end of the rect
 	unsigned int m_strRenderBufferOffset;//the distance between the start of the string buffer, and the start of the render string buffer
 	std::vector<size_t> m_strInsertedNewlineLocations;//the location of all of the newlines that were inserted into the render string
+	std::vector<size_t> m_nAdditionalInsertedCharLocations;//the number of chars inserted NOTE: these are the locations within the renderspace string
 
 	std::vector<GLUFRect> m_CharBoundingBoxes;//a buffer to hold all of the rects of the chars. the origin is the botom left of the text region also, this is based on m_strRenderBuffer, NOT m_strBuffer
 	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
@@ -1194,7 +1199,7 @@ protected:
 	double m_dfBlink;      // Caret blink time in milliseconds
 	double m_dfLastBlink;  // Last timestamp of caret blink
 	bool m_bCaretOn;     // Flag to indicate whether caret is currently visible
-	int m_nCaret;       // Caret position, in characters
+	int m_nCaret;       // Caret position, in characters (of the original string buffer)
 	bool m_bInsertMode;  // If true, control is in insert mode. Else, overwrite mode.
 	int m_nSelStart;    // Starting position of the selection. The caret marks the end.
 	int m_nFirstVisible;// First visible character in the edit control

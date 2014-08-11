@@ -29,7 +29,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 void ErrorMethod(const char* message, const char* func, const char* file, unsigned int line)
 {
-	printf(message);
+	printf("(%s | %i): %s \n", func, line, message);
+	//hang
+	system("PAUSE");
 }
 
 bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
