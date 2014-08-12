@@ -6833,10 +6833,20 @@ void GLUFEditBox::PlaceCaret( int nCP)
 		}
 
 		int line = GetLineNumberFromCharPos(rendCaret);
-		m_ScrollBar.SetTrackPos(line);
+
+		if (line < 0 || line >= m_ScrollBar.GetPageSize())
+		{
+			m_ScrollBar.SetTrackPos(line);
+		}
 		/*if (line < m_ScrollBar.GetTrackPos() || line > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
 			m_ScrollBar.SetTrackPos(line);*/
 	}
+}
+
+void GLUFEditBox::PlaceCaretRndBuffer(int nRndCp)
+{
+	m_nCaret = GetStrIndexFromStrRenderIndex(nRndCp);
+	//TODO:
 }
 
 int GLUFEditBox::GetLineNumberFromCharPos(int nCP)
@@ -6851,9 +6861,14 @@ int GLUFEditBox::GetLineNumberFromCharPos(int nCP)
 		if (m_strBuffer[i] == '\n')
 			++lin;
 
-	for (auto it : m_strInsertedNewlineLocations)
+	/*for (auto it : m_strInsertedNewlineLocations)
 		if (nCP >= it)
-			++lin;
+			++lin;*/
+	//add the difference
+	lin += nCP - nCPModified;
+
+	if (m_strRenderBuffer[nCP] == '\n')
+		++lin;
 
 	return lin;
 }
@@ -7015,6 +7030,8 @@ void GLUFEditBox::PasteFromClipboard()
 	//glfw makes this easy
 	const char* str;
 	str = glfwGetClipboardString(g_pGLFWWindow);
+	if (str == nullptr)//if glfw cannot support the format
+		return;
 
 	InsertString(m_nSelStart, str);
 
@@ -7076,7 +7093,7 @@ void GLUFEditBox::InsertChar(int pos, char ch)
 	{
 		m_strBuffer.insert(0, 1, ch);
 	}
-	else if (pos == GetTextLength())
+	else if (pos >= GetTextLength())
 	{
 		//append char
 		m_strBuffer += ch;
@@ -7164,11 +7181,11 @@ int GLUFEditBox::GetStrIndexFromStrRenderIndex(int strRenderIndex)
 
 int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 {
-	if (strIndex < m_strRenderBufferOffset)
-		return -2;
-
 	if (m_bAnalyseRequired)
 		Analyse();
+
+	if (strIndex < m_strRenderBufferOffset)
+		return -2;
 
 	int ret = strIndex;
 
@@ -7421,7 +7438,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 	bool bHandled = false;
 
-	//TODO:
+	//TODO:  keybord entry deletes all text afterwards even BEFORE insertChar is called
 
 	switch (msg)
 	{
@@ -7441,19 +7458,20 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 			m_bMouseDrag = true;
 			//SetCapture(GLUFGetHWND());
 			// Determine the character corresponding to the coordinates.
-			int nCP, nX1st;
+			int nCP;
 			bool bTrail;
-			/*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
-			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
+			//m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+			if (PttoCP(GLUFPoint(pt.x - m_rcText.left, pt.y - m_rcText.bottom), &nCP, &bTrail))
 			{
+				nCP = GetStrIndexFromStrRenderIndex(nCP);
 				// Cap at the nul character.
-				if (bTrail && nCP < m_Buffer.GetTextSize())
-					PlaceCaret(nCP + 1);
-				else
+				if (bTrail && nCP < GetTextLength())
 					PlaceCaret(nCP);
-				m_nSelStart = m_nCaret;
+				else
+					PlaceCaret(nCP - 1);
+				//m_nSelStart = m_nCaret;
 				ResetCaretBlink();
-			}*/
+			}
 			return true;
 		}
 		else
@@ -7478,7 +7496,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					PlaceCaret(nCP);
 			}*/
 
-			m_bAnalyseRequired = true;
+			//m_bAnalyseRequired = true;
 		}
 		break;
 	case GM_SCROLL:
@@ -7753,9 +7771,9 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					else if (m_nCaret >= 0)
 					{
 						// Move the caret, then delete the char.
+						RemoveChar(m_nCaret);
 						PlaceCaret(m_nCaret - 1);
 						m_nSelStart = m_nCaret;
-						RemoveChar(m_nCaret + 1);
 						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 					}
 					ResetCaretBlink();
@@ -8060,7 +8078,7 @@ bool GLUFEditBox::CPtoRC(int nCP, bool bTrail, GLUFRect *pRc)
 
 bool GLUFEditBox::PttoCP(GLUFPoint pt, int* pCP, bool* bTrail)
 {
-	/*GLUF_ASSERT(pCP && bTrail);
+	GLUF_ASSERT(pCP && bTrail);
 	*pCP = 0; *bTrail = false;  // Default
 
 	if (m_bAnalyseRequired)
@@ -8071,8 +8089,26 @@ bool GLUFEditBox::PttoCP(GLUFPoint pt, int* pCP, bool* bTrail)
 	for (auto it : m_CharBoundingBoxes)
 	{
 		if (GLUFPtInRect(it, pt))
+		{
+			if (GLUFPtInRect({ it.left, it.top, it.right - GLUFRectWidth(it) / 2.0f, it.bottom }, pt))
+			{
+				//leading edge
+				*bTrail = false;
+			}
+			else
+			{
+				//trailing edge
+				*bTrail = true;
+			}
+
+			//*pCP = GetStrRenderIndexFromStrIndex(*pCP);
 			return true;
-	}*/
+		}
+
+		++*pCP;
+	}
+	//if it failed, then make this -1
+	*pCP = -1;
 
 	return false;
 }
@@ -8207,7 +8243,7 @@ void GLUFEditBox::Analyse()
 	if (pFontNode && pFontNode->mSize)
 	{
 		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
-		m_ScrollBar.SetTrackRange(0, GetNumNewlines());
+		m_ScrollBar.SetTrackRange(0, GetNumNewlines()+1);
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.

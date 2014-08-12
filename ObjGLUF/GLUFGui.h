@@ -1147,7 +1147,8 @@ public:
 
 
 protected:
-	void            PlaceCaret(int nCP);
+	void            PlaceCaret(int nCP);//input m_strBuffer
+	void			PlaceCaretRndBuffer(int nRndCp);//input m_strRenderBuffer
 	void            DeleteSelectionText();
 	void            ResetCaretBlink();
 	void            CopyToClipboard();
@@ -1162,10 +1163,10 @@ protected:
 	//former CUniBuffer Methods
 	void Analyse();
 	
-	//NOTE: input the cursor position in m_strBuffer space
+	//NOTE: input the cursor position in m_strRenderBuffer space
 	bool CPtoRC(int nCP, bool bTrail, GLUFRect *pPt);
 
-	//NOTE: outputs the cursor position in m_strBuffer space
+	//NOTE: outputs the cursor position in m_strRenderBuffer space
 	bool PttoCP(GLUFPoint pt, int* pCP, bool* bTrail);
 	
 	//NOTE: all methods referencing a position within the edit box will be done IN STRING  SPACE and will be converted appropriately to make it so
