@@ -7032,8 +7032,12 @@ void GLUFEditBox::PasteFromClipboard()
 	str = glfwGetClipboardString(g_pGLFWWindow);
 	if (str == nullptr)//if glfw cannot support the format
 		return;
+	
+	if (m_nSelStart > m_strRenderBuffer.length())
+		InsertString(m_nSelStart + 1, str);
+	else
+		InsertString(m_nSelStart, str);
 
-	InsertString(m_nSelStart, str);
 
 	//when pasting, set the cursor to the end
 	m_nCaret = m_strBuffer.length() - 1;
@@ -7470,6 +7474,15 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				else
 					PlaceCaret(nCP - 1);
 				//m_nSelStart = m_nCaret;
+				ResetCaretBlink();
+			}
+			else if (   pt.y - m_rcText.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom || (
+						pt.x - m_rcText.left   > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].right && 
+						pt.y - m_rcText.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].top && 
+						pt.y - m_rcText.bottom > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom))
+			{
+				//this is hit if the mouse pos is below the bottom char, OR on the same line of the bottom row, but past the last char
+				PlaceCaret(m_strBuffer.length());
 				ResetCaretBlink();
 			}
 			return true;
