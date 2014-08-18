@@ -7,6 +7,7 @@
 #include <assimp/postprocess.h>
 #define USING_ASSIMP
 #define SUPPRESS_RADIAN_ERROR
+#define SUPPRESS_UTF8_ERROR
 #include "../ObjGLUF/GLUFGui.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -79,23 +80,23 @@ int main(void)
 
 
 	GLUFTexturePtr texPtr = GLUFBUFFERMANAGER.CreateTextureBuffer();
-	GLUFBUFFERMANAGER.LoadTextureFromFile(texPtr, "dxutcontrolstest.dds", TFF_DDS);
+	GLUFBUFFERMANAGER.LoadTextureFromFile(texPtr, L"dxutcontrolstest.dds", TFF_DDS);
 	GLUFInitGui(window, MsgProc, texPtr);
 
 	resMan = new GLUFDialogResourceManager();
 	dlg = new GLUFDialog();
 	dlg->Init(resMan);
 	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
-	dlg->SetCaptionText("Caption");
+	dlg->SetCaptionText(L"Caption");
 	dlg->SetCaptionHeight(0.03625f);
 	dlg->SetSize(0.8f, 0.8f);
 	dlg->SetLocation(0.1f, 0.1f);
 	dlg->SetBackgroundColors(Color(0, 128, 0, 255));
 	dlg->EnableKeyboardInput(true);
 
-	dlg->AddButton(0, "Button", 0.05f, 0.01f, 0.125f, 0.03625f);
+	dlg->AddButton(0, L"Button", 0.05f, 0.01f, 0.125f, 0.03625f);
 
-	std::ifstream t("text.txt");
+	/*std::ifstream t("text.txt");
 	std::string str;
 
 	t.seekg(0, std::ios::end);
@@ -105,47 +106,47 @@ int main(void)
 	str.assign((std::istreambuf_iterator<char>(t)),
 		std::istreambuf_iterator<char>());
 
-	dlg->AddEditBox(1, str, 0.1f, 0.1f, 0.5f, 0.5f);
+	dlg->AddEditBox(1, str, 0.1f, 0.1f, 0.5f, 0.5f);*/
 
-	/*GLUFListBox* box;
+	GLUFListBox* box;
 	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);
-	dlg->AddCheckBox(2, "Check Box", 0.3f, 0.1f, 0.03625f, 0.03625f);
-	dlg->AddRadioButton(3, 0, "Button 1", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
-	dlg->AddRadioButton(4, 0, "Button 2", 0.4f, 0.45f, 0.03625f, 0.03625f);
-	dlg->AddRadioButton(5, 0, "Button 3", 0.4f, 0.5f, 0.03625f, 0.03625f);
-	dlg->AddStatic(6, "Static", 0.1f, 0.6f, 0.175f, 0.03625f);
+	dlg->AddCheckBox(2, L"Check Box", 0.3f, 0.1f, 0.03625f, 0.03625f);
+	dlg->AddRadioButton(3, 0, L"Button 1", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
+	dlg->AddRadioButton(4, 0, L"Button 2", 0.4f, 0.45f, 0.03625f, 0.03625f);
+	dlg->AddRadioButton(5, 0, L"Button 3", 0.4f, 0.5f, 0.03625f, 0.03625f);
+	dlg->AddStatic(6, L"Static", 0.1f, 0.6f, 0.175f, 0.03625f);
 	//dlg->AddSlider (6, 0.1f, 0.3f, 0.4f, 0.03625f, 0.0f, 1.0f, 0.25f);
 
-	box->AddItem("Item 0",  nullptr);
-	box->AddItem("Item 1",  nullptr);
-	box->AddItem("Item 2",  nullptr);
-	box->AddItem("Item 3",  nullptr);
-	box->AddItem("Item 4",  nullptr);
-	box->AddItem("Item 5",  nullptr);
-	box->AddItem("Item 6",  nullptr);
-	box->AddItem("Item 7",  nullptr);
-	box->AddItem("Item 8",  nullptr);
-	box->AddItem("Item 9",  nullptr);
-	box->AddItem("Item 10", nullptr);
-	box->AddItem("Item 11", nullptr);
-	box->AddItem("Item 12", nullptr);
-	box->AddItem("Item 13", nullptr);
-	box->AddItem("Item 14", nullptr);
-	box->AddItem("Item 15", nullptr);
-	box->AddItem("Item 16", nullptr);
-	box->AddItem("Item 17", nullptr);
-	box->AddItem("Item 18", nullptr);
-	box->AddItem("Item 19", nullptr);
-	box->AddItem("Item 20", nullptr);
-	box->AddItem("Item 21", nullptr);
-	box->AddItem("Item 22", nullptr);
-	box->AddItem("Item 23", nullptr);
-	box->AddItem("Item 24", nullptr);
-	box->AddItem("Item 25", nullptr);
-	box->AddItem("Item 26", nullptr);
-	box->AddItem("Item 27", nullptr);
-	box->AddItem("Item 28", nullptr);
-	box->AddItem("Item 29", nullptr);*/
+	box->AddItem(L"Item 0", nullptr);
+	box->AddItem(L"Item 1",  nullptr);
+	box->AddItem(L"Item 2",  nullptr);
+	box->AddItem(L"Item 3",  nullptr);
+	box->AddItem(L"Item 4",  nullptr);
+	box->AddItem(L"Item 5", nullptr);
+	box->AddItem(L"Item 6", nullptr);
+	box->AddItem(L"Item 7", nullptr);
+	box->AddItem(L"Item 8", nullptr);
+	box->AddItem(L"Item 9", nullptr);
+	box->AddItem(L"Item 10", nullptr);
+	box->AddItem(L"Item 11", nullptr);
+	box->AddItem(L"Item 12", nullptr);
+	box->AddItem(L"Item 13", nullptr);
+	box->AddItem(L"Item 14", nullptr);
+	box->AddItem(L"Item 15", nullptr);
+	box->AddItem(L"Item 16", nullptr);
+	box->AddItem(L"Item 17", nullptr);
+	box->AddItem(L"Item 18", nullptr);
+	box->AddItem(L"Item 19", nullptr);
+	box->AddItem(L"Item 20", nullptr);
+	box->AddItem(L"Item 21", nullptr);
+	box->AddItem(L"Item 22", nullptr);
+	box->AddItem(L"Item 23", nullptr);
+	box->AddItem(L"Item 24", nullptr);
+	box->AddItem(L"Item 25", nullptr);
+	box->AddItem(L"Item 26", nullptr);
+	box->AddItem(L"Item 27", nullptr);
+	box->AddItem(L"Item 28", nullptr);
+	box->AddItem(L"Item 29", nullptr);
 
 
 	float ellapsedTime = 0.0f;

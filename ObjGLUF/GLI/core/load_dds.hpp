@@ -36,6 +36,8 @@ namespace gli
 	/// Loading a texture storage to file
 	storage load_dds(
 		char const * Filename);
+	storage load_dds(
+		wchar_t const * Filename);
 	storage load_dds_memory(
 		char* Memory, unsigned int Size);
 

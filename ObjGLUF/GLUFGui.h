@@ -160,7 +160,7 @@ enum GLUF_EVENT
 
 
 
-typedef void(*PCALLBACKGLUFGUIEVENT)(GLUF_EVENT nEvent, int nControlID, GLUFControl* pControl);
+typedef void (*PCALLBACKGLUFGUIEVENT)(GLUF_EVENT nEvent, int nControlID, GLUFControl* pControl);
 
 
 #define MAX_CONTROL_STATES 6
@@ -221,13 +221,13 @@ public:
 	bool                MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	// Control creation (all coordinates are based on normalzied device space)
-	GLUFResult             AddStatic(int ID, std::string strText, float x, float y, float width, float height, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
-	GLUFResult             AddButton(int ID, std::string strText, float x, float y, float width, float height, int nHotkey = 0, bool bIsDefault = false, GLUFButton** ppCreated = NULL);
-	GLUFResult             AddCheckBox(int ID, std::string strText, float x, float y, float width, float height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
-	GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::string strText, float x, float y, float width, float height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
+	GLUFResult             AddStatic(int ID, std::wstring strText, float x, float y, float width, float height, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
+	GLUFResult             AddButton(int ID, std::wstring strText, float x, float y, float width, float height, int nHotkey = 0, bool bIsDefault = false, GLUFButton** ppCreated = NULL);
+	GLUFResult             AddCheckBox(int ID, std::wstring strText, float x, float y, float width, float height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
+	GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, float x, float y, float width, float height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
 	GLUFResult             AddComboBox(int ID, float x, float y, float width, float height, int nHotKey = 0, bool bIsDefault = false, GLUFComboBox** ppCreated = NULL);
 	GLUFResult             AddSlider(int ID, float x, float y, float width, float height, float min = 0.0f, float max = 0.25f, float value = 0.125f, bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
-	GLUFResult             AddEditBox(int ID, std::string strText, float x, float y, float width, float height, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
+	GLUFResult             AddEditBox(int ID, std::wstring strText, float x, float y, float width, float height, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
 	GLUFResult             AddListBox(int ID, float x, float y, float width, float height, unsigned long dwStyle = 0, GLUFListBox** ppCreated = NULL);
 	GLUFResult             AddControl(GLUFControl* pControl);
 	GLUFResult             InitControl(GLUFControl* pControl);
@@ -264,8 +264,8 @@ public:
 	GLUFResult          DrawRect(GLUFRect pGLUFRect, Color color);
 	GLUFResult          DrawPolyLine(GLUFPoint* apPoints, unsigned int nNumPoints, Color color);
 	GLUFResult          DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth);
-	GLUFResult          CalcTextRect(std::string strText, GLUFElement* pElement, GLUFRect prcDest, int nCount = -1);
-	GLUFResult          DrawText(std::string strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow = false,
+	GLUFResult          CalcTextRect(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, int nCount = -1);
+	GLUFResult          DrawText(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow = false,
 		bool bCenter = false, bool bHardRect = false);
 
 	// Attributes
@@ -278,7 +278,7 @@ public:
 	void                EnableCaption(bool bEnable)					{ m_bCaption = bEnable;																		}
 	float               GetCaptionHeight() const					{ return m_nCaptionHeight; }
 	void                SetCaptionHeight(float nHeight)				{ m_nCaptionHeight = nHeight;																}
-	void                SetCaptionText(std::string pwszText)		{ m_wszCaption = pwszText;																	}
+	void                SetCaptionText(std::wstring pwszText)		{ m_wszCaption = pwszText;																	}
 	void                GetLocation(GLUFPoint& Pt) const			{ Pt.x = m_x; Pt.y = m_y;																	}
 	void                SetLocation(float x, float y)				{ m_x = x; m_y = y; }
 	void                SetSize(float width, float height)			{ m_width = width; m_height = height; }
@@ -356,7 +356,7 @@ private:
 	bool m_bCaption;
 	bool m_bMinimized;
 	bool m_bDrag;
-	std::string        m_wszCaption;
+	std::wstring        m_wszCaption;
 
 	//these are assumed to be based on the origin (bottom left) AND normalized
 	float m_x;
@@ -562,7 +562,7 @@ protected:
 void BeginText(glm::mat4 orthoMatrix);
 
 //NOTE: this only supports char values, yes newlines, and only ASCII characters
-void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect = false);
+void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect = false);
 void EndText(GLUFFontPtr font);
 
 //-----------------------------------------------------------------------------
@@ -668,13 +668,13 @@ public:
 	virtual void    Render(float fElapsedTime);
 	virtual bool    ContainsPoint(GLUFPoint pt){ return false; }
 
-	GLUFResult      GetTextCopy(std::string& strDest, unsigned int bufferCount);
-	std::string     GetText(){ return m_strText; }
-	GLUFResult      SetText(std::string strText);
+	GLUFResult      GetTextCopy(std::wstring& strDest, unsigned int bufferCount);
+	std::wstring     GetText(){ return m_strText; }
+	GLUFResult      SetText(std::wstring strText);
 
 
 protected:
-	std::string     m_strText;      // Window text  
+	std::wstring     m_strText;      // Window text  
 };
 
 
@@ -828,7 +828,7 @@ protected:
 //-----------------------------------------------------------------------------
 struct GLUFListBoxItem
 {
-	std::string strText;
+	std::wstring strText;
 	void* pData;
 
 	bool bVisible;
@@ -859,8 +859,8 @@ public:
 	//This should be in PIXELS
 	void            SetBorderPixels(int nBorder, int nMargin);
 	void            SetBorder(float fBorder, float fMargin){ m_fBorder = fBorder; m_fMargin = fMargin; }
-	GLUFResult      AddItem(std::string wszText, void* pData);
-	GLUFResult      InsertItem(int nIndex, std::string wszText, void* pData);
+	GLUFResult      AddItem(std::wstring wszText, void* pData);
+	GLUFResult      InsertItem(int nIndex, std::wstring wszText, void* pData);
 	void            RemoveItem(int nIndex);
 	void            RemoveAllItems();
 
@@ -899,7 +899,7 @@ protected:
 //-----------------------------------------------------------------------------
 struct GLUFComboBoxItem
 {
-	std::string strText;
+	std::wstring strText;
 	void* pData;
 
 	GLUFRect rcActive;
@@ -928,12 +928,12 @@ public:
 
 	virtual void    UpdateRects();
 
-	GLUFResult      AddItem(std::string strText, void* pData);
+	GLUFResult      AddItem(std::wstring strText, void* pData);
 	void            RemoveAllItems();
 	void            RemoveItem(unsigned int index);
-	bool            ContainsItem(std::string strText, unsigned int iStart = 0);
-	int             FindItem(std::string strText, unsigned int iStart = 0);
-	void*			GetItemData(std::string strText);
+	bool            ContainsItem(std::wstring strText, unsigned int iStart = 0);
+	int             FindItem(std::wstring strText, unsigned int iStart = 0);
+	void*			GetItemData(std::wstring strText);
 	void*			GetItemData(int nIndex);
 	void            SetDropHeight(float nHeight)			{ m_fDropHeight = nHeight; UpdateRects();		}
 	float           GetScrollBarWidth() const				{ return m_fSBWidth;							}
@@ -947,7 +947,7 @@ public:
 	GLUFComboBoxItem* GetItem(unsigned int index)			{ return m_Items[index];						}
 
 	GLUFResult         SetSelectedByIndex(unsigned int index);
-	GLUFResult         SetSelectedByText(std::string strText);
+	GLUFResult         SetSelectedByText(std::wstring strText);
 	GLUFResult         SetSelectedByData(void* pData);
 
 protected:
@@ -1013,106 +1013,6 @@ protected:
 	GLUFRect m_rcButton;
 };
 
-
-//???
-
-//-----------------------------------------------------------------------------
-// GLUFUniBuffer class for the edit control (this simulates a single line of text)
-//-----------------------------------------------------------------------------
-/*class GLUFUniBuffer
-{
-public:
-	GLUFUniBuffer(GLUFDialogResourceManager *resMan, int nInitialSize = 1);
-	~GLUFUniBuffer();
-
-	static void			    Initialize();
-	static void			    Uninitialize();
-
-	//int                     GetBufferSize(){ return 256; }
-	//bool                    SetBufferSize(int nSize);
-	int                     GetTextSize(){ return m_Buffer.length(); }
-	std::string				GetBuffer(unsigned int start = 0){ return m_Buffer.c_str() + start; }
-	const char				operator[](int n) const{ return m_Buffer[n]; }
-	char					operator[](int n){ return m_Buffer[n]; }
-	GLUFFontNode*			GetFontNode(){ return m_pFontNode; }
-	void                    SetFontNode(GLUFFontNode* pFontNode){ m_pFontNode = pFontNode; }
-	void                    Clear();
-
-	bool                    InsertChar(int nIndex, char wChar); // Inserts the char at specified index. If nIndex == -1, insert to the end.
-	bool                    RemoveChar(int nIndex);  // Removes the char at specified index. If nIndex == -1, remove the last char.
-	bool                    InsertString(int nIndex, std::string pStr);  // Inserts the first nCount characters of the string pStr at specified index.  If nCount == -1, the entire string is inserted. If nIndex == -1, insert to the end.
-	bool                    SetText(std::string wszText);
-
-	// Uniscribe:  We do not need Unsubscribe because we are using FreeType
-	
-	GLUFResult              CPtoX(int nCP, bool bTrail, int* pX);
-	GLUFResult              XtoCP(int nX, int* pCP, bool* pnTrail);
-	void                    GetPriorItemPos(int nCP, int* pPrior);
-	void                    GetNextItemPos(int nCP, int* pPrior);
-
-private:
-	GLUFResult              Analyse();      // Uniscribe -- Analyse() analyses the string in the buffer
-
-	GLUFDialogResourceManager *m_pResMan;
-
-	std::string m_Buffer; //buffer to hold the text
-
-	std::vector<float> m_CalcXValues;//a buffer to hold all of the X values for each character (leading edges , however there will be the trailing edge for last char)
-
-	// Uniscribe-specific
-	GLUFFontNode* m_pFontNode;          // Font node for the font that this buffer uses
-	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
-	//SCRIPT_STRING_ANALYSIS m_Analysis;  // Analysis for the current string
-
-private:
-	// Empty implementation of the Uniscribe API
-	static GLUFResult       Dummy_ScriptApplyDigitSubstitution(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*, SCRIPT_STATE*)
-	{
-		return GR_NOTIMPL;
-	}
-	static GLUFResult       Dummy_ScriptStringAnalyse(HDC, const void*, int, int, int, DWORD, int, SCRIPT_CONTROL*,
-		SCRIPT_STATE*, const int*, SCRIPT_TABDEF*, const BYTE*,
-		SCRIPT_STRING_ANALYSIS*)
-	{
-		return GR_NOTIMPL;
-	}
-	static GLUFResult       Dummy_ScriptStringCPtoX(SCRIPT_STRING_ANALYSIS, int, BOOL, int*)
-	{
-		return GR_NOTIMPL;
-	}
-	static GLUFResult       Dummy_ScriptStringXtoCP(SCRIPT_STRING_ANALYSIS, int, int*, int*)
-	{
-		return GR_NOTIMPL;
-	}
-	static GLUFResult       Dummy_ScriptStringFree(SCRIPT_STRING_ANALYSIS*)
-	{
-		return GR_NOTIMPL;
-	}
-	static const SCRIPT_LOGATTR* Dummy_ScriptString_pLogAttr(SCRIPT_STRING_ANALYSIS)
-	{
-		return NULL;
-	}
-	static const int* Dummy_ScriptString_pcOutChars(SCRIPT_STRING_ANALYSIS)
-	{
-		return NULL;
-	}
-
-	// Function pointers
-	static                  GLUFResult(*_ScriptApplyDigitSubstitution)(const SCRIPT_DIGITSUBSTITUTE*, SCRIPT_CONTROL*, SCRIPT_STATE*);
-	static                  GLUFResult(*_ScriptStringAnalyse)(HDC, const void*, int, int, int, DWORD, int,
-		SCRIPT_CONTROL*, SCRIPT_STATE*, const int*,
-		SCRIPT_TABDEF*, const BYTE*,
-		SCRIPT_STRING_ANALYSIS*);
-	static                  HRESULT(WINAPI* _ScriptStringCPtoX)(SCRIPT_STRING_ANALYSIS, int, BOOL, int*);
-	static                  HRESULT(WINAPI* _ScriptStringXtoCP)(SCRIPT_STRING_ANALYSIS, int, int*, int*);
-	static                  HRESULT(WINAPI* _ScriptStringFree)(SCRIPT_STRING_ANALYSIS*);
-	static const SCRIPT_LOGATTR* (WINAPI*_ScriptString_pLogAttr)(SCRIPT_STRING_ANALYSIS);
-	static const int* (WINAPI*_ScriptString_pcOutChars)(SCRIPT_STRING_ANALYSIS);
-
-	static HINSTANCE s_hDll;  // Uniscribe DLL handle
-	
-};*/
-
 //-----------------------------------------------------------------------------
 // EditBox control TODO: make text insertion AND fix things
 //-----------------------------------------------------------------------------
@@ -1131,10 +1031,10 @@ public:
 	virtual void    OnFocusIn();
 	virtual GLUFResult OnInit(){ return m_pDialog->InitControl(&m_ScrollBar); }
 
-	void            SetText(std::string wszText, bool bSelected = false);
-	std::string     GetText(){ return m_strBuffer; }
+	void            SetText(std::wstring wszText, bool bSelected = false);
+	std::wstring     GetText(){ return m_strBuffer; }
 	int             GetTextLength(){ return m_strBuffer.length(); }  // Returns text length in chars excluding NULL.
-	std::string     GetTextClamped();//this gets the text, but clamped to the bounding box, (NOTE: this will overflow off the bottom);
+	std::wstring     GetTextClamped();//this gets the text, but clamped to the bounding box, (NOTE: this will overflow off the bottom);
 	void            ClearText();
 	virtual void    SetTextColor(Color Color){ m_TextColor = Color; }  // Text color
 	void            SetSelectedTextColor(Color Color){ m_SelTextColor = Color; }  // Selected text color
@@ -1155,7 +1055,7 @@ protected:
 	void            PasteFromClipboard();
 
 	//NOTE: nCP must be the index from m_strRenderBuffer;
-	int             GetLineNumberFromCharPos(int nCP);//the value returned is the line number within the box, so even if it is scrolled, the top line is still 0
+	int             GetLineNumberFromCharPos(unsigned int nCP);//the value returned is the line number within the box, so even if it is scrolled, the top line is still 0
 
 	int				GetStrIndexFromStrRenderIndex(int strRenderIndex);//this is used to convert an index of an object that was clicked on the screen to the index of the real string
 	int             GetStrRenderIndexFromStrIndex(int strIndex);//just the opposite
@@ -1171,8 +1071,8 @@ protected:
 	
 	//NOTE: all methods referencing a position within the edit box will be done IN STRING  SPACE and will be converted appropriately to make it so
 
-	void InsertString(int pos, std::string str);
-	void InsertChar(int pos, char ch);
+	void InsertString(int pos, std::wstring str);
+	void InsertChar(int pos, wchar_t ch);
 
 	void RemoveString(int pos, int len);
 	void RemoveChar(int pos);
@@ -1184,8 +1084,8 @@ protected:
 
 	//GLUFUniBuffer m_Buffer;     // Buffer to hold text
 
-	std::string m_strBuffer; //buffer to hold the text
-	std::string m_strRenderBuffer;//this stores the string that will be rendered, this inclues newlines inserted at the end of the rect
+	std::wstring m_strBuffer; //buffer to hold the text
+	std::wstring m_strRenderBuffer;//this stores the string that will be rendered, this inclues newlines inserted at the end of the rect
 	unsigned int m_strRenderBufferOffset;//the distance between the start of the string buffer, and the start of the render string buffer
 	std::vector<size_t> m_strInsertedNewlineLocations;//the location of all of the newlines that were inserted into the render string
 	std::vector<size_t> m_nAdditionalInsertedCharLocations;//the number of chars inserted NOTE: these are the locations within the renderspace string
@@ -1228,38 +1128,41 @@ protected:
 //
 //
 
-/*
+
 
 class GLUFTextHelper
 {
 public:
-	GLUFTextHelper(GLUFDialogResourceManager* pManager, int nLineHeight);
+	GLUFTextHelper(GLUFDialogResourceManager* pManager, GLUFFontSize fLineHeight);
 	~GLUFTextHelper();
 
-	void Init(int nLineHeight = 15);
+	//line height = leadding
+	void Init(GLUFFontSize fLineHeight = 0.025f);
 
-	void SetInsertionPos(int x, int y)
+	void SetInsertionPos(GLUFPoint pt)
 	{
-		m_pt.x = x;
-		m_pt.y = y;
+		m_pt = pt;
 	}
-	void SetForegroundColor(glm::vec4 clr) { m_clr = clr; }
+	void SetForegroundColor(Color clr) { m_clr = clr; }
 
-	void       Begin(unsigned int fontToUse, GLUFFontSize size, GLUF_FONT_WEIGHT weight);
-	GLUFResult DrawFormattedTextLine(const char* strMsg, ...);
-	GLUFResult DrawTextLine(const char* strMsg);
+	void       Begin(GLUFFontIndex fontToUse, GLUFFontSize size, GLUF_FONT_WEIGHT weight);
+	GLUFResult DrawFormattedTextLine(const wchar_t* strMsg, size_t strLen, ...);
+	GLUFResult DrawTextLine(const wchar_t* strMsg, size_t strLen);
 	//GLUFResult DrawFormattedTextLine(const GLUFRect& rc, _In_ DWORD dwFlags, const WCHAR* strMsg, ...);
 	//GLUFResult DrawTextLine(_In_ const GLUFRect& rc, _In_ DWORD dwFlags, _In_z_ const WCHAR* strMsg);
-	GLUFResult DrawFormattedTextLine(const GLUFRect& rc, unsigned int dwFlags, const char* strMsg, ...);
-	GLUFResult DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const char* strMsg);
+	GLUFResult DrawFormattedTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen, ...);
+	GLUFResult DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen);
 	void    End();
 
 protected:
-	glm::vec4 m_clr;
+	Color m_clr;
 	GLUFPoint m_pt;
-	int m_nLineHeight;
+	GLUFFontSize m_fLineHeight;
 
-	// D3D11 font 
+
 	GLUFDialogResourceManager* m_pManager;
+
+	GLUFFontIndex m_nFont;
+	GLUFFontSize m_fFontSize;
+	GLUF_FONT_WEIGHT m_Weight;
 };
-*/

@@ -62,14 +62,16 @@ bool GLUFInitOpenGLExtentions()
 	return true;
 }
 
-char* GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize)
+char* GLUFLoadFileIntoMemory(const wchar_t* path, unsigned long* rawSize)
 {
 	GLUF_ASSERT(path);
 	GLUF_ASSERT(rawSize);
 
 	std::ifstream inFile(path, std::ios::binary);
 	inFile.seekg(0, std::ios::end);
+#pragma warning(disable : 4244)
 	*rawSize = inFile.tellg();
+#pragma warning(default : 4244)
 	inFile.seekg(0, std::ios::beg);
 
 	char* rawData;
@@ -708,10 +710,12 @@ void GLUFBufferManager::UseTexture(GLUFTexturePtr texture, GLuint location, GLen
 {
 	glActiveTexture(bindingPoint);
 	glBindTexture(GL_TEXTURE_2D, texture->mTextureId);
+#pragma warning(disable : 4244)
 	glUniform1f(location, bindingPoint);
+#pragma warning(default : 4244)
 }
 
-void GLUFBufferManager::LoadTextureFromFile(GLUFTexturePtr texture, std::string filePath, GLUFTextureFileFormat format)
+void GLUFBufferManager::LoadTextureFromFile(GLUFTexturePtr texture, std::wstring filePath, GLUFTextureFileFormat format)
 {
 	gli::texture2D Texture(gli::load_dds(filePath.c_str()));
 	assert(!Texture.empty());
@@ -847,7 +851,7 @@ public:
 
 	void Load(const char* shaderText, bool append = false);
 	void LoadFromMemory(char* shaderData, size_t length, bool append = false);
-	bool LoadFromFile(const char* filePath, bool append = false);
+	bool LoadFromFile(const wchar_t* filePath, bool append = false);
 
 	void FlushText(void){ mTmpShaderText.clear(); }
 
@@ -940,7 +944,7 @@ void GLUFShader::Load(const char* shaderText, bool append)
 	mTmpShaderText = shaderText;
 }
 
-bool GLUFShader::LoadFromFile(const char* filePath, bool append)
+bool GLUFShader::LoadFromFile(const wchar_t* filePath, bool append)
 {
 	if (!append)
 		mTmpShaderText.clear();
@@ -1130,13 +1134,39 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 
 //for creating things
 
-
-GLUFShaderPtr GLUFShaderManager::CreateShader(std::string shad, GLUFShaderType type, bool file, bool seperate)
+/*
+GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType type, bool file, bool seperate)
 {
 	GLUFShaderPtr shader(new GLUFShader());
 	shader->Init(type);
 
 	(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
+
+	GLUFShaderInfoStruct output;
+	shader->Compile(output);
+	mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, output));
+
+	//log it if it failed
+	if (!output)
+	{
+		std::wstringstream ss;
+		ss << "Shader Compilation Failed: \n" << output.mLog;
+		GLUF_ERROR(ss.str().c_str());
+	}
+
+	return shader;
+}
+*/
+
+GLUFShaderPtr GLUFShaderManager::CreateShaderFromFile(std::wstring filePath, GLUFShaderType type)
+{
+	//return CreateShader(filePath, type, true);
+
+	GLUFShaderPtr shader(new GLUFShader());
+	shader->Init(type);
+
+	//(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
+	shader->LoadFromFile(filePath.c_str());
 
 	GLUFShaderInfoStruct output;
 	shader->Compile(output);
@@ -1154,15 +1184,28 @@ GLUFShaderPtr GLUFShaderManager::CreateShader(std::string shad, GLUFShaderType t
 }
 
 
-GLUFShaderPtr GLUFShaderManager::CreateShaderFromFile(std::string filePath, GLUFShaderType type)
-{
-	return CreateShader(filePath, type, true);
-}
-
-
 GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(const char* text, GLUFShaderType type)
 {
-	return CreateShader(text, type, false);
+	//return CreateShader(text, type, false);
+	GLUFShaderPtr shader(new GLUFShader());
+	shader->Init(type);
+
+	//(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
+	shader->Load(text);
+
+	GLUFShaderInfoStruct output;
+	shader->Compile(output);
+	mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, output));
+
+	//log it if it failed
+	if (!output)
+	{
+		std::stringstream ss;
+		ss << "Shader Compilation Failed: \n" << output.mLog;
+		GLUF_ERROR(ss.str().c_str());
+	}
+
+	return shader;
 }
 
 GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool seperate)
@@ -1196,7 +1239,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSourc
 	for (auto it : shaderSources)
 	{
 		//use the counter global to get a unique name  This is temperary anyway
-		shaders.push_back(CreateShader(it.second, it.first, false));
+		shaders.push_back(CreateShaderFromMemory(it.second, it.first));
 
 		//make sure it didn't fail
 		if (!GetShaderLog(shaders[shaders.size()-1]))
@@ -1216,7 +1259,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths, 
 	for (auto it : shaderPaths)
 	{
 
-		shaders.push_back(CreateShader(it.second, it.first, true));
+		shaders.push_back(CreateShaderFromFile(it.second, it.first));
 
 		//make sure it didn't fail
 		if (!GetShaderLog(shaders[shaders.size() - 1]))

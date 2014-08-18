@@ -106,7 +106,7 @@ namespace detail
 	{
 		assert(TexelCoord.x < Dimensions.x);
 		assert(TexelCoord.y < Dimensions.y);
-
+#pragma warning(disable : 4244)
 		return glm::bitfieldInterleave(TexelCoord.x, TexelCoord.y);
 	}
 
@@ -121,6 +121,7 @@ namespace detail
 		assert(TexelCoord.z < Dimensions.z);
 
 		return glm::bitfieldInterleave(TexelCoord.x, TexelCoord.y, TexelCoord.z);
+#pragma warning(default : 4244)
 	}
 }//namespace detail
 }//namespace gli

@@ -37,10 +37,19 @@
 #include <list>
 #include <string>
 #include <sstream>
+#include <locale>
+#include <codecvt>
+#include <stdlib.h>
 
 #ifndef OBJGLUF_EXPORTS
 #ifndef SUPPRESS_RADIAN_ERROR
 #error "GLM is using radians as input, to suppress this error, #define SUPPRESS_RADIAN_ERROR"
+#endif
+#endif
+
+#ifndef OBJGLUF_EXPORTS
+#ifndef SUPPRESS_UTF8_ERROR
+#error "ATTENTION, all strings MUST be in utf8 encoding"
 #endif
 #endif
 
@@ -86,11 +95,11 @@ OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
 typedef unsigned long GLUFResult;
 
 //GLUFResult Values
-#define GR_FAILURE 0
-#define GR_SUCCESS 1
-#define GR_OUTOFMEMORY 2
-#define GR_INVALIDARG 3
-#define GR_NOTIMPL
+#define GR_FAILURE			0
+#define GR_SUCCESS			1
+#define GR_OUTOFMEMORY		2
+#define GR_INVALIDARG		3
+#define GR_NOTIMPL			4
 
 #define GLUF_FAILED(result) ((result == GR_FAILURE) ? true : false)
 #define GLUF_SUCCEEDED(result) ((result == GR_SUCCESS) ? true : false)
@@ -99,6 +108,14 @@ typedef unsigned long GLUFResult;
 #define GLUFTRACE_ERR(str, gr) GLUFTrace(__FILE__, __FUNCTION__, (unsigned long)__LINE__, gr, str);
 
 OBJGLUF_API GLUFResult GLUFTrace(const char*, const char*, unsigned long, GLUFResult, const char*);
+
+//not defined if not windows
+#ifndef _T
+#define _T(str) __T(str)
+#endif
+#ifndef __T
+#define __T(str) L ## str
+#endif
 
 #define GLUFGetTime() glfwGetTime()
 
@@ -115,7 +132,6 @@ struct OBJGLUF_API MemStreamBuf : public std::streambuf
 		setg(data, data, data + length);
 	}
 };
-
 
 
 #define GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION 0
@@ -137,7 +153,7 @@ OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 
 //this loads an entire file into a binary array, path is input, rawSize and rawData are outputs
-OBJGLUF_API char* GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize);
+OBJGLUF_API char* GLUFLoadFileIntoMemory(const wchar_t* path, unsigned long* rawSize);
 
 typedef std::vector<glm::vec4> Vec4Array;
 typedef std::vector<glm::vec3> Vec3Array;
@@ -188,21 +204,22 @@ OBJGLUF_API void		GLUFNormPoint(GLUFPoint& pt, GLUFPoint max);//max is a point t
 OBJGLUF_API void		GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp);
 OBJGLUF_API GLUFPoint	GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
 
-OBJGLUF_API inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false) 
+OBJGLUF_API inline std::vector<std::wstring> &GLUFSplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false)
 {
-	std::stringstream ss(s);
-	std::string item;
-	while (std::getline(ss, item, delim)) 
+	std::wstringstream ss(s);
+	std::wstring item;
+	while (std::getline(ss, item, delim))
 	{
-		item += delim;
+		if (keepDelim)//OOPS forgot this earlier
+			item += delim;
 		elems.push_back(item);
 	}
 	return elems;
 }
 
-OBJGLUF_API inline std::vector<std::string> GLUFSplitStr(const std::string &s, char delim, bool keepDelim = false)
+OBJGLUF_API inline std::vector<std::wstring> GLUFSplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false)
 {
-	std::vector<std::string> elems;
+	std::vector<std::wstring> elems;
 	GLUFSplitStr(s, delim, elems, keepDelim);
 	return elems;
 }
@@ -277,11 +294,11 @@ typedef std::shared_ptr<GLUFSeperateProgram> GLUFSepProgramPtr;
 typedef std::weak_ptr<GLUFSeperateProgram> GLUFSepProgramPtrWeak;
 
 typedef std::map<GLUFShaderType, const char*> GLUFShaderSourceList;
-typedef std::map<GLUFShaderType, std::string> GLUFShaderPathList;//do a little bit of fudging to get around this being the same as the above
+typedef std::map<GLUFShaderType, std::wstring> GLUFShaderPathList;//do a little bit of fudging to get around this being the same as the above
 typedef std::vector<GLuint> GLUFShaderIdList;
 typedef std::vector<GLuint> GLUFProgramIdList;
-typedef std::vector<std::string> GLUFShaderNameList;
-typedef std::vector<std::string> GLUFProgramNameList;
+typedef std::vector<std::wstring> GLUFShaderNameList;
+typedef std::vector<std::wstring> GLUFProgramNameList;
 typedef std::vector<GLUFShaderPtr> GLUFShaderPtrList;
 typedef std::vector<GLUFProgramPtr> GLUFProgramPtrList;
 typedef std::map<GLbitfield, GLUFProgramPtr> GLUFProgramPtrStagesMap;
@@ -299,7 +316,7 @@ class OBJGLUF_API GLUFShaderManager
 	std::map<GLUFProgramPtr, GLUFShaderInfoStruct> mLinklogs;
 
 	//a little helper function for creating things
-	GLUFShaderPtr CreateShader(std::string shad, GLUFShaderType type, bool file, bool seperate = false);
+	//GLUFShaderPtr CreateShader(std::wstring shad, GLUFShaderType type, bool file, bool seperate = false);
 
 	friend class GLUFBufferManager;
 
@@ -308,7 +325,7 @@ public:
 
 	//for creating things
 
-	GLUFShaderPtr CreateShaderFromFile(std::string filePath, GLUFShaderType type);
+	GLUFShaderPtr CreateShaderFromFile(std::wstring filePath, GLUFShaderType type);
 	GLUFShaderPtr CreateShaderFromMemory(const char* text, GLUFShaderType type);
 
 	GLUFProgramPtr CreateProgram(GLUFShaderPtrList shaders, bool seperate = false);
@@ -625,6 +642,10 @@ public:
 	void SetTexture(GLUFTexturePtr texture){ m_pTexture = texture; }
 	GLUFTexturePtr GetTexture(){ return m_pTexture; }
 
+	void SetAlpha(glm::u8 alpha){ mDiffuse.a = alpha; }
+	bool HasAlpha() const { return GetAlpha() != 1.0f; }
+	float GetAlpha() const { return mDiffuse.a; }
+
 };
 
 typedef std::shared_ptr<GLUFMaterial> GLUFMaterialPtr;
@@ -639,8 +660,8 @@ enum GLUFTextureFileFormat
 //this is a similar system to the shaders system
 class OBJGLUF_API GLUFBufferManager
 {
-	//std::map<std::string, GLUniformBufferPtrWeak> mUniformBuffers;
-	//std::map<std::string, GLVertexArrayPtrWeak> mVertexArrayBuffers;
+	//std::map<std::wstring, GLUniformBufferPtrWeak> mUniformBuffers;
+	//std::map<std::wstring, GLVertexArrayPtrWeak> mVertexArrayBuffers;
 	//friend class DdsResourceLoader;
 
 	//GLTexturePtr CreateTexture(GLuint glTexId);
@@ -695,7 +716,7 @@ public:
 	void UseTexture(GLUFTexturePtr texture, GLuint samplerLocation, GLenum bindingPoint);
 
 	//NOTE: call CreateTextureBuffer() FIRST
-	void LoadTextureFromFile(GLUFTexturePtr texture, std::string filePath, GLUFTextureFileFormat format);
+	void LoadTextureFromFile(GLUFTexturePtr texture, std::wstring filePath, GLUFTextureFileFormat format);
 
 	//NOTE: call CreateTextureBuffer() FIRST
 	void LoadTextureFromMemory(GLUFTexturePtr texture, char* data, unsigned int length, GLUFTextureFileFormat format);

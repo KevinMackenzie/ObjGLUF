@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <stdio.h>
+#include <cstdarg>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //IMPORTANT///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -388,8 +389,8 @@ public:
 	int RenderStyle;
 
 	float GetCharWidth(char ch, GLUFFontSize fSize);
-	float GetStringWidthNDC(std::string str, GLUFFontSize fSize);//this just automatically conversts the output to NDC space
-	float GetStringWidth(std::string str, GLUFFontSize fSize);
+	float GetStringWidthNDC(std::wstring str, GLUFFontSize fSize);//this just automatically conversts the output to NDC space
+	float GetStringWidth(std::wstring str, GLUFFontSize fSize);
 	bool Init(char* data, uint64_t rawSize);
 
 	//font properties
@@ -401,7 +402,7 @@ float GLUFFont::GetCharWidth(char ch, GLUFFontSize fSize)
 	return ((float)Width[ch] * fSize) / CellY;
 }
 
-float GLUFFont::GetStringWidth(std::string str, GLUFFontSize fSize)
+float GLUFFont::GetStringWidth(std::wstring str, GLUFFontSize fSize)
 {
 	float tmp = 0.0f;
 	for (auto it : str)
@@ -411,7 +412,7 @@ float GLUFFont::GetStringWidth(std::string str, GLUFFontSize fSize)
 	return tmp;
 }
 
-float GLUFFont::GetStringWidthNDC(std::string str, GLUFFontSize fSize)
+float GLUFFont::GetStringWidthNDC(std::wstring str, GLUFFontSize fSize)
 {
 	return GLUF_FONT_HEIGHT_NDC(GetStringWidth(str, fSize));
 }
@@ -552,9 +553,9 @@ GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize)
 	return ret;
 }
 /*
-GLUFFontPtr GLUFLoadFont(std::string fontFaceName)
+GLUFFontPtr GLUFLoadFont(std::wstring fontFaceName)
 {
-	std::string path = "C:/Windows/Fonts/";
+	std::wstring path = "C:/Windows/Fonts/";
 	path += fontFaceName.c_str();
 	path += ".ttf";
 
@@ -1548,7 +1549,7 @@ GLUFElement* GLUFDialog::GetDefaultElement(GLUF_CONTROL_TYPE nControlType, unsig
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddStatic(int ID, std::string strText, float x, float y, float width, float height, bool bIsDefault,
+GLUFResult GLUFDialog::AddStatic(int ID, std::wstring strText, float x, float y, float width, float height, bool bIsDefault,
 GLUFStatic** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
@@ -1578,7 +1579,7 @@ GLUFStatic** ppCreated)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddButton(int ID, std::string strText, float x, float y, float width, float height, int nHotkey,
+GLUFResult GLUFDialog::AddButton(int ID, std::wstring strText, float x, float y, float width, float height, int nHotkey,
 bool bIsDefault, GLUFButton** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
@@ -1609,7 +1610,7 @@ bool bIsDefault, GLUFButton** ppCreated)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddCheckBox(int ID, std::string strText, float x, float y, float width, float height, bool bChecked,
+GLUFResult GLUFDialog::AddCheckBox(int ID, std::wstring strText, float x, float y, float width, float height, bool bChecked,
 int nHotkey, bool bIsDefault, GLUFCheckBox** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
@@ -1641,7 +1642,7 @@ int nHotkey, bool bIsDefault, GLUFCheckBox** ppCreated)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddRadioButton(int ID, unsigned int nButtonGroup, std::string strText, float x, float y, float width, float height,
+GLUFResult GLUFDialog::AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, float x, float y, float width, float height,
 bool bChecked, int nHotkey, bool bIsDefault, GLUFRadioButton** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
@@ -1737,7 +1738,7 @@ bool bIsDefault, GLUFSlider** ppCreated)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddEditBox(int ID, std::string strText, float x, float y, float width, float height, bool bIsDefault,
+GLUFResult GLUFDialog::AddEditBox(int ID, std::wstring strText, float x, float y, float width, float height, bool bIsDefault,
 GLUFEditBox** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
@@ -2131,7 +2132,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::CalcTextRect(std::string strText, GLUFElement* pElement, GLUFRect prcDest, int nCount)
+GLUFResult GLUFDialog::CalcTextRect(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, int nCount)
 {
 	GLUFFontNode* pFontNode = GetFont(pElement->iFont);
 	if (!pFontNode)
@@ -2148,7 +2149,7 @@ GLUFResult GLUFDialog::CalcTextRect(std::string strText, GLUFElement* pElement, 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::DrawText(std::string strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow, bool bCenter, bool bHardRect)
+GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow, bool bCenter, bool bHardRect)
 {
 	// No need to draw fully transparent layers
 	if (pElement->FontColor.Current.w == 0)
@@ -2385,7 +2386,7 @@ void GLUFDialog::InitDefaultElements()
 	char* rawData;
 	unsigned long rawSize = 0;
 
-	rawData = GLUFLoadFileIntoMemory("Arial Unicode MS.bff", &rawSize);
+	rawData = GLUFLoadFileIntoMemory(_T("Arial Unicode MS.bff"), &rawSize);
 	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize);
 	free(rawData);
 
@@ -3596,7 +3597,7 @@ void GLUFStatic::Render(float fElapsedTime)
 
 
 //---------------------------------------------------------------------------------------
-GLUFResult GLUFStatic::GetTextCopy(std::string& strDest, unsigned int bufferCount)
+GLUFResult GLUFStatic::GetTextCopy(std::wstring& strDest, unsigned int bufferCount)
 {
 	// Validate incoming parameters
 	if (bufferCount == 0)
@@ -3612,7 +3613,7 @@ GLUFResult GLUFStatic::GetTextCopy(std::string& strDest, unsigned int bufferCoun
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFStatic::SetText(std::string strText)
+GLUFResult GLUFStatic::SetText(std::wstring strText)
 {
 	m_strText = strText;
 	return GR_SUCCESS;
@@ -4659,7 +4660,7 @@ void GLUFComboBox::Render( float fElapsedTime)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFComboBox::AddItem(std::string strText, void* pData)
+GLUFResult GLUFComboBox::AddItem(std::wstring strText, void* pData)
 {
 	// Validate parameters
 	/*if (!strText)
@@ -4725,14 +4726,14 @@ void GLUFComboBox::RemoveAllItems()
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFComboBox::ContainsItem(std::string strText, unsigned int iStart)
+bool GLUFComboBox::ContainsItem(std::wstring strText, unsigned int iStart)
 {
 	return (-1 != FindItem(strText, iStart));
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFComboBox::FindItem(std::string strText, unsigned int iStart)
+int GLUFComboBox::FindItem(std::wstring strText, unsigned int iStart)
 {
 	/*if (!strText)
 		return -1;*/
@@ -4773,7 +4774,7 @@ GLUFComboBoxItem* GLUFComboBox::GetSelectedItem()
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetItemData(std::string strText) 
+void* GLUFComboBox::GetItemData(std::wstring strText) 
 {
 	int index = FindItem(strText);
 	if (index == -1)
@@ -4817,7 +4818,7 @@ GLUFResult GLUFComboBox::SetSelectedByIndex( unsigned int index)
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByText(std::string strText)
+GLUFResult GLUFComboBox::SetSelectedByText(std::wstring strText)
 {
 	/*if (!strText)
 		return E_INVALIDARG;*/
@@ -5719,7 +5720,7 @@ void GLUFListBox::UpdateRects()
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFListBox::AddItem(std::string wszText, void* pData)
+GLUFResult GLUFListBox::AddItem(std::wstring wszText, void* pData)
 {
 	GLUFListBoxItem* pNewItem = new (std::nothrow) GLUFListBoxItem;
 	if (!pNewItem)
@@ -5744,7 +5745,7 @@ GLUFResult GLUFListBox::AddItem(std::string wszText, void* pData)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFListBox::InsertItem(int nIndex, std::string wszText, void* pData)
+GLUFResult GLUFListBox::InsertItem(int nIndex, std::wstring wszText, void* pData)
 {
 	GLUFListBoxItem* pNewItem = new (std::nothrow) GLUFListBoxItem;
 	if (!pNewItem)
@@ -6694,7 +6695,7 @@ void GLUFListBox::Render( float fElapsedTime)
 			if (m_fTextHeight > 0.0f)
 				m_ScrollBar.SetPageSize(int((GLUFRectHeight(m_rcBoundingBox) - (2 * m_fBorder)) / m_fTextHeight) + 1);
 			else
-				m_ScrollBar.SetPageSize((GLUFRectHeight(m_rcText)));
+				m_ScrollBar.SetPageSize(0);
 			bSBInit = true;
 		}
 
@@ -6849,7 +6850,7 @@ void GLUFEditBox::PlaceCaretRndBuffer(int nRndCp)
 	//TODO:
 }
 
-int GLUFEditBox::GetLineNumberFromCharPos(int nCP)
+int GLUFEditBox::GetLineNumberFromCharPos(unsigned int nCP)
 {
 	int nCPModified = nCP;
 	int lin = 0;
@@ -6888,7 +6889,7 @@ void GLUFEditBox::ClearText()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::SetText( std::string wszText,  bool bSelected)
+void GLUFEditBox::SetText( std::wstring wszText,  bool bSelected)
 {
 	//assert(wszText);
 
@@ -6958,7 +6959,7 @@ void GLUFEditBox::UpdateRects()
 	m_bAnalyseRequired = true;
 }
 
-
+#pragma warning(disable : 4018)
 #pragma warning(push)
 #pragma warning( disable : 4616 6386 )
 void GLUFEditBox::CopyToClipboard()
@@ -6991,17 +6992,19 @@ void GLUFEditBox::CopyToClipboard()
 			GlobalFree(hBlock);*/
 
 		//glfw makes this easy
-		std::string str = "";
-		std::string strBuffer = m_strBuffer;
+		std::wstring str = L"";
+		std::wstring strBuffer = m_strBuffer;
 		for (int i = m_nSelStart; i < m_nCaret; ++i)
 		{
 			str += strBuffer[i];
 		}
 
-		glfwSetClipboardString(g_pGLFWWindow, str.c_str());
+		char *tmp = "";
+		wcstombs(tmp, str.c_str(), str.length());
+
+		glfwSetClipboardString(g_pGLFWWindow, tmp);
 	}
 }
-
 
 void GLUFEditBox::PasteFromClipboard()
 {
@@ -7032,11 +7035,14 @@ void GLUFEditBox::PasteFromClipboard()
 	str = glfwGetClipboardString(g_pGLFWWindow);
 	if (str == nullptr)//if glfw cannot support the format
 		return;
-	
+	wchar_t *wStr = L"";
+
+	mbstowcs(wStr, str, strlen(str));
+
 	if (m_nSelStart > m_strRenderBuffer.length())
-		InsertString(m_nSelStart + 1, str);
+		InsertString(m_nSelStart + 1, wStr);
 	else
-		InsertString(m_nSelStart, str);
+		InsertString(m_nSelStart, wStr);
 
 
 	//when pasting, set the cursor to the end
@@ -7049,7 +7055,7 @@ void GLUFEditBox::PasteFromClipboard()
 #pragma warning(pop)
 
 
-void GLUFEditBox::InsertString(int pos, std::string str)
+void GLUFEditBox::InsertString(int pos, std::wstring str)
 {
 	//GLUF_ASSERT(pos < GetTextLength() - 1);
 	if (pos < 0)
@@ -7090,7 +7096,7 @@ void GLUFEditBox::RemoveString(int pos, int len)
 	m_bAnalyseRequired = true;
 }
 
-void GLUFEditBox::InsertChar(int pos, char ch)
+void GLUFEditBox::InsertChar(int pos, wchar_t ch)
 {
 	//GLUF_ASSERT(pos < GetTextLength() - 1);
 	if (pos < 0)
@@ -7214,7 +7220,7 @@ int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 	//is there anything else?
 	return ret;
 }
-
+#pragma warning(default : 4018)
 //--------------------------------------------------------------------------------------
 /*
 bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -7442,8 +7448,6 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 	bool bHandled = false;
 
-	//TODO:  keybord entry deletes all text afterwards even BEFORE insertChar is called
-
 	switch (msg)
 	{
 	case GM_MB:
@@ -7497,8 +7501,8 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		if (m_bMouseDrag)
 		{
 			// Determine the character corresponding to the coordinates.
-			int nCP, nX1st;
-			bool bTrail;
+			//int nCP, nX1st;
+			//bool bTrail;
 			/*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
 			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
 			{
@@ -7652,6 +7656,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 	//	return true;
 
 		m_bAnalyseRequired = true;
+		//TODO: unicode char support in editbox input
 	//case GM_UNICODE_CHAR: (suprisingly, the GM_KEY will work better, because at this time I do not support unicode chars)
 	if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
 	{
@@ -7930,6 +7935,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 			}
 			else
 			{
+#pragma warning(disable : 4018)
 				int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
 				if (rndCaret != -1 && rndCaret != -2 && !(rndCaret > m_strRenderBuffer.size()))//don't render off-screen
 				{
@@ -7956,6 +7962,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 					GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
 					m_pDialog->DrawRect(rcCaret, m_CaretColor);
 				}
+#pragma warning(default : 4018)
 			}
 		}
 	}
@@ -8181,7 +8188,7 @@ void GLUFEditBox::Analyse()
 		int charIndex = 0;
 		int addedCharactersCount = 0;
 
-		std::vector<std::string> strings = GLUFSplitStr(m_strRenderBuffer, ' ', true);
+		std::vector<std::wstring> strings = GLUFSplitStr(m_strRenderBuffer, ' ', true);
 		m_strInsertedNewlineLocations.clear();
 		for (auto it : strings)
 		{
@@ -8190,7 +8197,7 @@ void GLUFEditBox::Analyse()
 			float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
 
 			//these are natural newlines
-			if (it == "\n ")
+			if (it == L"\n ")
 			{
 				currXValue = fWordWidth;
 				charIndex += it.length();
@@ -8205,7 +8212,9 @@ void GLUFEditBox::Analyse()
 
 				for (auto itch : it)
 				{
+#pragma warning(disable : 4244)
 					float fCharWidth = pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
+#pragma warning(default : 4244)
 					currXValue += fCharWidth;
 
 					if (currXValue > fTextWidth)
@@ -8232,7 +8241,7 @@ void GLUFEditBox::Analyse()
 				//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
 
 				//blank strings i.e. double spaces ( or more ) then we just keep those at the end of the line
-				if (it == " ")
+				if (it == L" ")
 				{
 
 				}
@@ -8283,12 +8292,14 @@ void GLUFEditBox::Analyse()
 
 		bool topCulled = false;
 
-		std::string strRenderBufferTmp = "";
+		std::wstring strRenderBufferTmp = L"";
 		unsigned int i = 0;
 		for (auto it : m_strRenderBuffer)
 		{
 
+#pragma warning(disable : 4244)
 			thisCharWidth = pFontNode->m_pFontType->GetCharWidth(it, fontHeight);
+#pragma warning(default : 4244)
 
 			GLUFSetRect(rc, currXValue, distanceFromBottom, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
 
@@ -8360,7 +8371,7 @@ void BeginText(glm::mat4 orthoMatrix)
 }
 
 //--------------------------------------------------------------------------------------
-void DrawTextGLUF(GLUFFontNode font, std::string strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect)
+void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect)
 {
 	//TODO: make this split at word endings
 
@@ -8525,4 +8536,86 @@ void EndText(GLUFFontPtr font)
 
 	//lastly, rebind the old texture
 	//glBindTexture(GL_TEXTURE_BINDING_2D, tmpTexId);
+}
+
+
+//GLUFTextHelper
+GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager* pManager, GLUFFontSize fLineHeight) : m_pManager(pManager), m_clr(0, 0, 0, 255), m_pt(0.0f, 0.0f), m_fLineHeight(fLineHeight), m_nFont(0), m_fFontSize(0), m_Weight(FONT_WEIGHT_NORMAL)
+{
+	GLUF_ASSERT(pManager);
+}
+
+GLUFTextHelper::~GLUFTextHelper()
+{
+	m_pManager = 0;
+}
+
+void GLUFTextHelper::Init(GLUFFontSize fLineHeight)
+{
+	m_fLineHeight = fLineHeight;
+	m_clr = Color(0, 0, 0, 255);
+	m_pt = { 0.0f, 0.0f };
+	m_nFont = 0;
+}
+
+void GLUFTextHelper::Begin(unsigned int fontToUse, GLUFFontSize size, GLUF_FONT_WEIGHT weight)
+{
+	m_nFont = fontToUse;
+	m_fFontSize = size;
+	m_Weight = weight;
+
+	BeginText(m_pManager->GetOrthoMatrix());
+}
+
+GLUFResult GLUFTextHelper::DrawFormattedTextLine(const wchar_t* strMsg, size_t strLen, ...)
+{
+	va_list param;
+	wchar_t* Msg = new wchar_t[strLen];
+
+	va_start(param, strMsg);
+
+	//let sprintf handle all of the formatting
+	swprintf(Msg, strLen, strMsg, param);//TODO: if this fails?
+
+	return DrawTextLine(Msg, strLen);
+}
+
+GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg, size_t strLen)
+{
+	std::wstring sMsg = strMsg;
+
+	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), sMsg, { m_pt.x, m_pt.y, 0.0f, 0.0f }, m_clr, false);
+
+	//set the point down however many lines were drawn
+	for (auto it : sMsg)
+	{
+		if (it == '\n')
+			m_pt.y += m_fLineHeight;
+	}
+
+	return GR_SUCCESS;
+}
+
+GLUFResult GLUFTextHelper::DrawFormattedTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen, ...)
+{
+	va_list param;
+	wchar_t *Msg = new wchar_t[strLen];
+
+	va_start(param, strMsg);
+
+	swprintf(Msg, strLen, strMsg, param);
+
+	return DrawTextLine(rc, dwFlags, Msg, strLen);
+}
+
+GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen)
+{
+	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), strMsg, rc, m_clr, dwFlags & GT_CENTER, true);
+
+	return GR_SUCCESS;
+}
+
+void GLUFTextHelper::End()
+{
+	EndText(m_pManager->GetFontNode(m_nFont)->m_pFontType);
 }
