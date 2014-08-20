@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#define USING_ASSIMP
 #include "ObjGLUF.h"
 #include <fstream>
 #include <sstream>
@@ -1132,6 +1133,26 @@ GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool i
 	glGenBuffers(1, &mDataBuffer);
 }
 
+GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
+{
+	BindVertexArray();
+
+	glDeleteBuffers(1, &mDataBuffer);
+}
+
+GLUFVertexArrayAoS::GLUFVertexArrayAoS(const GLUFVertexArrayAoS& other)
+{
+	mVertexArrayId = other.mVertexArrayId;
+	mVertexCount = other.mVertexCount;
+	mUsageType = other.mUsageType;
+	mPrimitiveType = other.mPrimitiveType;
+	mAttribInfos = other.mAttribInfos;
+	mIndexBuffer = other.mIndexBuffer;
+	mIndexCount = other.mIndexCount;
+
+	mDataBuffer = other.mDataBuffer;
+}
+
 unsigned int GLUFVertexArrayAoS::GetVertexSize()
 {
 	unsigned int stride = 0;
@@ -1170,16 +1191,31 @@ void GLUFVertexArrayAoS::BufferSubData(unsigned int ValueOffsetCount, unsigned i
 
 GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLocation(GLUFAttribLoc loc)
 {
-	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
-	{
-		if (mAttribInfos[i].VertexAttribLocation == loc)
-			return mDataBuffers[i]; 
-	}
-	return 0;
+	return mDataBuffers.find(loc)->second;
 }
 
 GLUFVertexArraySoA::GLUFVertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
 {
+}
+
+GLUFVertexArraySoA::GLUFVertexArraySoA(const GLUFVertexArraySoA& other)
+{
+	mVertexArrayId = other.mVertexArrayId;
+	mVertexCount = other.mVertexCount;
+	mUsageType = other.mUsageType;
+	mPrimitiveType = other.mPrimitiveType;
+	mAttribInfos = other.mAttribInfos;
+	mIndexBuffer = other.mIndexBuffer;
+	mIndexCount = other.mIndexCount;
+
+	mDataBuffers = other.mDataBuffers;
+}
+
+GLUFVertexArraySoA::~GLUFVertexArraySoA()
+{
+	BindVertexArray();
+	for (auto it : mDataBuffers)
+		glDeleteBuffers(1, &it.second);
 }
 
 void GLUFVertexArraySoA::BufferData(GLUFAttribLoc loc, GLuint VertexCount, void* data)
@@ -1209,7 +1245,7 @@ void GLUFVertexArraySoA::AddVertexAttrib(GLUFVertexAttribInfo info)
 
 	GLuint newBuff = 0;
 	glGenBuffers(1, &newBuff);
-	mDataBuffers.push_back(newBuff);
+	mDataBuffers.insert(std::pair<GLUFAttribLoc, GLuint>(info.VertexAttribLocation, newBuff));
 	
 	RefreshDataBufferAttribute();
 }
@@ -1218,7 +1254,12 @@ void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
 {
 	BindVertexArray();
 
-	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
+	std::map<GLUFAttribLoc, GLuint>::iterator it = mDataBuffers.find(loc);
+
+	glDeleteBuffers(1, &(it->second));
+	mDataBuffers.erase(it);
+
+	/*for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
 	{
 		if (mAttribInfos[i].VertexAttribLocation == loc)
 		{
@@ -1226,7 +1267,7 @@ void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
 			mDataBuffers.erase(mDataBuffers.begin() + i);
 		}
 	}
-
+	*/
 
 	GLUFVertexArrayBase::RemoveVertexAttrib(loc);
 }
@@ -1236,7 +1277,144 @@ void GLUFVertexArraySoA::RefreshDataBufferAttribute()
 	BindVertexArray();
 	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[mAttribInfos[i].VertexAttribLocation]);
 		glVertexAttribPointer(mAttribInfos[i].VertexAttribLocation, mAttribInfos[i].ElementsPerValue, mAttribInfos[i].Type, GL_FALSE, 0, nullptr);
 	}
 }
+
+GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int meshNum)
+{
+	if (meshNum > scene->mNumMeshes)
+		return nullptr;
+
+	const aiMesh* mesh = scene->mMeshes[meshNum];
+
+	GLUFVertexArray* vertexData = new GLUFVertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+
+	if (mesh->HasPositions())
+		vertexData->AddVertexAttrib(g_attribPOS);
+	if (mesh->HasNormals())
+		vertexData->AddVertexAttrib(g_attribNORM);
+	if (mesh->HasTextureCoords(0))
+		vertexData->AddVertexAttrib(g_attribUV);
+	if (mesh->HasTangentsAndBitangents())
+	{
+		vertexData->AddVertexAttrib(g_attribTAN);
+		vertexData->AddVertexAttrib(g_attribBITAN);
+	}
+	if (mesh->HasVertexColors(0))
+		vertexData->AddVertexAttrib(g_attribCOLOR);
+
+
+	if (mesh->HasPositions())
+		vertexData->BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
+	if (mesh->HasNormals())
+		vertexData->BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
+	if (mesh->HasTextureCoords(0))
+		vertexData->BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+	if (mesh->HasTangentsAndBitangents())
+	{
+		vertexData->BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
+		vertexData->BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+	}
+	if (mesh->HasVertexColors(0))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
+
+	std::vector<GLuint> indices;
+	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+	{
+		aiFace curr = mesh->mFaces[i];
+		indices.push_back(curr.mIndices[0]);
+		indices.push_back(curr.mIndices[1]);
+		indices.push_back(curr.mIndices[2]);
+	}
+	vertexData->BufferIndices(&indices[0], indices.size());
+
+	return vertexData;
+}
+
+std::vector<GLUFVertexArray*> LoadVertexArraysFromScene(const aiScene* scene, unsigned int numMeshes)
+{
+	std::vector<GLUFVertexArray*> arrays;
+
+	if (numMeshes > scene->mNumMeshes)
+	{
+		arrays.push_back(nullptr);
+		return arrays;
+	}
+
+	for(unsigned int cnt = 0; cnt < numMeshes; ++cnt)
+	{
+		arrays.push_back(LoadVertexArrayFromScene(scene, cnt));//new GLUFVertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+	}
+	return arrays;
+}
+
+/*
+GLUFVertexArray* LoadVertexArrayFromFile(std::string path)
+{
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile(path,
+		aiProcess_CalcTangentSpace |
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_SortByPType);
+
+	const aiMesh* mesh = scene->mMeshes[0];
+
+	GLUFVertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+
+	if (mesh->HasPositions())
+		vertexData.AddVertexAttrib(g_attribPOS);
+	if (mesh->HasNormals())
+		vertexData.AddVertexAttrib(g_attribNORM);
+	if (mesh->HasTextureCoords(0))
+		vertexData.AddVertexAttrib(g_attribUV);
+	if (mesh->HasTangentsAndBitangents())
+	{
+		vertexData.AddVertexAttrib(g_attribTAN);
+		vertexData.AddVertexAttrib(g_attribBITAN);
+	}
+	if (mesh->HasVertexColors(0))
+		vertexData.AddVertexAttrib(g_attribCOLOR);
+
+
+	if (mesh->HasPositions())
+		vertexData.BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
+	if (mesh->HasNormals())
+		vertexData.BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
+	if (mesh->HasTextureCoords(0))
+		vertexData.BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+	if (mesh->HasTangentsAndBitangents())
+	{
+		vertexData.BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
+		vertexData.BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+	}
+	if (mesh->HasVertexColors(0))
+		vertexData.BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
+
+	std::vector<GLuint> indices;
+	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+	{
+		aiFace curr = mesh->mFaces[i];
+		indices.push_back(curr.mIndices[0]);
+		indices.push_back(curr.mIndices[1]);
+		indices.push_back(curr.mIndices[2]);
+	}
+	vertexData.BufferIndices(&indices[0], indices.size());
+
+	return vertexData;
+	return LoadVertexArray(scene);
+}
+
+GLUFVertexArray *LoadVertexArrayFromFile(unsigned int size, void* data)
+{
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFileFromMemory(data, size,
+		aiProcess_CalcTangentSpace |
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_SortByPType);
+
+	return LoadVertexArray(scene);
+}*/

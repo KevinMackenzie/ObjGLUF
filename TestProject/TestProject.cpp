@@ -2,9 +2,6 @@
 //
 
 #include "stdafx.h"
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #define USING_ASSIMP
 #define SUPPRESS_RADIAN_ERROR
 #define SUPPRESS_UTF8_ERROR
@@ -147,18 +144,19 @@ int main(void)
 
 
 
-
-
+	std::string path = "suzanne.obj.model";
+	
 	//load from assimp
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile("suzanne.obj.model",
+	const aiScene* scene = importer.ReadFile(path,
 		aiProcess_CalcTangentSpace |
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType);
 
-	const aiMesh* mesh = scene->mMeshes[0];
-	GLUFVertexArray vertexData;
+	/*const aiMesh* mesh = scene->mMeshes[0];
+
+	GLUFVertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
 	if (mesh->HasPositions())
 		vertexData.AddVertexAttrib(g_attribPOS);
@@ -166,8 +164,14 @@ int main(void)
 		vertexData.AddVertexAttrib(g_attribNORM);
 	if (mesh->HasTextureCoords(0))
 		vertexData.AddVertexAttrib(g_attribUV);
-	if (!mesh->HasFaces())
-		return 1;
+	if (mesh->HasTangentsAndBitangents())
+	{
+		vertexData.AddVertexAttrib(g_attribTAN);
+		vertexData.AddVertexAttrib(g_attribBITAN);
+	}
+	if (mesh->HasVertexColors(0))
+		vertexData.AddVertexAttrib(g_attribCOLOR);
+
 
 	if (mesh->HasPositions())
 		vertexData.BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
@@ -175,6 +179,13 @@ int main(void)
 		vertexData.BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
 	if (mesh->HasTextureCoords(0))
 		vertexData.BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+	if (mesh->HasTangentsAndBitangents())
+	{
+		vertexData.BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
+		vertexData.BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+	}
+	if (mesh->HasVertexColors(0))
+		vertexData.BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
 
 	std::vector<GLuint> indices;
 	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
@@ -184,7 +195,11 @@ int main(void)
 		indices.push_back(curr.mIndices[1]);
 		indices.push_back(curr.mIndices[2]);
 	}
-	vertexData.BufferIndices(&indices[0], indices.size());
+	vertexData.BufferIndices(&indices[0], indices.size());*/
+
+	GLUFVertexArray* vertexData = LoadVertexArrayFromScene(scene);
+	if (!vertexData)
+		EXIT_FAILURE;
 
 	//load shaders
 	GLUFProgramPtr Prog;
@@ -259,7 +274,7 @@ int main(void)
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
 		glUniform1i(5, 0);
 
-		vertexData.Draw();
+		vertexData->Draw();
 
 
 		// Swap buffers

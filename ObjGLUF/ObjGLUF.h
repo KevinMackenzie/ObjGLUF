@@ -36,6 +36,12 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#ifdef USING_ASSIMP
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#endif
+
 #include <vector>
 #include <memory>
 #include <map>
@@ -447,6 +453,7 @@ protected:
 
 	virtual void RefreshDataBufferAttribute() = 0;
 	GLUFVertexAttribInfo GetAttribInfoFromLoc(GLUFAttribLoc loc);
+	GLUFVertexArrayBase(const GLUFVertexArrayBase& other){};
 public:
 	GLUFVertexArrayBase(GLenum PrimType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool index = true);
 	~GLUFVertexArrayBase();
@@ -475,6 +482,8 @@ class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 
 public:
 	GLUFVertexArrayAoS(GLenum PrimType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+	~GLUFVertexArrayAoS();
+	GLUFVertexArrayAoS(const GLUFVertexArrayAoS& other);
 
 	//This includes the padding on 4 byte bounderies
 	unsigned int GetVertexSize();
@@ -488,7 +497,8 @@ public:
 class OBJGLUF_API GLUFVertexArraySoA : public GLUFVertexArrayBase
 {
 protected:
-	std::vector<GLuint> mDataBuffers;
+	//       Attrib Location, buffer location
+	std::map<GLUFAttribLoc, GLuint> mDataBuffers;
 
 	virtual void RefreshDataBufferAttribute();
 
@@ -496,6 +506,8 @@ protected:
 
 public:
 	GLUFVertexArraySoA(GLenum PrimType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+	~GLUFVertexArraySoA();
+	GLUFVertexArraySoA(const GLUFVertexArraySoA& other);
 
 	void BufferData(GLUFAttribLoc loc, GLuint VertexCount, void* data);
 	void BufferSubData(GLUFAttribLoc loc, GLuint VertexOffsetCount, GLuint VertexCount, void* data);
@@ -504,10 +516,38 @@ public:
 	virtual void AddVertexAttrib(GLUFVertexAttribInfo info);
 	virtual void RemoveVertexAttrib(GLUFAttribLoc loc);
 
+	//friend std::ostream& operator<<(std::ostream& out, const GLUFVertexArraySoA& dat);
+
 };
+
+/*inline std::ostream& operator << ( std::ostream& out, const GLUFVertexArraySoA& dat)
+{
+	out << "Vertex Array:\n" << "Attributes: {\n\t";
+	for (auto it : dat.mAttribInfos)
+		out << "(" << it.BytesPerElement << "," << it.ElementsPerValue << "," << it.VertexAttribLocation << "," << it.Type << "),\n\t";
+	out << "}\n";
+	out << "Data Buffers: {\n\t";
+	for (auto it : dat.mDataBuffers)
+		out << "(" << it.first << "," << it.second << "),\n\t";
+	out << "}\n";
+	out << "Index Buffer: " << dat.mIndexBuffer << "\n";
+	out << "Index Count:  " << dat.mIndexCount << "\n";
+	out << "Primitive Type: " << dat.mPrimitiveType << "\n";
+	out << "Usage Type: " << dat.mUsageType << "\n";
+	out << "Vertex Array Id: " << dat.mVertexArrayId << "\n";
+	out << "Vertex Count: " << dat.mVertexCount << "\n";
+	
+	return out;
+}*/
 
 
 typedef GLUFVertexArraySoA GLUFVertexArray;
+
+#ifdef USING_ASSIMP
+//NOTE: this only supports single color/uv channels
+GLUFVertexArray               OBJGLUF_API *LoadVertexArrayFromScene(const aiScene* scene, unsigned int meshNum = 0);
+std::vector<GLUFVertexArray*> OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, unsigned int numMeshes);
+#endif
 
 //these are preprocessors that require the differet locations for different attributes(defaults)
 #define VERTEX_ATTRIB_POSITION	0
