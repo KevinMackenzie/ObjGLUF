@@ -304,432 +304,8 @@ glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y)
 		else
 			return glm::vec2(rect.left, rect.bottom);
 }
-/*
-class GLUFUniformBuffer
-{
 
-	friend GLUFBufferManager;
-
-	//GLUFProgramPtrWeak programRef;
-	GLuint mTransformBufferId;
-	//TODO: impliment this further with a std::vector
-
-	GLUFMatrixTransformBlock mTransformData;//this will be used lator for mapping
-
-public:
-
-	void RefreshTransformData();
-
-	GLUFUniformBuffer(){ glGenBuffers(1, &mTransformBufferId); glBindBuffer(GL_UNIFORM_BUFFER, mTransformBufferId); glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 5, nullptr, GL_DYNAMIC_DRAW); }
-	~GLUFUniformBuffer(){ glDeleteBuffers(1, &mTransformBufferId); mTransformData.TrueDelete(); }
-};
-
-class GLUFVertexArrayObject
-{
-	friend GLUFBufferManager;
-
-	//make sure to check that each element has the SAME number of elements (except for indices)
-
-	std::vector<GLUFBufferType> m_BufferInformation;
-	std::vector<GLuint>         m_BufferLocations;//each of these corresponds on one of the above
-
-	GLuint mIndexLocation = 0;
-
-	bool mInitialiazed[3];
-
-
-public:
-
-	void Refresh();//this reloads the data from the memory to openGL
-	void EnableActive();
-	void DisableAll();
-
-	GLUFVertexArrayObject(std::vector<GLUFBufferType> BufferInformation);
-	~GLUFVertexArrayObject();
-
-};
-
-class GLUFTextureBuffer
-{
-	friend GLUFBufferManager;
-	GLuint mTextureId;
-
-public:
-
-	GLUFTextureBuffer(){ glGenTextures(1, &mTextureId); }
-	~GLUFTextureBuffer(){ glDeleteTextures(1, &mTextureId); };
-};
-
-void GLUFVertexArrayObject::Refresh()
-{
-	glBindVertexArray(mVAOId);
-	
-	if (mIndicies.size())
-	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexId);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mIndicies.size() * sizeof(GLushort), &mIndicies[0], GL_DYNAMIC_DRAW);
-	}
-
-	if (mPositions.size())
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, mPositionId);
-		glBufferData(GL_ARRAY_BUFFER, mPositions.size() * sizeof(glm::vec3), &mPositions[0], GL_DYNAMIC_DRAW);
-		if (!mInitialiazed[IN_POSITIONS])
-		{
-			glEnableVertexAttribArray(IN_POSITIONS);
-			mInitialiazed[IN_POSITIONS] = true;
-		}
-	}
-	else if (mInitialiazed[IN_POSITIONS])
-	{
-		//if the array is EMPTY, and it IS initialized, then remove it
-		glBindBuffer(GL_ARRAY_BUFFER, mPositionId);
-		glDisableVertexAttribArray(IN_POSITIONS);
-		mInitialiazed[IN_POSITIONS] = false;
-	}
-
-	if (mNormals.size())
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, mNormalId);
-		glBufferData(GL_ARRAY_BUFFER, mNormals.size() * sizeof(glm::vec3), &mNormals[0], GL_DYNAMIC_DRAW);
-
-		if (!mInitialiazed[IN_NORMALS])
-		{
-			glEnableVertexAttribArray(IN_NORMALS);
-			mInitialiazed[IN_NORMALS] = true;
-		}
-	}
-	else if (mInitialiazed[IN_NORMALS])
-	{
-		//if the array is EMPTY, and it IS initialized, then remove it
-		glBindBuffer(GL_ARRAY_BUFFER, mNormalId);
-		glDisableVertexAttribArray(IN_NORMALS);
-		mInitialiazed[IN_NORMALS] = false;
-	}
-
-
-	if (mUVCoords.size())
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, mUVCoordId);
-		glBufferData(GL_ARRAY_BUFFER, mUVCoords.size() * sizeof(glm::vec2), &mUVCoords[0], GL_DYNAMIC_DRAW);
-
-		if (!mInitialiazed[IN_UVCOORDS])
-		{
-			glEnableVertexAttribArray(IN_UVCOORDS);
-
-			mInitialiazed[IN_UVCOORDS] = true;
-		}
-	}
-	else if (mInitialiazed[IN_UVCOORDS])
-	{
-		//if the array is EMPTY, and it IS initialized, then remove it
-		glBindBuffer(GL_ARRAY_BUFFER, mUVCoordId);
-		glDisableVertexAttribArray(IN_UVCOORDS);
-
-		mInitialiazed[IN_UVCOORDS] = false;
-	}
-
-}
-
-void GLUFVertexArrayObject::EnableActive()
-{
-	if (mInitialiazed[IN_POSITIONS])
-		glEnableVertexAttribArray(IN_POSITIONS);
-	if (mInitialiazed[IN_NORMALS])
-		glEnableVertexAttribArray(IN_NORMALS);
-	if (mInitialiazed[IN_UVCOORDS])
-		glEnableVertexAttribArray(IN_UVCOORDS);
-
-}
-
-void GLUFVertexArrayObject::DisableAll()
-{
-	glDisableVertexAttribArray(IN_POSITIONS);
-	glDisableVertexAttribArray(IN_NORMALS);
-	glDisableVertexAttribArray(IN_UVCOORDS);
-}
-
-GLUFVertexArrayObject::~GLUFVertexArrayObject()
-{
-	glDeleteVertexArrays(1, &mVAOId);
-	GLuint mBuffIds[4] = { mPositionId, mNormalId, mUVCoordId, mIndexId };
-	glDeleteBuffers(4, mBuffIds);
-}
-
-GLUFVertexArrayObject::GLUFVertexArrayObject(std::vector<GLUFBufferType> BufferInformation)
-{
-	mInitialiazed[0] = false;
-	mInitialiazed[1] = false;
-	mInitialiazed[2] = false;
-
-	glGenVertexArrays(1, &mVAOId);
-	glBindVertexArray(mVAOId);//THIS WAS A HUGE THING TO MISS, THE VAO MUST BE BOUND
-
-	glGenBuffers(1, &mPositionId);
-	glGenBuffers(1, &mNormalId);
-	glGenBuffers(1, &mUVCoordId);
-	glGenBuffers(1, &mIndexId);
-
-	glBindBuffer(GL_ARRAY_BUFFER, mPositionId);
-	glVertexAttribPointer(IN_POSITIONS, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	glBindBuffer(GL_ARRAY_BUFFER, mNormalId);
-	glVertexAttribPointer(IN_NORMALS, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	glBindBuffer(GL_ARRAY_BUFFER, mUVCoordId);
-	glVertexAttribPointer(IN_UVCOORDS, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//we only want to enable vertex arrays if there are ITEMS IN THE BUFFERS
-}
-
-void GLUFUniformBuffer::RefreshTransformData()
-{
-	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, mTransformBufferId);
-	glm::mat4 *pData = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4) * 5, GL_MAP_WRITE_BIT);
-	pData[UT_MODEL] = mTransformData[UT_MODEL];
-	pData[UT_VIEW] = mTransformData[UT_VIEW];
-	pData[UT_PROJ] = mTransformData[UT_PROJ];
-
-	pData[UT_MODELVIEW] = mTransformData[UT_MODELVIEW];
-	pData[UT_MVP] = mTransformData[UT_MVP];
-
-	glUnmapBuffer(GL_UNIFORM_BUFFER);
-}
-
-///////////////////////////////
-//Shader code for uniform block
-//
-//NOTE: All will be provided unless necisary ( MAYBE FOR NOW )
-//
-//
-/*
-
-layout(std140, binding = 0) uniform MatrixTransformations
-{						//base alignment			offset			aligned offset
-	mat4 m;				//16						0					0
-	mat4 v;				//16						64					64
-	mat4 p;				//16						128					128
-	mat4 mv;			//16						192					192
-	mat4 mvp;			//16						256					256
-};
-
-//NOTE: vertex shader input
-position -> 0
-normal   -> 1
-texCoord -> 2
-
-
-
-////////////////////////////
-//
-//Buffer Stuff
-///////////////////////////
-
-
-void GLUFBufferManager::ResetBufferBindings()
-{
-	glBindVertexArray(0);
-	glBindBuffer(GL_VERTEX_ARRAY, 0);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	//TODO: expand this
-}
-
-GLUFVertexArrayPtr GLUFBufferManager::CreateVertexArray(std::vector<GLUFBufferType> DataTypes)
-{
-	return GLUFVertexArrayPtr(new GLUFVertexArrayObject(DataTypes));
-}
-
-GLUFUniformBufferPtr GLUFBufferManager::CreateUniformArray()
-{
-	return GLUFUniformBufferPtr(new GLUFUniformBuffer);
-}
-
-void GLUFBufferManager::DeleteVertexBuffer(GLUFVertexArrayPtr vertArray)
-{
-	delete vertArray.get();
-}
-
-void GLUFBufferManager::DeleteUniformBuffer(GLUFUniformBufferPtr buffer)
-{
-	delete buffer.get();
-}
-
-void GLUFBufferManager::DrawVertexArray(GLUFVertexArrayPtr vertArray, GLenum topology)
-{
-	glBindVertexArray(vertArray->mVAOId);
-	vertArray->EnableActive();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertArray->mIndexId);
-	glDrawElements(topology, vertArray->mIndicies.size(), GL_UNSIGNED_SHORT, 0);
-	vertArray->DisableAll();
-	//glDrawArrays(topology, 0, 3);
-}
-
-void GLUFBufferManager::DrawVertexArrayInstanced(GLUFVertexArrayPtr vertArray, GLuint instanceCount, GLenum topology)
-{
-	glBindVertexArray(vertArray->mVAOId);
-	glDrawElementsInstanced(topology, vertArray->mPositions.size(), GL_UNSIGNED_SHORT, 0, instanceCount);
-}
-
-void GLUFBufferManager::BindUniformArray(GLUFUniformBufferPtr buffer)
-{
-	//TODO: setup with material and transform data
-	glBindBufferBase(GL_UNIFORM_BUFFER, GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION, buffer->mTransformBufferId);
-}
-
-void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, GLUFBufferType type, void* data, int ElementCount)
-{
-	//when modifying, change the local copy as well
-	signed char* rawData = (signed char*)malloc(ElementCount * type.BytePerElement * type.ElementsPerValue);
-
-	if (!data)
-	{
-		GLUF_ERROR("Attempt to modify vertex data with empty array");
-		return;
-	}
-
-	/*
-	switch (type)
-	{
-	case VAO_POSITIONS:
-		glBindBuffer(GL_ARRAY_BUFFER, vertArray->mPositionId);
-		vertArray->mPositions = data;
-		break;
-	case VAO_NORMALS:
-		glBindBuffer(GL_ARRAY_BUFFER, vertArray->mNormalId);
-		vertArray->mNormals = data;
-		break;
-	default:
-		GLUF_ERROR("Unsupported Vertex Attribute Type for this Method");
-	}
-
-	glBindBuffer()
-	glBufferData(GL_ARRAY_BUFFER, data.size() * 3 * sizeof(GLfloat), &data[0], GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-/*void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, GLUFVertexAttributeType type, Vec2Array data)
-{
-	if (!data.size())
-	{
-		GLUF_ERROR("Attempt to modify vertex data with empty array");
-		return;
-	}
-
-	switch (type)
-	{
-	case VAO_TEXCOORDS:
-		glBindBuffer(GL_ARRAY_BUFFER, vertArray->mUVCoordId);
-		vertArray->mUVCoords = data;
-		break;
-	default:
-		GLUF_ERROR("Unsupported Vertex Attribute Type for this Method");
-	}
-
-	glBufferData(GL_ARRAY_BUFFER, data.size() * 2 * sizeof(GLfloat), &data[0], GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void GLUFBufferManager::MoidfyVertexIncidies(GLUFVertexArrayPtr vertArray, IndexArray data)
-{
-	if (!data.size())
-	{
-		GLUF_ERROR("Attempt to modify vertex data with empty array");
-		return;
-	}
-
-	vertArray->mIndicies = data;
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertArray->mIndexId);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size() * sizeof(GLushort), &data[0], GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
-
-void GLUFBufferManager::ModifyVertexArray(GLUFVertexArrayPtr vertArray, Vec3Array positions, Vec3Array normals, Vec2Array texCoords, IndexArray indicies)
-{
-	vertArray->mIndicies = indicies;
-	vertArray->mPositions = positions;
-	vertArray->mNormals = normals;
-	vertArray->mUVCoords = texCoords;
-
-	vertArray->Refresh();
-}
-
-GLUFVAOData GLUFBufferManager::MapVertexArray(GLUFVertexArrayPtr vertArray)
-{
-	return GLUFVAOData(&vertArray->mPositions, &vertArray->mNormals, &vertArray->mUVCoords, &vertArray->mIndicies);
-}
-
-void GLUFBufferManager::UnMapVertexArray(GLUFVertexArrayPtr vertArray)
-{
-	vertArray->Refresh();
-}
-
-void GLUFBufferManager::ModifyUniformTransformMatrix(GLUFUniformBufferPtr buffer, GLUFTransformUniformType type, glm::mat4 data)
-{
-	//make sure the data can be accessed
-	if (!buffer->mTransformData.ModifyValue(type, data))
-		return;
-	buffer->RefreshTransformData();//this uses a bit more memory, but is centrailized
-}
-
-void GLUFBufferManager::ModifyUniformTransformMatrix(GLUFUniformBufferPtr buffer, GLUFMatrixTransformBlockParam data)
-{
-	//make sure the data can be accessed
-	buffer->mTransformData = data;
-	buffer->RefreshTransformData();
-}
-
-GLUFMatrixTransformBlock GLUFBufferManager::MapUniformTransform(GLUFUniformBufferPtr buffer)
-{
-	return buffer->mTransformData;
-}
-
-void GLUFBufferManager::UnMapUniformTransform(GLUFUniformBufferPtr buffer)
-{
-	buffer->RefreshTransformData();
-}
-
-GLuint GLUFBufferManager::GetUniformTransformBufferId(GLUFUniformBufferPtr buffer)
-{
-	return buffer->mTransformBufferId;
-}
-
-GLUFTexturePtr GLUFBufferManager::CreateTextureBuffer()
-{
-	return GLUFTexturePtr(new GLUFTextureBuffer);
-}
-
-GLUFTexturePtr GLUFBufferManager::CreateTextureBuffer(GLuint glTexture)
-{
-	GLUFTexturePtr ptr(new GLUFTextureBuffer);
-	ptr->mTextureId = glTexture;
-	return ptr;
-}
-
-void GLUFBufferManager::UseTexture(GLUFTexturePtr texture, GLuint location, GLenum bindingPoint)
-{
-	glActiveTexture(bindingPoint);
-	glBindTexture(GL_TEXTURE_2D, texture->mTextureId);
-#pragma warning(disable : 4244)
-	glUniform1f(location, bindingPoint);
-#pragma warning(default : 4244)
-}
-
-GLuint GLUFBufferManager::GetTextureBufferId(GLUFTexturePtr texture)
-{
-	return texture->mTextureId;
-}
-
-bool GLUFBufferManager::CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1)
-{
-	return (texture->mTextureId == texture1->mTextureId);
-}
-
-GLuint GLUF::LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
+GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 {
 	GLuint tex = 0;
 	gli::texture2D Texture(gli::load_dds(filePath.c_str()));
@@ -782,7 +358,7 @@ GLuint GLUF::LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat fo
 }
 
 
-GLuint GLUF::LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format)
+GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format)
 {
 	GLuint tex = 0;
 	gli::texture2D Texture(gli::load_dds_memory(data, length));
@@ -832,7 +408,7 @@ GLuint GLUF::LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureF
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return tex;
-}*/
+}
 
 ////////////////////////////
 //
@@ -1387,4 +963,266 @@ void GLUFShaderManager::ClearPrograms(GLUFSepProgramPtr ppo, GLbitfield stages)
 void GLUFShaderManager::UseProgram(GLUFSepProgramPtr program)
 {
 	glBindProgramPipeline(program->mPPOId);
+}
+
+
+
+
+
+GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
+{
+	glGenVertexArrayBindVertexArray(&mVertexArrayId);
+
+	if (index)
+		glGenBuffers(1, &mIndexBuffer);
+}
+
+GLUFVertexArrayBase::~GLUFVertexArrayBase()
+{
+	BindVertexArray();
+	glDeleteBuffers(1, &mIndexBuffer);
+	glDeleteVertexArrays(1, &mVertexArrayId);
+
+	glBindVertexArray(0);
+}
+
+void GLUFVertexArrayBase::BindVertexArray()
+{
+	glBindVertexArray(mVertexArrayId);
+}
+
+void GLUFVertexArrayBase::AddVertexAttrib(GLUFVertexAttribInfo info)
+{
+	BindVertexArray();
+
+	mAttribInfos.push_back(info);
+
+	RefreshDataBufferAttribute();
+}
+
+void GLUFVertexArrayBase::RemoveVertexAttrib(GLUFAttribLoc loc)
+{
+	for (std::vector<GLUFVertexAttribInfo>::iterator it = mAttribInfos.begin(); it != mAttribInfos.end(); ++it)
+	{
+		if (it->VertexAttribLocation == loc)
+		{
+			mAttribInfos.erase(it);
+			break;
+		}
+	}
+}
+
+GLUFVertexAttribInfo GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttribLoc loc)
+{
+	GLUFVertexAttribInfo ret;
+	for (auto it : mAttribInfos)
+	{
+		if (it.VertexAttribLocation == loc)
+			return it;
+	}
+
+	return ret;
+}
+
+void GLUFVertexArrayBase::BufferIndices(GLuint* indices, unsigned int count)
+{
+	BindVertexArray();
+	mIndexCount = count;
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * count, indices, mUsageType);
+}
+
+void GLUFVertexArrayBase::Draw()
+{
+	BindVertexArray();
+	EnableVertexAttributes();
+	
+	if (mIndexBuffer != 0)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+		glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
+	}
+	else
+	{
+		glDrawArrays(mPrimitiveType, 0, mVertexCount);
+	}
+
+	DisableVertexAttributes();
+}
+
+void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
+{
+	BindVertexArray();
+	EnableVertexAttributes();
+
+	if (mIndexBuffer != 0)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+		glDrawElementsInstanced(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr, instances);
+	}
+	else
+	{
+		glDrawArraysInstanced(mPrimitiveType, 0, mVertexCount, instances);
+	}
+
+	DisableVertexAttributes();
+}
+
+void GLUFVertexArrayBase::EnableVertexAttributes()
+{
+	for (auto it : mAttribInfos)
+	{
+		glEnableVertexAttribArray(it.VertexAttribLocation);
+	}
+}
+
+void GLUFVertexArrayBase::DisableVertexAttributes()
+{
+	for (auto it : mAttribInfos)
+	{
+		glDisableVertexAttribArray(it.VertexAttribLocation);
+	}
+}
+
+
+
+int RoundNearestMultiple(int num, int multiple)
+{
+	unsigned int nearestMultiple = 0;
+	for (unsigned int i = 0; i < num; i += multiple)
+	{
+		nearestMultiple = i;
+	}
+
+	nearestMultiple += multiple;
+	return nearestMultiple;
+}
+
+void GLUFVertexArrayAoS::RefreshDataBufferAttribute()
+{
+	BindVertexArray();
+
+	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+	unsigned int stride = GetVertexSize();
+
+
+	for (auto it : mAttribInfos)
+	{
+		glVertexAttribPointer(it.VertexAttribLocation, it.ElementsPerValue, it.Type, GL_FALSE, stride, nullptr);
+	}
+}
+
+GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
+{
+	//the VAO is already bound
+
+	glGenBuffers(1, &mDataBuffer);
+}
+
+unsigned int GLUFVertexArrayAoS::GetVertexSize()
+{
+	unsigned int stride = 0;
+	char* data = nullptr;
+	for (auto it : mAttribInfos)
+	{
+		//round to the 4 bytes bounderies
+		data = (char*)malloc(RoundNearestMultiple(it.BytesPerElement, 4));
+		stride += it.ElementsPerValue * sizeof(data);
+	}
+
+	return stride;
+}
+
+void GLUFVertexArrayAoS::BufferData(void* data, unsigned int NumVertices)
+{
+	BindVertexArray();
+	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+	glBufferData(GL_ARRAY_BUFFER, NumVertices * GetVertexSize(), data, mUsageType);
+
+	mVertexCount = NumVertices;
+}
+
+void GLUFVertexArrayAoS::BufferSubData(unsigned int ValueOffsetCount, unsigned int NumValues, void* data)
+{
+	BindVertexArray();
+	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+	unsigned int size = GetVertexSize();
+	glBufferSubData(GL_ARRAY_BUFFER, ValueOffsetCount * size, NumValues * size, data);
+}
+
+
+
+
+GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLocation(GLUFAttribLoc loc)
+{
+	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
+	{
+		if (mAttribInfos[i].VertexAttribLocation == loc)
+			return mDataBuffers[i]; 
+	}
+	return 0;
+}
+
+GLUFVertexArraySoA::GLUFVertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
+{
+}
+
+void GLUFVertexArraySoA::BufferData(GLUFAttribLoc loc, GLuint VertexCount, void* data)
+{
+	BindVertexArray();
+	glBindBuffer(GL_ARRAY_BUFFER, GetBufferIdFromAttribLocation(loc));
+	mVertexCount = VertexCount;
+
+	GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
+	glBufferData(GL_ARRAY_BUFFER, VertexCount * info.BytesPerElement * info.ElementsPerValue, data, mUsageType);
+}
+
+void GLUFVertexArraySoA::BufferSubData(GLUFAttribLoc loc, GLuint VertexOffsetCount, GLuint VertexCount, void* data)
+{
+	BindVertexArray();
+	glBindBuffer(GL_ARRAY_BUFFER, GetBufferIdFromAttribLocation(loc));
+	
+	GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
+	glBufferSubData(GL_ARRAY_BUFFER, VertexOffsetCount * info.BytesPerElement * info.ElementsPerValue, VertexCount * info.BytesPerElement * info.ElementsPerValue, data);
+}
+
+void GLUFVertexArraySoA::AddVertexAttrib(GLUFVertexAttribInfo info)
+{
+	GLUFVertexArrayBase::AddVertexAttrib(info);
+
+	GLuint newBuff = 0;
+	glGenBuffers(1, &newBuff);
+	mDataBuffers.push_back(newBuff);
+	
+	RefreshDataBufferAttribute();
+}
+
+void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
+{
+	BindVertexArray();
+
+	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
+	{
+		if (mAttribInfos[i].VertexAttribLocation == loc)
+		{
+			glDeleteBuffers(1, &mDataBuffers[i]);
+			mDataBuffers.erase(mDataBuffers.begin() + i);
+		}
+	}
+
+
+	GLUFVertexArrayBase::RemoveVertexAttrib(loc);
+}
+
+void GLUFVertexArraySoA::RefreshDataBufferAttribute()
+{
+	BindVertexArray();
+	for (auto it : mAttribInfos)
+	{
+		glVertexAttribPointer(it.VertexAttribLocation, it.ElementsPerValue, it.Type, GL_FALSE, 0, nullptr);
+	}
 }

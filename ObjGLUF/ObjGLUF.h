@@ -136,11 +136,6 @@ typedef glm::vec3 Color3f;
 typedef glm::vec4 Color4f;
 
 
-#define GLUF_UNIVERSAL_TRANSFORM_UNIFORM_BLOCK_LOCATION 0
-//#define GLUF_UNIVERSAL_VERTEX_POSITION_LOCATION 0
-//#define GLUF_UNIVERSAL_VERTEX_NORMAL_LOCATION 1
-//#define GLFU_UNIVERSAL_VERTEX_UVCOORD_LOCATION 2
-
 #define GLUF_PI (double)3.14159265358979
 #define GLUF_PI_F (float)3.14159265358979
 
@@ -358,6 +353,12 @@ public:
 
 };
 
+//global instances of the managers (becuase they are not static, and have to member variables)
+//extern GLUFBufferManager OBJGLUF_API g_BufferManager;
+extern GLUFShaderManager OBJGLUF_API g_ShaderManager;
+
+//#define GLUFBUFFERMANAGER g_BufferManager
+#define GLUFSHADERMANAGER g_ShaderManager
 
 /*
 Usage examples
@@ -370,505 +371,116 @@ GLUFShaderPtr shad = CreateShader("shader.glsl", ST_VERTEX_SHADER);
 
 */
 
-/*enum GLUFShaderInputVertexDataType
-{
-IN_POSITIONS = 0,
-IN_NORMALS = 1,
-IN_UVCOORDS = 2,
-IN_COLORS = 3
-};
-
-enum GLUFShaderUniformTransformMatrixType
-{
-IN_M = 4,
-IN_V = 3,
-IN_P = 2,
-IN_MV = 1,
-IN_MVP = 0
-};
-
-
-struct OBJGLUF_API GLUFMeshBarebones
-{
-Vec3Array mVertices;
-IndexArray mIndices;
-};
-/*
-//typedef GLuint GLBuffer;
-//typedef GLuint GLVertexBuffer;
-//typedef GLuint GLIndexBuffer;
-
-enum GLUFTransformUniformType
-{
-	UT_MODEL = 0,
-	UT_VIEW = 1,
-	UT_PROJ = 2,
-	UT_MODELVIEW = 3,
-	UT_MVP = 4
-};
-
-//this matches with the layout location of them in the shader
-/*enum GLUFVertexAttributeType
-{
-	VAO_POSITIONS = 0,
-	VAO_NORMALS = 1,
-	VAO_TEXCOORDS = 2,
-	VAO_INDICIES = 3,
-};
-/*
-struct GLUFMatrixTransformBlockPtrs
-{
-protected:
-	friend class GLUFMatrixTransformBlock;
-	glm::mat4 *pM;
-	glm::mat4 *pV;
-	glm::mat4 *pP;
-	glm::mat4 *pMV;
-	glm::mat4 *pMVP;
-public:
-
-	GLUFMatrixTransformBlockPtrs(glm::mat4 *m, glm::mat4 *v, glm::mat4 *p, glm::mat4 *mv, glm::mat4 *mvp) : pM(new glm::mat4(*m)), pV(new glm::mat4(*v)), pP(new glm::mat4(*p)), pMV(new glm::mat4(*mv)), pMVP(new glm::mat4(*mvp))
-	{}
-	~GLUFMatrixTransformBlockPtrs(){ delete pM, pV, pP, pMV, pMVP; }
-
-	bool ModifyValue(GLUFTransformUniformType type, glm::mat4 data)
-	{
-		switch (type)
-		{
-		case UT_MODEL:
-			*pM = data;
-			*pMV = *pV * *pM;
-			*pMVP = *pP * *pMV;
-		case UT_VIEW:
-			*pV = data;
-			*pMV = *pV * *pM;
-			*pMVP = *pP * *pMV;
-		case UT_PROJ:
-			*pP = data;
-			*pMVP = *pP * *pMV;
-		default:
-			GLUF_ERROR("Cannot modify MV or MVP data directly");
-			return false;
-		}
-		return true;
-	}
-
-	glm::mat4 operator [](unsigned short index)
-	{
-		switch (index)
-		{
-		case UT_MODEL:
-			return *pM;
-		case UT_VIEW:
-			return *pV;
-		case UT_PROJ:
-			return *pP;
-		case UT_MODELVIEW:
-			return *pMV;
-		case UT_MVP:
-			return *pMVP;
-		default:
-			return glm::mat4();
-		}
-	}
-};
-struct OBJGLUF_API GLUFMatrixTransformBlockParam
-{
-protected:
-	friend struct GLUFMatrixTransformBlock;
-	friend class GLUFUniformBuffer;
-	friend class GLUFBufferManager;
-	glm::mat4 pM;
-	glm::mat4 pV;
-	glm::mat4 pP;
-	glm::mat4 pMV;
-	glm::mat4 pMVP;
-public:
-
-	GLUFMatrixTransformBlockParam(glm::mat4 m = glm::mat4(), glm::mat4 v = glm::mat4(), glm::mat4 p = glm::mat4()) : pM(m), pV(v), pP(p), pMV(v * m), pMVP(p * v * m){}
-};
-
-struct OBJGLUF_API GLUFMatrixTransformBlock
-{
-protected:
-	//friend GLUFMatrixTransformBlockPtrs;
-	friend class GLUFUniformBuffer;
-	friend GLUFBufferManager;
-	glm::mat4* pM;
-	glm::mat4* pV;
-	glm::mat4* pP;
-	glm::mat4* pMV;
-	glm::mat4* pMVP;
-
-	GLUFMatrixTransformBlock() : 
-		pM(new glm::mat4()), pV(new glm::mat4()), pP(new glm::mat4()), pMV(new glm::mat4()), pMVP(new glm::mat4())//possibly make this more efficient
-	{}
-public:
-
-	GLUFMatrixTransformBlock(glm::mat4 m, glm::mat4 v, glm::mat4 p) : pM(new glm::mat4(m)), pV(new glm::mat4(v)), pP(new glm::mat4(p)), pMV(new glm::mat4(v * m)), pMVP(new glm::mat4(p * *pMV))
-	{}
-
-	GLUFMatrixTransformBlock& operator=(GLUFMatrixTransformBlock other)
-	{
-		pM = other.pM;
-		pV = other.pV;
-		pP = other.pP;
-
-		pMV = other.pMV;
-		pMVP = other.pMVP;
-		return *this;
-	}
-
-	GLUFMatrixTransformBlock& operator=(GLUFMatrixTransformBlockParam other)
-	{
-		*pM = other.pM;
-		*pV = other.pV;
-		*pP = other.pP;
-
-		*pMV = other.pMV;
-		*pMVP = other.pMVP;
-		return *this;
-	}
-
-	
-	~GLUFMatrixTransformBlock()
-	{
-		pM = pV = pP = pMV = pMVP = nullptr;
-	}
-
-	void TrueDelete(){ delete pM, pV, pP, pMV, pMVP; pM = pV = pP = pMV = pMVP = nullptr; }
-
-	bool ModifyValue(GLUFTransformUniformType type, glm::mat4 data)
-	{
-		switch (type)
-		{
-		case UT_MODEL:
-			*pM = data;
-			*pMV = *pV * *pM;
-			*pMVP = *pP * *pMV;
-			break;
-		case UT_VIEW:
-			*pV = data;
-			*pMV = *pV * *pM;
-			*pMVP = *pP * *pMV;
-			break;
-		case UT_PROJ:
-			*pP = data;
-			*pMVP = *pP * *pMV;
-			break;
-		default:
-			GLUF_ERROR("Cannot modify MV or MVP data directly");
-			return false;
-		}
-		return true;
-	}
-
-	glm::mat4 operator [](unsigned short index)
-	{
-		switch (index)
-		{
-		case UT_MODEL:
-			return *pM;
-		case UT_VIEW:
-			return *pV;
-		case UT_PROJ:
-			return *pP;
-		case UT_MODELVIEW:
-			return *pMV;
-		case UT_MVP:
-			return *pMVP;
-		default:
-			return glm::mat4();
-		}
-	}
-};
-
-struct OBJGLUF_API GLUFVertex
-{
-	GLushort  mIndex;
-	glm::vec3 mPosition;
-	glm::vec3 mNormal;
-	glm::vec2 mUV;
-	Color4f   mColor;
-};
-
-struct OBJGLUF_API GLUFVAOData
-{
-	Vec3Array* mPositions;
-	Vec3Array* mNormals;
-	Vec2Array* mUVCoords;
-	IndexArray* mIndicies;
-
-	void AddVertex(GLUFVertex vert){ mPositions->push_back(vert.mPosition); mNormals->push_back(vert.mNormal); mUVCoords->push_back(vert.mUV); mIndicies->push_back(vert.mIndex); }
-
-	GLUFVAOData(Vec3Array* positions, Vec3Array* normals, Vec2Array* uvCoords, IndexArray* indicies) : mPositions(positions), mNormals(normals), mUVCoords(uvCoords), mIndicies(indicies){}
-
-	~GLUFVAOData(){ mPositions = nullptr; mNormals = nullptr; mUVCoords = nullptr; mIndicies = nullptr; }
-}; 
-
-
-struct OBJGLUF_API GLUFUniformBlockStandardLayoutData
-{
-	GLushort mBinding;
-	const char* mName;//if this is NOT NULL then it is assumed that this string should be used
-
-	GLubyte* m_pData;//this should be pre-aligned to the layout in use
-};
-
-//WORK IN PROGRESS
-struct GLUFUniformBlockSharedLayoutData
-{
-	GLushort mBinding;
-	const char* mName;//this is the name of the uniform block, if this is not null, then this will be used to retreive the binding point
-
-	const char** mVariableNames;//This is an array of strings in the format $(UniformBlockName).$(AttributeName) in the order they should be assigned
-	
-	GLuint  *m_pLengths;//this is a list of lengths for each element in the m_pData array;
-	GLubyte *m_pData;//This is the data that is in order
-};
-
-struct GLUFBufferType 
-{
-	unsigned short BytePerElement;//i.e.   4 for int, or 1 for char
-	unsigned short ElementsPerValue;//i.e. 3 for vec3
-	unsigned short VertexAttribLoc;//the location of this item in the shader
-};
-
-class OBJGLUF_API GLUFUniformBuffer;
-class OBJGLUF_API GLUFVertexArrayObject;
-class OBJGLUF_API GLUFTextureBuffer;
-
-
-typedef std::weak_ptr<GLUFUniformBuffer> GLUFUniformBufferPtrWeak;
-typedef std::weak_ptr<GLUFVertexArrayObject> GLUFVertexArrayPtrWeak;
-typedef std::weak_ptr<GLUFTextureBuffer> GLUFTexturePtrWeak;
-
-typedef std::shared_ptr<GLUFUniformBuffer> GLUFUniformBufferPtr;
-typedef std::shared_ptr<GLUFVertexArrayObject> GLUFVertexArrayPtr;
-typedef std::shared_ptr<GLUFTextureBuffer> GLUFTexturePtr;
-
-class OBJGLUF_API GLUFMaterial
-{
-protected:
-	Color mDiffuse, mAmbient, mSpecular, mEmissive;
-	GLfloat mPower;
-
-	GLUFTexturePtr m_pTexture;
-
-public:
-	void SetDiffuse(Color diffuse){ mDiffuse = diffuse; }
-	Color GetDiffuse(){ return mDiffuse; }
-
-	void SetAmbient(Color ambient){ mAmbient = ambient; }
-	Color GetAmbient(){ return mAmbient; }
-
-	void SetSpecular(Color specular, GLfloat power){ mSpecular = specular; mPower = power; }
-	Color GetSpecular(){ return mSpecular; }
-	GLfloat GetPower(){ return mPower; }
-
-	void SetEmissive(Color emissive){ mEmissive = emissive; }
-	Color GetEmissive(){ return mEmissive; }
-
-	void SetTexture(GLUFTexturePtr texture){ m_pTexture = texture; }
-	GLUFTexturePtr GetTexture(){ return m_pTexture; }
-
-	void SetAlpha(glm::u8 alpha){ mDiffuse.a = alpha; }
-	bool HasAlpha() const { return GetAlpha() != 1.0f; }
-	float GetAlpha() const { return mDiffuse.a; }
-
-};
-
-typedef std::shared_ptr<GLUFMaterial> GLUFMaterialPtr;
-
-enum GLUFTextureFileFormat
-{
-	TFF_DDS = 0//,
-	//TFF_PNG = 1,
-	//TFF_JPG = 2
-};
-
-//this is a similar system to the shaders system
-class OBJGLUF_API GLUFBufferManager
-{
-	//std::map<std::wstring, GLUniformBufferPtrWeak> mUniformBuffers;
-	//std::map<std::wstring, GLVertexArrayPtrWeak> mVertexArrayBuffers;
-	//friend class DdsResourceLoader;
-
-	//GLTexturePtr CreateTexture(GLuint glTexId);
-
-	//friend class Scene;
-
-public:
-
-
-	void ResetBufferBindings();//this is used to "unuse" the bound textures and buffers after done drawing
-	
-
-	GLUFVertexArrayPtr CreateVertexArray(std::vector<GLUFBufferType> DataTypes);
-	GLUFUniformBufferPtr CreateUniformArray();
-
-	void DeleteVertexBuffer(GLUFVertexArrayPtr vertArray);
-	void DeleteUniformBuffer(GLUFUniformBufferPtr buffer);
-
-	void DrawVertexArray(GLUFVertexArrayPtr vertArray, GLenum topology = GL_TRIANGLES);
-	void DrawVertexArrayInstanced(GLUFVertexArrayPtr vertArray, GLuint instanceCount, GLenum topology = GL_TRIANGLES);
-
-	GLuint GetUniformTransformBufferId(GLUFUniformBufferPtr buffer);
-
-	void BindUniformArray(GLUFUniformBufferPtr buffer);
-
-	void ModifyVertexArray(GLUFVertexArrayPtr vertArray, GLUFBufferType type, void* data, int NumElements);//numElements would be 4 if you had 4 vec3's
-	void ModifyVertexArrayIndices(GLUFVertexArrayPtr vertArray, IndexArray indices);
-
-	GLUFMatrixTransformBlock MapUniformTransform(GLUFUniformBufferPtr buffer);
-	void UnMapUniformTransform(GLUFUniformBufferPtr buffer);
-
-	GLUFVAOData MapVertexArray(GLUFVertexArrayPtr vertArray);
-	void        UnMapVertexArray(GLUFVertexArrayPtr vertArray);
-
-	//this is for modifying standard things such as transforms, or material.
-	void ModifyUniformTransformMatrix(GLUFUniformBufferPtr buffer, GLUFTransformUniformType type, glm::mat4 data);//the transform uniform block that is standard to all shaders will always be location of 1
-	void ModifyUniformTransformMatrix(GLUFUniformBufferPtr buffer, GLUFMatrixTransformBlockParam data);//this REQUIRES all matrices to exist
-	void ModifyUniformMaterial(GLUFUniformBufferPtr buffer, GLUFMaterial mat){};//todo
-	void ModifyLighting(GLUFUniformBufferPtr buffer){ };//todo
-
-	//TODO: add support for custom uniform blocks
-	//WORK IN PROGRESS
-	void ModifyUniformBlock(GLUFUniformBufferPtr buffer, GLUFUniformBlockStandardLayoutData param){};
-
-
-	//texture methods
-	GLUFTexturePtr CreateTextureBuffer();
-	GLUFTexturePtr CreateTextureBuffer(GLuint glTexture);
-
-	GLuint GetTextureBufferId(GLUFTexturePtr texture);
-
-	void UseTexture(GLUFTexturePtr texture, GLuint samplerLocation, GLenum bindingPoint);
-
-
-
-	bool CompareTextures(GLUFTexturePtr texture, GLUFTexturePtr texture1);
-
-	//void BufferTexture(GLUFTexturePtr texture, GLsizei length, GLvoid* data){};
-
-};
-*/
 
 enum GLUFTextureFileFormat
 {
 	TFF_DDS = 0//all for now
 };
 
-namespace GLUF
+
+GLuint OBJGLUF_API LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format);
+GLuint OBJGLUF_API LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format);
+
+
+
+
+////////////////////////////////////////////////////////////////
+// these are buffer helpers, they are meant to be flexible 
+//	and revealing
+//
+
+typedef signed char* GLUFBufferData;
+typedef GLuint       GLUFAttribLoc;
+
+struct GLUFVertexAttribInfo
 {
-	inline GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
-	{
-		GLuint tex = 0;
-		gli::texture2D Texture(gli::load_dds(filePath.c_str()));
-		assert(!Texture.empty());
-		glGenTextures(1, &tex);
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, GLint(Texture.levels() - 1));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-		glTexStorage2D(GL_TEXTURE_2D,
-			GLint(Texture.levels()),
-			GLenum(gli::internal_format(Texture.format())),
-			GLsizei(Texture.dimensions().x),
-			GLsizei(Texture.dimensions().y));
-		if (gli::is_compressed(Texture.format()))
-		{
-			for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
-			{
-				glCompressedTexSubImage2D(GL_TEXTURE_2D,
-					GLint(Level),
-					0, 0,
-					GLsizei(Texture[Level].dimensions().x),
-					GLsizei(Texture[Level].dimensions().y),
-					GLenum(gli::internal_format(Texture.format())),
-					GLsizei(Texture[Level].size()),
-					Texture[Level].data());
-			}
-		}
-		else
-		{
-			for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
-			{
-				glTexSubImage2D(GL_TEXTURE_2D,
-					GLint(Level),
-					0, 0,
-					GLsizei(Texture[Level].dimensions().x),
-					GLsizei(Texture[Level].dimensions().y),
-					GLenum(gli::external_format(Texture.format())),
-					GLenum(gli::type_format(Texture.format())),
-					Texture[Level].data());
-			}
-		}
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		return tex;
-	}
+	unsigned short BytesPerElement;//int would be 4
+	unsigned short ElementsPerValue;//vec4 would be 4
+	GLUFAttribLoc  VertexAttribLocation;
+	GLenum         Type;//float would be GL_FLOAT
+};
 
 
-	inline GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format)
-	{
-		GLuint tex = 0;
-		gli::texture2D Texture(gli::load_dds_memory(data, length));
-		assert(!Texture.empty());
-		glGenTextures(1, &tex);
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, GLint(Texture.levels() - 1));
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-		glTexStorage2D(GL_TEXTURE_2D,
-			GLint(Texture.levels()),
-			GLenum(gli::internal_format(Texture.format())),
-			GLsizei(Texture.dimensions().x),
-			GLsizei(Texture.dimensions().y));
-		if (gli::is_compressed(Texture.format()))
-		{
-			for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
-			{
-				glCompressedTexSubImage2D(GL_TEXTURE_2D,
-					GLint(Level),
-					0, 0,
-					GLsizei(Texture[Level].dimensions().x),
-					GLsizei(Texture[Level].dimensions().y),
-					GLenum(gli::internal_format(Texture.format())),
-					GLsizei(Texture[Level].size()),
-					Texture[Level].data());
-			}
-		}
-		else
-		{
-			for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
-			{
-				glTexSubImage2D(GL_TEXTURE_2D,
-					GLint(Level),
-					0, 0,
-					GLsizei(Texture[Level].dimensions().x),
-					GLsizei(Texture[Level].dimensions().y),
-					GLenum(gli::external_format(Texture.format())),
-					GLenum(gli::type_format(Texture.format())),
-					Texture[Level].data());
-			}
-		}
+class GLUFVertexArrayBase
+{
+protected:
+	GLuint mVertexArrayId = 0;
+	GLuint mVertexCount = 0;
 
-		glBindTexture(GL_TEXTURE_2D, 0);
+	GLenum mUsageType;
+	GLenum mPrimitiveType;
+	std::vector<GLUFVertexAttribInfo> mAttribInfos;//these are IN ORDER
 
-		return tex;
-	}
-}
-//global instances of the managers (becuase they are not static, and have to member variables)
-//extern GLUFBufferManager OBJGLUF_API g_BufferManager;
-extern GLUFShaderManager OBJGLUF_API g_ShaderManager;
+	GLuint mIndexBuffer = 0;
+	GLuint mIndexCount  = 0;
 
-//#define GLUFBUFFERMANAGER g_BufferManager
-#define GLUFSHADERMANAGER g_ShaderManager
+	virtual void RefreshDataBufferAttribute() = 0;
+	GLUFVertexAttribInfo GetAttribInfoFromLoc(GLUFAttribLoc loc);
+public:
+	GLUFVertexArrayBase(GLenum PrimType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool index = true);
+	~GLUFVertexArrayBase();
+
+	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+	virtual void AddVertexAttrib(GLUFVertexAttribInfo info);
+	virtual void RemoveVertexAttrib(GLUFAttribLoc loc);
+	void BindVertexArray();
+
+	void Draw();
+	void DrawInstanced(GLuint instances);
+
+	void BufferIndices(GLuint* indices, unsigned int Count);
+
+	virtual void EnableVertexAttributes() = 0;
+	virtual void DisableVertexAttributes() = 0;
+};
+
+//NOTE: this requires all data to be on four byte bounderies
+class GLUFVertexArrayAoS : public GLUFVertexArrayBase
+{
+	GLuint mDataBuffer = 0;
+
+	virtual void RefreshDataBufferAttribute();
+
+public:
+	GLUFVertexArrayAoS(GLenum PrimType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+
+	//This includes the padding on 4 byte bounderies
+	unsigned int GetVertexSize();
+
+	void BufferData(void* data,  unsigned int NumVertices);//this is used to add  whole vertices.  
+	void BufferSubData(unsigned int ValueOffsetCount/*ie 3 to insert after the 4th element*/, unsigned int NumValues, void* data);
+
+};
+
+
+class GLUFVertexArraySoA : GLUFVertexArrayBase
+{
+protected:
+	std::vector<GLuint> mDataBuffers;
+
+	virtual void RefreshDataBufferAttribute();
+
+	GLuint GetBufferIdFromAttribLocation(GLUFAttribLoc loc);
+
+public:
+	GLUFVertexArraySoA(GLenum PrimType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+
+	void BufferData(GLUFAttribLoc loc, GLuint VertexCount, void* data);
+	void BufferSubData(GLUFAttribLoc loc, GLuint VertexOffsetCount, GLuint VertexCount, void* data);
+
+	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+	virtual void AddVertexAttrib(GLUFVertexAttribInfo info);
+	virtual void RemoveVertexAttrib(GLUFAttribLoc loc);
+
+};
+
+
+typedef GLUFVertexArrayAoS GLUFVertexArray;
+
+//these are preprocessors that require the differet locations for different attributes(defaults)
+#define VERTEX_ATTRIB_POSITION	0
+#define VERTEX_ATTRIB_NORMAL	1 
+#define VERTEX_ATTRIB_UV		2
+#define VERTEX_ATTRIB_COLOR		3
+#define VERTEX_ATTRIB_TAN		4	
+#define VERTEX_ATTRIB_BITAN		5
