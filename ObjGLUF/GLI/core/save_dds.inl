@@ -29,7 +29,7 @@
 namespace gli{
 namespace detail
 {
-	glm::uint32 getMaskRed(format const & Formatl)
+	inline glm::uint32 getMaskRed(format const & Formatl)
 	{
 		switch(Formatl)
 		{
@@ -43,7 +43,7 @@ namespace detail
 		}
 	}
 
-	glm::uint32 getMaskGreen(format const & Formatl)
+	inline glm::uint32 getMaskGreen(format const & Formatl)
 	{
 		switch(Formatl)
 		{
@@ -56,7 +56,7 @@ namespace detail
 		}
 	}
 
-	glm::uint32 getMaskBlue(format const & Formatl)
+	inline glm::uint32 getMaskBlue(format const & Formatl)
 	{
 		switch(Formatl)
 		{
@@ -68,7 +68,7 @@ namespace detail
 		}
 	}
 
-	glm::uint32 getMaskAlpha(format const & Formatl)
+	inline glm::uint32 getMaskAlpha(format const & Formatl)
 	{
 		switch(Formatl)
 		{

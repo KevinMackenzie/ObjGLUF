@@ -82,7 +82,7 @@ typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 // a callback does not use the parameter, it will be 0, but this does not mean 0 is an invalid parameter for callbacks
 // that use it.  Other notes: when specifying hotkeys, always use the GLFW macros for specifying them.  Consult the GLFW
 // input documentation for more information.
-void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLUFTexturePtr controltex);
+void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLuint controltex);
 
 typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
 typedef float GLUFFontSize;//this is in normalized screencoords
@@ -392,7 +392,7 @@ private:
 //--------------------------------------------------------------------------------------
 struct GLUFTextureNode
 {
-	GLUFTexturePtr m_pTextureElement;
+	GLuint m_pTextureElement;
 };
 
 //WIP, support more font options eg. stroke, italics, variable leading, etc.
@@ -475,7 +475,7 @@ public:
 	int     GetFontCount()   { return m_FontCache.size(); }
 
 	int     AddFont(GLUFFontPtr font, GLUFFontSize size, GLUF_FONT_WEIGHT weight);
-	int     AddTexture(GLUFTexturePtr texture);
+	int     AddTexture(GLuint texture);
 
 	bool    RegisterDialog(GLUFDialog* pDialog);
 	void    UnregisterDialog(GLUFDialog* pDialog);

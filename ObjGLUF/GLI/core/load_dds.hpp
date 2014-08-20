@@ -33,6 +33,16 @@
 
 namespace gli
 {
+
+	//a little treat for initializing streambuf's with existing data
+	struct MemStreamBuf : public std::streambuf
+	{
+		MemStreamBuf(char* data, std::ptrdiff_t length)
+		{
+			setg(data, data, data + length);
+		}
+	};
+
 	/// Loading a texture storage to file
 	storage load_dds(
 		char const * Filename);

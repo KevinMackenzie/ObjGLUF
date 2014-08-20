@@ -209,7 +209,7 @@ GLuint g_TextTexCoords;
 GLuint g_TextIndices;
 
 GLFWwindow* g_pGLFWWindow;
-GLUFTexturePtr g_pControlTexturePtr;
+GLuint g_pControlTexturePtr;
 int g_ControlTextureResourceManLocation = -1;
 
 const char* g_UIShaderVert =
@@ -295,7 +295,7 @@ const char* g_TextShaderFrag =
 
 
 
-void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLUFTexturePtr controltex)
+void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLuint controltex)
 {
 	g_pGLFWWindow = pInitializedGLFWWindow;
 	g_pCallback = callback;
@@ -419,7 +419,7 @@ float GLUFFont::GetStringWidthNDC(std::wstring str, GLUFFontSize fSize)
 
 bool GLUFFont::Init(char* data, uint64_t rawSize)
 {
-	MemStreamBuf buf(data, (ptrdiff_t)rawSize);
+	gli::MemStreamBuf buf(data, (ptrdiff_t)rawSize);
 
 	char *dat, *img;
 	std::istream in(&buf);
@@ -974,7 +974,9 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 	m_pManager->ApplyRenderUI();
 
-	GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
+	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
+	glActiveTexture(0);	
+	glBindTexture(GL_TEXTURE_2D, pTextureNode->m_pTextureElement);
 
 	// Render the caption if it's enabled.
 	/*if (m_bCaption)
@@ -2183,7 +2185,9 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 
 	//reenable the control texture
 	GLUFTextureNode* pTextureNode = GetTexture(0);
-	GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
+	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D, pTextureNode->m_pTextureElement);
 
 	return GR_SUCCESS;
 }
@@ -3068,6 +3072,8 @@ void GLUFDialogResourceManager::ApplyRenderUI()
 	glEnableVertexAttribArray(2);
 	GLUFSHADERMANAGER.UseProgram(g_UIProgram);
 
+	glUniform1f(m_pSamplerLocation, 0);
+
 	ApplyOrtho();
 
 	// States ???
@@ -3333,13 +3339,13 @@ int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, GLUFFontSize height, GL
 
 
 //--------------------------------------------------------------------------------------
-int GLUFDialogResourceManager::AddTexture(GLUFTexturePtr texture)
+int GLUFDialogResourceManager::AddTexture(GLuint texture)
 {
 	// See if this texture already exists
 	for (size_t i = 0; i < m_TextureCache.size(); ++i)
 	{
 		GLUFTextureNode* pTextureNode = m_TextureCache[i];
-		if (GLUFBUFFERMANAGER.CompareTextures(texture, pTextureNode->m_pTextureElement))
+		if (texture == pTextureNode->m_pTextureElement)
 		{
 			return static_cast<int>(i);
 		}

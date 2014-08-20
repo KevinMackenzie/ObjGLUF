@@ -79,8 +79,7 @@ int main(void)
 	GLUFInitOpenGLExtentions();
 
 
-	GLUFTexturePtr texPtr = GLUFBUFFERMANAGER.CreateTextureBuffer();
-	GLUFBUFFERMANAGER.LoadTextureFromFile(texPtr, L"dxutcontrolstest.dds", TFF_DDS);
+	GLuint texPtr = GLUF::LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
 	GLUFInitGui(window, MsgProc, texPtr);
 
 	resMan = new GLUFDialogResourceManager();
