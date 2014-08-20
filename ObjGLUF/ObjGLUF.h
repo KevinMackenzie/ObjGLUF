@@ -8,10 +8,14 @@
 
 #pragma warning (disable : 4251)
 
+#ifdef _WIN32
 #ifdef OBJGLUF_EXPORTS
 #define OBJGLUF_API __declspec(dllexport)
 #else
 #define OBJGLUF_API __declspec(dllimport)
+#endif
+#else
+#define OBJGLUF_API
 #endif
 
 //TODO LIST:
@@ -59,10 +63,37 @@ inline glm::vec2 AssimpToGlm(aiVector2D v)
 {
 	return glm::vec2(v.x, v.y);
 }
+inline glm::vec2 AssimpToGlm3_2(aiVector3D v)
+{
+	return glm::vec2(v.x, v.y);
+}
+inline glm::vec2* AssimpToGlm(aiVector2D* v, unsigned int count)
+{
+	glm::vec2* ret = new glm::vec2[count];
+	for(unsigned int i = 0; i < count; ++i)
+		ret[i] = AssimpToGlm(v[i]);
+	return ret;
+}
+inline glm::vec2* AssimpToGlm3_2(aiVector3D* v, unsigned int count)
+{
+	glm::vec2* ret = new glm::vec2[count];
+	for(unsigned int i = 0; i < count; ++i)
+		ret[i] = AssimpToGlm3_2(v[i]);
+	return ret;
+}
+
+
 
 inline glm::vec3 AssimpToGlm(aiVector3D v)
 {
 	return glm::vec3(v.x, v.y, v.z);
+}
+inline glm::vec3* AssimpToGlm(aiVector3D* v, unsigned int count)
+{
+	glm::vec3* ret = new glm::vec3[count];
+	for(unsigned int i = 0; i < count; ++i)
+		ret[i] = AssimpToGlm(v[i]);
+	return ret;
 }
 inline glm::vec3 AssimpToGlm(aiColor3D v)
 {
@@ -392,7 +423,7 @@ GLuint OBJGLUF_API LoadTextureFromMemory(char* data, unsigned int length, GLUFTe
 typedef signed char* GLUFBufferData;
 typedef GLuint       GLUFAttribLoc;
 
-struct GLUFVertexAttribInfo
+struct OBJGLUF_API GLUFVertexAttribInfo
 {
 	unsigned short BytesPerElement;//int would be 4
 	unsigned short ElementsPerValue;//vec4 would be 4
@@ -401,7 +432,7 @@ struct GLUFVertexAttribInfo
 };
 
 
-class GLUFVertexArrayBase
+class OBJGLUF_API GLUFVertexArrayBase
 {
 protected:
 	GLuint mVertexArrayId = 0;
@@ -429,13 +460,14 @@ public:
 	void DrawInstanced(GLuint instances);
 
 	void BufferIndices(GLuint* indices, unsigned int Count);
+	//void BufferFaces(GLuint* indices, unsigned int FaceCount);
 
-	virtual void EnableVertexAttributes() = 0;
-	virtual void DisableVertexAttributes() = 0;
+	virtual void EnableVertexAttributes();
+	virtual void DisableVertexAttributes();
 };
 
 //NOTE: this requires all data to be on four byte bounderies
-class GLUFVertexArrayAoS : public GLUFVertexArrayBase
+class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 {
 	GLuint mDataBuffer = 0;
 
@@ -453,7 +485,7 @@ public:
 };
 
 
-class GLUFVertexArraySoA : GLUFVertexArrayBase
+class OBJGLUF_API GLUFVertexArraySoA : public GLUFVertexArrayBase
 {
 protected:
 	std::vector<GLuint> mDataBuffers;
@@ -475,7 +507,7 @@ public:
 };
 
 
-typedef GLUFVertexArrayAoS GLUFVertexArray;
+typedef GLUFVertexArraySoA GLUFVertexArray;
 
 //these are preprocessors that require the differet locations for different attributes(defaults)
 #define VERTEX_ATTRIB_POSITION	0
@@ -484,3 +516,11 @@ typedef GLUFVertexArrayAoS GLUFVertexArray;
 #define VERTEX_ATTRIB_COLOR		3
 #define VERTEX_ATTRIB_TAN		4	
 #define VERTEX_ATTRIB_BITAN		5
+
+//these are premade GLUFVertexAttribInfo for the standard inputs
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribPOS;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribNORM;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribTAN;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribBITAN;

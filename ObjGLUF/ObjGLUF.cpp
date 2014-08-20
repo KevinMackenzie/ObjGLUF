@@ -11,6 +11,16 @@ GLUFErrorMethod ErrorMethod;
 //GLUFBufferManager g_BufferManager;
 GLUFShaderManager g_ShaderManager;
 
+//initialize the standard vertex attributes
+//							Name				bytes,	count,	location,	type
+const GLUFVertexAttribInfo	g_attribPOS		= { 4,		3,		0,			GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribNORM	= { 4,		3,		1,			GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV		= { 4,		2,		2,			GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR	= { 4,		4,		3,			GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		4,			GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		5,			GL_FLOAT };
+
+
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 {
 	ErrorMethod = method;
@@ -45,6 +55,7 @@ bool GLUFInit()
 		GLUF_ERROR("GLFW Initialization Failed!");
 		return false;
 	}
+
 
 	return true;
 }
@@ -1014,7 +1025,7 @@ void GLUFVertexArrayBase::RemoveVertexAttrib(GLUFAttribLoc loc)
 
 GLUFVertexAttribInfo GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttribLoc loc)
 {
-	GLUFVertexAttribInfo ret;
+	GLUFVertexAttribInfo ret = { 0, 0, 0, GL_FLOAT };
 	for (auto it : mAttribInfos)
 	{
 		if (it.VertexAttribLocation == loc)
@@ -1087,7 +1098,7 @@ void GLUFVertexArrayBase::DisableVertexAttributes()
 
 
 
-int RoundNearestMultiple(int num, int multiple)
+int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 {
 	unsigned int nearestMultiple = 0;
 	for (unsigned int i = 0; i < num; i += multiple)
@@ -1192,7 +1203,9 @@ void GLUFVertexArraySoA::BufferSubData(GLUFAttribLoc loc, GLuint VertexOffsetCou
 
 void GLUFVertexArraySoA::AddVertexAttrib(GLUFVertexAttribInfo info)
 {
-	GLUFVertexArrayBase::AddVertexAttrib(info);
+	BindVertexArray();
+
+	mAttribInfos.push_back(info);
 
 	GLuint newBuff = 0;
 	glGenBuffers(1, &newBuff);
@@ -1221,8 +1234,9 @@ void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
 void GLUFVertexArraySoA::RefreshDataBufferAttribute()
 {
 	BindVertexArray();
-	for (auto it : mAttribInfos)
+	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
 	{
-		glVertexAttribPointer(it.VertexAttribLocation, it.ElementsPerValue, it.Type, GL_FALSE, 0, nullptr);
+		glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[i]);
+		glVertexAttribPointer(mAttribInfos[i].VertexAttribLocation, mAttribInfos[i].ElementsPerValue, mAttribInfos[i].Type, GL_FALSE, 0, nullptr);
 	}
 }

@@ -1,12 +1,18 @@
-//#version 430 core
+#version 430 core
 
 // Input vertex data, different for all executions of this shader.
-//layout(location = 0) in vec3 vertexPosition_modelspace;
-//layout(location = 1) in vec3 vertexNormal_modelspace;
-//layout(location = 2) in vec2 vertexUV;
+layout(location = 0) in vec3 _Position;
+layout(location = 1) in vec3 _Normal;
+layout(location = 2) in vec2 _UV;
+
 
 // Output data ; will be interpolated for each fragment.
 //out vec2 UV;
+out VS_OUT
+{
+	vec2 uvCoord;
+} vs_out;
+
 out vec3 Position_worldspace;
 out vec3 Normal_cameraspace;
 out vec3 EyeDirection_cameraspace;
@@ -21,7 +27,12 @@ out vec3 LightDirection_cameraspace;
 //	mat4 MV;
 //	mat4 MVP;
 //};
-uniform vec3 LightPosition_worldspace;
+
+layout(location = 0) uniform mat4 M;
+layout(location = 1) uniform mat4 V;
+layout(location = 2) uniform mat4 MVP;
+
+layout(location = 3) uniform vec3 LightPosition_worldspace;
 
 void main(){
 

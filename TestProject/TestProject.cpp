@@ -23,11 +23,6 @@ static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 }
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-}
 void ErrorMethod(const char* message, const char* func, const char* file, unsigned int line)
 {
 	printf("(%s | %i): %s \n", func, line, message);
@@ -39,8 +34,9 @@ bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 {
 	if (msg == GM_KEY)
 	{
-		if (param1 == GLFW_KEY_ESCAPE && param3 == GLFW_PRESS)
-			glfwSetWindowShouldClose(window, GL_TRUE);
+		if (param1 == GLFW_KEY_ESCAPE && param3 == GLFW_RELEASE)
+			//DialogOpened = !DialogOpened;
+			dlg->SetMinimized(!dlg->GetMinimized());
 		//return true;
 	}
 
@@ -79,7 +75,7 @@ int main(void)
 	GLUFInitOpenGLExtentions();
 
 
-	GLuint texPtr = GLUF::LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
+	GLuint texPtr = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
 	GLUFInitGui(window, MsgProc, texPtr);
 
 	resMan = new GLUFDialogResourceManager();
@@ -148,6 +144,60 @@ int main(void)
 	box->AddItem(L"Item 29", nullptr);
 
 
+
+
+
+
+
+	//load from assimp
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile("suzanne.obj.model",
+		aiProcess_CalcTangentSpace |
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_SortByPType);
+
+	const aiMesh* mesh = scene->mMeshes[0];
+	GLUFVertexArray vertexData;
+
+	if (mesh->HasPositions())
+		vertexData.AddVertexAttrib(g_attribPOS);
+	if (mesh->HasNormals())
+		vertexData.AddVertexAttrib(g_attribNORM);
+	if (mesh->HasTextureCoords(0))
+		vertexData.AddVertexAttrib(g_attribUV);
+	if (!mesh->HasFaces())
+		return 1;
+
+	if (mesh->HasPositions())
+		vertexData.BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
+	if (mesh->HasNormals())
+		vertexData.BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
+	if (mesh->HasTextureCoords(0))
+		vertexData.BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+
+	std::vector<GLuint> indices;
+	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+	{
+		aiFace curr = mesh->mFaces[i];
+		indices.push_back(curr.mIndices[0]);
+		indices.push_back(curr.mIndices[1]);
+		indices.push_back(curr.mIndices[2]);
+	}
+	vertexData.BufferIndices(&indices[0], indices.size());
+
+	//load shaders
+	GLUFProgramPtr Prog;
+
+	GLUFShaderPathList paths;
+	paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER,   L"StandardShadingVert.glsl"));
+	paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"StandardShadingFrag.glsl"));
+	Prog = GLUFSHADERMANAGER.CreateProgram(paths);
+
+	//load texture
+	GLuint texture = LoadTextureFromFile(L"uvmap.dds", TFF_DDS);
+
+
 	float ellapsedTime = 0.0f;
 	float prevTime = 0.0f;
 	float currTime = 0.0f;
@@ -177,8 +227,40 @@ int main(void)
 		static const GLfloat one = 1.0f;
 
 		glClearBufferfv(GL_COLOR, 0, black);
+		
+		//dlg->OnRender(ellapsedTime);
+		
+		// Enable depth test
+		glEnable(GL_DEPTH_TEST);
+		// Accept fragment if it closer to the camera than the former one
+		glDepthFunc(GL_LESS);
 
-		dlg->OnRender(ellapsedTime);
+		// Cull triangles which normal is not towards the camera
+		glEnable(GL_CULL_FACE);
+
+		GLUFSHADERMANAGER.UseProgram(Prog);
+		glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(50), ratio, 0.1f, 1000.0f);
+		glm::mat4 ViewMatrix = glm::mat4();
+		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
+		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+		// Send our transformation to the currently bound shader, 
+		// in the "MVP" uniform
+		glUniformMatrix4fv(2, 1, GL_FALSE, &MVP[0][0]);
+		glUniformMatrix4fv(0, 1, GL_FALSE, &ModelMatrix[0][0]);
+		glUniformMatrix4fv(1, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+		glm::vec3 lightPos = glm::vec3(4, 4, 4);
+		glUniform3f(3, lightPos.x, lightPos.y, lightPos.z);
+
+		// Bind our texture in Texture Unit 0
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		// Set our "myTextureSampler" sampler to user Texture Unit 0
+		glUniform1i(5, 0);
+
+		vertexData.Draw();
+
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -187,12 +269,10 @@ int main(void)
 		//prevTime = currTime;
 
 	} // Check if the ESC key was pressed or the window was closed
-	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-	glfwWindowShouldClose(window) == 0);
+	while (glfwWindowShouldClose(window) == 0);
 
 
 	glfwDestroyWindow(window);
-	glfwTerminate();
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();

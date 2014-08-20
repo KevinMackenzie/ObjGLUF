@@ -1,4 +1,4 @@
-//#version 430 core
+#version 430 core
 
 // Interpolated values from the vertex shaders
 //in vec2 UV;
@@ -7,13 +7,18 @@ in vec3 Normal_cameraspace;
 in vec3 EyeDirection_cameraspace;
 in vec3 LightDirection_cameraspace;
 
+in VS_OUT
+{
+	vec2 uvCoord;
+} fs_in;
+
 // Ouput data
-//out vec3 color;
+out vec4 _Color;
 
 // Values that stay constant for the whole mesh.
-//layout(location = 5) uniform sampler2D myTextureSampler;
+layout(location = 5) uniform sampler2D TextureSampler;
 //uniform mat4 MV;
-uniform vec3 LightPosition_worldspace;
+layout(location = 3) uniform vec3 LightPosition_worldspace;
 
 void main(){
 
@@ -58,5 +63,6 @@ void main(){
 		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance) +
 		// Specular : reflective highlight, like a mirror
 		MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha,5) / (distance*distance), 1.0);
-
+	
+	//_Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }
