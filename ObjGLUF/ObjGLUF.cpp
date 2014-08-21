@@ -13,13 +13,27 @@ GLUFErrorMethod ErrorMethod;
 GLUFShaderManager g_ShaderManager;
 
 //initialize the standard vertex attributes
-//							Name				bytes,	count,	location,	type
-const GLUFVertexAttribInfo	g_attribPOS		= { 4,		3,		0,			GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribNORM	= { 4,		3,		1,			GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV		= { 4,		2,		2,			GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR	= { 4,		4,		3,			GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		4,			GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		5,			GL_FLOAT };
+//							Name				bytes,	count,	location,				type
+const GLUFVertexAttribInfo	g_attribPOS		= { 4,		3,		VERTEX_ATTRIB_POSITION,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribNORM	= { 4,		3,		VERTEX_ATTRIB_NORMAL,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV0		= { 4,		2,		VERTEX_ATTRIB_UV0,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV1		= { 4,		2,		VERTEX_ATTRIB_UV1,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV2		= { 4,		2,      VERTEX_ATTRIB_UV2,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV3		= { 4,		2,		VERTEX_ATTRIB_UV3,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV4		= { 4,		2,		VERTEX_ATTRIB_UV4,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV5		= { 4,		2,		VERTEX_ATTRIB_UV5,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV6		= { 4,		2,		VERTEX_ATTRIB_UV6,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV7		= { 4,		2,		VERTEX_ATTRIB_UV7,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR0	= { 4,		4,		VERTEX_ATTRIB_COLOR0,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR1	= { 4,		4,		VERTEX_ATTRIB_COLOR1,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR2	= { 4,		4,		VERTEX_ATTRIB_COLOR2,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR3	= { 4,		4,		VERTEX_ATTRIB_COLOR3,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR4	= { 4,		4,		VERTEX_ATTRIB_COLOR4,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR5	= { 4,		4,		VERTEX_ATTRIB_COLOR5,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR6	= { 4,		4,		VERTEX_ATTRIB_COLOR6,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR7	= { 4,		4,		VERTEX_ATTRIB_COLOR7,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		VERTEX_ATTRIB_TAN,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		VERTEX_ATTRIB_BITAN,	GL_FLOAT };
 
 
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
@@ -1296,14 +1310,43 @@ GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int mes
 	if (mesh->HasNormals())
 		vertexData->AddVertexAttrib(g_attribNORM);
 	if (mesh->HasTextureCoords(0))
-		vertexData->AddVertexAttrib(g_attribUV);
+		vertexData->AddVertexAttrib(g_attribUV0);
+	if (mesh->HasTextureCoords(1))
+		vertexData->AddVertexAttrib(g_attribUV1);
+	if (mesh->HasTextureCoords(2))
+		vertexData->AddVertexAttrib(g_attribUV2);
+	if (mesh->HasTextureCoords(3))
+		vertexData->AddVertexAttrib(g_attribUV3);
+	if (mesh->HasTextureCoords(4))
+		vertexData->AddVertexAttrib(g_attribUV4);
+	if (mesh->HasTextureCoords(5))
+		vertexData->AddVertexAttrib(g_attribUV5);
+	if (mesh->HasTextureCoords(6))
+		vertexData->AddVertexAttrib(g_attribUV6);
+	if (mesh->HasTextureCoords(7))
+		vertexData->AddVertexAttrib(g_attribUV7);
+
+	if (mesh->HasVertexColors(0))
+		vertexData->AddVertexAttrib(g_attribCOLOR0);
+	if (mesh->HasVertexColors(1))
+		vertexData->AddVertexAttrib(g_attribCOLOR1);
+	if (mesh->HasVertexColors(2))
+		vertexData->AddVertexAttrib(g_attribCOLOR2);
+	if (mesh->HasVertexColors(3))
+		vertexData->AddVertexAttrib(g_attribCOLOR3);
+	if (mesh->HasVertexColors(4))
+		vertexData->AddVertexAttrib(g_attribCOLOR4);
+	if (mesh->HasVertexColors(5))
+		vertexData->AddVertexAttrib(g_attribCOLOR5);
+	if (mesh->HasVertexColors(6))
+		vertexData->AddVertexAttrib(g_attribCOLOR6);
+	if (mesh->HasVertexColors(7))
+		vertexData->AddVertexAttrib(g_attribCOLOR7);
 	if (mesh->HasTangentsAndBitangents())
 	{
 		vertexData->AddVertexAttrib(g_attribTAN);
 		vertexData->AddVertexAttrib(g_attribBITAN);
 	}
-	if (mesh->HasVertexColors(0))
-		vertexData->AddVertexAttrib(g_attribCOLOR);
 
 
 	if (mesh->HasPositions())
@@ -1311,14 +1354,43 @@ GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int mes
 	if (mesh->HasNormals())
 		vertexData->BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
 	if (mesh->HasTextureCoords(0))
-		vertexData->BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+		vertexData->BufferData(VERTEX_ATTRIB_UV0, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(1))
+		vertexData->BufferData(VERTEX_ATTRIB_UV1, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(2))
+		vertexData->BufferData(VERTEX_ATTRIB_UV2, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(3))
+		vertexData->BufferData(VERTEX_ATTRIB_UV3, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(4))
+		vertexData->BufferData(VERTEX_ATTRIB_UV4, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(5))
+		vertexData->BufferData(VERTEX_ATTRIB_UV5, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(6))
+		vertexData->BufferData(VERTEX_ATTRIB_UV6, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(7))
+		vertexData->BufferData(VERTEX_ATTRIB_UV7, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
+
+	if (mesh->HasVertexColors(0))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR0, mesh->mNumVertices, mesh->mColors[0]);
+	if (mesh->HasVertexColors(1))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR1, mesh->mNumVertices, mesh->mColors[1]);
+	if (mesh->HasVertexColors(2))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR2, mesh->mNumVertices, mesh->mColors[2]);
+	if (mesh->HasVertexColors(3))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR3, mesh->mNumVertices, mesh->mColors[3]);
+	if (mesh->HasVertexColors(4))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR4, mesh->mNumVertices, mesh->mColors[4]);
+	if (mesh->HasVertexColors(5))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR5, mesh->mNumVertices, mesh->mColors[5]);
+	if (mesh->HasVertexColors(6))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR6, mesh->mNumVertices, mesh->mColors[6]);
+	if (mesh->HasVertexColors(7))
+		vertexData->BufferData(VERTEX_ATTRIB_COLOR7, mesh->mNumVertices, mesh->mColors[7]);
 	if (mesh->HasTangentsAndBitangents())
 	{
 		vertexData->BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
 		vertexData->BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
 	}
-	if (mesh->HasVertexColors(0))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
 
 	std::vector<GLuint> indices;
 	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)

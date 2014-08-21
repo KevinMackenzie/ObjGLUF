@@ -81,24 +81,14 @@ int main(void)
 	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
 	dlg->SetCaptionText(L"Caption");
 	dlg->SetCaptionHeight(0.03625f);
+	dlg->LockPosition(false);
+	dlg->EnableCaption(true);
 	dlg->SetSize(0.8f, 0.8f);
 	dlg->SetLocation(0.1f, 0.1f);
-	dlg->SetBackgroundColors(Color(0, 128, 0, 255));
+	dlg->SetBackgroundColors(Color(0, 128, 0, 128));
 	dlg->EnableKeyboardInput(true);
 
 	dlg->AddButton(0, L"Button", 0.05f, 0.01f, 0.125f, 0.03625f);
-
-	/*std::ifstream t("text.txt");
-	std::string str;
-
-	t.seekg(0, std::ios::end);
-	str.reserve(t.tellg());
-	t.seekg(0, std::ios::beg);
-
-	str.assign((std::istreambuf_iterator<char>(t)),
-		std::istreambuf_iterator<char>());
-
-	dlg->AddEditBox(1, str, 0.1f, 0.1f, 0.5f, 0.5f);*/
 
 	GLUFListBox* box;
 	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);
@@ -154,48 +144,6 @@ int main(void)
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType);
 
-	/*const aiMesh* mesh = scene->mMeshes[0];
-
-	GLUFVertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
-
-	if (mesh->HasPositions())
-		vertexData.AddVertexAttrib(g_attribPOS);
-	if (mesh->HasNormals())
-		vertexData.AddVertexAttrib(g_attribNORM);
-	if (mesh->HasTextureCoords(0))
-		vertexData.AddVertexAttrib(g_attribUV);
-	if (mesh->HasTangentsAndBitangents())
-	{
-		vertexData.AddVertexAttrib(g_attribTAN);
-		vertexData.AddVertexAttrib(g_attribBITAN);
-	}
-	if (mesh->HasVertexColors(0))
-		vertexData.AddVertexAttrib(g_attribCOLOR);
-
-
-	if (mesh->HasPositions())
-		vertexData.BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
-	if (mesh->HasNormals())
-		vertexData.BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
-	if (mesh->HasTextureCoords(0))
-		vertexData.BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
-	if (mesh->HasTangentsAndBitangents())
-	{
-		vertexData.BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
-		vertexData.BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
-	}
-	if (mesh->HasVertexColors(0))
-		vertexData.BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
-
-	std::vector<GLuint> indices;
-	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
-	{
-		aiFace curr = mesh->mFaces[i];
-		indices.push_back(curr.mIndices[0]);
-		indices.push_back(curr.mIndices[1]);
-		indices.push_back(curr.mIndices[2]);
-	}
-	vertexData.BufferIndices(&indices[0], indices.size());*/
 
 	GLUFVertexArray* vertexData = LoadVertexArrayFromScene(scene);
 	if (!vertexData)
@@ -243,7 +191,6 @@ int main(void)
 
 		glClearBufferfv(GL_COLOR, 0, black);
 		
-		//dlg->OnRender(ellapsedTime);
 		
 		// Enable depth test
 		glEnable(GL_DEPTH_TEST);
@@ -276,6 +223,8 @@ int main(void)
 
 		vertexData->Draw();
 
+		//render dialog last(overlay)
+		dlg->OnRender(ellapsedTime);
 
 		// Swap buffers
 		glfwSwapBuffers(window);

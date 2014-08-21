@@ -1,12 +1,6 @@
 #pragma once
 
 #include "ObjGLUF.h"
-//#include <Dimm.h>
-//#include "usp10NoWindows.h"
-
-//TODO: create MsgProcs for all Controls
-//TODO: change the whole coordinate system to use a normalized value (origin at bottom left)
-//					0,0 is origin, and 1, 1, is upper right.  Just like texture coordinates
 
 //--------------------------------------------------------------------------------------
 // Macro definitions
@@ -263,7 +257,7 @@ public:
 	// Render helpers
 	GLUFResult          DrawRect(GLUFRect pGLUFRect, Color color);
 	GLUFResult          DrawPolyLine(GLUFPoint* apPoints, unsigned int nNumPoints, Color color);
-	GLUFResult          DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth);
+	GLUFResult          DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth, bool textured = true);
 	GLUFResult          CalcTextRect(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, int nCount = -1);
 	GLUFResult          DrawText(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow = false,
 		bool bCenter = false, bool bHardRect = false);
@@ -284,6 +278,8 @@ public:
 	void                SetSize(float width, float height)			{ m_width = width; m_height = height; }
 	float               GetWidth()									{ return m_width; }
 	float               GetHeight()									{ return m_height; }
+
+	void LockPosition(bool lock = true){ m_bPosLocked = lock; }
 
 	static void			SetRefreshTime(float fTime)					{ s_fTimeRefresh = fTime;																	}
 
@@ -325,7 +321,15 @@ public:
 	GLUFPoint m_MousePosition;
 	GLUFPoint m_MousePositionDialogSpace;
 
+
+	GLUFPoint m_MousePositionOld;
+
 private:
+	bool firstTime = true;
+
+	bool m_bPosLocked = true;
+	bool m_bDragged = false;
+
 	int m_nDefaultControlID;
 
 	//HRESULT             OnRender9(float fElapsedTime);
@@ -453,12 +457,10 @@ public:
 	//void    StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 	//void    RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 
-	//We openGL guys don't need any Direct3D crap
-
 	void    ApplyRenderUI();
 	void	ApplyRenderUIUntex();
 	void	BeginSprites();
-	void	EndSprites(bool textured = true);
+	void	EndSprites(bool textured);
 	/*ID3D11Device* GetD3D11Device()
 	{
 	return m_pd3d11Device;

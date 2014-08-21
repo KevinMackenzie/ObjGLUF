@@ -841,6 +841,8 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 	//	L"To fix hook up GLUFDialogResourceManager to device callbacks.  See comments for details");
 	//no need for "devices", this is all handled by GLFW
 
+	glBindVertexArray(m_pManager->m_pVBScreenQuadVAO);
+
 	// See if the dialog needs to be refreshed
 	if (m_fTimeLastRefresh < s_fTimeRefresh)
 	{
@@ -854,10 +856,10 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 		return GR_SUCCESS;
 
 	// Enable depth test
-	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 
 	// Accept fragment if it closer OR THE SAME ( this works nicely with dialog elements )
-	glDepthFunc(GL_LEQUAL);
+	//glDepthFunc(GL_LEQUAL);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -972,26 +974,12 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 	m_pManager->BeginSprites();
 	BeginText(m_pManager->GetOrthoMatrix());
 
-	m_pManager->ApplyRenderUI();
 
 	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
-	glActiveTexture(0);	
-	glBindTexture(GL_TEXTURE_2D, pTextureNode->m_pTextureElement);
 
-	// Render the caption if it's enabled.
-	/*if (m_bCaption)
-	{
-		// DrawSprite will offset the rect down by
-		// m_nCaptionHeight, so adjust the rect higher
-		// here to negate the effect.
-		GLUFRect rc = { 0, m_nCaptionHeight, m_width, 0 };
-		DrawSprite(&m_CapElement, rc, -0.99f);
-		rc.left += 5; // Make a left margin
-		if (m_bMinimized)
-			DrawText("(Minimized)", &m_CapElement, rc, true);
-		DrawText(m_wszCaption, &m_CapElement, rc, true);
-	}*/
 
+
+	m_pManager->ApplyRenderUI();
 	// If the dialog is minimized, skip rendering
 	// its controls.
 	if (!m_bMinimized)
@@ -1007,6 +995,30 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 		if (s_pControlFocus && s_pControlFocus->m_pDialog == this)
 			s_pControlFocus->Render(fElapsedTime);
+	}
+
+	// Render the caption if it's enabled.
+	if (m_bCaption)
+	{
+		// DrawSprite will offset the rect down by
+		// m_nCaptionHeight, so adjust the rect higher
+		// here to negate the effect.
+
+		m_CapElement.TextureColor.SetCurrent(GLUF_STATE_NORMAL);
+		m_CapElement.FontColor.SetCurrent(GLUF_STATE_NORMAL);
+		GLUFRect rc = { 0, m_height, m_width, m_height - m_nCaptionHeight };
+		DrawSprite(&m_CapElement, rc, -0.99f, false);
+
+		rc.left += 5 / m_pManager->GetWindowSize().x; // Make a left margin
+
+		if (m_bMinimized)
+		{
+			std::wstring str = m_wszCaption.c_str();
+			str += L"(Minimized)";
+			DrawText(str, &m_CapElement, rc, false);
+		}
+		else
+			DrawText(m_wszCaption, &m_CapElement, rc, false);
 	}
 
 	// End sprites
@@ -1130,6 +1142,11 @@ GLUFTextureNode* GLUFDialog::GetTexture(unsigned int index) const
 
 bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
+	if (firstTime)
+		firstTime = false;
+	else
+		m_MousePositionOld = m_MousePosition;
+
 	//first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
 	double x, y;
 	glfwGetCursorPos(g_pGLFWWindow, &x, &y);
@@ -1165,6 +1182,9 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 	m_MousePositionDialogSpace.x = m_MousePosition.x - m_x;
 	m_MousePositionDialogSpace.y = m_MousePosition.y - m_y;
 
+	//if (m_bCaption)
+	//	m_MousePositionDialogSpace.y -= m_nCaptionHeight;
+
 	//mousePos = GLUFMultPoints(mousePos, m_pManager->GetOrthoPoint());
 
 	bool bHandled = false;
@@ -1192,10 +1212,11 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 			((param2 == GLFW_PRESS) == true) )
 		{
 
-			if (m_MousePosition.x >= m_x && m_MousePosition.x < m_x + m_width &&
-				m_MousePosition.y >= m_y && m_MousePosition.y < m_y + m_nCaptionHeight)
+			if (m_MousePositionDialogSpace.x >= 0 && m_MousePositionDialogSpace.x < m_width &&
+				m_MousePositionDialogSpace.y >= m_height - m_nCaptionHeight && m_MousePositionDialogSpace.y < m_height)
 			{
 				m_bDrag = true;
+				m_bDragged = false;
 				//SetCapture(GLUFGetHWND());
 				return true;
 			}
@@ -1205,13 +1226,47 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 				(param2 == GLFW_RELEASE) == true && 
 				(m_bDrag))
 		{
-			if (m_MousePosition.x >= m_x && m_MousePosition.x < m_x + m_width &&
-				m_MousePosition.y >= m_y && m_MousePosition.y < m_y + m_nCaptionHeight)
+			if (m_MousePositionDialogSpace.x >= 0 && m_MousePositionDialogSpace.x < m_width &&
+				m_MousePositionDialogSpace.y >= m_height - m_nCaptionHeight && m_MousePositionDialogSpace.y < m_height)
 			{
 				//ReleaseCapture();
 				m_bDrag = false;
-				m_bMinimized = !m_bMinimized;
+
+				//only minimize if the dialog WAS NOT moved
+				if (!m_bDragged)
+				{
+					m_bMinimized = !m_bMinimized;
+				}
+
 				return true;
+			}
+		}
+		else if ((msg == GM_CURSOR_POS))
+		{
+			//is it over the caption?
+			if (m_bCaption && glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && !m_bPosLocked)
+			{
+				if (m_bDrag)
+				{
+					//if (m_MousePosition.x < 0.0f || m_MousePosition.y < 0.0f)
+					//{
+					//	glfwSetCursorPos(g_pGLFWWindow, (m_MousePosition.x < 0.0f) ? 0 : param1, (m_MousePosition.y < 0.0f) ? param2 : 0);
+					//}
+
+					GLUFPoint delta = m_MousePosition - m_MousePositionOld;
+					GLUFPoint orthPt = m_pManager->GetOrthoPoint();
+
+					//this accounts for non-square windows
+					m_y = std::clamp(delta.y + m_y, (1.0f - orthPt.y) / 2 - m_height + m_nCaptionHeight, orthPt.y - m_height + (1.0f - orthPt.y) / 2);
+					m_x = std::clamp(delta.x + m_x, (1.0f - orthPt.x) / 2, orthPt.x - m_width + (1.0f - orthPt.x) / 2);
+
+					//m_x += delta.x;
+					//m_y += delta.y;
+
+					m_bDragged = true;
+
+					return true;
+				}
 			}
 		}
 	}
@@ -1483,6 +1538,7 @@ void GLUFDialog::OnMouseUp(GLUFPoint pt)
 //--------------------------------------------------------------------------------------
 void GLUFDialog::OnMouseMove(GLUFPoint pt)
 {
+
 	// Figure out which control the mouse is over now
 	GLUFControl* pControl = GetControlAtPoint(pt);
 
@@ -1997,7 +2053,7 @@ GLUFResult GLUFDialog::DrawRect(GLUFRect pRect, Color color)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth)
+GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth, bool textured)
 {
 	// No need to draw fully transparent layers
 	//if (pElement->TextureColor.Current.w == 0)
@@ -2022,7 +2078,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 
 	// If caption is enabled, offset the Y position by its height.
 	//if (m_bCaption)
-	//	GLUFOffsetRect(rcScreen, 0, -m_nCaptionHeight);
+	//	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
 
 	rcScreen = GLUFScreenToClipspace(rcScreen);
 
@@ -2126,7 +2182,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 
 	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
 	// draw a sprite every time to keep the order correct between sprites and text.
-	m_pManager->EndSprites();
+	m_pManager->EndSprites(textured);
 
 	return GR_SUCCESS;
 }
@@ -2161,8 +2217,8 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 	GLUFOffsetRect(rcScreen, m_x, m_y);
 
 	// If caption is enabled, offset the Y position by its height.
-	if (m_bCaption)
-		GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
+	//if (m_bCaption)
+	//	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
 
 	//float fBBWidth = (float)m_pManager->m_nBackBufferWidth;
 	//float fBBHeight = (float)m_pManager->m_nBackBufferHeight;
@@ -2186,8 +2242,6 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 	//reenable the control texture
 	GLUFTextureNode* pTextureNode = GetTexture(0);
 	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D, pTextureNode->m_pTextureElement);
 
 	return GR_SUCCESS;
 }
@@ -2407,12 +2461,12 @@ void GLUFDialog::InitDefaultElements()
 	m_CapElement.SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
 	m_CapElement.SetTexture(0, &rcTexture);
-	m_CapElement.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 255);
-	m_CapElement.FontColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 255);
-	m_CapElement.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_VCENTER);
+	m_CapElement.TextureColor.Init(Color(255, 255, 255, 255));
+	m_CapElement.FontColor.Init(Color(0, 0, 0, 255));
+	m_CapElement.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
-	m_CapElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
-	m_CapElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+	//m_CapElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+	//m_CapElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
 
 	//Element.FontColor.States[GLUF_STATE_NORMAL]		= Color(0, 0, 0, 255);
@@ -2742,49 +2796,48 @@ m_SpriteBufferColors(0),
 m_SpriteBufferTexCoords(0),
 m_SpriteBufferIndices(0)
 {
-	glGenVertexArrays(1, &m_pVBScreenQuadVAO);
-	glBindVertexArray(m_pVBScreenQuadVAO);
-	glGenBuffers(1, &m_pVBScreenQuadIndicies);
-	glGenBuffers(1, &m_pVBScreenQuadPositions);
-	glGenBuffers(1, &m_pVBScreenQuadColor);
-	glGenBuffers(1, &m_pVBScreenQuadUVs);
+	glGenVertexArrayBindVertexArray(&m_pVBScreenQuadVAO);
+	//glGenBuffers(1, &m_pVBScreenQuadIndicies);
+	//glGenBuffers(1, &m_pVBScreenQuadPositions);
+	//glGenBuffers(1, &m_pVBScreenQuadColor);
+	//glGenBuffers(1, &m_pVBScreenQuadUVs);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_pVBScreenQuadPositions);
+	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadPositions);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_pVBScreenQuadColor);
+	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadColor);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_pVBScreenQuadUVs);
+	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadUVs);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	//this is static
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pVBScreenQuadIndicies);
+	glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
 
 	GLubyte indices[6] = {	2, 1, 0, 
 							2, 3, 1};
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
 
 
-	glGenVertexArrays(1, &m_SpriteBufferVao);
-	glBindVertexArray(m_SpriteBufferVao);
+	glGenVertexArrayBindVertexArray(&m_SpriteBufferVao);
+	//glBindVertexArray(m_SpriteBufferVao);
 
-	glGenBuffers(1, &m_SpriteBufferPos);
-	glGenBuffers(1, &m_SpriteBufferColors);
-	glGenBuffers(1, &m_SpriteBufferTexCoords);
-	glGenBuffers(1, &m_SpriteBufferIndices);
+	//glGenBuffers(1, &m_SpriteBufferPos);
+	//glGenBuffers(1, &m_SpriteBufferColors);
+	//glGenBuffers(1, &m_SpriteBufferTexCoords);
+	//glGenBuffers(1, &m_SpriteBufferIndices);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
+	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_SpriteBufferPos);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
+	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_SpriteBufferColors);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
+	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_SpriteBufferTexCoords);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	//this is static
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_SpriteBufferIndices);
+	glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
 
 	GLubyte indicesS[6] = { 2, 1, 0,
 							2, 3, 1 };
@@ -3096,7 +3149,7 @@ void GLUFDialogResourceManager::ApplyRenderUIUntex()
 	//pd3dImmediateContext->PSSetShader(m_pPSRenderUIUntex11, nullptr, 0);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);//just in case
+	glDisableVertexAttribArray(2);
 	GLUFSHADERMANAGER.UseProgram(g_UIProgramUntex);
 	
 	ApplyOrtho();
@@ -3222,10 +3275,10 @@ void GLUFDialogResourceManager::EndSprites(bool textured)
 	{
 		ApplyRenderUIUntex();
 	}
-	/*
+	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, GLUFBUFFERMANAGER.GetTextureBufferId(g_pControlTexturePtr));
-	glUniform1f(m_pSamplerLocation, 0);*/
+	glBindTexture(GL_TEXTURE_2D, g_pControlTexturePtr);
+	glUniform1f(m_pSamplerLocation, 0);
 
 	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
@@ -8408,7 +8461,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 	}
 
 	//glBegin(GL_QUADS);
-	float z = GLUF_NEAR_BUTTON_DEPTH + 0.00005f;
+	float z = GLUF_NEAR_BUTTON_DEPTH;
 	for (auto ch : strText)
 	{
 		float widthConverted = (font.m_pFontType->CellX * tmpSize) / font.m_pFontType->CellY;
@@ -8487,7 +8540,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 		CurX += ((float)font.m_pFontType->Width[ch] * tmpSize) / font.m_pFontType->CellY;
 		//CurX += 0.05;
 
-		z += 0.00005f;//to solve the depth problem
+		//z += 0.00005f;//to solve the depth problem
 		
 	}
 	//glEnd();

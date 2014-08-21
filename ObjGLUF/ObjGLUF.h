@@ -113,10 +113,21 @@ inline glm::vec4 AssimpToGlm(aiColor4D v)
 
 #endif
 
+
+namespace std
+{
+	//This is a very useful function that is not in the standard libraries
+	template<class _Ty> inline
+	const _Ty& (clamp)(const _Ty& _Value, const _Ty& _Min, const _Ty& _Max)
+	{
+		return std::min(std::max(_Value, _Min), _Max);
+	}
+}
+
 //added openGL functionality
 
 //This first generates a single buffer, then immediatly binds it
-#define glGenBufferBindBuffer(buffer, target) glGenBuffers(1, buffer); glBindBuffer(target, *buffer)
+#define glGenBufferBindBuffer(target, buffer) glGenBuffers(1, buffer); glBindBuffer(target, *buffer)
 
 //This first generates a single vertex array, then immediatly binds it
 #define glGenVertexArrayBindVertexArray(vertexArray) glGenVertexArrays(1, vertexArray); glBindVertexArray(*vertexArray)
@@ -222,6 +233,11 @@ struct OBJGLUF_API GLUFPoint
 	GLUFPoint(float val1, float val2) : x(val1), y(val2){}
 	GLUFPoint() : x(0), y(0){}
 };
+
+inline GLUFPoint operator -(const GLUFPoint& pt0, const GLUFPoint& pt1)
+{
+	return { pt0.x - pt1.x, pt0.y - pt1.y };
+}
 
 OBJGLUF_API bool		GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
 OBJGLUF_API void		GLUFSetRectEmpty(GLUFRect& rect);
@@ -544,7 +560,6 @@ public:
 typedef GLUFVertexArraySoA GLUFVertexArray;
 
 #ifdef USING_ASSIMP
-//NOTE: this only supports single color/uv channels
 GLUFVertexArray               OBJGLUF_API *LoadVertexArrayFromScene(const aiScene* scene, unsigned int meshNum = 0);
 std::vector<GLUFVertexArray*> OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, unsigned int numMeshes);
 #endif
@@ -552,15 +567,45 @@ std::vector<GLUFVertexArray*> OBJGLUF_API LoadVertexArraysFromScene(const aiScen
 //these are preprocessors that require the differet locations for different attributes(defaults)
 #define VERTEX_ATTRIB_POSITION	0
 #define VERTEX_ATTRIB_NORMAL	1 
-#define VERTEX_ATTRIB_UV		2
-#define VERTEX_ATTRIB_COLOR		3
+#define VERTEX_ATTRIB_UV0		2
+#define VERTEX_ATTRIB_COLOR0	3
 #define VERTEX_ATTRIB_TAN		4	
 #define VERTEX_ATTRIB_BITAN		5
+
+#define VERTEX_ATTRIB_UV1       10
+#define VERTEX_ATTRIB_UV2       11
+#define VERTEX_ATTRIB_UV3       12
+#define VERTEX_ATTRIB_UV4       13
+#define VERTEX_ATTRIB_UV5       14
+#define VERTEX_ATTRIB_UV6       15
+#define VERTEX_ATTRIB_UV7       16
+
+#define VERTEX_ATTRIB_COLOR1    17
+#define VERTEX_ATTRIB_COLOR2    18
+#define VERTEX_ATTRIB_COLOR3    19
+#define VERTEX_ATTRIB_COLOR4    20
+#define VERTEX_ATTRIB_COLOR5    21
+#define VERTEX_ATTRIB_COLOR6    22
+#define VERTEX_ATTRIB_COLOR7    23
 
 //these are premade GLUFVertexAttribInfo for the standard inputs
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribPOS;
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribNORM;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV0;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV1;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV2;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV3;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV4;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV5;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV6;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV7;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR0;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR1;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR2;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR3;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR4;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR5;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR6;
+extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR7;
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribTAN;
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribBITAN;
