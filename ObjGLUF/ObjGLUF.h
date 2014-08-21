@@ -196,6 +196,8 @@ OBJGLUF_API bool GLUFInit();
 //call this after calling glfwMakeContextCurrent on the window
 OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
+OBJGLUF_API void GLUFTerminate();
+
 
 //this loads an entire file into a binary array, path is input, rawSize and rawData are outputs
 OBJGLUF_API char* GLUFLoadFileIntoMemory(const wchar_t* path, unsigned long* rawSize);

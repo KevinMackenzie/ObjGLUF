@@ -58,8 +58,10 @@ int main(void)
 	GLUFInit();
 
 
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
+	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+
 	window = glfwCreateWindow(800, 800, "Simple example", NULL, NULL);
 	if (!window)
 	{
@@ -79,7 +81,7 @@ int main(void)
 	dlg = new GLUFDialog();
 	dlg->Init(resMan);
 	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
-	dlg->SetCaptionText(L"Caption");
+	dlg->SetCaptionText(L"Iaption");
 	dlg->SetCaptionHeight(0.03625f);
 	dlg->LockPosition(false);
 	dlg->EnableCaption(true);
@@ -240,6 +242,8 @@ int main(void)
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
+
+	GLUFTerminate();
 
 	return 0;
 }

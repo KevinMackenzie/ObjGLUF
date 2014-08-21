@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "GLUFGui.h"
-#include "CBFG/BitmapFontClass.h"
+//#include "CBFG/BitmapFontClass.h"
+#include <ft2build.h> 
+#include FT_FREETYPE_H
 
 #include <algorithm>
 #include <stdio.h>
@@ -23,6 +25,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//this defines the space in pixels between glyphs in the font
+#define GLYPH_PADDING 5
 
 // Minimum scroll bar thumb size
 #define SCROLLBAR_MINTHUMBSIZE 0.005f
@@ -198,6 +203,10 @@ public:
 // Initialization and globals
 //======================================================================================
 
+FT_Library g_FtLib;
+
+unsigned short g_WndWidth = 0;
+unsigned short g_WndHeight = 0;
 
 GLUFProgramPtr g_UIProgram;
 GLUFProgramPtr g_UIProgramUntex;
@@ -295,7 +304,7 @@ const char* g_TextShaderFrag =
 
 
 
-void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLuint controltex)
+bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLuint controltex)
 {
 	g_pGLFWWindow = pInitializedGLFWWindow;
 	g_pCallback = callback;
@@ -355,6 +364,22 @@ void GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 
 	//load the texture for the controls
 	g_pControlTexturePtr = controltex;
+
+
+	//initialize the freetype library.
+	FT_Error err = FT_Init_FreeType(&g_FtLib);
+	if (err)
+	{
+		GLUF_ERROR("Failed to Initialize the Freetype Library!");
+		return false;
+	}
+
+	int w, h;
+	glfwGetWindowSize(g_pGLFWWindow, &w, &h);
+	g_WndHeight = h;
+	g_WndWidth = w;
+
+	return true;
 }
 
 
@@ -365,59 +390,266 @@ GLUFResult GLUFTrace(const char* file, const char* function, unsigned long lineN
 	return value;
 }
 
+void GLUFTerminate()
+{
+	FT_Done_FreeType(g_FtLib);
+}
+
 
 //======================================================================================
 // GLUFFont
 //======================================================================================
 
-typedef struct
+/*typedef struct
 {
 	unsigned char ID1, ID2;
 	unsigned char BPP;
 	int ImageWidth, ImageHeight, CellWidth, CellHeight;
 	unsigned char StartPoint;
-}GLUFFontFileHeader;
+}GLUFFontFileHeader;*/
 
+struct character_info 
+{
+	float ax; // advance.x
+	float ay; // advance.y
+
+	float bw; // bitmap.width;
+	float bh; // bitmap.rows;
+
+	float bl; // bitmap_left;
+	float bt; // bitmap_top;
+
+	float tx; // x offset of glyph in texture coordinates
+};
+
+//TODO: setup with languages
 class GLUFFont
 {	
 public:
-	int CellX, CellY, YOffset, RowPitch;
+	/*int CellX, CellY, YOffset, RowPitch;
 	char Base;
 	char Width[256];
 	GLuint TexID;
 	float RowFactor, ColFactor;
-	int RenderStyle;
+	int RenderStyle;*/
 
-	float GetCharWidth(char ch, GLUFFontSize fSize);
-	float GetStringWidthNDC(std::wstring str, GLUFFontSize fSize);//this just automatically conversts the output to NDC space
-	float GetStringWidth(std::wstring str, GLUFFontSize fSize);
-	bool Init(char* data, uint64_t rawSize);
+
+	FT_Face mFtFont;
+	GLUFFontSize mHeight;
+
+	int mAtlasHeight = 0;//pixels
+	int mAtlasWidth = 0;//pixels
+
+	GLuint mTexId = 0;
+
+	//unsigned int* mTexOffsets;
+	//unsigned int* mAdvance
+
+	character_info* mCharAtlas;
+
+	unsigned int mCharacterOffset = 32;
+	unsigned int mCharacterEnd = 128;
+
+	//GLfloat GetTextureXOffset(wchar_t ch);
+	float GetCharWidth(wchar_t ch);
+	float GetCharHeight(wchar_t ch);
+	float GetStringWidthNDC(std::wstring str);//this just automatically conversts the output to NDC space
+	float GetStringWidth(std::wstring str);
+	bool Init(void* data, uint64_t rawSize, GLUFFontSize fontHeight);
+
+	//this is called when the window is resized
+	void Refresh();
+
+	GLUFRect GetCharRect(wchar_t ch);
+	GLUFRect GetCharTexRect(wchar_t ch);
 
 	//font properties
 
 };
 
-float GLUFFont::GetCharWidth(char ch, GLUFFontSize fSize)
+GLUFFontSize GLUFGetFontHeight(GLUFFontPtr font)
 {
-	return ((float)Width[ch] * fSize) / CellY;
+	return font->mHeight;
 }
 
-float GLUFFont::GetStringWidth(std::wstring str, GLUFFontSize fSize)
+void GLUFFont::Refresh()
+{
+
+	//reset variables
+	mAtlasWidth = 0;
+	mAtlasHeight = 0;
+
+
+	int mult = (g_WndHeight >= g_WndWidth) ? g_WndWidth : g_WndHeight;
+
+	int pxlHeight = int(mHeight * mult);
+
+	if (FT_Set_Char_Size(mFtFont, pxlHeight << 6, pxlHeight << 6, 96, 96))
+	{
+		GLUF_ERROR("Size setting Failed");
+	}
+
+	FT_GlyphSlot g = mFtFont->glyph;
+
+
+	//load the characters' dimmensions
+	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++)
+	{
+		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER)) 
+		{
+			GLUF_ERROR("Loading character failed!\n");
+			continue;
+		}
+
+		mAtlasWidth += g->bitmap.width + GLYPH_PADDING;
+		mAtlasHeight = std::max(mAtlasHeight, g->bitmap.rows);
+
+	}
+
+	//generate textures
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, mTexId);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	// Fonts should be rendered at native resolution so no need for texture filtering
+	//float fLargest = 0.0f;
+	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
+	//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Stop chararcters from bleeding over edges
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	GLfloat transparent[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, transparent);//any overflow will be transparent
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasWidth, mAtlasHeight, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+
+	//load texture data
+	char* dat0 = new char[GLYPH_PADDING * mAtlasHeight];
+	for (int i = 0; i < GLYPH_PADDING * mAtlasHeight; ++i)
+		dat0[i] = 0;
+
+	int x = 0;
+	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
+	{
+		unsigned int p = i - mCharacterOffset;
+
+		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
+			continue;
+
+		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING), 0, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
+
+		//this adds padding to keep the characters looking clean
+		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING) + g->bitmap.width, 0, GLYPH_PADDING, mAtlasHeight, GL_LUMINANCE, GL_UNSIGNED_BYTE, dat0);
+
+		mCharAtlas[p].tx = (float)(x + (p * GLYPH_PADDING)) / (float)mAtlasWidth;
+
+		x += g->bitmap.width;
+
+		mCharAtlas[p].ax = (float)(g->advance.x >> 6);
+		mCharAtlas[p].ay = (float)(g->advance.y >> 6);
+
+		mCharAtlas[p].bw = (float)g->bitmap.width;
+		mCharAtlas[p].bh = (float)g->bitmap.rows;
+
+		mCharAtlas[p].bl = (float)g->bitmap_left;
+		mCharAtlas[p].bt = (float)g->bitmap_top;
+
+	}
+
+	//FT_Done_Face(mFtFont);
+	g = 0;
+
+	for (int i = mCharacterOffset; i < mCharacterEnd; ++i)
+		wprintf(L"%c: %f\n", (wchar_t)i, GetCharHeight(i));
+}
+
+bool GLUFFont::Init(void* data, uint64_t rawSize, float fontHeight)
+{
+	mHeight = fontHeight;
+	mCharAtlas = new character_info[mCharacterEnd - mCharacterOffset];
+
+	if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data, (FT_Long)rawSize, 0, &mFtFont))
+		return false;
+
+	glGenTextures(1, &mTexId);
+
+	Refresh();
+
+	return true;
+}
+
+GLUFRect GLUFFont::GetCharRect(wchar_t ch)
+{
+	GLUFRect rc = { 0.0f, GetCharHeight(ch ), GetCharWidth(ch), 0.0f };
+	//GLUFOffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
+
+	//if there is a dropdown, make sure it is accounted for
+	float dy = ((mCharAtlas[ch - mCharacterOffset].bt - mCharAtlas[ch - mCharacterOffset].bh) / mAtlasHeight) * mHeight;
+	GLUFOffsetRect(rc, 0.0f, 2*dy);
+	return rc;
+}
+
+GLUFRect GLUFFont::GetCharTexRect(wchar_t ch)
+{
+	/*if (ch == mCharacterEnd - 1)
+		return{ mCharAtlas[ch - mCharacterOffset].tx, 1.0f, 1.0f,										1.0f - (mCharAtlas[ch-mCharacterOffset].bh / mAtlasHeight) };
+	else
+		return{ mCharAtlas[ch - mCharacterOffset].tx, 1.0f, mCharAtlas[ch - mCharacterOffset].tx + mCharAtlas[ch - mCharacterOffset].bw / mAtlasWidth, 1.0f - (mCharAtlas[ch - mCharacterOffset].bh / mAtlasHeight) };*/
+	
+	float l, t, r, b;
+	
+	l = mCharAtlas[ch - mCharacterOffset].tx;
+	t = 0.0f;
+	r = mCharAtlas[ch - mCharacterOffset].tx + (mCharAtlas[ch - mCharacterOffset].bw + mCharAtlas[ch - mCharacterOffset].bl) / mAtlasWidth;
+	b = (mCharAtlas[ch - mCharacterOffset].bh / mAtlasHeight);
+
+	return{ l, t, r, b };
+};
+
+
+/*GLfloat GLUFFont::GetTextureXOffset(wchar_t ch)
+{
+	if (ch == mCharacterEnd)
+		return 1.0f;
+	else
+		return (float)mTexOffsets[ch - mCharacterOffset] / mAtlasWidth;
+}*/
+
+float GLUFFont::GetCharWidth(wchar_t ch)
+{
+	/*if (ch == mCharacterEnd)
+		return ((float)(mAtlasWidth - mCharAtlas[ch - mCharacterOffset - 1].bl) * mHeight) / mAtlasHeight;
+	else
+		return ((float)(mCharAtlas[ch - mCharacterOffset + 1].bl - mCharAtlas[ch - mCharacterOffset]) * mHeight) / mAtlasHeight;*/
+
+	return (mCharAtlas[ch - mCharacterOffset].ax * GetCharHeight(ch)) / mAtlasHeight;
+}
+
+float GLUFFont::GetCharHeight(wchar_t ch)
+{
+	return (mCharAtlas[ch - mCharacterOffset].bt / mAtlasHeight) * mHeight;
+}
+
+float GLUFFont::GetStringWidth(std::wstring str)
 {
 	float tmp = 0.0f;
 	for (auto it : str)
 	{
-		tmp += ((float)Width[it] * fSize) / CellY;
+		tmp += GetCharWidth(it);
 	}
 	return tmp;
 }
 
-float GLUFFont::GetStringWidthNDC(std::wstring str, GLUFFontSize fSize)
+float GLUFFont::GetStringWidthNDC(std::wstring str)
 {
-	return GLUF_FONT_HEIGHT_NDC(GetStringWidth(str, fSize));
+	return GLUF_FONT_HEIGHT_NDC(GetStringWidth(str));
 }
 
-bool GLUFFont::Init(char* data, uint64_t rawSize)
+
+
+/*bool GLUFFont::Init(char* data, uint64_t rawSize)
 {
 	gli::MemStreamBuf buf(data, (ptrdiff_t)rawSize);
 
@@ -543,13 +775,13 @@ bool GLUFFont::Init(char* data, uint64_t rawSize)
 	delete[] dat;
 
 	return true;
-}
+}*/
 
 
-GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize)
+GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize, float fontHeight)
 {
 	GLUFFontPtr ret(new GLUFFont());
-	ret->Init(rawData, rawSize);
+	ret->Init(rawData, rawSize, fontHeight);
 	return ret;
 }
 /*
@@ -1146,6 +1378,9 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		firstTime = false;
 	else
 		m_MousePositionOld = m_MousePosition;
+
+	m_pManager->MsgProc(GLUF_PASS_CALLBACK_PARAM);
+
 
 	//first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
 	double x, y;
@@ -2226,7 +2461,7 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 	//auto pd3dDevice = m_pManager->GetD3D11Device();
 	//auto pd3d11DeviceContext = m_pManager->GetD3D11DeviceContext();
 
-	if (bShadow)
+	/*if (bShadow)
 	{
 		GLUFRect rcShadow = rcScreen;
 		GLUFOffsetRect(rcShadow, 1 / m_pManager->GetWindowSize().x, 1 / m_pManager->GetWindowSize().y);
@@ -2234,7 +2469,7 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 		Color vShadowColor(0, 0, 0, 255);
 		DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcShadow, vShadowColor, bCenter, bHardRect);
 
-	}
+	}*/
 
 	Color vFontColor = pElement->FontColor.Current;
 	DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcScreen, vFontColor, bCenter, bHardRect);
@@ -2444,11 +2679,11 @@ void GLUFDialog::InitDefaultElements()
 	char* rawData;
 	unsigned long rawSize = 0;
 
-	rawData = GLUFLoadFileIntoMemory(_T("Arial Unicode MS.bff"), &rawSize);
-	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize);
-	free(rawData);
+	rawData = GLUFLoadFileIntoMemory(_T("Arial.ttf"), &rawSize);
+	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize, 0.025f);
+	//free(rawData); DON'T FREE
 
-	int fontIndex = m_pManager->AddFont(font, 0.025f, FONT_WEIGHT_NORMAL);
+	int fontIndex = m_pManager->AddFont(font, FONT_WEIGHT_NORMAL);
 	SetFont(0, fontIndex);
 
 
@@ -2842,6 +3077,9 @@ m_SpriteBufferIndices(0)
 	GLubyte indicesS[6] = { 2, 1, 0,
 							2, 3, 1 };
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indicesS, GL_STATIC_DRAW);
+
+
+	GetWindowSize();
 }
 
 
@@ -2880,19 +3118,22 @@ GLUFDialogResourceManager::~GLUFDialogResourceManager()
 bool GLUFDialogResourceManager::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
 	GLUF_UNREFERENCED_PARAMETER(msg);
-	GLUF_UNREFERENCED_PARAMETER(param1);
-	GLUF_UNREFERENCED_PARAMETER(param2);
+	//GLUF_UNREFERENCED_PARAMETER(param1);
+	//GLUF_UNREFERENCED_PARAMETER(param2);
 	GLUF_UNREFERENCED_PARAMETER(param3);
 	GLUF_UNREFERENCED_PARAMETER(param4);
 
 	switch (msg)
 	{
 	case GM_RESIZE:
+		m_WndSize.width = 0.0f;
+		m_WndSize.height = 0.0f;
+		GetWindowSize();
 
-		int w, h;
-		glfwGetWindowSize(g_pGLFWWindow, &w, &h);
-		m_WndSize.width = (float)w;
-		m_WndSize.height = (float)h;
+		//refresh the fonts to the new window size
+		for (auto it : m_FontCache)
+			if (it != nullptr)
+				it->m_pFontType->Refresh();
 	}
 
 	return false;
@@ -3357,18 +3598,20 @@ GLUFPoint GLUFDialogResourceManager::GetWindowSize()
 		glfwGetWindowSize(g_pGLFWWindow, &w, &h);
 		m_WndSize.width = (float)w;
 		m_WndSize.height = (float)h;
+		g_WndHeight = h;
+		g_WndWidth = w;
 	}
 	return m_WndSize;
 }
 
 //--------------------------------------------------------------------------------------
-int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, GLUFFontSize height, GLUF_FONT_WEIGHT weight)
+int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, GLUF_FONT_WEIGHT weight)
 {
 	// See if this font already exists (this is simple)
 	for (size_t i = 0; i < m_FontCache.size(); ++i)
 	{
 		GLUFFontNode* node = m_FontCache[i];
-		if (font == node->m_pFontType && node->mSize == height)
+		if (font == node->m_pFontType && node->mWeight == weight)
 			return static_cast<int>(i);
 	}
 
@@ -3379,7 +3622,7 @@ int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, GLUFFontSize height, GL
 
 	//wcscpy_s(pNewFontNode->strFace, MAX_PATH, strFaceName);
 	pNewFontNode->m_pFontType = font;
-	pNewFontNode->mSize = height;
+	//pNewFontNode->mSize = height;
 	pNewFontNode->mWeight = weight;
 	//FT_Set_Char_Size(pNewFontNode->m_pFontType->mFontFace, 0, height * 64, 72, 72);
 	m_FontCache.push_back(pNewFontNode);
@@ -4218,9 +4461,9 @@ void GLUFComboBox::UpdateRects()
 	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcDropdown) * 0.965f);
 	m_ScrollBar.m_y = m_rcText.top;
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[2]->iFont);
-	if (pFontNode && pFontNode->mSize)
+	if (pFontNode/* && pFontNode->mSize*/)
 	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcDropdownText) / pFontNode->mSize));
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcDropdownText) / pFontNode->m_pFontType->mHeight));
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
@@ -4236,7 +4479,7 @@ void GLUFComboBox::UpdateItemRects()
 	if (pFont)
 	{
 		float curY = m_rcDropdownText.top - 0.02f;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
-		float fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
+		float fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->m_pFontType->mHeight;//subtract the font size initially too, because we do not want it hanging off the edge
 
 
 		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
@@ -4244,7 +4487,7 @@ void GLUFComboBox::UpdateItemRects()
 			GLUFComboBoxItem* pItem = m_Items[i];
 
 			// Make sure there's room left in the dropdown
-			fRemainingHeight -= pFont->mSize;
+			fRemainingHeight -= pFont->m_pFontType->mHeight;
 			if (fRemainingHeight <= 0.0f)
 			{
 				pItem->bVisible = false;
@@ -4253,8 +4496,8 @@ void GLUFComboBox::UpdateItemRects()
 
 			pItem->bVisible = true;
 
-			GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mSize);
-			curY -= pFont->mSize;
+			GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->m_pFontType->mHeight);
+			curY -= pFont->m_pFontType->mHeight;
 		}
 	}
 }
@@ -4578,9 +4821,9 @@ void GLUFComboBox::Render( float fElapsedTime)
 	if (!bSBInit)
 	{
 		// Update the page size of the scroll bar
-		if (m_pDialog->GetManager()->GetFontNode(pElement->iFont)->mSize)
+		if (m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_pFontType->mHeight)
 			m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcDropdownText) /
-			(m_pDialog->GetManager()->GetFontNode(pElement->iFont)->mSize)));
+			(m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_pFontType->mHeight)));
 		else
 			m_ScrollBar.SetPageSize(0);
 		bSBInit = true;
@@ -5750,7 +5993,7 @@ void GLUFListBox::UpdateRects()
 {
 	GLUFControl::UpdateRects();
 
-	m_fTextHeight = m_pDialog->GetFont(GetElement(0)->iFont)->mSize;
+	m_fTextHeight = m_pDialog->GetFont(GetElement(0)->iFont)->m_pFontType->mHeight;
 
 	m_rcSelection = m_rcBoundingBox;
 	m_rcSelection.right -= m_fSBWidth;
@@ -5766,9 +6009,9 @@ void GLUFListBox::UpdateRects()
 	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
 	m_ScrollBar.m_y = m_rcText.top;
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-	if (pFontNode && pFontNode->mSize)
+	if (pFontNode && pFontNode->m_pFontType->mHeight)
 	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_pFontType->mHeight));
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
@@ -6709,7 +6952,7 @@ void GLUFListBox::UpdateItemRects()
 			GLUFListBoxItem* pItem = m_Items[i];
 
 			// Make sure there's room left in the box
-			fRemainingHeight -= pFont->mSize;
+			fRemainingHeight -= pFont->m_pFontType->mHeight;
 			if (fRemainingHeight - m_fBorder <= 0.0f)
 			{
 				pItem->bVisible = false;
@@ -6718,8 +6961,8 @@ void GLUFListBox::UpdateItemRects()
 
 			pItem->bVisible = true;
 
-			GLUFSetRect(pItem->rcActive, m_rcBoundingBox.left + m_fMargin, curY, m_rcBoundingBox.right - m_fMargin, curY - pFont->mSize);
-			curY -= pFont->mSize;
+			GLUFSetRect(pItem->rcActive, m_rcBoundingBox.left + m_fMargin, curY, m_rcBoundingBox.right - m_fMargin, curY - pFont->m_pFontType->mHeight);
+			curY -= pFont->m_pFontType->mHeight;
 		}
 	}
 }
@@ -7987,7 +8230,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 						rcCaret = m_CharBoundingBoxes[0];
 				}
 				else
-					GLUFSetRect(rcCaret, 0.0f, GLUFRectHeight(m_rcText), 0.002f, GLUFRectHeight(m_rcText) - pFontNode->mSize);
+					GLUFSetRect(rcCaret, 0.0f, GLUFRectHeight(m_rcText), 0.002f, GLUFRectHeight(m_rcText) - pFontNode->m_pFontType->mHeight);
 
 				GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
 				m_pDialog->DrawRect(rcCaret, m_CaretColor);
@@ -8001,7 +8244,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 					if (m_strRenderBuffer[rndCaret] == '\n')
 					{
 						//if it is a newline character, then give the leading edge of the first char of the line
-						GLUFSetRect(rcCaret, 0.0f, m_CharBoundingBoxes[rndCaret].bottom, 0.002f, m_CharBoundingBoxes[rndCaret].bottom - pFontNode->mSize);
+						GLUFSetRect(rcCaret, 0.0f, m_CharBoundingBoxes[rndCaret].bottom, 0.002f, m_CharBoundingBoxes[rndCaret].bottom - pFontNode->m_pFontType->mHeight);
 					}
 					else
 					{
@@ -8253,7 +8496,7 @@ void GLUFEditBox::Analyse()
 		{
 
 
-			float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it, pFontNode->mSize);
+			float fWordWidth = pFontNode->m_pFontType->GetStringWidth(it);
 
 			//these are natural newlines
 			if (it == L"\n ")
@@ -8272,7 +8515,7 @@ void GLUFEditBox::Analyse()
 				for (auto itch : it)
 				{
 #pragma warning(disable : 4244)
-					float fCharWidth = pFontNode->m_pFontType->GetCharWidth(itch, pFontNode->mSize);
+					float fCharWidth = pFontNode->m_pFontType->GetCharWidth(itch);
 #pragma warning(default : 4244)
 					currXValue += fCharWidth;
 
@@ -8321,9 +8564,9 @@ void GLUFEditBox::Analyse()
 	}
 
 	//recalculate scroll bar (this has to be done in between analyzing steps)
-	if (pFontNode && pFontNode->mSize)
+	if (pFontNode && pFontNode->m_pFontType->mHeight)
 	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->mSize));
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_pFontType->mHeight));
 		m_ScrollBar.SetTrackRange(0, GetNumNewlines()+1);
 
 		// The selected item may have been scrolled off the page.
@@ -8345,7 +8588,7 @@ void GLUFEditBox::Analyse()
 		int   lineNum = 0;
 
 		float thisCharWidth = 0.0f;
-		float fontHeight = pFontNode->mSize;
+		float fontHeight = pFontNode->m_pFontType->mHeight;
 		float scrollbarOffset = m_ScrollBar.GetTrackPos() * fontHeight;
 		GLUFRect rc;
 
@@ -8357,7 +8600,7 @@ void GLUFEditBox::Analyse()
 		{
 
 #pragma warning(disable : 4244)
-			thisCharWidth = pFontNode->m_pFontType->GetCharWidth(it, fontHeight);
+			thisCharWidth = pFontNode->m_pFontType->GetCharWidth(it);
 #pragma warning(default : 4244)
 
 			GLUFSetRect(rc, currXValue, distanceFromBottom, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
@@ -8434,15 +8677,14 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 {
 	//TODO: make this split at word endings
 
-	if (font.mSize > GLUFRectHeight(rcScreen) && bHardRect)
+	if (font.m_pFontType->mHeight > GLUFRectHeight(rcScreen) && bHardRect)
 		return;//no sense rendering if it is too big
 
 	rcScreen = GLUFScreenToClipspace(rcScreen);
 
-	GLUFFontSize tmpSize = GLUF_FONT_HEIGHT_NDC(font.mSize);
+	GLUFFontSize tmpSize = GLUF_FONT_HEIGHT_NDC(font.m_pFontType->mHeight);
 
-	int Row, Col;
-	float U, V, U1, V1;
+	GLUFRect UV;
 
 	float CurX = rcScreen.left;
 	float CurY = rcScreen.top;
@@ -8455,7 +8697,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 		float tmp = 0.0f;
 		for (auto it : strText)
 		{
-			tmp += ((float)font.m_pFontType->Width[it] * tmpSize) / font.m_pFontType->CellY;
+			tmp += font.m_pFontType->GetCharWidth(it);//((float)font.m_pFontType->Width[it] * tmpSize) / font.m_pFontType->CellY;
 		}
 		CurX += fabsf((GLUFRectWidth(rcScreen) - tmp) / 2);
 	}
@@ -8464,7 +8706,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 	float z = GLUF_NEAR_BUTTON_DEPTH;
 	for (auto ch : strText)
 	{
-		float widthConverted = (font.m_pFontType->CellX * tmpSize) / font.m_pFontType->CellY;
+		float widthConverted = font.m_pFontType->GetCharWidth(ch);//(font.m_pFontType->CellX * tmpSize) / font.m_pFontType->mAtlasWidth;
 
 		//lets support newlines :) (or if the next char will go outside the rect)
 		if (ch == '\n' || (CurX + widthConverted > rcScreen.right && bHardRect))
@@ -8482,40 +8724,52 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 			}
 		}
 
-		Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
-		Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
+		//Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
+		//Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
 
-		U = Col*font.m_pFontType->ColFactor;
-		V = Row*font.m_pFontType->RowFactor;
-		U1 = U + font.m_pFontType->ColFactor;
-		V1 = V + font.m_pFontType->RowFactor;
+		//U = Col*font.m_pFontType->ColFactor;
+		//V = Row*font.m_pFontType->RowFactor;
+		//U1 = U + font.m_pFontType->ColFactor;
+		//V1 = V + font.m_pFontType->RowFactor;
+
+		//U = font.m_pFontType->GetTextureXOffset(ch);
+		//V = 0.0f;
+		//U1 = U + font.m_pFontType->GetCharWidth(ch);
+		//V1 = 1.0f;
+		UV = font.m_pFontType->GetCharTexRect(ch);
 
 		//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
 		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
 		//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
 		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
 
-		GLUFRect glyph;
-		glyph.left = CurX;
-		glyph.right = CurX + widthConverted;
-		glyph.top = CurY;
-		glyph.bottom = CurY - tmpSize;
+		GLUFRect glyph = font.m_pFontType->GetCharRect(ch);
+
+		//remember to expand for this
+		glyph.right = GLUF_FONT_HEIGHT_NDC(glyph.right);
+		glyph.top   = GLUF_FONT_HEIGHT_NDC(glyph.right);
+
+		GLUFOffsetRect(glyph, CurX, CurY - (tmpSize));
+		//glyph.left = CurX;
+		//glyph.right = CurX + widthConverted;
+		//glyph.top = CurY;
+		//glyph.bottom = CurY - tmpSize;
 
 
 		//triangle 1
 		g_TextVerticies.push_back(
 			glm::vec3(GLUFGetVec2FromRect(glyph, false, true), z),
-			glm::vec2(U, V));
+			GLUFGetVec2FromRect(UV, false, true));
 		//glm::vec2(z, 1.0f));
 
 		g_TextVerticies.push_back(
 			glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
-			glm::vec2(U, V1));
+			GLUFGetVec2FromRect(UV, false, false));
 		//glm::vec2(z, z));
 
 		g_TextVerticies.push_back(
 			glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
-			glm::vec2(U1, V));
+			GLUFGetVec2FromRect(UV, true, true));
 		//glm::vec2(1.0f, 1.0f));
 
 
@@ -8523,21 +8777,21 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 
 		g_TextVerticies.push_back(
 			glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
-			glm::vec2(U, V1));
+			GLUFGetVec2FromRect(UV, false, false));
 		//glm::vec2(z, z));
 
 		g_TextVerticies.push_back(
 			glm::vec3(GLUFGetVec2FromRect(glyph, true, false), z),
-			glm::vec2(U1, V1));
+			GLUFGetVec2FromRect(UV, true, false));
 		//glm::vec2(1.0f, z));
 
 		g_TextVerticies.push_back(
 			glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
-			glm::vec2(U1, V));
+			GLUFGetVec2FromRect(UV, true, true));
 		//glm::vec2(1.0f, 1.0f));
 
 
-		CurX += ((float)font.m_pFontType->Width[ch] * tmpSize) / font.m_pFontType->CellY;
+		CurX += GLUFRectWidth(glyph);
 		//CurX += 0.05;
 
 		//z += 0.00005f;//to solve the depth problem
@@ -8567,6 +8821,7 @@ void EndText(GLUFFontPtr font)
 	glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
 	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec3), g_TextVerticies.data_pos(), GL_STREAM_DRAW);
 
+
 	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
 	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec2), g_TextVerticies.data_tex(), GL_STREAM_DRAW);
 
@@ -8578,8 +8833,9 @@ void EndText(GLUFFontPtr font)
 
 	//second, the sampler
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, font->TexID);
+	glBindTexture(GL_TEXTURE_2D, font->mTexId);
 	glUniform1f(1, 0);
+
 
 	//third, the color
 	Color4f color = g_TextVerticies.get_color();

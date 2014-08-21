@@ -76,13 +76,14 @@ typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 // a callback does not use the parameter, it will be 0, but this does not mean 0 is an invalid parameter for callbacks
 // that use it.  Other notes: when specifying hotkeys, always use the GLFW macros for specifying them.  Consult the GLFW
 // input documentation for more information.
-void OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLuint controltex);
+bool OBJGLUF_API GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLuint controltex);
 
 typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
 typedef float GLUFFontSize;//this is in normalized screencoords
 
 //NOTE: i am no longer using freetype, it is just more than is necisary right now
-OBJGLUF_API GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize);
+OBJGLUF_API GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize, float fontHeight);
+OBJGLUF_API GLUFFontSize GLUFGetFontHeight(GLUFFontPtr font);
 
 //NOTE: not all fonts support all of these weights! the closest available will be chosen (ALSO this does not work well with preinstalled fonts)
 enum GLUF_FONT_WEIGHT
@@ -105,7 +106,7 @@ enum GLUF_FONT_WEIGHT
 };
 
 
-extern OBJGLUF_API GLUFProgramPtr g_UIProgram;
+//extern OBJGLUF_API GLUFProgramPtr g_UIProgram;
 
 
 //--------------------------------------------------------------------------------------
@@ -402,7 +403,7 @@ struct GLUFTextureNode
 //WIP, support more font options eg. stroke, italics, variable leading, etc.
 struct GLUFFontNode
 {
-	GLUFFontSize mSize;
+	//GLUFFontSize mSize;
 	GLUF_FONT_WEIGHT mWeight;
 	GLUFFontPtr m_pFontType;
 };
@@ -476,7 +477,7 @@ public:
 	int		GetTextureCount(){ return m_TextureCache.size(); }
 	int     GetFontCount()   { return m_FontCache.size(); }
 
-	int     AddFont(GLUFFontPtr font, GLUFFontSize size, GLUF_FONT_WEIGHT weight);
+	int     AddFont(GLUFFontPtr font, GLUF_FONT_WEIGHT weight);
 	int     AddTexture(GLuint texture);
 
 	bool    RegisterDialog(GLUFDialog* pDialog);
