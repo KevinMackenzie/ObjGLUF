@@ -208,9 +208,9 @@ FT_Library g_FtLib;
 unsigned short g_WndWidth = 0;
 unsigned short g_WndHeight = 0;
 
-GLUFProgramPtr g_UIProgram;
-GLUFProgramPtr g_UIProgramUntex;
-GLUFProgramPtr g_TextProgram;
+GLUFProgramPtr g_UIProgram = nullptr;
+GLUFProgramPtr g_UIProgramUntex = nullptr;
+GLUFProgramPtr g_TextProgram = nullptr;
 GLUFTextVertexArray g_TextVerticies;
 GLuint g_TextVAO;
 GLuint g_TextPos;
@@ -244,73 +244,72 @@ struct TextShaderLocations_t
 }g_TextShaderLocations;
 
 const char* g_UIShaderVert =
-"#version 120 \n"\
-"attribute	vec3 _Position; \n"\
-"attribute	vec4 _Color; \n"\
-"attribute	vec2 _UV; \n"\
-"uniform	mat4 _Ortho; \n"\
-"	\n"\
-"	\n"\
-"varying vec4 Color; \n"\
-"varying vec2 uvCoord; \n" \
-"				 \n"\
-"void main(void) \n"\
-"{ \n"\
-"	gl_Position = vec4(_Position, 1.0f) * _Ortho; \n"\
-"	Color = _Color; \n"\
-"   uvCoord = abs(vec2(0.0f, 1.0f) - _UV); \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
-"} \n";
+"#version 120														\n"\
+"attribute vec3 _Position;											\n"\
+"attribute vec2 _UV;												\n"\
+"attribute vec4 _Color;												\n"\
+"uniform   mat4 _Ortho;												\n"\
+"varying vec4 Color;												\n"\
+"varying vec2 uvCoord;												\n"\
+"void main(void)													\n"\
+"{																	\n"\
+"	gl_Position = vec4(_Position, 1.0f) * _Ortho;					\n"\
+"	Color = _Color;													\n"\
+"   uvCoord = abs(vec2(0.0f, 1.0f) - _UV);							\n"\
+"}																	\n";
+/*the V's are inverted because the texture is loaded bottom to top*/
+
 
 const char* g_UIShaderFrag =
-"#version 120 \n"\
-"varying vec4 Color; \n"\
-"varying vec2 uvCoord; \n"\
-"uniform sampler2D TextureSampler; \n"\
-"void main(void) \n"\
-"{ \n"\
-"	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
-"	//Color = fs_in.Color; \n"\
-"   vec4 oColor = texture2D(TextureSampler, uvCoord); \n" \
-"	oColor = vec4(mix(oColor.rgb, Color.rgb, Color.a), oColor.a); \n"\
-"	gl_FragColor = Color;\n"\
-"} \n"; 
+"#version 120														\n"\
+"varying vec4 Color;												\n"\
+"varying vec2 uvCoord;												\n"\
+"uniform sampler2D _TS;												\n"\
+"void main(void)													\n"\
+"{																	\n"\
+"	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f);							\n"\
+"	//Color = fs_in.Color;											\n"\
+"   vec4 oColor = texture2D(_TS, uvCoord);							\n"\
+"	oColor = vec4(mix(oColor.rgb, Color.rgb, Color.a), oColor.a);	\n"\
+"	gl_FragColor = oColor;											\n"\
+"}																	\n"; 
 
 const char* g_UIShaderFragUntex =
-"#version 120 \n"\
-"varying vec4 Color; \n"\
-"varying vec2 uvCoord; \n"\
-"void main(void) \n"\
-"{ \n"\
-"	gl_FragColor = Color; \n"\
-"} \n";
+"#version 120														\n"\
+"varying vec4 Color;												\n"\
+"varying vec2 uvCoord;												\n"\
+"void main(void)													\n"\
+"{																	\n"\
+"	gl_FragColor = Color;											\n"\
+"}																	\n";
 
 const char* g_TextShaderVert =
-"#version 120 \n" \
-"attribute vec3 _Position; \n"\
-"attribute vec2 _UV; \n" \
-"uniform mat4 _Ortho;\n"\
-"varying vec2 uvCoord;\n"\
-"void main(void)\n"\
-"{\n"\
-"   uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/; \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
-"	gl_Position = vec4(_Position, 1.0f) * _Ortho; \n"\
-"} \n";
+"#version 120														\n"\
+"attribute vec3 _Position;											\n"\
+"attribute vec2 _UV;												\n"\
+"uniform mat4 _Ortho;												\n"\
+"varying vec2 uvCoord;												\n"\
+"void main(void)													\n"\
+"{																	\n"\
+"   uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/;					\n"\
+"	gl_Position = vec4(_Position, 1.0f) * _Ortho;					\n"\
+"}																	\n";
 
 const char* g_TextShaderFrag =
-"#version 120 \n" \
-"uniform vec4 _Color; \n"\
-"uniform sampler2D TextureSampler; \n"\
-"varying vec2 uvCoord;\n"\
-"void main(void)\n"\
-"{\n"\
-"	vec4 Color;\n"\
-"	Color.a = texture2D(TextureSampler, uvCoord).r;\n"\
-"	Color.rgb = _Color.rgb; \n"\
-"	//Color.a = 1.0f;\n"\
-"	Color.a *= _Color.a;\n"\
-"	//Color = vec4(1.0f, 0.0f, 0.0f, 1.0f); \n"\
-"	gl_FragColor = Color; \n"\
-"} \n";
+"#version 120														\n"\
+"uniform vec4 _Color;												\n"\
+"uniform sampler2D _TS;												\n"\
+"varying vec2 uvCoord;												\n"\
+"void main(void)													\n"\
+"{																	\n"\
+"	vec4 Color;														\n"\
+"	Color.a = texture2D(_TS, uvCoord).r;							\n"\
+"	Color.rgb = _Color.rgb;											\n"\
+"	//Color.a = 1.0f;												\n"\
+"	Color.a *= _Color.a;											\n"\
+"	//Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);							\n"\
+"	gl_FragColor = Color;											\n"\
+"}																	\n";
 
 
 
@@ -335,11 +334,7 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	glfwSetWindowIconifyCallback(g_pGLFWWindow, GLFWWindowIconifyCallback);
 	glfwSetFramebufferSizeCallback(g_pGLFWWindow, GLFWFrameBufferSizeCallback);
 
-	//load the ui shader
-	GLUFProgramPtr programUIVert;
-	GLUFProgramPtr programUIFrag;
-	GLUFProgramPtr programUIFragUntex;
-
+	//load the ui shaders
 	GLUFShaderSourceList sources;
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, g_UIShaderVert));
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_UIShaderFrag));
@@ -356,28 +351,38 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_TextShaderFrag));
 	g_TextProgram = GLUFSHADERMANAGER.CreateProgram(sources);
 
-	//TODO: make the shader object do this for me, and then I can just access each id through a keyword
-
-	GLuint progId = GLUFSHADERMANAGER.GetProgramId(g_UIProgram);
 
 	//load the locations
-	g_UIShaderLocations.position	= glGetAttribLocation(progId, "_Position");
-	g_UIShaderLocations.uv			= glGetAttribLocation(progId, "_UV");
-	g_UIShaderLocations.color		= glGetAttribLocation(progId, "_Color");
-	g_UIShaderLocations.ortho		= glGetUniformLocation(progId, "_Ortho");
-	g_UIShaderLocations.sampler		= glGetUniformLocation(progId, "TextureSampler");
+	g_UIShaderLocations.position	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+	g_UIShaderLocations.uv			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
+	g_UIShaderLocations.color		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+	g_UIShaderLocations.ortho		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
+	g_UIShaderLocations.sampler		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
 
-	progId = GLUFSHADERMANAGER.GetProgramId(g_TextProgram);
+	g_TextShaderLocations.position	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
+	g_TextShaderLocations.uv		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
+	g_TextShaderLocations.color		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
+	g_TextShaderLocations.ortho		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
+	g_TextShaderLocations.sampler	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
 
-	g_TextShaderLocations.position	= glGetAttribLocation(progId, "_Position");
-	g_TextShaderLocations.uv		= glGetAttribLocation(progId, "_UV");
-	g_TextShaderLocations.color		= glGetUniformLocation(progId, "_Color");
-	g_TextShaderLocations.ortho		= glGetUniformLocation(progId, "_Ortho");
-	g_TextShaderLocations.sampler	= glGetUniformLocation(progId, "TextureSampler");
+	/*GLuint program = GLUFSHADERMANAGER.GetProgramId(g_UIProgram);
+
+	g_UIShaderLocations.position = glGetAttribLocation(program, "_Position");
+	g_UIShaderLocations.uv = glGetAttribLocation(program, "_UV");
+	g_UIShaderLocations.color = glGetAttribLocation(program, "_Color");
+	g_UIShaderLocations.ortho = glGetUniformLocation(program, "_Ortho");
+	g_UIShaderLocations.sampler = glGetUniformLocation(program, "_TS");
+
+	program = GLUFSHADERMANAGER.GetProgramId(g_TextProgram);
+
+	g_TextShaderLocations.position = glGetAttribLocation(program, "_Position");
+	g_TextShaderLocations.uv = glGetAttribLocation(program, "_UV");
+	g_TextShaderLocations.color = glGetUniformLocation(program, "_Color");
+	g_TextShaderLocations.ortho = glGetUniformLocation(program, "_Ortho");
+	g_TextShaderLocations.sampler = glGetUniformLocation(program, "_TS");*/
 
 	//create the text arrrays
-	glGenVertexArrays(1, &g_TextVAO);
-	glBindVertexArray(g_TextVAO);
+	glGenVertexArrayBindVertexArray(&g_TextVAO);
 	glGenBuffers(1, &g_TextPos);
 	glGenBuffers(1, &g_TextTexCoords);
 

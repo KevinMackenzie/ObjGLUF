@@ -35,6 +35,8 @@ const GLUFVertexAttribInfo	g_attribCOLOR7	= { 4,		4,		VERTEX_ATTRIB_COLOR7,	GL_F
 const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		VERTEX_ATTRIB_TAN,		GL_FLOAT };
 const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		VERTEX_ATTRIB_BITAN,	GL_FLOAT };
 
+GLuint g_GLVersionMajor = 0;
+GLuint g_GLVersionMinor = 0;
 
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 {
@@ -83,6 +85,15 @@ bool GLUFInitOpenGLExtentions()
 		GLUF_ERROR("Failed to initialize OpenGL Extensions using GLEW");
 		return false;
 	}
+
+
+	//setup global openGL version
+	const char* version = (const char*)glGetString(GL_VERSION);
+	
+	std::vector<std::string> vsVec;
+	vsVec = GLUFSplitStr((const char*)version, L'.');//TODO: global openGL version
+	g_GLVersionMajor = std::stoi(vsVec[0]);
+	g_GLVersionMinor = std::stoi(vsVec[1]);
 
 	return true;
 }
@@ -333,7 +344,12 @@ glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y)
 
 GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 {
-	GLuint tex = 0;
+	unsigned long rawSize = 0;
+	char* data = GLUFLoadFileIntoMemory(filePath.c_str(), &rawSize);
+
+	return LoadTextureFromMemory(data, rawSize, format);
+
+	/*GLuint tex = 0;
 	gli::texture2D Texture(gli::load_dds(filePath.c_str()));
 	assert(!Texture.empty());
 	glGenTextures(1, &tex);
@@ -344,11 +360,11 @@ GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexImage2D(GL_TEXTURE_2D,
+	glTexStorage2D(GL_TEXTURE_2D,
 		GLint(Texture.levels()),
 		GLenum(gli::internal_format(Texture.format())),
 		GLsizei(Texture.dimensions().x),
-		GLsizei(Texture.dimensions().y), 0, GL_RGBA, GL_FLOAT, nullptr);
+		GLsizei(Texture.dimensions().y));
 	if (gli::is_compressed(Texture.format()))
 	{
 		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
@@ -378,9 +394,7 @@ GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 		}
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	return tex;
+	glBindTexture(GL_TEXTURE_2D, 0);*/
 }
 
 
@@ -485,9 +499,11 @@ class GLUFProgram
 {
 	friend GLUFShaderManager;
 
-	GLuint mUniformBuffId;
+	//GLuint mUniformBuffId;
 	GLuint mProgramId;
 	std::map<GLUFShaderType, GLUFShaderPtr > mShaderBuff;
+	std::map<std::string, GLuint> mAttributeLocations;
+	std::map<std::string, GLuint> mUniformLocations;
 
 public:
 
@@ -682,7 +698,7 @@ void GLUFProgram::Init()
 	mProgramId = glCreateProgram();
 
 	//for uniforms
-	glGenBuffers(1, &mUniformBuffId);
+	//glGenBuffers(1, &mUniformBuffId);
 }
 
 void GLUFProgram::AttachShader(GLUFShaderPtr shader)
@@ -727,6 +743,41 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 	else
 	{
 		FlushShaders();//this removes the references to them from the program, but they will still exist unless they are 'common'
+		
+		//Load the variable names
+		GLint attribCount = 0;
+		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTES, &attribCount);
+
+		GLint maxLength;
+		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLength);
+
+		GLuint id = glGetAttribLocation(mProgramId, "_UV");
+
+		GLenum type;
+
+		GLint written, size;
+		for (int i = 0; i < attribCount; ++i)
+		{
+			GLchar* data = (GLchar*)malloc(maxLength);
+
+			glGetActiveAttrib(mProgramId, i, maxLength, &written, &size, &type, data);
+			mAttributeLocations.insert(std::pair<std::string, GLuint>(data, glGetAttribLocation(mProgramId, data)));
+
+			free(data);
+		}
+
+		GLint uniformCount = 0;
+		glGetProgramiv(mProgramId, GL_ACTIVE_UNIFORMS, &uniformCount);
+
+		for (int i = 0; i < uniformCount; ++i)
+		{
+			GLchar* data = (GLchar*)malloc(maxLength);
+
+			glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, data);
+			mUniformLocations.insert(std::pair<std::string, GLuint>(data, glGetUniformLocation(mProgramId, data)));
+
+			free(data);
+		}
 	}
 }
 
@@ -966,6 +1017,25 @@ GLUFSepProgramPtr GLUFShaderManager::CreateSeperateProgram(GLUFProgramPtrStagesM
 		ret->AttachProgram(it.second, it.first);
 	}
 	return ret;
+}
+
+GLuint GLUFShaderManager::GetShaderVariableLocation(GLUFProgramPtr prog, GLUFLocationType locType, std::string varName)
+{
+	std::map<std::string, GLuint>::iterator it;
+
+	if (locType == GLT_ATTRIB)
+	{
+		it = prog->mAttributeLocations.find(varName);
+	}
+	else
+	{
+		it = prog->mUniformLocations.find(varName);
+	}
+	return it->second;
+	/*if (it)
+		return it->second;
+	else
+		return 0;//make better*/
 }
 
 void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr ppo, GLbitfield stages, GLUFProgramPtr program)

@@ -136,8 +136,6 @@ int main(void)
 
 
 
-
-
 	std::string path = "suzanne.obj.model";
 	
 	//load from assimp
@@ -223,7 +221,7 @@ int main(void)
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
 		glUniform1i(5, 0);
 
-		//vertexData->Draw();
+		vertexData->Draw();
 
 		//render dialog last(overlay)
 		dlg->OnRender(ellapsedTime);

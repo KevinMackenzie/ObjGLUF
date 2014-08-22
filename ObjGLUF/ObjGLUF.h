@@ -276,6 +276,26 @@ OBJGLUF_API inline std::vector<std::wstring> GLUFSplitStr(const std::wstring &s,
 	return elems;
 }
 
+OBJGLUF_API inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false)
+{
+	std::stringstream ss(s);
+	std::string item;
+	while (std::getline(ss, item, delim))
+	{
+		if (keepDelim)//OOPS forgot this earlier
+			item += delim;
+		elems.push_back(item);
+	}
+	return elems;
+}
+
+OBJGLUF_API inline std::vector<std::string> GLUFSplitStr(const std::string &s, char delim, bool keepDelim = false)
+{
+	std::vector<std::string> elems;
+	GLUFSplitStr(s, delim, elems, keepDelim);
+	return elems;
+}
+
 template<typename T>
 OBJGLUF_API inline size_t GLUFGetVectorSize(std::vector<T> vec)
 {
@@ -293,7 +313,11 @@ OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
 
 
 
-
+enum GLUFLocationType
+{
+	GLT_ATTRIB = 0,
+	GLT_UNIFORM,
+};
 
 struct OBJGLUF_API GLUFShaderInfoStruct
 {
@@ -315,6 +339,8 @@ enum GLUFShaderType
 	SH_GEOMETRY_SHADER = GL_GEOMETRY_SHADER,
 	SH_FRAGMENT_SHADER = GL_FRAGMENT_SHADER
 };
+
+
 
 typedef GLUFShaderInfoStruct GLUFCompileOutputStruct;
 typedef GLUFShaderInfoStruct GLUFLinkOutputStruct;
@@ -373,6 +399,8 @@ public:
 	GLUFProgramPtr CreateProgram(GLUFShaderPathList shaderPaths, bool seperate = false);
 
 	GLUFSepProgramPtr CreateSeperateProgram(GLUFProgramPtrStagesMap programs);
+
+	GLuint GetShaderVariableLocation(GLUFProgramPtr prog, GLUFLocationType locType, std::string varName);
 
 	//for removing things
 
@@ -611,3 +639,7 @@ extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR6;
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR7;
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribTAN;
 extern const GLUFVertexAttribInfo OBJGLUF_API g_attribBITAN;
+
+
+extern GLuint g_GLVersionMajor;
+extern GLuint g_GLVersionMinor;
