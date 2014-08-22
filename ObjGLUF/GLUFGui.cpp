@@ -221,85 +221,95 @@ GLFWwindow* g_pGLFWWindow;
 GLuint g_pControlTexturePtr;
 int g_ControlTextureResourceManLocation = -1;
 
+
+//uniform locations
+struct UIShaderLocations_t
+{
+	GLuint position = 0;
+	GLuint color = 0;
+	GLuint uv = 0;
+	GLuint ortho = 0;
+	GLuint sampler = 0;
+
+}g_UIShaderLocations;
+
+struct TextShaderLocations_t
+{
+	GLuint position = 0;
+	GLuint uv = 0;
+	GLuint ortho = 0;
+	GLuint color = 0;
+	GLuint sampler = 0;
+
+}g_TextShaderLocations;
+
 const char* g_UIShaderVert =
-"#version 430 core \n"\
-"layout(location = 0) in vec3 _Position; \n"\
-"layout(location = 1) in vec4 _Color; \n"\
-"layout(location = 2) in vec2 _UV; \n"\
-"layout(location = 0) uniform mat4 _Ortho; \n"\
-"out VS_OUT \n"\
-"{ \n"\
-"	vec4 Color; \n"\
-"	vec2 uvCoord; \n" \
-"} vs_out; \n"\
+"#version 120 \n"\
+"attribute	vec3 _Position; \n"\
+"attribute	vec4 _Color; \n"\
+"attribute	vec2 _UV; \n"\
+"uniform	mat4 _Ortho; \n"\
+"	\n"\
+"	\n"\
+"varying vec4 Color; \n"\
+"varying vec2 uvCoord; \n" \
+"				 \n"\
 "void main(void) \n"\
 "{ \n"\
 "	gl_Position = vec4(_Position, 1.0f) * _Ortho; \n"\
-"	vs_out.Color = _Color; \n"\
-"   vs_out.uvCoord = abs(vec2(0.0f, 1.0f) - _UV); \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
+"	Color = _Color; \n"\
+"   uvCoord = abs(vec2(0.0f, 1.0f) - _UV); \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
 "} \n";
 
 const char* g_UIShaderFrag =
-"#version 430 core \n"\
-"in VS_OUT \n"\
-"{"\
-"	vec4 Color; \n"\
-"	vec2 uvCoord; \n"\
-"} fs_in; \n"\
-"layout(location = 0) out vec4 Color; \n"\
-"layout(location = 1) uniform sampler2D TextureSampler; \n"\
+"#version 120 \n"\
+"varying vec4 Color; \n"\
+"varying vec2 uvCoord; \n"\
+"uniform sampler2D TextureSampler; \n"\
 "void main(void) \n"\
 "{ \n"\
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f); \n"\
 "	//Color = fs_in.Color; \n"\
-"   Color = texture(TextureSampler, fs_in.uvCoord); \n" \
-"	Color = vec4(mix(Color.rgb, fs_in.Color.rgb, fs_in.Color.a), Color.a); \n"\
+"   vec4 oColor = texture2D(TextureSampler, uvCoord); \n" \
+"	oColor = vec4(mix(oColor.rgb, Color.rgb, Color.a), oColor.a); \n"\
+"	gl_FragColor = Color;\n"\
 "} \n"; 
 
 const char* g_UIShaderFragUntex =
-"#version 430 core \n"\
-"in VS_OUT \n"\
-"{ \n"\
-"	vec4 Color; \n"\
-"	vec2 uvCoord; \n"\
-"} fs_in; \n"\
-"layout(location = 0) out vec4 Color; \n"\
+"#version 120 \n"\
+"varying vec4 Color; \n"\
+"varying vec2 uvCoord; \n"\
 "void main(void) \n"\
 "{ \n"\
-"	Color = fs_in.Color; \n"\
+"	gl_FragColor = Color; \n"\
 "} \n";
 
 const char* g_TextShaderVert =
-"#version 430 core \n" \
-"layout(location = 0) in vec3 _Position; \n"\
-"layout(location = 1) in vec2 _UV; \n" \
-"layout(location = 0) uniform mat4 _MV;\n"\
-"out VS_OUT \n"\
-"{\n"\
-"	vec2 uvCoord;\n"\
-"} vs_out;\n"\
+"#version 120 \n" \
+"attribute vec3 _Position; \n"\
+"attribute vec2 _UV; \n" \
+"uniform mat4 _Ortho;\n"\
+"varying vec2 uvCoord;\n"\
 "void main(void)\n"\
 "{\n"\
-"   vs_out.uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/; \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
-"	gl_Position = vec4(_Position, 1.0f) * _MV; \n"\
+"   uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/; \n"  /*the V's are inverted because the texture is loaded bottom to top*/ \
+"	gl_Position = vec4(_Position, 1.0f) * _Ortho; \n"\
 "} \n";
 
 const char* g_TextShaderFrag =
-"#version 430 core \n" \
-"layout(location = 2) uniform vec4 _Color; \n"\
-"layout(location = 1) uniform sampler2D TextureSampler; \n"\
-"layout(location = 0) out vec4 Color; \n"\
-"in VS_OUT \n"\
-"{\n"\
-"	vec2 uvCoord;\n"\
-"} fs_in;\n"\
+"#version 120 \n" \
+"uniform vec4 _Color; \n"\
+"uniform sampler2D TextureSampler; \n"\
+"varying vec2 uvCoord;\n"\
 "void main(void)\n"\
 "{\n"\
-"	Color.a = texture(TextureSampler, fs_in.uvCoord).r;\n"\
+"	vec4 Color;\n"\
+"	Color.a = texture2D(TextureSampler, uvCoord).r;\n"\
 "	Color.rgb = _Color.rgb; \n"\
 "	//Color.a = 1.0f;\n"\
 "	Color.a *= _Color.a;\n"\
 "	//Color = vec4(1.0f, 0.0f, 0.0f, 1.0f); \n"\
+"	gl_FragColor = Color; \n"\
 "} \n";
 
 
@@ -346,6 +356,24 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_TextShaderFrag));
 	g_TextProgram = GLUFSHADERMANAGER.CreateProgram(sources);
 
+	//TODO: make the shader object do this for me, and then I can just access each id through a keyword
+
+	GLuint progId = GLUFSHADERMANAGER.GetProgramId(g_UIProgram);
+
+	//load the locations
+	g_UIShaderLocations.position	= glGetAttribLocation(progId, "_Position");
+	g_UIShaderLocations.uv			= glGetAttribLocation(progId, "_UV");
+	g_UIShaderLocations.color		= glGetAttribLocation(progId, "_Color");
+	g_UIShaderLocations.ortho		= glGetUniformLocation(progId, "_Ortho");
+	g_UIShaderLocations.sampler		= glGetUniformLocation(progId, "TextureSampler");
+
+	progId = GLUFSHADERMANAGER.GetProgramId(g_TextProgram);
+
+	g_TextShaderLocations.position	= glGetAttribLocation(progId, "_Position");
+	g_TextShaderLocations.uv		= glGetAttribLocation(progId, "_UV");
+	g_TextShaderLocations.color		= glGetUniformLocation(progId, "_Color");
+	g_TextShaderLocations.ortho		= glGetUniformLocation(progId, "_Ortho");
+	g_TextShaderLocations.sampler	= glGetUniformLocation(progId, "TextureSampler");
 
 	//create the text arrrays
 	glGenVertexArrays(1, &g_TextVAO);
@@ -354,10 +382,10 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	glGenBuffers(1, &g_TextTexCoords);
 
 	glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glVertexAttribPointer(g_TextShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glVertexAttribPointer(g_TextShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glBindVertexArray(0);
 
@@ -549,12 +577,12 @@ void GLUFFont::Refresh()
 			mCharAtlas[p].ay = 0.0f;
 
 			mCharAtlas[p].bw = 1.0f;
-			mCharAtlas[p].bh = mAtlasHeight;
+			mCharAtlas[p].bh = (float)mAtlasHeight;
 
 			mCharAtlas[p].bl = 0.0f;
 			mCharAtlas[p].bt = 0.0f;
 
-			mCharAtlas[p].tx = mAtlasWidth - GLYPH_PADDING;
+			mCharAtlas[p].tx = float(mAtlasWidth - GLYPH_PADDING);
 
 			continue;
 		}
@@ -3053,7 +3081,6 @@ m_pVBScreenQuadIndicies(0),
 m_pVBScreenQuadPositions(0),
 m_pVBScreenQuadColor(0),
 m_pVBScreenQuadUVs(0),
-m_pSamplerLocation(1),//SAMPLER LOCATION HERE:
 //m_pVBScreenQuad11(nullptr),
 //m_pSpriteBuffer11(nullptr),
 //m_SpriteBufferBytes11(0)
@@ -3070,13 +3097,13 @@ m_SpriteBufferIndices(0)
 	//glGenBuffers(1, &m_pVBScreenQuadUVs);
 
 	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadPositions);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glVertexAttribPointer(g_UIShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadColor);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glVertexAttribPointer(g_UIShaderLocations.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadUVs);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	//this is static
 	glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
@@ -3393,12 +3420,12 @@ void GLUFDialogResourceManager::ApplyRenderUI()
 	//pd3dImmediateContext->DSSetShader(nullptr, nullptr, 0);
 	//pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
 	//pd3dImmediateContext->PSSetShader(m_pPSRenderUI11, nullptr, 0);
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(g_UIShaderLocations.position);
+	glEnableVertexAttribArray(g_UIShaderLocations.color);
+	glEnableVertexAttribArray(g_UIShaderLocations.uv);
 	GLUFSHADERMANAGER.UseProgram(g_UIProgram);
 
-	glUniform1f(m_pSamplerLocation, 0);
+	glUniform1f(g_UIShaderLocations.sampler, 0);
 
 	ApplyOrtho();
 
@@ -3420,9 +3447,9 @@ void GLUFDialogResourceManager::ApplyRenderUIUntex()
 	//pd3dImmediateContext->DSSetShader(nullptr, nullptr, 0);
 	//pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
 	//pd3dImmediateContext->PSSetShader(m_pPSRenderUIUntex11, nullptr, 0);
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
+	glEnableVertexAttribArray(g_UIShaderLocations.position);
+	glEnableVertexAttribArray(g_UIShaderLocations.color);
+	glDisableVertexAttribArray(g_UIShaderLocations.uv);
 	GLUFSHADERMANAGER.UseProgram(g_UIProgramUntex);
 	
 	ApplyOrtho();
@@ -3461,7 +3488,7 @@ glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix()
 void GLUFDialogResourceManager::ApplyOrtho()
 {
 	glm::mat4 mat = GetOrthoMatrix();
-	glUniformMatrix4fv(0, 1, GL_FALSE, &mat[0][0]);
+	glUniformMatrix4fv(g_UIShaderLocations.ortho, 1, GL_FALSE, &mat[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
@@ -3551,7 +3578,7 @@ void GLUFDialogResourceManager::EndSprites(bool textured)
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, g_pControlTexturePtr);
-	glUniform1f(m_pSamplerLocation, 0);
+	glUniform1f(g_UIShaderLocations.sampler, 0);
 
 	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
@@ -8860,20 +8887,20 @@ void EndText(GLUFFontPtr font)
 
 	//first uniform: model-view matrix
 	glm::mat4 mv = g_TextOrtho;
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mv));
+	glUniformMatrix4fv(g_TextShaderLocations.ortho, 1, GL_FALSE, glm::value_ptr(mv));
 
 	//second, the sampler
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, font->mTexId);
-	glUniform1f(1, 0);
+	glUniform1f(g_TextShaderLocations.sampler, 0);
 
 
 	//third, the color
 	Color4f color = g_TextVerticies.get_color();
-	glUniform4f(2, color.r, color.g, color.b, color.a);
+	glUniform4f(g_TextShaderLocations.color, color.r, color.g, color.b, color.a);
 
-	glEnableVertexAttribArray(0);//positions
-	glEnableVertexAttribArray(1);//uvs
+	glEnableVertexAttribArray(g_TextShaderLocations.position);//positions
+	glEnableVertexAttribArray(g_TextShaderLocations.uv);//uvs
 
 	glDrawArrays(GL_TRIANGLES, 0, g_TextVerticies.size());
 

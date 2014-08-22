@@ -344,11 +344,11 @@ GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexStorage2D(GL_TEXTURE_2D,
+	glTexImage2D(GL_TEXTURE_2D,
 		GLint(Texture.levels()),
 		GLenum(gli::internal_format(Texture.format())),
 		GLsizei(Texture.dimensions().x),
-		GLsizei(Texture.dimensions().y));
+		GLsizei(Texture.dimensions().y), 0, GL_RGBA, GL_FLOAT, nullptr);
 	if (gli::is_compressed(Texture.format()))
 	{
 		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
