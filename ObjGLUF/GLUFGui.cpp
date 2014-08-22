@@ -461,6 +461,7 @@ public:
 	void Refresh();
 
 	GLUFRect GetCharRect(wchar_t ch);
+	GLUFRect GetCharRectNDC(wchar_t ch);
 	GLUFRect GetCharTexRect(wchar_t ch);
 
 	//font properties
@@ -538,6 +539,26 @@ void GLUFFont::Refresh()
 		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
 			continue;
 
+		if (i == 32/*space*/)
+		{
+			FT_UInt spId = FT_Get_Char_Index(mFtFont, 32);
+			if (FT_Load_Glyph(mFtFont, spId, FT_LOAD_RENDER))
+				continue;
+
+			mCharAtlas[p].ax = (float)(mFtFont->glyph->advance.x >> 6);
+			mCharAtlas[p].ay = 0.0f;
+
+			mCharAtlas[p].bw = 1.0f;
+			mCharAtlas[p].bh = mAtlasHeight;
+
+			mCharAtlas[p].bl = 0.0f;
+			mCharAtlas[p].bt = 0.0f;
+
+			mCharAtlas[p].tx = mAtlasWidth - GLYPH_PADDING;
+
+			continue;
+		}
+
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING), 0, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
 
 		//this adds padding to keep the characters looking clean
@@ -561,8 +582,8 @@ void GLUFFont::Refresh()
 	//FT_Done_Face(mFtFont);
 	g = 0;
 
-	for (int i = mCharacterOffset; i < mCharacterEnd; ++i)
-		wprintf(L"%c: %f\n", (wchar_t)i, GetCharHeight(i));
+	/*for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
+		wprintf(L"%c: %f\n", (wchar_t)i, GetCharWidth(i));*/
 }
 
 bool GLUFFont::Init(void* data, uint64_t rawSize, float fontHeight)
@@ -586,8 +607,19 @@ GLUFRect GLUFFont::GetCharRect(wchar_t ch)
 	//GLUFOffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
 
 	//if there is a dropdown, make sure it is accounted for
-	float dy = ((mCharAtlas[ch - mCharacterOffset].bt - mCharAtlas[ch - mCharacterOffset].bh) / mAtlasHeight) * mHeight;
-	GLUFOffsetRect(rc, 0.0f, 2*dy);
+	float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
+	GLUFOffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, dy);
+	return rc;
+}
+
+GLUFRect GLUFFont::GetCharRectNDC(wchar_t ch)
+{
+	GLUFRect rc = { 0.0f, 2.0f * GetCharHeight(ch), 2.0f * GetCharWidth(ch), 0.0f };
+	//GLUFOffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
+
+	//if there is a dropdown, make sure it is accounted for
+	float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
+	GLUFOffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, -2 * dy);
 	return rc;
 }
 
@@ -629,7 +661,7 @@ float GLUFFont::GetCharWidth(wchar_t ch)
 
 float GLUFFont::GetCharHeight(wchar_t ch)
 {
-	return (mCharAtlas[ch - mCharacterOffset].bt / mAtlasHeight) * mHeight;
+	return (mCharAtlas[ch - mCharacterOffset].bh / mAtlasHeight) * mHeight;
 }
 
 float GLUFFont::GetStringWidth(std::wstring str)
@@ -2680,7 +2712,7 @@ void GLUFDialog::InitDefaultElements()
 	unsigned long rawSize = 0;
 
 	rawData = GLUFLoadFileIntoMemory(_T("Arial.ttf"), &rawSize);
-	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize, 0.025f);
+	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize, 0.02f);
 	//free(rawData); DON'T FREE
 
 	int fontIndex = m_pManager->AddFont(font, FONT_WEIGHT_NORMAL);
@@ -8675,7 +8707,6 @@ void BeginText(glm::mat4 orthoMatrix)
 //--------------------------------------------------------------------------------------
 void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Color vFontColor, bool bCenter, bool bHardRect)
 {
-	//TODO: make this split at word endings
 
 	if (font.m_pFontType->mHeight > GLUFRectHeight(rcScreen) && bHardRect)
 		return;//no sense rendering if it is too big
@@ -8743,11 +8774,11 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 		//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
 		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
 
-		GLUFRect glyph = font.m_pFontType->GetCharRect(ch);
+		GLUFRect glyph = font.m_pFontType->GetCharRectNDC(ch);
 
 		//remember to expand for this
-		glyph.right = GLUF_FONT_HEIGHT_NDC(glyph.right);
-		glyph.top   = GLUF_FONT_HEIGHT_NDC(glyph.right);
+		//glyph.right = GLUF_FONT_HEIGHT_NDC(glyph.right);
+		//glyph.top   = GLUF_FONT_HEIGHT_NDC(glyph.right);
 
 		GLUFOffsetRect(glyph, CurX, CurY - (tmpSize));
 		//glyph.left = CurX;

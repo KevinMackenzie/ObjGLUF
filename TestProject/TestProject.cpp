@@ -81,7 +81,7 @@ int main(void)
 	dlg = new GLUFDialog();
 	dlg->Init(resMan);
 	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
-	dlg->SetCaptionText(L"Iaption");
+	dlg->SetCaptionText(L"Caption");
 	dlg->SetCaptionHeight(0.03625f);
 	dlg->LockPosition(false);
 	dlg->EnableCaption(true);
@@ -90,7 +90,9 @@ int main(void)
 	dlg->SetBackgroundColors(Color(0, 128, 0, 128));
 	dlg->EnableKeyboardInput(true);
 
-	dlg->AddButton(0, L"Button", 0.05f, 0.01f, 0.125f, 0.03625f);
+	dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 0.1f, 0.6f, 0.175f, 0.03625f);
+
+	/*dlg->AddButton(0, L"Button", 0.05f, 0.01f, 0.125f, 0.03625f);
 
 	GLUFListBox* box;
 	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);
@@ -130,7 +132,7 @@ int main(void)
 	box->AddItem(L"Item 26", nullptr);
 	box->AddItem(L"Item 27", nullptr);
 	box->AddItem(L"Item 28", nullptr);
-	box->AddItem(L"Item 29", nullptr);
+	box->AddItem(L"Item 29", nullptr);*/
 
 
 
@@ -167,8 +169,6 @@ int main(void)
 	float prevTime = 0.0f;
 	float currTime = 0.0f;
 
-	// Dark blue background
-	//glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
 
 
@@ -188,7 +188,7 @@ int main(void)
 		glfwGetFramebufferSize(window, &width, &height);
 		ratio = width / (float)height;
 		glViewport(0, 0, width, height);
-		static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		static const GLfloat black[] = { 0.0f, 0.0f, 4.0f, 1.0f };
 		static const GLfloat one = 1.0f;
 
 		glClearBufferfv(GL_COLOR, 0, black);
@@ -223,7 +223,7 @@ int main(void)
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
 		glUniform1i(5, 0);
 
-		vertexData->Draw();
+		//vertexData->Draw();
 
 		//render dialog last(overlay)
 		dlg->OnRender(ellapsedTime);
