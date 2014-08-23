@@ -401,11 +401,15 @@ public:
 	GLUFProgramPtr CreateProgram(GLUFShaderSourceList shaderSources, bool seperate = false);
 	GLUFProgramPtr CreateProgram(GLUFShaderPathList shaderPaths, bool seperate = false);
 
-	GLUFSepProgramPtr CreateSeperateProgram(GLUFProgramPtrStagesMap programs);
+	//program pipelines are broken
+	//GLUFSepProgramPtr CreateSeperateProgram(GLUFProgramPtrStagesMap programs);
 
 	GLuint GetShaderVariableLocation(GLUFProgramPtr prog, GLUFLocationType locType, std::string varName);
 	GLUFVariableLocMap GetShaderAttribLocations(GLUFProgramPtr prog);
 	GLUFVariableLocMap GetShaderUniformLocations(GLUFProgramPtr prog);
+
+	GLUFVariableLocMap GetShaderAttribLocations(GLUFSepProgramPtr prog);
+	GLUFVariableLocMap GetShaderUniformLocations(GLUFSepProgramPtr prog);
 
 	//for removing things
 
@@ -656,8 +660,8 @@ extern std::map<unsigned char, GLUFVertexAttribInfo> OBJGLUF_API g_stdAttrib;
 
 
 
-extern GLuint g_GLVersionMajor;
-extern GLuint g_GLVersionMinor;
+extern GLuint OBJGLUF_API g_GLVersionMajor;
+extern GLuint OBJGLUF_API g_GLVersionMinor;
 
 
 

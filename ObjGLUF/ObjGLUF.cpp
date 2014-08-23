@@ -548,15 +548,35 @@ class GLUFSeperateProgram
 	GLUFProgramPtrStagesMap m_Programs;//so the programs don't go deleting themselves until the PPO is destroyed
 
 public:
-	~GLUFSeperateProgram(){ glDeleteProgramPipelines(1, &mPPOId); }
+	~GLUFSeperateProgram();
 
-	void Init(){ glGenProgramPipelines(1, &mPPOId); }
+	void Init();
 	
-	void AttachProgram(GLUFProgramPtr program, GLbitfield stages){ m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); glUseProgramStages(mPPOId, stages, program->GetId()); }
+	void AttachProgram(GLUFProgramPtr program, GLbitfield stages);
 
 };
 
+////////////////////////////////////////
+//
+//GLUFSeperateProgram Methods:
+//
+//
 
+GLUFSeperateProgram::~GLUFSeperateProgram()
+{
+	glDeleteProgramPipelines(1, &mPPOId); 
+}
+
+void GLUFSeperateProgram::Init()
+{
+	glGenProgramPipelines(1, &mPPOId);
+}
+
+void GLUFSeperateProgram::AttachProgram(GLUFProgramPtr program, GLbitfield stages)
+{
+	m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); 
+	glUseProgramStages(mPPOId, stages, program->GetId());
+}
 
 ////////////////////////////////////////
 //
@@ -1069,6 +1089,30 @@ GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(GLUFProgramPtr p
 	return prog->mUniformLocations;
 }
 
+GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(GLUFSepProgramPtr prog)
+{
+	GLUFVariableLocMap ret;
+
+	for (auto it : prog->m_Programs)
+	{
+		ret.insert(it.second->mAttributeLocations.begin(), it.second->mAttributeLocations.end());
+	}
+
+	return ret;
+}
+
+GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(GLUFSepProgramPtr prog)
+{
+	GLUFVariableLocMap ret;
+
+	for (auto it : prog->m_Programs)
+	{
+		ret.insert(it.second->mUniformLocations.begin(), it.second->mUniformLocations.end());
+	}
+
+	return ret;
+}
+
 void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr ppo, GLbitfield stages, GLUFProgramPtr program)
 {
 	ppo->AttachProgram(program, stages);
@@ -1089,6 +1133,7 @@ void GLUFShaderManager::ClearPrograms(GLUFSepProgramPtr ppo, GLbitfield stages)
 
 void GLUFShaderManager::UseProgram(GLUFSepProgramPtr program)
 {
+	glUseProgram(0);
 	glBindProgramPipeline(program->mPPOId);
 }
 

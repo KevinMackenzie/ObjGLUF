@@ -144,12 +144,22 @@ int main(void)
 
 
 	//load shaders
-	GLUFProgramPtr Prog;
+	GLUFProgramPtr frag, vert;
+	GLUFSepProgramPtr Prog;
 
 	GLUFShaderPathList paths;
 	paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+	vert = GLUFSHADERMANAGER.CreateProgram(paths, true);
+	paths.clear();
+
 	paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
-	Prog = GLUFSHADERMANAGER.CreateProgram(paths);
+	frag = GLUFSHADERMANAGER.CreateProgram(paths);
+
+	GLUFProgramPtrStagesMap stages;
+	stages.insert(GLUFProgramPtrStagesPair(GL_FRAGMENT_SHADER_BIT, frag));
+	stages.insert(GLUFProgramPtrStagesPair(GL_VERTEX_SHADER_BIT,   vert));
+
+	Prog = GLUFSHADERMANAGER.CreateSeperateProgram(stages);
 
 	GLUFVariableLocMap attribs, uniforms;
 	attribs = GLUFSHADERMANAGER.GetShaderAttribLocations(Prog);
@@ -203,7 +213,7 @@ int main(void)
 	float currTime = 0.0f;
 
 
-
+	printf("%i.%i", g_GLVersionMajor, g_GLVersionMinor);
 
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);
