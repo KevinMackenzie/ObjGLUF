@@ -8,32 +8,38 @@
 #include <sstream>
 #include <GLFW/glfw3.h>
 
+namespace GLUF
+{
+
 GLUFErrorMethod ErrorMethod;
 //GLUFBufferManager g_BufferManager;
 GLUFShaderManager g_ShaderManager;
 
 //initialize the standard vertex attributes
 //							Name				bytes,	count,	location,				type
-const GLUFVertexAttribInfo	g_attribPOS		= { 4,		3,		VERTEX_ATTRIB_POSITION,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribNORM	= { 4,		3,		VERTEX_ATTRIB_NORMAL,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV0		= { 4,		2,		VERTEX_ATTRIB_UV0,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV1		= { 4,		2,		VERTEX_ATTRIB_UV1,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV2		= { 4,		2,      VERTEX_ATTRIB_UV2,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV3		= { 4,		2,		VERTEX_ATTRIB_UV3,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV4		= { 4,		2,		VERTEX_ATTRIB_UV4,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV5		= { 4,		2,		VERTEX_ATTRIB_UV5,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV6		= { 4,		2,		VERTEX_ATTRIB_UV6,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribUV7		= { 4,		2,		VERTEX_ATTRIB_UV7,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR0	= { 4,		4,		VERTEX_ATTRIB_COLOR0,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR1	= { 4,		4,		VERTEX_ATTRIB_COLOR1,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR2	= { 4,		4,		VERTEX_ATTRIB_COLOR2,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR3	= { 4,		4,		VERTEX_ATTRIB_COLOR3,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR4	= { 4,		4,		VERTEX_ATTRIB_COLOR4,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR5	= { 4,		4,		VERTEX_ATTRIB_COLOR5,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR6	= { 4,		4,		VERTEX_ATTRIB_COLOR6,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribCOLOR7	= { 4,		4,		VERTEX_ATTRIB_COLOR7,	GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		VERTEX_ATTRIB_TAN,		GL_FLOAT };
-const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		VERTEX_ATTRIB_BITAN,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribPOS		= { 4,		3,		GLUF_VERTEX_ATTRIB_POSITION,GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribNORM	= { 4,		3,		GLUF_VERTEX_ATTRIB_NORMAL,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV0		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV0,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV1		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV1,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV2		= { 4,		2,      GLUF_VERTEX_ATTRIB_UV2,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV3		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV3,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV4		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV4,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV5		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV5,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV6		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV6,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribUV7		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV7,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR0	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR0,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR1	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR1,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR2	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR2,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR3	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR3,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR4	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR4,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR5	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR5,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR6	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR6,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribCOLOR7	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR7,	GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		GLUF_VERTEX_ATTRIB_TAN,		GL_FLOAT };
+const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		GLUF_VERTEX_ATTRIB_BITAN,	GL_FLOAT };
+
+
+GLUFVertexAttribMap g_stdAttrib;
 
 GLuint g_GLVersionMajor = 0;
 GLuint g_GLVersionMinor = 0;
@@ -94,6 +100,29 @@ bool GLUFInitOpenGLExtentions()
 	vsVec = GLUFSplitStr((const char*)version, L'.');//TODO: global openGL version
 	g_GLVersionMajor = std::stoi(vsVec[0]);
 	g_GLVersionMinor = std::stoi(vsVec[1]);
+
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, g_attribPOS));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, g_attribNORM));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, g_attribPOS));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR0, g_attribCOLOR0));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_TAN, g_attribTAN));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_BITAN, g_attribBITAN));
+
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV1, g_attribUV1));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV2, g_attribUV2));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV3, g_attribUV3));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV4, g_attribUV4));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV5, g_attribUV5));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV6, g_attribUV6));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV7, g_attribUV7));
+
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR1, g_attribCOLOR1));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR2, g_attribCOLOR2));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR3, g_attribCOLOR3));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR4, g_attribCOLOR4));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR5, g_attribCOLOR5));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR6, g_attribCOLOR6));
+	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR7, g_attribCOLOR7));
 
 	return true;
 }
@@ -312,10 +341,10 @@ void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp)
 Color4f GLUFColorToFloat(Color color)
 {
 	Color4f col;
-	col.x = (float)color.x / 255.0f;
-	col.y = (float)color.y / 255.0f;
-	col.z = (float)color.z / 255.0f;
-	col.w = (float)color.w / 255.0f;
+	col.x = std::min(1.0f, (float)color.x / 255.0f);
+	col.y = std::min(1.0f, (float)color.y / 255.0f);
+	col.z = std::min(1.0f, (float)color.z / 255.0f);
+	col.w = std::min(1.0f, (float)color.w / 255.0f);
 	return col;
 }
 
@@ -344,12 +373,12 @@ glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y)
 
 GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 {
-	unsigned long rawSize = 0;
+	/*unsigned long rawSize = 0;
 	char* data = GLUFLoadFileIntoMemory(filePath.c_str(), &rawSize);
 
-	return LoadTextureFromMemory(data, rawSize, format);
+	return LoadTextureFromMemory(data, rawSize, format);*/
 
-	/*GLuint tex = 0;
+	GLuint tex = 0;
 	gli::texture2D Texture(gli::load_dds(filePath.c_str()));
 	assert(!Texture.empty());
 	glGenTextures(1, &tex);
@@ -360,21 +389,15 @@ GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexStorage2D(GL_TEXTURE_2D,
-		GLint(Texture.levels()),
-		GLenum(gli::internal_format(Texture.format())),
-		GLsizei(Texture.dimensions().x),
-		GLsizei(Texture.dimensions().y));
 	if (gli::is_compressed(Texture.format()))
 	{
 		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D,
+			glCompressedTexImage2D(GL_TEXTURE_2D,
 				GLint(Level),
-				0, 0,
-				GLsizei(Texture[Level].dimensions().x),
-				GLsizei(Texture[Level].dimensions().y),
 				GLenum(gli::internal_format(Texture.format())),
+				GLsizei(Texture[Level].dimensions().x),
+				GLsizei(Texture[Level].dimensions().y), 0,
 				GLsizei(Texture[Level].size()),
 				Texture[Level].data());
 		}
@@ -383,18 +406,21 @@ GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 	{
 		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
 		{
-			glTexSubImage2D(GL_TEXTURE_2D,
+			glTexImage2D(GL_TEXTURE_2D,
 				GLint(Level),
-				0, 0,
+				GLenum(gli::internal_format(Texture.format())),
 				GLsizei(Texture[Level].dimensions().x),
-				GLsizei(Texture[Level].dimensions().y),
+				GLsizei(Texture[Level].dimensions().y), 0,
 				GLenum(gli::external_format(Texture.format())),
 				GLenum(gli::type_format(Texture.format())),
 				Texture[Level].data());
 		}
 	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);*/
+	glBindTexture(GL_TEXTURE_2D, 0);
+	
+	return tex;
+	
 }
 
 
@@ -411,21 +437,15 @@ GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFor
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexStorage2D(GL_TEXTURE_2D,
-		GLint(Texture.levels()),
-		GLenum(gli::internal_format(Texture.format())),
-		GLsizei(Texture.dimensions().x),
-		GLsizei(Texture.dimensions().y));
 	if (gli::is_compressed(Texture.format()))
 	{
 		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D,
+			glCompressedTexImage2D(GL_TEXTURE_2D,
 				GLint(Level),
-				0, 0,
-				GLsizei(Texture[Level].dimensions().x),
-				GLsizei(Texture[Level].dimensions().y),
 				GLenum(gli::internal_format(Texture.format())),
+				GLsizei(Texture[Level].dimensions().x),
+				GLsizei(Texture[Level].dimensions().y), 0,
 				GLsizei(Texture[Level].size()),
 				Texture[Level].data());
 		}
@@ -434,11 +454,11 @@ GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFor
 	{
 		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
 		{
-			glTexSubImage2D(GL_TEXTURE_2D,
+			glTexImage2D(GL_TEXTURE_2D,
 				GLint(Level),
-				0, 0,
+				GLenum(gli::internal_format(Texture.format())),
 				GLsizei(Texture[Level].dimensions().x),
-				GLsizei(Texture[Level].dimensions().y),
+				GLsizei(Texture[Level].dimensions().y), 0,
 				GLenum(gli::external_format(Texture.format())),
 				GLenum(gli::type_format(Texture.format())),
 				Texture[Level].data());
@@ -502,8 +522,8 @@ class GLUFProgram
 	//GLuint mUniformBuffId;
 	GLuint mProgramId;
 	std::map<GLUFShaderType, GLUFShaderPtr > mShaderBuff;
-	std::map<std::string, GLuint> mAttributeLocations;
-	std::map<std::string, GLuint> mUniformLocations;
+	GLUFVariableLocMap mAttributeLocations;
+	GLUFVariableLocMap mUniformLocations;
 
 public:
 
@@ -761,7 +781,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 			GLchar* data = (GLchar*)malloc(maxLength);
 
 			glGetActiveAttrib(mProgramId, i, maxLength, &written, &size, &type, data);
-			mAttributeLocations.insert(std::pair<std::string, GLuint>(data, glGetAttribLocation(mProgramId, data)));
+			mAttributeLocations.insert(GLUFVariableLocPair(data, glGetAttribLocation(mProgramId, data)));
 
 			free(data);
 		}
@@ -774,7 +794,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 			GLchar* data = (GLchar*)malloc(maxLength);
 
 			glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, data);
-			mUniformLocations.insert(std::pair<std::string, GLuint>(data, glGetUniformLocation(mProgramId, data)));
+			mUniformLocations.insert(GLUFVariableLocPair(data, glGetUniformLocation(mProgramId, data)));
 
 			free(data);
 		}
@@ -1031,11 +1051,22 @@ GLuint GLUFShaderManager::GetShaderVariableLocation(GLUFProgramPtr prog, GLUFLoc
 	{
 		it = prog->mUniformLocations.find(varName);
 	}
+
 	return it->second;
 	/*if (it)
 		return it->second;
 	else
 		return 0;//make better*/
+}
+
+GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(GLUFProgramPtr prog)
+{
+	return prog->mAttributeLocations;
+}
+
+GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(GLUFProgramPtr prog)
+{
+	return prog->mUniformLocations;
 }
 
 void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr ppo, GLbitfield stages, GLUFProgramPtr program)
@@ -1371,11 +1402,13 @@ GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int mes
 	if (meshNum > scene->mNumMeshes)
 		return nullptr;
 
-	const aiMesh* mesh = scene->mMeshes[meshNum];
+	//const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	GLUFVertexArray* vertexData = new GLUFVertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+	GLUFVertexArray* arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
+	if (!arr)
+		return nullptr;
 
-	if (mesh->HasPositions())
+	/*if (mesh->HasPositions())
 		vertexData->AddVertexAttrib(g_attribPOS);
 	if (mesh->HasNormals())
 		vertexData->AddVertexAttrib(g_attribNORM);
@@ -1420,46 +1453,200 @@ GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int mes
 
 
 	if (mesh->HasPositions())
-		vertexData->BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
 	if (mesh->HasNormals())
-		vertexData->BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
 	if (mesh->HasTextureCoords(0))
-		vertexData->BufferData(VERTEX_ATTRIB_UV0, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV0, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(1))
-		vertexData->BufferData(VERTEX_ATTRIB_UV1, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV1, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(2))
-		vertexData->BufferData(VERTEX_ATTRIB_UV2, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV2, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(3))
-		vertexData->BufferData(VERTEX_ATTRIB_UV3, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV3, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(4))
-		vertexData->BufferData(VERTEX_ATTRIB_UV4, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV4, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(5))
-		vertexData->BufferData(VERTEX_ATTRIB_UV5, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV5, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(6))
-		vertexData->BufferData(VERTEX_ATTRIB_UV6, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV6, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
 	if (mesh->HasTextureCoords(7))
-		vertexData->BufferData(VERTEX_ATTRIB_UV7, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV7, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
 
 	if (mesh->HasVertexColors(0))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR0, mesh->mNumVertices, mesh->mColors[0]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR0, mesh->mNumVertices, mesh->mColors[0]);
 	if (mesh->HasVertexColors(1))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR1, mesh->mNumVertices, mesh->mColors[1]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR1, mesh->mNumVertices, mesh->mColors[1]);
 	if (mesh->HasVertexColors(2))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR2, mesh->mNumVertices, mesh->mColors[2]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR2, mesh->mNumVertices, mesh->mColors[2]);
 	if (mesh->HasVertexColors(3))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR3, mesh->mNumVertices, mesh->mColors[3]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR3, mesh->mNumVertices, mesh->mColors[3]);
 	if (mesh->HasVertexColors(4))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR4, mesh->mNumVertices, mesh->mColors[4]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR4, mesh->mNumVertices, mesh->mColors[4]);
 	if (mesh->HasVertexColors(5))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR5, mesh->mNumVertices, mesh->mColors[5]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR5, mesh->mNumVertices, mesh->mColors[5]);
 	if (mesh->HasVertexColors(6))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR6, mesh->mNumVertices, mesh->mColors[6]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR6, mesh->mNumVertices, mesh->mColors[6]);
 	if (mesh->HasVertexColors(7))
-		vertexData->BufferData(VERTEX_ATTRIB_COLOR7, mesh->mNumVertices, mesh->mColors[7]);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR7, mesh->mNumVertices, mesh->mColors[7]);
 	if (mesh->HasTangentsAndBitangents())
 	{
-		vertexData->BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
-		vertexData->BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
+		vertexData->BufferData(GLUF_VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+	}
+
+	std::vector<GLuint> indices;
+	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+	{
+		aiFace curr = mesh->mFaces[i];
+		indices.push_back(curr.mIndices[0]);
+		indices.push_back(curr.mIndices[1]);
+		indices.push_back(curr.mIndices[2]);
+	}
+	vertexData->BufferIndices(&indices[0], indices.size());*/
+
+	return arr;
+}
+
+GLUFVertexArray* LoadVertexArrayFromScene(const aiScene* scene, GLUFVertexAttribMap inputs, unsigned int meshNum)
+{
+	if (meshNum > scene->mNumMeshes)
+		return false;
+
+	const aiMesh* mesh = scene->mMeshes[meshNum];
+
+	GLUFVertexArray* vertexData = new GLUFVertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+
+	GLUFVertexAttribMap::iterator it, itPos, itNorm, itUV0, itUV1, itUV2, itUV3, itUV4, itUV5, itUV6, itUV7, itCol0, itCol1, itCol2, itCol3, itCol4, itCol5, itCol6, itCol7, itTan, itBitan;
+
+	it = itPos = inputs.find(GLUF_VERTEX_ATTRIB_POSITION);
+	if (mesh->HasPositions() && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itNorm = inputs.find(GLUF_VERTEX_ATTRIB_NORMAL);
+	if (mesh->HasNormals() && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV0 = inputs.find(GLUF_VERTEX_ATTRIB_UV0);
+	if (mesh->HasTextureCoords(0) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV1 = inputs.find(GLUF_VERTEX_ATTRIB_UV1);
+	if (mesh->HasTextureCoords(1) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV2 = inputs.find(GLUF_VERTEX_ATTRIB_UV2);
+	if (mesh->HasTextureCoords(2) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV3 = inputs.find(GLUF_VERTEX_ATTRIB_UV3);
+	if (mesh->HasTextureCoords(3) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV4 = inputs.find(GLUF_VERTEX_ATTRIB_UV4);
+	if (mesh->HasTextureCoords(4) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV5 = inputs.find(GLUF_VERTEX_ATTRIB_UV5);
+	if (mesh->HasTextureCoords(5) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV6 = inputs.find(GLUF_VERTEX_ATTRIB_UV6);
+	if (mesh->HasTextureCoords(6) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itUV7 = inputs.find(GLUF_VERTEX_ATTRIB_UV7);
+	if (mesh->HasTextureCoords(7) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+
+
+	it = itCol0 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR0);
+	if (mesh->HasVertexColors(0) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itCol1 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR1);
+	if (mesh->HasVertexColors(1) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itCol2 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR2);
+	if (mesh->HasVertexColors(2) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itCol3 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR3);
+	if (mesh->HasVertexColors(3) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itCol4 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR4);
+	if (mesh->HasVertexColors(4) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+	
+	it = itCol5 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR5);
+	if (mesh->HasVertexColors(5) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itCol6 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR6);
+	if (mesh->HasVertexColors(6) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+	it = itCol7 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR7);
+	if (mesh->HasVertexColors(7) && it != inputs.end())
+		vertexData->AddVertexAttrib(it->second);
+
+
+	it = itTan = inputs.find(GLUF_VERTEX_ATTRIB_TAN);
+	it = itBitan = inputs.find(GLUF_VERTEX_ATTRIB_BITAN);
+	if (it != inputs.end())
+	{
+		if (mesh->HasTangentsAndBitangents() && itTan != inputs.end())
+		{
+			vertexData->AddVertexAttrib(itTan->second);
+			vertexData->AddVertexAttrib(itBitan->second);
+		}
+	}
+
+
+	if (mesh->HasPositions() && itPos != inputs.end())
+		vertexData->BufferData(itPos->second.VertexAttribLocation, mesh->mNumVertices, mesh->mVertices);
+	if (mesh->HasNormals() && itNorm != inputs.end())
+		vertexData->BufferData(itNorm->second.VertexAttribLocation, mesh->mNumVertices, mesh->mNormals);
+	if (mesh->HasTextureCoords(0) && itUV0 != inputs.end())
+		vertexData->BufferData(itUV0->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(1) && itUV1 != inputs.end())
+		vertexData->BufferData(itUV1->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(2) && itUV2 != inputs.end())
+		vertexData->BufferData(itUV2->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(3) && itUV3 != inputs.end())
+		vertexData->BufferData(itUV3->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(4) && itUV4 != inputs.end())
+		vertexData->BufferData(itUV4->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(5) && itUV5 != inputs.end())
+		vertexData->BufferData(itUV5->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(6) && itUV6 != inputs.end())
+		vertexData->BufferData(itUV6->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
+	if (mesh->HasTextureCoords(7) && itUV7 != inputs.end())
+		vertexData->BufferData(itUV7->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
+
+	if (mesh->HasVertexColors(0) && itCol0 != inputs.end())
+		vertexData->BufferData(itCol0->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[0]);
+	if (mesh->HasVertexColors(1) && itCol1 != inputs.end())
+		vertexData->BufferData(itCol1->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[1]);
+	if (mesh->HasVertexColors(2) && itCol2 != inputs.end())
+		vertexData->BufferData(itCol2->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[2]);
+	if (mesh->HasVertexColors(3) && itCol3 != inputs.end())
+		vertexData->BufferData(itCol3->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[3]);
+	if (mesh->HasVertexColors(4) && itCol4 != inputs.end())
+		vertexData->BufferData(itCol4->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[4]);
+	if (mesh->HasVertexColors(5) && itCol5 != inputs.end())
+		vertexData->BufferData(itCol5->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[5]);
+	if (mesh->HasVertexColors(6) && itCol6 != inputs.end())
+		vertexData->BufferData(itCol6->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[6]);
+	if (mesh->HasVertexColors(7) && itCol7 != inputs.end())
+		vertexData->BufferData(itCol7->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[7]);
+	if (mesh->HasTangentsAndBitangents() && itBitan != inputs.end() && itTan != inputs.end())
+	{
+		vertexData->BufferData(itBitan->second.VertexAttribLocation, mesh->mNumVertices, mesh->mBitangents);
+		vertexData->BufferData(itTan->second.VertexAttribLocation, mesh->mNumVertices, mesh->mTangents);
 	}
 
 	std::vector<GLuint> indices;
@@ -1560,3 +1747,5 @@ GLUFVertexArray *LoadVertexArrayFromFile(unsigned int size, void* data)
 
 	return LoadVertexArray(scene);
 }*/
+
+}

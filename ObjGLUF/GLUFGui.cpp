@@ -26,6 +26,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+namespace GLUF
+{
+
 //this defines the space in pixels between glyphs in the font
 #define GLYPH_PADDING 5
 
@@ -233,6 +236,14 @@ struct UIShaderLocations_t
 
 }g_UIShaderLocations;
 
+struct UIShaderLocationsUntex_t
+{
+	GLuint position = 0;
+	GLuint color = 0;
+	GLuint ortho = 0;
+
+}g_UIShaderLocationsUntex;
+
 struct TextShaderLocations_t
 {
 	GLuint position = 0;
@@ -353,33 +364,21 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 
 
 	//load the locations
-	g_UIShaderLocations.position	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
-	g_UIShaderLocations.uv			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
-	g_UIShaderLocations.color		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
-	g_UIShaderLocations.ortho		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
-	g_UIShaderLocations.sampler		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
+	g_UIShaderLocations.position		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+	g_UIShaderLocations.uv				= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
+	g_UIShaderLocations.color			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+	g_UIShaderLocations.ortho			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
+	g_UIShaderLocations.sampler			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
 
-	g_TextShaderLocations.position	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
-	g_TextShaderLocations.uv		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
-	g_TextShaderLocations.color		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
-	g_TextShaderLocations.ortho		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
-	g_TextShaderLocations.sampler	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
+	g_UIShaderLocationsUntex.position	= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+	g_UIShaderLocationsUntex.color		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+	g_UIShaderLocationsUntex.ortho		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
 
-	/*GLuint program = GLUFSHADERMANAGER.GetProgramId(g_UIProgram);
-
-	g_UIShaderLocations.position = glGetAttribLocation(program, "_Position");
-	g_UIShaderLocations.uv = glGetAttribLocation(program, "_UV");
-	g_UIShaderLocations.color = glGetAttribLocation(program, "_Color");
-	g_UIShaderLocations.ortho = glGetUniformLocation(program, "_Ortho");
-	g_UIShaderLocations.sampler = glGetUniformLocation(program, "_TS");
-
-	program = GLUFSHADERMANAGER.GetProgramId(g_TextProgram);
-
-	g_TextShaderLocations.position = glGetAttribLocation(program, "_Position");
-	g_TextShaderLocations.uv = glGetAttribLocation(program, "_UV");
-	g_TextShaderLocations.color = glGetUniformLocation(program, "_Color");
-	g_TextShaderLocations.ortho = glGetUniformLocation(program, "_Ortho");
-	g_TextShaderLocations.sampler = glGetUniformLocation(program, "_TS");*/
+	g_TextShaderLocations.position		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
+	g_TextShaderLocations.uv			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
+	g_TextShaderLocations.color			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
+	g_TextShaderLocations.ortho			= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
+	g_TextShaderLocations.sampler		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
 
 	//create the text arrrays
 	glGenVertexArrayBindVertexArray(&g_TextVAO);
@@ -433,13 +432,6 @@ void GLUFTerminate()
 // GLUFFont
 //======================================================================================
 
-/*typedef struct
-{
-	unsigned char ID1, ID2;
-	unsigned char BPP;
-	int ImageWidth, ImageHeight, CellWidth, CellHeight;
-	unsigned char StartPoint;
-}GLUFFontFileHeader;*/
 
 struct character_info 
 {
@@ -459,13 +451,6 @@ struct character_info
 class GLUFFont
 {	
 public:
-	/*int CellX, CellY, YOffset, RowPitch;
-	char Base;
-	char Width[256];
-	GLuint TexID;
-	float RowFactor, ColFactor;
-	int RenderStyle;*/
-
 
 	FT_Face mFtFont;
 	GLUFFontSize mHeight;
@@ -658,11 +643,6 @@ GLUFRect GLUFFont::GetCharRectNDC(wchar_t ch)
 
 GLUFRect GLUFFont::GetCharTexRect(wchar_t ch)
 {
-	/*if (ch == mCharacterEnd - 1)
-		return{ mCharAtlas[ch - mCharacterOffset].tx, 1.0f, 1.0f,										1.0f - (mCharAtlas[ch-mCharacterOffset].bh / mAtlasHeight) };
-	else
-		return{ mCharAtlas[ch - mCharacterOffset].tx, 1.0f, mCharAtlas[ch - mCharacterOffset].tx + mCharAtlas[ch - mCharacterOffset].bw / mAtlasWidth, 1.0f - (mCharAtlas[ch - mCharacterOffset].bh / mAtlasHeight) };*/
-	
 	float l, t, r, b;
 	
 	l = mCharAtlas[ch - mCharacterOffset].tx;
@@ -673,22 +653,8 @@ GLUFRect GLUFFont::GetCharTexRect(wchar_t ch)
 	return{ l, t, r, b };
 };
 
-
-/*GLfloat GLUFFont::GetTextureXOffset(wchar_t ch)
-{
-	if (ch == mCharacterEnd)
-		return 1.0f;
-	else
-		return (float)mTexOffsets[ch - mCharacterOffset] / mAtlasWidth;
-}*/
-
 float GLUFFont::GetCharWidth(wchar_t ch)
 {
-	/*if (ch == mCharacterEnd)
-		return ((float)(mAtlasWidth - mCharAtlas[ch - mCharacterOffset - 1].bl) * mHeight) / mAtlasHeight;
-	else
-		return ((float)(mCharAtlas[ch - mCharacterOffset + 1].bl - mCharAtlas[ch - mCharacterOffset]) * mHeight) / mAtlasHeight;*/
-
 	return (mCharAtlas[ch - mCharacterOffset].ax * GetCharHeight(ch)) / mAtlasHeight;
 }
 
@@ -713,168 +679,12 @@ float GLUFFont::GetStringWidthNDC(std::wstring str)
 }
 
 
-
-/*bool GLUFFont::Init(char* data, uint64_t rawSize)
-{
-	gli::MemStreamBuf buf(data, (ptrdiff_t)rawSize);
-
-	char *dat, *img;
-	std::istream in(&buf);
-	char bpp;
-	int ImgX, ImgY;
-
-	//in.open(fname, ios_base::binary | ios_base::in);
-
-	if (in.fail())
-		return false;
-
-
-	// allocate space for file data
-	dat = new char[(unsigned int)rawSize];
-
-	// Read filedata
-	if (!dat)
-		return false;
-
-	in.read(dat, rawSize);
-
-	if (in.fail())
-	{
-		delete[] dat;
-		return false;
-	}
-
-
-	// Check ID is 'BFF2'
-	if ((unsigned char)dat[0] != 0xBF || (unsigned char)dat[1] != 0xF2)
-	{
-		delete[] dat;
-		return false;
-	}
-
-	// Grab the rest of the header
-	memcpy(&ImgX, &dat[2], sizeof(int));
-	memcpy(&ImgY, &dat[6], sizeof(int));
-	memcpy(&CellX, &dat[10], sizeof(int));
-	memcpy(&CellY, &dat[14], sizeof(int));
-	bpp = dat[18];
-	Base = dat[19];
-
-	// Check filesize
-	if (rawSize != ((MAP_DATA_OFFSET)+((ImgX*ImgY)*(bpp / 8))))
-		return false;
-
-	// Calculate font params
-	RowPitch = ImgX / CellX;
-	ColFactor = (float)CellX / (float)ImgX;
-	RowFactor = (float)CellY / (float)ImgY;
-	YOffset = CellY;
-
-	// Determine blending options based on BPP
-	switch (bpp)
-	{
-	case 8: // Greyscale
-		RenderStyle = BFG_RS_ALPHA;
-		break;
-
-	case 24: // RGB
-		RenderStyle = BFG_RS_RGB;
-		break;
-
-	case 32: // RGBA
-		RenderStyle = BFG_RS_RGBA;
-		break;
-
-	default: // Unsupported BPP
-		delete[] dat;
-		return false;
-		break;
-	}
-
-	// Allocate space for image
-	img = new char[(ImgX*ImgY)*(bpp / 8)];
-
-	if (!img)
-	{
-		delete[] dat;
-		return false;
-	}
-
-	// Grab char widths
-	memcpy(Width, &dat[WIDTH_DATA_OFFSET], 256);
-
-	// Grab image data
-	memcpy(img, &dat[MAP_DATA_OFFSET], (ImgX*ImgY)*(bpp / 8));
-
-	// Create Texture
-	glGenTextures(1, &TexID);
-	glBindTexture(GL_TEXTURE_2D, TexID);
-	// Fonts should be rendered at native resolution so no need for texture filtering
-	//float fLargest = 0.0f;
-	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
-//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// Stop chararcters from bleeding over edges
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// Tex creation params are dependent on BPP
-	switch (RenderStyle)
-	{
-	case BFG_RS_ALPHA:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, ImgX, ImgY, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, img);
-		break;
-
-	case BFG_RS_RGB:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ImgX, ImgY, 0, GL_RGB, GL_UNSIGNED_BYTE, img);
-		break;
-
-	case BFG_RS_RGBA:
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ImgX, ImgY, 0, GL_RGBA, GL_UNSIGNED_BYTE, img);
-		break;
-	}
-
-	// Clean up
-	delete[] img;
-	delete[] dat;
-
-	return true;
-}*/
-
-
 GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize, float fontHeight)
 {
 	GLUFFontPtr ret(new GLUFFont());
 	ret->Init(rawData, rawSize, fontHeight);
 	return ret;
 }
-/*
-GLUFFontPtr GLUFLoadFont(std::wstring fontFaceName)
-{
-	std::wstring path = "C:/Windows/Fonts/";
-	path += fontFaceName.c_str();
-	path += ".ttf";
-
-
-	GLUFFontPtr ret(new GLUFFont());
-
-	char* rawData = nullptr;
-	unsigned long rawSize;
-	if (GLUFLoadFileIntoMemory(path.c_str(), &rawSize, rawData))
-	{
-		if (!ret->Init(rawData, rawSize))
-		{
-			return nullptr;
-		}
-	}
-	else
-	{
-		return nullptr;
-	}
-	
-	return ret;
-}*/
 
 //======================================================================================
 // GLUFBlendColor
@@ -898,7 +708,7 @@ void GLUFBlendColor::Init(Color defaultColor, Color disabledColor, Color hiddenC
 void GLUFBlendColor::Blend(GLUF_CONTROL_STATE iState, float fElapsedTime, float fRate)
 {
 	//this is quite condensed, this basically interpolates from the current state to the destination state based on the time
-	Current = glm::mix(Current, States[iState], 1.0f - powf(fRate, 30 * fElapsedTime));
+	Current = glm::mix(Current, States[iState], 1.0f - powf(fRate, 30*fElapsedTime));//TODO: make this more asthetically working
 }
 
 void GLUFBlendColor::SetCurrent(Color current)
@@ -909,6 +719,14 @@ void GLUFBlendColor::SetCurrent(Color current)
 void GLUFBlendColor::SetCurrent(GLUF_CONTROL_STATE state)
 {
 	Current = States[state];
+}
+
+void GLUFBlendColor::SetAll(Color color)
+{
+	for (int i = 0; i < MAX_CONTROL_STATES; ++i)
+		States[i] = color;
+
+	SetCurrent(color);
 }
 
 //======================================================================================
@@ -965,10 +783,6 @@ m_bCaption(false),
 m_bMinimized(false),
 m_bDrag(false),
 m_nCaptionHeight(18),
-m_colorTopLeft(0),
-m_colorTopRight(0),
-m_colorBottomLeft(0),
-m_colorBottomRight(0),
 m_pCallbackEvent(nullptr),
 m_pCallbackEventUserContext(nullptr),
 m_fTimeLastRefresh(0),
@@ -1138,7 +952,6 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 	//	L"To fix hook up GLUFDialogResourceManager to device callbacks.  See comments for details");
 	//no need for "devices", this is all handled by GLFW
 
-	glBindVertexArray(m_pManager->m_pVBScreenQuadVAO);
 
 	// See if the dialog needs to be refreshed
 	if (m_fTimeLastRefresh < s_fTimeRefresh)
@@ -1154,129 +967,27 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 	// Enable depth test
 	glDisable(GL_DEPTH_TEST);
-
-	// Accept fragment if it closer OR THE SAME ( this works nicely with dialog elements )
-	//glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//ID3D11Device* pd3dDevice = m_pManager->GetD3D11Device();
-	//ID3D11DeviceContext* pd3dDeviceContext = m_pManager->GetD3D11DeviceContext();
+	m_pManager->BeginSprites();
 
-	// Set up a state block here and restore it when finished drawing all the controls
-	//m_pManager->StoreD3D11State(pd3dDeviceContext);
-
-	//if any of them are visible, then draw
-	bool bBackgroundIsVisible = (m_colorTopLeft.a > 0 || m_colorTopRight.a > 0 || m_colorBottomRight.a > 0 || m_colorBottomLeft.a > 0);
-	if (!m_bMinimized && bBackgroundIsVisible)
+	if (!m_bMinimized)
 	{
 		// Convert the draw rectangle from screen coordinates to clip space coordinates.(where the origin is in the middle of the screen, and the edges are 1, or negative 1
-		GLUFRect windowCoords = { m_x, m_y + m_height, m_x + m_width, m_y };
-		windowCoords = GLUFScreenToClipspace(windowCoords);
+		GLUFRect windowCoords = { 0, m_height, m_width, 0 };
+		//windowCoords = GLUFScreenToClipspace(windowCoords);
 
-		/*Left = m_x * 2.0f / m_pManager->m_nBackBufferWidth - 1.0f;
-		Right = (m_x + m_width) * 2.0f / m_pManager->m_nBackBufferWidth - 1.0f;
-		Top = 1.0f - m_y * 2.0f / m_pManager->m_nBackBufferHeight;
-		Bottom = 1.0f - (m_y + m_height) * 2.0f / m_pManager->m_nBackBufferHeight;*/
-
-		/*glm::vec3 vertices[4] =
-		{
-			glm::vec3(Left, Top, 0.5f), m_colorTopLeft, glm::vec2(0.0f, 0.0f),
-			glm::vec3(Right, Top, 0.5f), m_colorTopRight, glm::vec2(1.0f, 0.0f),
-			glm::vec3(Left, Bottom, 0.5f), m_colorBottomLeft, glm::vec2(0.0f, 1.0f),
-			glm::vec3(Right, Bottom, 0.5f), m_colorBottomRight, glm::vec2(1.0f, 1.0f)
-		};*/
-
-		glm::vec3 positions[4] = 
-		{ 
-			glm::vec3(windowCoords.left, windowCoords.top, -0.99f),
-			glm::vec3(windowCoords.right, windowCoords.top, -0.99f),
-			glm::vec3(windowCoords.left, windowCoords.bottom, -0.99f),
-			glm::vec3(windowCoords.right, windowCoords.bottom, -0.99f)
-		};
-
-		Color4f colors[4] = 
-		{
-			GLUFColorToFloat(m_colorBottomLeft),
-			GLUFColorToFloat(m_colorTopRight),
-			GLUFColorToFloat(m_colorBottomLeft),
-			GLUFColorToFloat(m_colorBottomRight)
-		};
-
-		glm::vec2 texCoords[4] = 
-		{
-			glm::vec2(0.0f, 0.0f),
-			glm::vec2(1.0f, 0.0f),
-			glm::vec2(0.0f, 1.0f),
-			glm::vec2(1.0f, 1.0f) 
-		};
-
-		//GLUF_SCREEN_VERTEX_10 *pVB;
-		/*D3D11_MAPPED_SUBRESOURCE MappedData;
-		if (SUCCEEDED(pd3dDeviceContext->Map(m_pManager->m_pVBScreenQuad11, 0, D3D11_MAP_WRITE_DISCARD,
-			0, &MappedData)))
-		{
-			memcpy(MappedData.pData, vertices, sizeof(vertices));
-			pd3dDeviceContext->Unmap(m_pManager->m_pVBScreenQuad11, 0);
-		}*/
-
-		glBindVertexArray(m_pManager->m_pVBScreenQuadVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, m_pManager->m_pVBScreenQuadPositions);
-		glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), positions, GL_STREAM_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_pManager->m_pVBScreenQuadColor);
-		glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(Color4f), colors, GL_STREAM_DRAW);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_pManager->m_pVBScreenQuadUVs);
-		glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), texCoords, GL_STREAM_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pManager->m_pVBScreenQuadIndicies);
-		
-
-		// Set the quad VB as current
-		/*UINT stride = sizeof(GLUF_SCREEN_VERTEX_10);
-		UINT offset = 0;
-		pd3dDeviceContext->IASetVertexBuffers(0, 1, &m_pManager->m_pVBScreenQuad11, &stride, &offset);
-		pd3dDeviceContext->IASetInputLayout(m_pManager->m_pInputLayout11);
-		pd3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);*/
-
-		// Setup for rendering
-		//m_pManager->ApplyRenderUIUntex11(pd3dDeviceContext);
-		//pd3dDeviceContext->Draw(4, 0);
-
-
-		//glEnableVertexAttribArray(0);//Positions
-		//glEnableVertexAttribArray(1);//Colors
-		//glEnableVertexAttribArray(2);//UVs
-
-		//GLUFSHADERMANAGER.UseProgram(g_UIProgram);
-		m_pManager->ApplyRenderUIUntex();
-
-
-
-		//well we are drawing a square (would there be any reason to make this GL_TRIANGLES?)
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
+		DrawSprite(&m_DlgElement, windowCoords, -0.99f, false);
 	}
 
-	GLUFTextureNode* pTextureNode = GetTexture(0);
-	//pd3dDeviceContext->PSSetShaderResources(0, 1, &pTextureNode->pTexResView11);
-	
-	/*glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, pTextureNode->m_pTextureElement);
-	glUniform1f(m_pManager->m_pSamplerLocation, 0);0 corresponds to GL_TEXTURE0
-	*/
-
 	// Sort depth back to front
-	m_pManager->BeginSprites();
 	BeginText(m_pManager->GetOrthoMatrix());
 
 
-	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
-
-
-
-	m_pManager->ApplyRenderUI();
+	//m_pManager->ApplyRenderUI();
 	// If the dialog is minimized, skip rendering
 	// its controls.
 	if (!m_bMinimized)
@@ -1304,6 +1015,8 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 		m_CapElement.TextureColor.SetCurrent(GLUF_STATE_NORMAL);
 		m_CapElement.FontColor.SetCurrent(GLUF_STATE_NORMAL);
 		GLUFRect rc = { 0, m_height, m_width, m_height - m_nCaptionHeight };
+
+		m_pManager->ApplyRenderUIUntex();
 		DrawSprite(&m_CapElement, rc, -0.99f, false);
 
 		rc.left += 5 / m_pManager->GetWindowSize().x; // Make a left margin
@@ -1325,6 +1038,8 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 		EndText();
 	}*/
 	//m_pManager->RestoreD3D11State(pd3dDeviceContext);
+
+	glDisable(GL_BLEND);
 
 	return GR_SUCCESS;
 }
@@ -1400,31 +1115,6 @@ GLUFResult GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resMa
 	m_Textures[index] = resManIndex;
 	return GR_SUCCESS;
 }
-
-
-//--------------------------------------------------------------------------------------
-/* We will not support resources based on windows resource modules
-GLUFResult GLUFDialog::SetTexture(UINT index, LPCWSTR strResourceName, HMODULE hResourceModule)
-{
-	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
-	// was made so that the GLUF's GUI could become seperate and optional from GLUF's core.  The 
-	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
-	// of the application if it wishes to use GLUF's GUI.
-	assert(m_pManager && L"To fix this, call GLUFDialog::Init() first.  See comments for details.");
-	_Analysis_assume_(m_pManager);
-
-	// Make sure the list is at least as large as the index being set
-	for (size_t i = m_Textures.size(); i <= index; i++)
-	{
-		m_Textures.push_back(-1);
-	}
-
-	int iTexture = m_pManager->AddTexture(strResourceName, hResourceModule);
-
-	m_Textures[index] = iTexture;
-	return GR_SUCCESS;
-}
-*/
 
 //--------------------------------------------------------------------------------------
 GLUFTextureNode* GLUFDialog::GetTexture(unsigned int index) const
@@ -2345,7 +2035,7 @@ GLUFResult GLUFDialog::DrawRect(GLUFRect pRect, Color color)
 
 	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
 	// draw a sprite every time to keep the order correct between sprites and text.
-	m_pManager->EndSprites(false);//render in untextured mode
+	m_pManager->EndSprites(nullptr, false);//render in untextured mode
 
 	return GR_SUCCESS;
 }
@@ -2482,7 +2172,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 
 	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
 	// draw a sprite every time to keep the order correct between sprites and text.
-	m_pManager->EndSprites(textured);
+	m_pManager->EndSprites(pElement, textured);
 
 	return GR_SUCCESS;
 }
@@ -2545,19 +2235,6 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 
 	return GR_SUCCESS;
 }
-
-
-//--------------------------------------------------------------------------------------
-
-void GLUFDialog::SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,
-	Color colorBottomRight)
-{
-	m_colorTopLeft = colorTopLeft;
-	m_colorTopRight = colorTopRight;
-	m_colorBottomLeft = colorBottomLeft;
-	m_colorBottomRight = colorBottomRight;
-}
-
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::SetNextDialog(GLUFDialog* pNextDialog)
@@ -2739,8 +2416,6 @@ bool GLUFDialog::OnCycleFocus(bool bForward)
 //--------------------------------------------------------------------------------------
 void GLUFDialog::InitDefaultElements()
 {
-	//TODO: make this less "Windows" dependent and ship with a font
-	//GLUFFontPtr font = GLUFLoadFont("arial");
 	char* rawData;
 	unsigned long rawSize = 0;
 
@@ -2764,6 +2439,16 @@ void GLUFDialog::InitDefaultElements()
 	m_CapElement.TextureColor.Init(Color(255, 255, 255, 255));
 	m_CapElement.FontColor.Init(Color(0, 0, 0, 255));
 	m_CapElement.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
+	// Pre-blend as we don't need to transition the state
+	//m_CapElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+	//m_CapElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+
+	m_DlgElement.SetFont(0);
+	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
+	m_DlgElement.SetTexture(0, &rcTexture);
+	m_DlgElement.TextureColor.Init(Color(255, 0, 0, 128));
+	m_DlgElement.FontColor.Init(Color(0, 0, 0, 255));
+	m_DlgElement.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
 	//m_CapElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 	//m_CapElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
@@ -3101,14 +2786,14 @@ m_SpriteBufferIndices(0)
 	//glGenBuffers(1, &m_pVBScreenQuadColor);
 	//glGenBuffers(1, &m_pVBScreenQuadUVs);
 
-	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadPositions);
+	/*glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadPositions);
 	glVertexAttribPointer(g_UIShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadColor);
 	glVertexAttribPointer(g_UIShaderLocations.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadUVs);
-	glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);*/
 
 	//this is static
 	glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
@@ -3430,8 +3115,6 @@ void GLUFDialogResourceManager::ApplyRenderUI()
 	glEnableVertexAttribArray(g_UIShaderLocations.uv);
 	GLUFSHADERMANAGER.UseProgram(g_UIProgram);
 
-	glUniform1f(g_UIShaderLocations.sampler, 0);
-
 	ApplyOrtho();
 
 	// States ???
@@ -3452,9 +3135,8 @@ void GLUFDialogResourceManager::ApplyRenderUIUntex()
 	//pd3dImmediateContext->DSSetShader(nullptr, nullptr, 0);
 	//pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
 	//pd3dImmediateContext->PSSetShader(m_pPSRenderUIUntex11, nullptr, 0);
-	glEnableVertexAttribArray(g_UIShaderLocations.position);
-	glEnableVertexAttribArray(g_UIShaderLocations.color);
-	glDisableVertexAttribArray(g_UIShaderLocations.uv);
+	glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
+	glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);
 	GLUFSHADERMANAGER.UseProgram(g_UIProgramUntex);
 	
 	ApplyOrtho();
@@ -3505,7 +3187,7 @@ void GLUFDialogResourceManager::BeginSprites()
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialogResourceManager::EndSprites(bool textured)
+void GLUFDialogResourceManager::EndSprites(GLUFElement* element, bool textured)
 {
 	//this ensures we do not get a "vector subscript out of range"
 	if (m_SpriteVertices.size() == 0)
@@ -3550,16 +3232,41 @@ void GLUFDialogResourceManager::EndSprites(bool textured)
 
 	//buffer the data
 	glBindVertexArray(m_SpriteBufferVao);
+
+	if (textured)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
+		glVertexAttribPointer(g_UIShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
+		glVertexAttribPointer(g_UIShaderLocations.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
+		glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+	}
+	else
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
+		glVertexAttribPointer(g_UIShaderLocationsUntex.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
+		glVertexAttribPointer(g_UIShaderLocationsUntex.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+	}
+
 	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
 	glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec3), m_SpriteVertices.data_pos(), GL_STREAM_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
 	glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(Color4f), m_SpriteVertices.data_color(), GL_STREAM_DRAW);
 
+	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
 	if (textured)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
 		glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec2), m_SpriteVertices.data_tex(), GL_STREAM_DRAW);
+	}
+	else
+	{
+		glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec2), nullptr, GL_STREAM_DRAW);
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_SpriteBufferIndices);
@@ -3575,15 +3282,18 @@ void GLUFDialogResourceManager::EndSprites(bool textured)
 	if (textured)
 	{
 		ApplyRenderUI();
+
+		GLUFTextureNode* pTexture = GetTextureNode(element->iTexture);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, pTexture->m_pTextureElement);
+		glUniform1i(g_UIShaderLocations.sampler, 0);
 	}
 	else
 	{
 		ApplyRenderUIUntex();
 	}
 	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, g_pControlTexturePtr);
-	glUniform1f(g_UIShaderLocations.sampler, 0);
 
 	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
@@ -8754,15 +8464,11 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 
 	if (bCenter)
 	{
-		CurY -= (GLUFRectHeight(rcScreen) / 2) - (tmpSize / 2);
+		CurY -= (GLUFRectHeight(rcScreen) / 3.0f) - (tmpSize / 3.0f);
 		
 		//calc widths
-		float tmp = 0.0f;
-		for (auto it : strText)
-		{
-			tmp += font.m_pFontType->GetCharWidth(it);//((float)font.m_pFontType->Width[it] * tmpSize) / font.m_pFontType->CellY;
-		}
-		CurX += fabsf((GLUFRectWidth(rcScreen) - tmp) / 2);
+		float tmp = font.m_pFontType->GetStringWidth(strText);
+		CurX += fabsf((GLUFRectWidth(rcScreen) - tmp) / 3.0f);
 	}
 
 	//glBegin(GL_QUADS);
@@ -8897,7 +8603,7 @@ void EndText(GLUFFontPtr font)
 	//second, the sampler
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, font->mTexId);
-	glUniform1f(g_TextShaderLocations.sampler, 0);
+	glUniform1i(g_TextShaderLocations.sampler, 0);
 
 
 	//third, the color
@@ -8996,4 +8702,6 @@ GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags
 void GLUFTextHelper::End()
 {
 	EndText(m_pManager->GetFontNode(m_nFont)->m_pFontType);
+}
+
 }

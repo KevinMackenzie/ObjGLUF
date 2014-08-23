@@ -2,6 +2,9 @@
 
 #include "ObjGLUF.h"
 
+namespace GLUF
+{
+
 //--------------------------------------------------------------------------------------
 // Macro definitions
 //--------------------------------------------------------------------------------------
@@ -12,8 +15,6 @@
 #define GT_VCENTER	0x000000010
 #define GT_TOP      0x000000020
 #define GT_BOTTOM   0x000000030
-
-
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -167,6 +168,8 @@ struct GLUFBlendColor
 	void		SetCurrent(Color current);
 	void		SetCurrent(GLUF_CONTROL_STATE state);
 
+	void		SetAll(Color color);
+
 	Color		States[MAX_CONTROL_STATES]; // Modulate colors for all possible control states
 	Color		Current;
 };
@@ -264,25 +267,23 @@ public:
 		bool bCenter = false, bool bHardRect = false);
 
 	// Attributes
-	void                SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,	Color colorBottomRight);
-	bool                GetVisible()								{ return m_bVisible;																		}
-	void                SetVisible(bool bVisible)					{ m_bVisible = bVisible;																	}
-	bool                GetMinimized()								{ return m_bMinimized;																		}
-	void                SetMinimized(bool bMinimized)				{ m_bMinimized = bMinimized;																}
-	void                SetBackgroundColors(Color colorAllCorners)	{ SetBackgroundColors(colorAllCorners, colorAllCorners, colorAllCorners, colorAllCorners);	}
-	void                EnableCaption(bool bEnable)					{ m_bCaption = bEnable;																		}
-	float               GetCaptionHeight() const					{ return m_nCaptionHeight; }
-	void                SetCaptionHeight(float nHeight)				{ m_nCaptionHeight = nHeight;																}
-	void                SetCaptionText(std::wstring pwszText)		{ m_wszCaption = pwszText;																	}
-	void                GetLocation(GLUFPoint& Pt) const			{ Pt.x = m_x; Pt.y = m_y;																	}
-	void                SetLocation(float x, float y)				{ m_x = x; m_y = y; }
-	void                SetSize(float width, float height)			{ m_width = width; m_height = height; }
-	float               GetWidth()									{ return m_width; }
-	float               GetHeight()									{ return m_height; }
-
-	void LockPosition(bool lock = true){ m_bPosLocked = lock; }
-
-	static void			SetRefreshTime(float fTime)					{ s_fTimeRefresh = fTime;																	}
+	//void                SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,	Color colorBottomRight);
+	bool                GetVisible()								{ return m_bVisible;						}
+	void                SetVisible(bool bVisible)					{ m_bVisible = bVisible;					}
+	bool                GetMinimized()								{ return m_bMinimized;						}
+	void                SetMinimized(bool bMinimized)				{ m_bMinimized = bMinimized;				}
+	void                SetBackgroundColor(Color color)				{ m_DlgElement.TextureColor.SetAll(color);	}
+	void                EnableCaption(bool bEnable)					{ m_bCaption = bEnable;						}
+	float               GetCaptionHeight() const					{ return m_nCaptionHeight;					}
+	void                SetCaptionHeight(float nHeight)				{ m_nCaptionHeight = nHeight;				}
+	void                SetCaptionText(std::wstring pwszText)		{ m_wszCaption = pwszText;					}
+	void                GetLocation(GLUFPoint& Pt) const			{ Pt.x = m_x; Pt.y = m_y;					}
+	void                SetLocation(float x, float y)				{ m_x = x; m_y = y;							}
+	void                SetSize(float width, float height)			{ m_width = width; m_height = height;		}
+	float               GetWidth()									{ return m_width;							}
+	float               GetHeight()									{ return m_height;							}
+	void LockPosition(bool lock = true)								{ m_bPosLocked = lock;						}
+	static void			SetRefreshTime(float fTime)					{ s_fTimeRefresh = fTime;					}
 
 	static GLUFControl* GetNextControl(GLUFControl* pControl);
 	static GLUFControl* GetPrevControl(GLUFControl* pControl);
@@ -370,10 +371,10 @@ private:
 	float m_height;
 	float m_nCaptionHeight;
 
-	Color m_colorTopLeft;
+	/*Color m_colorTopLeft;
 	Color m_colorTopRight;
 	Color m_colorBottomLeft;
-	Color m_colorBottomRight;
+	Color m_colorBottomRight;*/
 
 	GLUFDialogResourceManager* m_pManager;
 	PCALLBACKGLUFGUIEVENT m_pCallbackEvent;
@@ -386,6 +387,7 @@ private:
 	std::vector <GLUFElementHolder*> m_DefaultElements;
 
 	GLUFElement m_CapElement;  // Element for the caption
+	GLUFElement m_DlgElement;  // Element for the client area
 
 	GLUFDialog* m_pNextDialog;
 	GLUFDialog* m_pPrevDialog;
@@ -461,7 +463,7 @@ public:
 	void    ApplyRenderUI();
 	void	ApplyRenderUIUntex();
 	void	BeginSprites();
-	void	EndSprites(bool textured);
+	void	EndSprites(GLUFElement* element, bool textured);
 	/*ID3D11Device* GetD3D11Device()
 	{
 	return m_pd3d11Device;
@@ -1169,3 +1171,5 @@ protected:
 	GLUFFontSize m_fFontSize;
 	GLUF_FONT_WEIGHT m_Weight;
 };
+
+}
