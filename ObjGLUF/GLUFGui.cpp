@@ -211,6 +211,7 @@ FT_Library g_FtLib;
 unsigned short g_WndWidth = 0;
 unsigned short g_WndHeight = 0;
 
+GLUFFontPtr g_DefaultFont = nullptr;
 GLUFProgramPtr g_UIProgram = nullptr;
 GLUFProgramPtr g_UIProgramUntex = nullptr;
 GLUFProgramPtr g_TextProgram = nullptr;
@@ -324,8 +325,9 @@ const char* g_TextShaderFrag =
 
 
 
-bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLuint controltex)
+bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLuint controltex, GLUFFontPtr pDefFont)
 {
+	g_DefaultFont = pDefFont;
 	g_pGLFWWindow = pInitializedGLFWWindow;
 	g_pCallback = callback;
 	
@@ -1058,7 +1060,7 @@ void GLUFDialog::SendEvent(GLUF_EVENT nEvent, bool bTriggeredByUser, GLUFControl
 	if (!bTriggeredByUser && !m_bNonUserEvents)
 		return;
 
-	m_pCallbackEvent(nEvent, pControl->GetID(), pControl);
+	m_pCallbackEvent(nEvent, pControl->GetID(), pControl, m_pCallbackEventUserContext);
 }
 
 
@@ -2412,20 +2414,30 @@ bool GLUFDialog::OnCycleFocus(bool bForward)
 	return false;
 }
 
-
+GLUFFontPtr g_ArielDefault = nullptr;
 //--------------------------------------------------------------------------------------
 void GLUFDialog::InitDefaultElements()
 {
-	char* rawData;
-	unsigned long rawSize = 0;
+	//this makes it more efficient
+	if (g_DefaultFont == nullptr)
+	{
+		if (g_ArielDefault == nullptr)
+		{
+			char* rawData;
+			unsigned long rawSize = 0;
 
-	rawData = GLUFLoadFileIntoMemory(_T("Arial.ttf"), &rawSize);
-	GLUFFontPtr font = GLUFLoadFont(rawData, rawSize, 0.02f);
-	//free(rawData); DON'T FREE
+			rawData = GLUFLoadFileIntoMemory(_T("Arial.ttf"), &rawSize);
+			g_ArielDefault = GLUFLoadFont(rawData, rawSize, 0.02f);
+			//free(rawData); DON'T FREE
+		}
 
-	int fontIndex = m_pManager->AddFont(font, FONT_WEIGHT_NORMAL);
-	SetFont(0, fontIndex);
-
+		int fontIndex = m_pManager->AddFont(g_ArielDefault, FONT_WEIGHT_NORMAL);
+		SetFont(0, fontIndex);
+	}
+	else
+	{
+		int fontIndex = m_pManager->AddFont(g_DefaultFont, FONT_WEIGHT_NORMAL);
+	}
 
 	GLUFElement Element;
 	GLUFRect rcTexture;
@@ -8629,11 +8641,6 @@ GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager* pManager, GLUFFontSize
 	GLUF_ASSERT(pManager);
 }
 
-GLUFTextHelper::~GLUFTextHelper()
-{
-	m_pManager = 0;
-}
-
 void GLUFTextHelper::Init(GLUFFontSize fLineHeight)
 {
 	m_fLineHeight = fLineHeight;
@@ -8642,10 +8649,9 @@ void GLUFTextHelper::Init(GLUFFontSize fLineHeight)
 	m_nFont = 0;
 }
 
-void GLUFTextHelper::Begin(unsigned int fontToUse, GLUFFontSize size, GLUF_FONT_WEIGHT weight)
+void GLUFTextHelper::Begin(GLUFFontIndex fontToUse, GLUF_FONT_WEIGHT weight)
 {
 	m_nFont = fontToUse;
-	m_fFontSize = size;
 	m_Weight = weight;
 
 	BeginText(m_pManager->GetOrthoMatrix());
@@ -8661,10 +8667,10 @@ GLUFResult GLUFTextHelper::DrawFormattedTextLine(const wchar_t* strMsg, size_t s
 	//let sprintf handle all of the formatting
 	swprintf(Msg, strLen, strMsg, param);//TODO: if this fails?
 
-	return DrawTextLine(Msg, strLen);
+	return DrawTextLine(Msg);
 }
 
-GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg, size_t strLen)
+GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg)
 {
 	std::wstring sMsg = strMsg;
 
@@ -8689,10 +8695,10 @@ GLUFResult GLUFTextHelper::DrawFormattedTextLine(const GLUFRect& rc, unsigned in
 
 	swprintf(Msg, strLen, strMsg, param);
 
-	return DrawTextLine(rc, dwFlags, Msg, strLen);
+	return DrawTextLine(rc, dwFlags, Msg);
 }
 
-GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen)
+GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg)
 {
 	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), strMsg, rc, m_clr, dwFlags & GT_CENTER, true);
 
