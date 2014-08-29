@@ -16,6 +16,7 @@ namespace GLUF
 #define GT_TOP      0x0010
 #define GT_BOTTOM   0x0020//WARNING: this looks kind of funny with hard rect off
 
+#define GT_MULTI_LINE 0x0030 //NOTE: this is ONLY used by EditBox
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
@@ -235,7 +236,7 @@ public:
 	GLUF::GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, long x, long y, long width, long height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
 	GLUF::GLUFResult             AddComboBox(int ID, long x, long y, long width, long height, int nHotKey = 0, bool bIsDefault = false, GLUFComboBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddSlider(int ID, long x, long y, long width, long height, long min = 0.0f, long max = 0.25f, long value = 0.125f, bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
-	GLUF::GLUFResult             AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
+	GLUF::GLUFResult             AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags = GT_LEFT | GT_TOP, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddListBox(int ID, long x, long y, long width, long height, unsigned long dwStyle = 0, GLUFListBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddControl(GLUFControl* pControl);
 	GLUF::GLUFResult             InitControl(GLUFControl* pControl);
@@ -294,10 +295,13 @@ public:
 	long                GetHeight()									{ return m_height; }
 	void				Lock(bool lock = true)								{ m_bLocked = lock; }
 	void				EnableGrabAnywhere(bool enable = true)		{ m_bGrabAnywhere = enable; }
+	void				EnableAutoClamp(bool enable = true)			{ m_bAutoClamp = enable; }
 	static void			SetRefreshTime(float fTime)					{ s_fTimeRefresh = fTime;					}
 
 	static GLUFControl* GetNextControl(GLUFControl* pControl);
 	static GLUFControl* GetPrevControl(GLUFControl* pControl);
+
+	void                ClampToScreen();
 
 	void                RemoveControl(int ID);
 	void                RemoveAllControls();
@@ -342,6 +346,7 @@ private:
 	bool firstTime = true;
 
 	bool m_bLocked = true;
+	bool m_bAutoClamp = false;
 	bool m_bGrabAnywhere = false;
 	bool m_bDragged = false;
 
@@ -420,6 +425,7 @@ struct GLUFFontNode
 {
 	//GLUFFontSize mSize;
 	GLUF_FONT_WEIGHT mWeight;
+	GLUFFontSize m_Leading;
 	GLUFFontPtr m_pFontType;
 };
 
@@ -492,7 +498,8 @@ public:
 	int		GetTextureCount(){ return (int)m_TextureCache.size(); }
 	int     GetFontCount()   { return (int)m_FontCache.size(); }
 
-	int     AddFont(GLUFFontPtr font, GLUF_FONT_WEIGHT weight);
+	//a leading of 1.0 would be the height of the font
+	int     AddFont(GLUFFontPtr font, float fLeading, GLUF_FONT_WEIGHT weight);
 	int     AddTexture(GLuint texture);
 
 	bool    RegisterDialog(GLUFDialog* pDialog);
@@ -1036,7 +1043,7 @@ protected:
 class GLUFEditBox : public GLUFControl
 {
 public:
-	GLUFEditBox(GLUFDialog* pDialog = NULL);
+	GLUFEditBox(bool isMultiline = false, GLUFDialog* pDialog = NULL);
 	virtual         ~GLUFEditBox();
 
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -1132,6 +1139,8 @@ protected:
 
 	// Mouse-specific
 	bool m_bMouseDrag;       // True to indicate drag in progress
+
+	bool m_bMultiline = true;
 
 	// Static
 	static bool s_bHideCaret;   // If true, we don't render the caret.

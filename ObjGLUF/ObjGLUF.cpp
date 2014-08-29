@@ -454,6 +454,7 @@ glm::vec2 GLUFGetVec2FromRect(GLUFRectf rect, bool x, bool y)
 
 GLuint LoadTextureDDS(char* rawData, unsigned int size)
 {
+	//TODO support more compatibiulity, ie RGB, BGR, don't make it dependent on ABGR
 	unsigned char header[124];
 
 
@@ -469,11 +470,18 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
 	/* get the surface desc */
 	memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
 
-	unsigned int height = *(unsigned int*)&(header[8]);
-	unsigned int width = *(unsigned int*)&(header[12]);
-	unsigned int linearSize = *(unsigned int*)&(header[16]);
-	unsigned int mipMapCount = *(unsigned int*)&(header[24]);
-	unsigned int fourCC = *(unsigned int*)&(header[80]);
+	//this is all the data I need, but I just need to load it properly to opengl
+	unsigned int height =		*(unsigned int*)&(header[8]);
+	unsigned int width =		*(unsigned int*)&(header[12]);
+	unsigned int linearSize =	*(unsigned int*)&(header[16]);
+	unsigned int mipMapCount =	*(unsigned int*)&(header[24]);
+	unsigned int flags =		*(unsigned int*)&(header[76]);
+	unsigned int fourCC =		*(unsigned int*)&(header[80]);
+	unsigned int RGBBitCount =	*(unsigned int*)&(header[84]);
+	unsigned int RBitMask =		*(unsigned int*)&(header[88]);
+	unsigned int GBitMask =		*(unsigned int*)&(header[92]);
+	unsigned int BBitMask =		*(unsigned int*)&(header[96]);
+	unsigned int ABitMask =		*(unsigned int*)&(header[100]);
 
 
 	char * buffer;
@@ -484,20 +492,20 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
 	//memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
 
 	unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
-	unsigned int format;
+	unsigned int compressedFormat;
 	switch (fourCC)
 	{
 	case FOURCC_DXT1:
-		format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 		break;
 	case FOURCC_DXT3:
-		format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
 		break;
 	case FOURCC_DXT5:
-		format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 		break;
 	default:
-		format = 0;//uncompressed
+		compressedFormat = 0;//uncompressed
 	}
 
 	// Create one OpenGL texture
@@ -507,27 +515,27 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
 	// "Bind" the newly created texture : all future texture functions will modify this texture
 	glBindTexture(GL_TEXTURE_2D, textureID); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapCount);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapCount - 1);//REMEMBER it is max mip, NOT mip count
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
 
-	if (format != 0)
+	if (compressedFormat != 0)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-		unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+		unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
 		unsigned int offset = 0;
 
 		/* load the mipmaps */
 		for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
 		{
-			unsigned int size = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
-			glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
-				0, size, buffer + offset);
+			unsigned int mipSize = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
+			glCompressedTexImage2D(GL_TEXTURE_2D, level, compressedFormat, width, height,
+				0, mipSize, buffer + offset);
 
-			offset += size;
+			offset += mipSize;
 			width /= 2;
 			height /= 2;
 
@@ -546,8 +554,8 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
 		{
 			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
 
-
-			offset += size;
+			unsigned int mipSize = (width * height * 4);
+			offset += mipSize;
 			width /= 2;
 			height /= 2;
 

@@ -580,7 +580,7 @@ void GLUFFont::Refresh()
 			mCharAtlas[p].ax = (mFtFont->glyph->advance.x >> 6);
 			mCharAtlas[p].ay = 0L;
 
-			mCharAtlas[p].bw = 1L;
+			mCharAtlas[p].bw = mCharAtlas[p].ax;//this is useful in the edit box.
 			mCharAtlas[p].bh = mAtlasHeight;
 
 			mCharAtlas[p].bl = 0L;
@@ -636,6 +636,9 @@ bool GLUFFont::Init(void* data, uint64_t rawSize, GLUFFontSize fontHeight)
 GLUFRect GLUFFont::GetCharRect(wchar_t ch)
 {
 	GLUFRect rc = { 0, GetCharHeight(ch), GetCharWidth(ch), 0 };
+
+	if (ch < mCharacterOffset)
+		return rc;
 	//GLUFOffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
 
 	//if there is a dropdown, make sure it is accounted for
@@ -658,28 +661,39 @@ GLUFRect GLUFFont::GetCharRect(wchar_t ch)
 
 GLUFRectf GLUFFont::GetCharTexRect(wchar_t ch)
 {
-	float l, t, r, b;
-	
-	l = mCharAtlas[ch - mCharacterOffset].tx;
-	t = 0.0f;
-	r = mCharAtlas[ch - mCharacterOffset].tx + (float)GetCharWidth(ch) / (float)mAtlasWidth;
-	b = (float)mCharAtlas[ch - mCharacterOffset].bh / (float)mAtlasHeight;
+	float l = 0, t = 0, r = 0, b = 0;
+	if (ch >= mCharacterOffset)
+	{
+		l = mCharAtlas[ch - mCharacterOffset].tx;
+		t = 0.0f;
+		r = mCharAtlas[ch - mCharacterOffset].tx + (float)GetCharWidth(ch) / (float)mAtlasWidth;
+		b = (float)mCharAtlas[ch - mCharacterOffset].bh / (float)mAtlasHeight;
+	}
 
 	return{ l, t, r, b };
 };
 
 GLUFFontSize GLUFFont::GetCharAdvance(wchar_t ch)
 {
+	if (ch < mCharacterOffset)
+		return 0;
+
 	return mCharAtlas[ch - mCharacterOffset].ax;
 }
 
 GLUFFontSize GLUFFont::GetCharWidth(wchar_t ch)
 {
+	if (ch < mCharacterOffset)
+		return 0;
+
 	return mCharAtlas[ch - mCharacterOffset].bw;
 }
 
 GLUFFontSize GLUFFont::GetCharHeight(wchar_t ch)
 {
+	if (ch < mCharacterOffset)
+		return 0;
+
 	return mCharAtlas[ch - mCharacterOffset].bh;
 }
 
@@ -1042,7 +1056,7 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 		GLUFRect rc = { 0, 0, m_width, -m_nCaptionHeight };
 
 		m_pManager->ApplyRenderUIUntex();
-		DrawSprite(&m_CapElement, rc, -0.99f);
+		DrawSprite(&m_CapElement, rc, -0.99f, false);
 
 		rc.left += 5; // Make a left margin
 
@@ -1311,6 +1325,12 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		}
 	}
 
+	//this is important, if the window is resized, then make sure to reclamp the dialog position
+	if (m_bAutoClamp && msg == GM_RESIZE)
+	{
+		ClampToScreen();
+	}
+
 	// If the dialog is minimized, don't send any messages to controls.
 	if (m_bMinimized)
 		return false;
@@ -1517,6 +1537,13 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 	return false;
 }
 
+
+//--------------------------------------------------------------------------------------
+void GLUFDialog::ClampToScreen()
+{
+	m_x = std::clamp(m_x, 0L, (long)g_WndWidth - m_width);
+	m_y = std::clamp(m_y, 0L, (long)g_WndHeight - m_nCaptionHeight);
+}
 
 //--------------------------------------------------------------------------------------
 GLUFControl* GLUFDialog::GetControlAtPoint(GLUFPoint pt) 
@@ -1836,12 +1863,12 @@ bool bIsDefault, GLUFSlider** ppCreated)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, bool bIsDefault,
+GLUFResult GLUFDialog::AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags, bool bIsDefault,
 GLUFEditBox** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
 
-	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox(this);
+	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox((bool)(dwTextFlags & GT_MULTI_LINE), this);
 
 	if (ppCreated)
 		*ppCreated = pEditBox;
@@ -1852,6 +1879,8 @@ GLUFEditBox** ppCreated)
 	hr = AddControl(pEditBox);
 	if (GLUF_FAILED(hr))
 		return hr;
+
+	pEditBox->GetElement(0)->dwTextFormat = dwTextFlags;
 
 	// Set the ID and position
 	pEditBox->SetID(ID);
@@ -2058,10 +2087,10 @@ void GLUFDialog::RequestFocus(GLUFControl* pControl)
 GLUFResult GLUFDialog::DrawRect(GLUFRect pRect, Color color)
 {
 	GLUFRect rcScreen = pRect;
-	GLUFOffsetRect(rcScreen, m_x, m_y);
+	GLUFOffsetRect(rcScreen, m_x - long(g_WndWidth / 2), m_nCaptionHeight + m_y - long(g_WndHeight / 2));
 
-	if (m_bCaption)
-		GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
+	//if (m_bCaption)
+	//	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
 
 	//rcScreen = GLUFScreenToClipspace(rcScreen);
 
@@ -2114,7 +2143,7 @@ GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float
 	//glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
 
 	GLUFRectf rcTexture = pElement->rcTexture;
-	GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);
+	//GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);
 
 	GLUFRect rcScreen = prcDest;
 
@@ -2408,15 +2437,15 @@ void GLUFDialog::InitDefaultElements()
 			unsigned long rawSize = 0;
 
 			rawData = GLUFLoadFileIntoMemory(_T("Arial.ttf"), &rawSize);
-			g_ArielDefault = GLUFLoadFont(rawData, rawSize, 20L);
+			g_ArielDefault = GLUFLoadFont(rawData, rawSize, 15L);
 			//free(rawData); DON'T FREE
 		}
 
-		fontIndex = m_pManager->AddFont(g_ArielDefault, FONT_WEIGHT_NORMAL);
+		fontIndex = m_pManager->AddFont(g_ArielDefault, 1.15f, FONT_WEIGHT_NORMAL);
 	}
 	else
 	{
-		fontIndex = m_pManager->AddFont(g_DefaultFont, FONT_WEIGHT_NORMAL);
+		fontIndex = m_pManager->AddFont(g_DefaultFont, 1.15f, FONT_WEIGHT_NORMAL);
 	}
 
 	SetFont(0, fontIndex);
@@ -2439,6 +2468,7 @@ void GLUFDialog::InitDefaultElements()
 
 	m_DlgElement.SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
+	//GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
 	m_DlgElement.SetTexture(0, &rcTexture);
 	m_DlgElement.TextureColor.Init(Color(255, 0, 0, 128));
 	m_DlgElement.FontColor.Init(Color(0, 0, 0, 255));
@@ -2552,7 +2582,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
 	Element.SetTexture(0, &rcTexture);
-	Element.SetFont(0);
+	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(200, 200, 200, 150);
 	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(230, 230, 230, 170);
 	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 70);
@@ -2875,9 +2905,9 @@ bool GLUFDialogResourceManager::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int p
 		GetWindowSize();
 
 		//refresh the fonts to the new window size
-		for (auto it : m_FontCache)
+		/*for (auto it : m_FontCache)
 			if (it != nullptr)
-				it->m_pFontType->Refresh();
+				it->m_pFontType->Refresh();*/
 	}
 
 	return false;
@@ -3239,7 +3269,7 @@ void GLUFDialogResourceManager::EndSprites(GLUFElement* element, bool textured)
 	//pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//pd3dImmediateContext->Draw(static_cast<UINT>(m_SpriteVertices.size()), 0);
 	
-	if (textured)
+	if (textured && element)
 	{
 		ApplyRenderUI();
 
@@ -3339,7 +3369,7 @@ GLUFPoint GLUFDialogResourceManager::GetWindowSize()
 }
 
 //--------------------------------------------------------------------------------------
-int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, GLUF_FONT_WEIGHT weight)
+int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, float fLeading, GLUF_FONT_WEIGHT weight)
 {
 	// See if this font already exists (this is simple)
 	for (size_t i = 0; i < m_FontCache.size(); ++i)
@@ -3356,6 +3386,7 @@ int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, GLUF_FONT_WEIGHT weight
 
 	//wcscpy_s(pNewFontNode->strFace, MAX_PATH, strFaceName);
 	pNewFontNode->m_pFontType = font;
+	pNewFontNode->m_Leading = long((float)font->mHeight * fLeading);
 	//pNewFontNode->mSize = height;
 	pNewFontNode->mWeight = weight;
 	//FT_Set_Char_Size(pNewFontNode->m_pFontType->mFontFace, 0, height * 64, 72, 72);
@@ -4085,7 +4116,7 @@ void GLUFComboBox::UpdateRects()
 
 	m_rcDropdown.left = long(m_rcText.left * 1.019f);
 	m_rcDropdown.top = long(1.02f * m_rcText.bottom);
-	m_rcDropdown.right = m_rcText.right - m_fSBWidth;
+	m_rcDropdown.right = m_rcText.right;
 	m_rcDropdown.bottom = m_rcDropdown.top - m_fDropHeight;
 	//GLUFOffsetRect(m_rcDropdown, 0, -GLUFRectHeight(m_rcText));
 
@@ -4097,7 +4128,7 @@ void GLUFComboBox::UpdateRects()
 
 	// Update the scrollbar's rects
 	m_ScrollBar.SetLocation(m_rcDropdown.right, m_rcDropdown.bottom);
-	m_ScrollBar.SetSize(m_fSBWidth, long(GLUFRectHeight(m_rcDropdown) * 0.965f));
+	m_ScrollBar.SetSize(m_fSBWidth, abs(m_rcButton.bottom - m_rcDropdown.bottom));
 	m_ScrollBar.m_y = m_rcText.top;
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[2]->iFont);
 	if (pFontNode/* && pFontNode->mSize*/)
@@ -4117,8 +4148,8 @@ void GLUFComboBox::UpdateItemRects()
 	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(2)->iFont);
 	if (pFont)
 	{
-		int curY = m_rcDropdownText.top - 5;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
-		int fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->m_pFontType->mHeight;//subtract the font size initially too, because we do not want it hanging off the edge
+		int curY = m_rcText.bottom - 4;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
+		int fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->m_Leading;//subtract the font size initially too, because we do not want it hanging off the edge
 
 
 		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
@@ -4126,7 +4157,7 @@ void GLUFComboBox::UpdateItemRects()
 			GLUFComboBoxItem* pItem = m_Items[i];
 
 			// Make sure there's room left in the dropdown
-			fRemainingHeight -= pFont->m_pFontType->mHeight;
+			fRemainingHeight -= pFont->m_Leading;
 			if (fRemainingHeight <= 0.0f)
 			{
 				pItem->bVisible = false;
@@ -4136,7 +4167,7 @@ void GLUFComboBox::UpdateItemRects()
 			pItem->bVisible = true;
 
 			GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->m_pFontType->mHeight);
-			curY -= pFont->m_pFontType->mHeight;
+			curY -= pFont->m_Leading;
 		}
 	}
 }
@@ -4462,7 +4493,7 @@ void GLUFComboBox::Render( float fElapsedTime)
 		// Update the page size of the scroll bar
 		if (m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_pFontType->mHeight)
 			m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcDropdownText) /
-			(m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_pFontType->mHeight)));
+			(m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_Leading)));
 		else
 			m_ScrollBar.SetPageSize(0);
 		bSBInit = true;
@@ -4497,6 +4528,9 @@ void GLUFComboBox::Render( float fElapsedTime)
 			for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
 			{
 				GLUFComboBoxItem* pItem = m_Items[i];
+				GLUFRect active = pItem->rcActive;
+
+				active.top = active.bottom + pFont->m_Leading;
 
 				// Make sure there's room left in the dropdown
 				
@@ -4523,7 +4557,7 @@ void GLUFComboBox::Render( float fElapsedTime)
 					/*GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
 						m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));*/
 					//m_pDialog->DrawText(pItem->strText, pSelectionElement, rc);
-					m_pDialog->DrawSprite(pSelectionElement, pItem->rcActive, GLUF_NEAR_BUTTON_DEPTH);
+					m_pDialog->DrawSprite(pSelectionElement, active, GLUF_NEAR_BUTTON_DEPTH);
 					m_pDialog->DrawText(pItem->strText, pSelectionElement, pItem->rcActive);
 				}
 				else
@@ -5251,14 +5285,15 @@ void GLUFScrollBar::UpdateRects()
 // Compute the dimension of the scroll thumb
 void GLUFScrollBar::UpdateThumbRect()
 {
+	//TODO: fix bug where the icon can go just below the max it should
 	if (m_nEnd - m_nStart > m_nPageSize)
 	{
-		int nThumbHeight = std::max((int)GLUFRectHeight(m_rcTrack) * m_nPageSize / (m_nEnd - m_nStart),
-			SCROLLBAR_MINTHUMBSIZE);
-		int nMaxPosition = m_nEnd - m_nStart - m_nPageSize;
-		m_rcThumb.top = m_rcTrack.top + (m_nPosition - m_nStart) * (GLUFRectHeight(m_rcTrack) - nThumbHeight)
+		int nThumbHeight = std::clamp((int)GLUFRectHeight(m_rcTrack) * m_nPageSize / (m_nEnd - m_nStart),
+			SCROLLBAR_MINTHUMBSIZE, (int)GLUFRectHeight(m_rcTrack));
+		int nMaxPosition = m_nEnd - m_nStart - m_nPageSize + 1;
+		m_rcThumb.top = m_rcTrack.top - (m_nPosition - m_nStart) * (GLUFRectHeight(m_rcTrack) - nThumbHeight)
 			/ nMaxPosition;
-		m_rcThumb.bottom = m_rcThumb.top + nThumbHeight;
+		m_rcThumb.bottom = m_rcThumb.top - nThumbHeight;
 		m_bShowThumb = true;
 
 	}
@@ -5606,13 +5641,15 @@ void GLUFListBox::UpdateRects()
 {
 	GLUFControl::UpdateRects();
 
-	m_fTextHeight = m_pDialog->GetFont(GetElement(0)->iFont)->m_pFontType->mHeight;
+	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
+	m_fTextHeight = pFont->m_Leading;
 
 	m_rcSelection = m_rcBoundingBox;
 	m_rcSelection.right -= m_fSBWidth;
-	GLUFInflateRect(m_rcSelection, 0, -m_fBorder);
+	GLUFInflateRect(m_rcSelection, -m_fBorder, -m_fBorder);
 	m_rcText = m_rcSelection;
 	GLUFInflateRect(m_rcText, -m_fMargin, 0);
+	//m_fBorder += -(GLUFRectHeight(m_rcText) % (long)pFont->m_Leading) / 2;
 
 	// Update the scrollbar's rects
 	//m_ScrollBar.SetLocation(m_rcBoundingBox.right - m_fSBWidth, m_rcBoundingBox.top);
@@ -5624,12 +5661,14 @@ void GLUFListBox::UpdateRects()
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pFontNode && pFontNode->m_pFontType->mHeight)
 	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_pFontType->mHeight));
+		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_Leading));
 
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
 		m_ScrollBar.ShowItem(m_Selected[m_Selected.size()-1]);
 	}
+
+	UpdateItemRects();
 }
 
 
@@ -6141,9 +6180,6 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 //--------------------------------------------------------------------------------------
 bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
 {
-	//TODO:
-
-	//UNREFERENCED_PARAMETER(wParam);
 
 	if (GM_FOCUS == msg && param1 == GL_FALSE)
 	{
@@ -6556,16 +6592,23 @@ void GLUFListBox::UpdateItemRects()
 	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
 	if (pFont)
 	{
-		int curY = m_rcBoundingBox.top - m_fBorder;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
-		int nRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - m_fBorder;//subtract the font size initially too, because we do not want it hanging off the edge
+		int curY = m_rcText.top - pFont->m_Leading / 2;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
+		int nRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - pFont->m_Leading;
 
 
+		//int nRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - pFont->m_Leading;
+
+		//for all of the ones before the displayed, just set them to something impossible
+		for (size_t i = 0; i < m_ScrollBar.GetTrackPos(); ++i)
+		{
+			GLUFSetRect(m_Items[i]->rcActive, 0, 0, 0, 0);
+		}
 		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
 		{
 			GLUFListBoxItem* pItem = m_Items[i];
 
 			// Make sure there's room left in the box
-			nRemainingHeight -= pFont->m_pFontType->mHeight;
+			nRemainingHeight -= pFont->m_Leading;
 			if (nRemainingHeight - m_fBorder <= 0)
 			{
 				pItem->bVisible = false;
@@ -6575,7 +6618,7 @@ void GLUFListBox::UpdateItemRects()
 			pItem->bVisible = true;
 
 			GLUFSetRect(pItem->rcActive, m_rcBoundingBox.left + m_fMargin, curY, m_rcBoundingBox.right - m_fMargin, curY - pFont->m_pFontType->mHeight);
-			curY -= pFont->m_pFontType->mHeight;
+			curY -= pFont->m_Leading;
 		}
 	}
 }
@@ -6678,7 +6721,7 @@ bool GLUFEditBox::s_bHideCaret;   // If true, we don't render the caret.
 #define EDITBOX_SCROLLEXTENT 4
 
 //--------------------------------------------------------------------------------------
-GLUFEditBox::GLUFEditBox(GLUFDialog* pDialog) : GLUFControl(pDialog), m_ScrollBar(pDialog)
+GLUFEditBox::GLUFEditBox(bool isMultiline, GLUFDialog* pDialog) : GLUFControl(pDialog), m_ScrollBar(pDialog), m_bMultiline(isMultiline)
 {
 	m_Type = GLUF_CONTROL_EDITBOX;
 	m_pDialog = pDialog;
@@ -6915,8 +6958,8 @@ void GLUFEditBox::CopyToClipboard()
 			str += strBuffer[i];
 		}
 
-		char *tmp = "";
-		wcstombs(tmp, str.c_str(), str.length());
+		char *tmp = new char[256];
+		wcstombs(tmp, str.c_str(), 256);
 
 		glfwSetClipboardString(g_pGLFWWindow, tmp);
 	}
@@ -6951,14 +6994,14 @@ void GLUFEditBox::PasteFromClipboard()
 	str = glfwGetClipboardString(g_pGLFWWindow);
 	if (str == nullptr)//if glfw cannot support the format
 		return;
-	wchar_t *wStr = L"";
+	wchar_t *wStr = new wchar_t[256];
 
-	mbstowcs(wStr, str, strlen(str));
+	mbstowcs(wStr, str, 256);
 
 	if (m_nSelStart > m_strRenderBuffer.length())
 		InsertString(m_nSelStart + 1, wStr);
 	else
-		InsertString(m_nSelStart, wStr);
+		InsertString(m_nCaret + 1, wStr);
 
 
 	//when pasting, set the cursor to the end
@@ -7126,7 +7169,7 @@ int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 	for (unsigned int i = 0; i < ret && i+offset < m_strRenderBuffer.length()/*this is usually hit first*/; ++i)
 	{
 		//make sure to add an offset for each unmatching character
-		if (m_strRenderBuffer[i + offset] != m_strBuffer[i + m_strRenderBufferOffset])
+		while (m_strRenderBuffer[i + offset] != m_strBuffer[i + m_strRenderBufferOffset])
 			++offset;
 	}
 
@@ -7372,7 +7415,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		if (!m_bHasFocus)
 			m_pDialog->RequestFocus(this);
 
-		if (param2 == GLFW_PRESS)
+		if (param2 == GLFW_PRESS && m_strRenderBuffer.length())
 		{
 
 			if (!ContainsPoint(pt))
@@ -7759,6 +7802,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				// Invoke the callback when the user presses Enter.
 				//m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
 				InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
+				PlaceCaret(m_nCaret + 1);
 				break;
 
 				// Junk characters we don't want in the string
@@ -7826,10 +7870,21 @@ void GLUFEditBox::Render( float fElapsedTime)
 	}
 
 	GLUFElement* pElement = GetElement(0);
+
+	// Render the control graphics
+	for (int e = 0; e < 9; ++e)
+	{
+		pElement = m_Elements[e];
+		pElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
+
+		m_pDialog->DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
+	}
+
+
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pElement)
 	{
-		if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
+		if (/*m_bHasFocus && */m_bCaretOn && !s_bHideCaret)
 		{
 			// Start the rectangle with insert mode caret
 			GLUFRect rcCaret;
@@ -7858,7 +7913,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 					if (m_strRenderBuffer[rndCaret] == '\n')
 					{
 						//if it is a newline character, then give the leading edge of the first char of the line
-						GLUFSetRect(rcCaret, 0, m_CharBoundingBoxes[rndCaret].bottom, 2, m_CharBoundingBoxes[rndCaret].bottom - pFontNode->m_pFontType->mHeight);
+						GLUFSetRect(rcCaret, m_CharBoundingBoxes[0].left - 2, m_CharBoundingBoxes[rndCaret].bottom, 2, m_CharBoundingBoxes[rndCaret].bottom - pFontNode->m_Leading);
 					}
 					else
 					{
@@ -7872,105 +7927,22 @@ void GLUFEditBox::Render( float fElapsedTime)
 					{
 						if (rndCaret >= m_CharBoundingBoxes.size() - 1);
 						else
+						{
 							rcCaret.right = m_CharBoundingBoxes[rndCaret + 1].right;
+						}
 					}
 
 					GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
-					m_pDialog->DrawRect(rcCaret, m_CaretColor);
+
+					m_pDialog->DrawRect(rcCaret, m_CaretColor/*GLUF::Color(0, 0, 0, 255)*/);
 				}
 #pragma warning(default : 4018)
 			}
 		}
 	}
 
-	// Render the control graphics
-	for (int e = 0; e < 9; ++e)
-	{
-		pElement = m_Elements[e];
-		pElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
-
-		m_pDialog->DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
-	}
-
-	//
-	// Compute the X coordinates of the first visible character.
-	//
-	//int nXFirst = 0;
-	/*m_Buffer.CPtoX(m_nFirstVisible, false, &nXFirst);
-
-	//
-	// Compute the X coordinates of the selection rectangle
-	//
-	m_Buffer.CPtoX(m_nCaret, false, &nCaretX);
-	if (m_nCaret != m_nSelStart)
-		m_Buffer.CPtoX(m_nSelStart, false, &nSelStartX);
-	else
-		nSelStartX = nCaretX;*/
-
-	//
-	// Render the selection rectangle
-	//
-	/*GLUFRect rcSelection;  // Make this available for rendering selected text
-	if (m_nCaret != m_nSelStart)
-	{
-		int nSelLeftX = nCaretX, nSelRightX = nSelStartX;
-		// Swap if left is bigger than right
-		if (nSelLeftX > nSelRightX)
-		{
-			int nTemp = nSelLeftX; nSelLeftX = nSelRightX; nSelRightX = nTemp;
-		}
-
-		GLUFSetRect(rcSelection, nSelLeftX, m_rcText.top, nSelRightX, m_rcText.bottom);
-		GLUFOffsetRect(rcSelection, m_rcText.left - nXFirst, 0);
-		GLUFIntersectRect(rcSelection, m_rcText, rcSelection);
-
-		m_pDialog->DrawRect(rcSelection, m_SelBkColor);
-	}*/
-
-	//
-	// Render the text
-	//
-	// Element 0 for text
-	
-
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
 	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText);
-
-	// Render the selected text
-	/*if (m_nCaret != m_nSelStart)
-	{
-		int nFirstToRender = std::max(m_nFirstVisible, std::min(m_nSelStart, m_nCaret));
-		m_Elements[0]->FontColor.SetCurrent(m_SelTextColor);
-		m_pDialog->DrawText(GetBuffer(nFirstToRender),
-			m_Elements[0], rcSelection, false, false, true);
-	}*/
-
-
-
-	//
-	// Render the caret if this control has the focus
-	//
-	//if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
-	//{
-		// Start the rectangle with insert mode caret
-		/*GLUFRect rcCaret;
-		GLUFSetRect(rcCaret,
-			m_CharBoundingBoxes[m_nCaret].right, m_CharBoundingBoxes[m_nCaret].top,
-			m_CharBoundingBoxes[m_nCaret].right + 0.00625f, m_CharBoundingBoxes[m_nCaret].top - pFontNode->mSize);
-		GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
-
-		// If we are in overwrite mode, adjust the caret rectangle
-		// to fill the entire character.
-		/*if (!m_bInsertMode)
-		{
-			// Obtain the right edge X coord of the current character
-			int nRightEdgeX;
-			m_Buffer.CPtoX(m_nCaret, true, &nRightEdgeX);
-			rcCaret.right = m_rcText.left - nXFirst + nRightEdgeX;
-		}
-
-		m_pDialog->DrawRect(rcCaret, m_CaretColor);
-	//}*/
 
 
 }
@@ -8129,7 +8101,8 @@ void GLUFEditBox::Analyse()
 				for (auto itch : it)
 				{
 #pragma warning(disable : 4244)
-					GLUFFontSize nCharWidth = pFontNode->m_pFontType->GetCharAdvance(itch);
+					GLUFFontSize nCharWidth;
+					nCharWidth = pFontNode->m_pFontType->GetCharAdvance(itch);
 #pragma warning(default : 4244)
 					currXValue += (int)nCharWidth;
 
@@ -8157,11 +8130,11 @@ void GLUFEditBox::Analyse()
 				//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
 
 				//blank strings i.e. double spaces ( or more ) then we just keep those at the end of the line
-				if (it == L" ")
+				/*if (it == L" ")
 				{
 
-				}
-				else
+				}*/
+				
 				{
 					m_strRenderBuffer.insert(charIndex + addedCharactersCount, 1, '\n');
 					m_strInsertedNewlineLocations.push_back(charIndex + addedCharactersCount);
@@ -8202,8 +8175,8 @@ void GLUFEditBox::Analyse()
 		int   lineNum = 0;
 
 		int thisCharWidth = 0;
-		int fontHeight = pFontNode->m_pFontType->mHeight;
-		int scrollbarOffset = m_ScrollBar.GetTrackPos() * fontHeight;
+		int fontHeight = pFontNode->m_Leading;
+		int scrollbarOffset = m_ScrollBar.GetTrackPos() * pFontNode->m_Leading;
 		GLUFRect rc;
 
 		bool topCulled = false;
@@ -8214,10 +8187,15 @@ void GLUFEditBox::Analyse()
 		{
 
 #pragma warning(disable : 4244)
-			thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+				thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
 #pragma warning(default : 4244)
 
-			GLUFSetRect(rc, currXValue, distanceFromBottom, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
+			rc = pFontNode->m_pFontType->GetCharRect(it);
+			rc.top = distanceFromBottom;
+			rc.bottom = distanceFromBottom - fontHeight;
+			rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+			GLUFOffsetRect(rc, currXValue, 0);
+			//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
 
 			//offset the whole block by the scroll level
 			GLUFOffsetRect(rc, 0, scrollbarOffset);
@@ -8309,11 +8287,11 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 	unsigned int centerOffset = (GLUFRectWidth(rcScreen) - strWidth) / 2;
 	if (dwTextFlags & GT_CENTER)
 	{		
-		CurX += centerOffset;
+		CurX = rcScreen.left + centerOffset;
 	}
 	else if (dwTextFlags & GT_RIGHT)
 	{
-		CurX += centerOffset * 2;
+		CurX = rcScreen.left + centerOffset * 2;
 	}
 
 	unsigned int numLines = 1;//always have one to get the GT_VCENTER correct
@@ -8344,14 +8322,14 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 			if (dwTextFlags & GT_CENTER)
 				CurX = rcScreen.left + centerOffset;
 			else if (dwTextFlags & GT_LEFT)
-				CurX = rcScreen.left;
+				CurX = rcScreen.left + 5;
 			else if (dwTextFlags & GT_RIGHT)
 				CurX = rcScreen.left + centerOffset * 2;
 
-			CurY -= tmpSize;// *1.1f;//assume a reasonible leding
+			CurY -= font.m_Leading;// *1.1f;//assume a reasonible leding
 
 			//if the next line will go off of the page, then don't draw it
-			if ((CurY - (long)tmpSize < rcScreen.bottom) && bHardRect)
+			if ((CurY - (long)font.m_Leading < rcScreen.bottom) && bHardRect)
 				break;
 
 			if (ch == '\n')
@@ -8428,7 +8406,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 		//glm::vec2(1.0f, 1.0f));
 
 
-		CurX += GLUFRectWidth(glyph);
+		CurX += widthConverted;
 		//CurX += 0.05;
 
 		//z += 0.00005f;//to solve the depth problem

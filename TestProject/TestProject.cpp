@@ -85,31 +85,35 @@ int main(void)
 	dlg->SetCaptionText(L"Caption");
 	dlg->SetCaptionHeight(50);
 	dlg->Lock(false);
-	dlg->EnableGrabAnywhere();
+	dlg->EnableAutoClamp();
+	//dlg->EnableGrabAnywhere();
 	//dlg->SetMinimized(true);
 	dlg->EnableCaption(true);
 	dlg->SetSize(600, 600);
 	dlg->SetLocation(50, 50);
 	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
 	dlg->EnableKeyboardInput(true);
+	//GLUFRect rc = { 0, 200, 200, 0 };
 
-	dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
+	dlg->AddEditBox(10, L"EditBox", 100, 100, 400, 400);
 
-	dlg->AddCheckBox(2, L"Check Box", 150, 50, 20, 20);
-	dlg->AddRadioButton(3, 0, L"Button 1", 200, 200, 20, 20, true);
-	dlg->AddRadioButton(4, 0, L"Button 2", 200, 250, 20, 20);
-	dlg->AddRadioButton(5, 0, L"Button 3", 200, 300, 20, 20);
-	dlg->AddButton(0, L"Button", 25, 10, 75, 20);
+	/*dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
 
-	/*dlg->AddButton(0, L"Button", 0.05f, 0.01f, 0.125f, 0.03625f);
+	//dlg->AddCheckBox(2, L"Check Box", 150, 50, 20, 20);
+	//dlg->AddRadioButton(3, 0, L"Button 1", 200, 200, 20, 20, true);
+	//dlg->AddRadioButton(4, 0, L"Button 2", 200, 250, 20, 20);
+	//dlg->AddRadioButton(5, 0, L"Button 3", 200, 300, 20, 20);
+	//dlg->AddButton(0, L"Button", 25, 10, 75, 20);
 
-	GLUFListBox* box;
-	dlg->AddListBox(1, 0.2f, 0.2f, 0.125f, 0.35f, GLUFListBox::MULTISELECTION, &box);
-	dlg->AddCheckBox(2, L"Check Box", 0.3f, 0.1f, 0.03625f, 0.03625f);
-	dlg->AddRadioButton(3, 0, L"Button 1", 0.4f, 0.4f, 0.03625f, 0.03625f, true);
-	dlg->AddRadioButton(4, 0, L"Button 2", 0.4f, 0.45f, 0.03625f, 0.03625f);
-	dlg->AddRadioButton(5, 0, L"Button 3", 0.4f, 0.5f, 0.03625f, 0.03625f);
-	dlg->AddStatic(6, L"Static", 0.1f, 0.6f, 0.175f, 0.03625f);
+	dlg->AddButton(0, L"Button", 50, 10, 125, 35);
+
+	GLUFComboBox* box;
+	dlg->AddComboBox(1, 200, 200, 125, 35, 0, false, &box);
+	dlg->AddCheckBox(2, L"Check Box", 300, 100, 35, 35);
+	dlg->AddRadioButton(3, 0, L"Button 1", 400, 400, 35, 35, true);
+	dlg->AddRadioButton(4, 0, L"Button 2", 400, 450, 35, 35);
+	dlg->AddRadioButton(5, 0, L"Button 3", 400, 500, 35, 35);
+	dlg->AddStatic(6, L"Static", 100, 600, 175, 35);
 	//dlg->AddSlider (6, 0.1f, 0.3f, 0.4f, 0.03625f, 0.0f, 1.0f, 0.25f);
 
 	box->AddItem(L"Item 0", nullptr);
@@ -275,6 +279,7 @@ int main(void)
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
 			dlg->OnRender(ellapsedTime);
+			//dlg->DrawRect(rc, GLUF::Color(255, 0, 0, 255));
 
 		// Swap buffers
 		glfwSwapBuffers(window);
