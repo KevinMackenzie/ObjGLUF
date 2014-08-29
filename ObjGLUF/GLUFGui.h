@@ -8,13 +8,13 @@ namespace GLUF
 //--------------------------------------------------------------------------------------
 // Macro definitions
 //--------------------------------------------------------------------------------------
-#define GT_CENTER	0x000000001
-#define GT_LEFT		0x000000002
-#define GT_RIGHT    0x000000003
+#define GT_CENTER	0x0001
+#define GT_LEFT		0x0002
+#define GT_RIGHT    0x0004
 
-#define GT_VCENTER	0x000000010
-#define GT_TOP      0x000000020
-#define GT_BOTTOM   0x000000030
+#define GT_VCENTER	0x0008//WARNING: this looks kind of funny with hard rect off
+#define GT_TOP      0x0010
+#define GT_BOTTOM   0x0020//WARNING: this looks kind of funny with hard rect off
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -59,21 +59,24 @@ enum GLUF_MESSAGE_TYPE
 // Funcs and Enums for using fonts
 //--------------------------------------------------------------------------------------
 
+typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
+
 #define GLUF_POINTS_PER_PIXEL 1.333333f
 #define GLUF_POINTS_TO_PIXELS(points) (GLUFFontSize)((float)points * GLUF_POINTS_PER_PIXEL)
-#define GLUF_NORMALIZE_COORD(value)(value / ((float)(GLUF::g_WndHeight > GLUF::g_WndWidth) ? GLUF::g_WndWidth : GLUF::g_WndHeight))
+//#define GLUF_NORMALIZE_COORD(value)(value / ((float)(GLUF::g_WndHeight > GLUF::g_WndWidth) ? GLUF::g_WndWidth : GLUF::g_WndHeight))
 
 //DON'T SET THESE
 extern unsigned short OBJGLUF_API g_WndWidth;
 extern unsigned short OBJGLUF_API g_WndHeight;
 
 //this is because when rendered the actual font height will be cut in half.  Use this when using font in NDC space
-#define GLUF_FONT_HEIGHT_NDC(size) (size * 2) 
+//#define GLUF_FONT_HEIGHT_NDC(size) (size * 2) 
 
 typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 
 #define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4
 #define GLUF_PASS_CALLBACK_PARAM msg, param1, param2, param3, param4
+
 
 //this must be called AFTER GLUFInitOpenGLExtentions();  callbackFunc may do whatever it pleases, however;
 // callbackFunc must explicitly call the callback methods of the dialog manager and the dialog classes (and whatever else)
@@ -82,13 +85,15 @@ typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 // a callback does not use the parameter, it will be 0, but this does not mean 0 is an invalid parameter for callbacks
 // that use it.  Other notes: when specifying hotkeys, always use the GLFW macros for specifying them.  Consult the GLFW
 // input documentation for more information.
-typedef std::shared_ptr<GLUFFont> GLUFFontPtr;
-OBJGLUF_API bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLuint controltex, GLUFFontPtr pDefFont = nullptr);
-
-typedef float GLUFFontSize;//this is in normalized screencoords
+OBJGLUF_API bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLuint controltex);
 
 
-OBJGLUF_API GLUFFontPtr GLUFLoadFont(char* rawData, uint64_t rawSize, float fontHeight);
+OBJGLUF_API void GLUFSetDefaultFont(GLUFFontPtr pDefFont);
+
+typedef unsigned long GLUFFontSize;//this is in normalized screencoords
+
+
+OBJGLUF_API GLUFFontPtr GLUFLoadFont(void* rawData, uint64_t rawSize, GLUFFontSize fontHeight);
 OBJGLUF_API GLUFFontSize GLUFGetFontHeight(GLUFFontPtr font);
 
 //NOTE: not all fonts support all of these weights! the closest available will be chosen (ALSO this does not work well with preinstalled fonts)
@@ -188,7 +193,7 @@ typedef unsigned int GLUFFontIndex;
 class GLUFElement
 {
 public:
-	void    SetTexture(GLUFTextureIndex iTexture, GLUF::GLUFRect* prcTexture, GLUF::Color defaultTextureColor = GLUF::Color(255, 255, 255, 0));
+	void    SetTexture(GLUFTextureIndex iTexture, GLUF::GLUFRectf* prcTexture, GLUF::Color defaultTextureColor = GLUF::Color(255, 255, 255, 0));
 	void    SetFont(GLUFFontIndex iFont, GLUF::Color defaultFontColor = GLUF::Color(0, 0, 0, 255), unsigned int dwTextFormat = GT_CENTER | GT_VCENTER);
 
 	void    Refresh();
@@ -197,7 +202,7 @@ public:
 	GLUFFontIndex iFont;				// Index of the font for this Element
 	unsigned int dwTextFormat;			// The format of the text
 
-	GLUF::GLUFRect rcTexture;					// Bounding Rect of this element on the composite texture(NOTE: this are given in normalized coordinates just like openGL textures)
+	GLUF::GLUFRectf rcTexture;					// Bounding Rect of this element on the composite texture(NOTE: this are given in normalized coordinates just like openGL textures)
 
 	GLUFBlendColor TextureColor;
 	GLUFBlendColor FontColor;
@@ -224,14 +229,14 @@ public:
 	bool                MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	// Control creation (all coordinates are based on normalzied device space)
-	GLUF::GLUFResult             AddStatic(int ID, std::wstring strText, float x, float y, float width, float height, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
-	GLUF::GLUFResult             AddButton(int ID, std::wstring strText, float x, float y, float width, float height, int nHotkey = 0, bool bIsDefault = false, GLUFButton** ppCreated = NULL);
-	GLUF::GLUFResult             AddCheckBox(int ID, std::wstring strText, float x, float y, float width, float height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
-	GLUF::GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, float x, float y, float width, float height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
-	GLUF::GLUFResult             AddComboBox(int ID, float x, float y, float width, float height, int nHotKey = 0, bool bIsDefault = false, GLUFComboBox** ppCreated = NULL);
-	GLUF::GLUFResult             AddSlider(int ID, float x, float y, float width, float height, float min = 0.0f, float max = 0.25f, float value = 0.125f, bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
-	GLUF::GLUFResult             AddEditBox(int ID, std::wstring strText, float x, float y, float width, float height, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
-	GLUF::GLUFResult             AddListBox(int ID, float x, float y, float width, float height, unsigned long dwStyle = 0, GLUFListBox** ppCreated = NULL);
+	GLUF::GLUFResult             AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
+	GLUF::GLUFResult             AddButton(int ID, std::wstring strText, long x, long y, long width, long height, int nHotkey = 0, bool bIsDefault = false, GLUFButton** ppCreated = NULL);
+	GLUF::GLUFResult             AddCheckBox(int ID, std::wstring strText, long x, long y, long width, long height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
+	GLUF::GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, long x, long y, long width, long height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
+	GLUF::GLUFResult             AddComboBox(int ID, long x, long y, long width, long height, int nHotKey = 0, bool bIsDefault = false, GLUFComboBox** ppCreated = NULL);
+	GLUF::GLUFResult             AddSlider(int ID, long x, long y, long width, long height, long min = 0.0f, long max = 0.25f, long value = 0.125f, bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
+	GLUF::GLUFResult             AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
+	GLUF::GLUFResult             AddListBox(int ID, long x, long y, long width, long height, unsigned long dwStyle = 0, GLUFListBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddControl(GLUFControl* pControl);
 	GLUF::GLUFResult             InitControl(GLUFControl* pControl);
 
@@ -269,7 +274,7 @@ public:
 	GLUF::GLUFResult          DrawSprite(GLUFElement* pElement, GLUF::GLUFRect prcDest, float fDepth, bool textured = true);
 	GLUF::GLUFResult          CalcTextRect(std::wstring strText, GLUFElement* pElement, GLUF::GLUFRect prcDest, int nCount = -1);
 	GLUF::GLUFResult          DrawText(std::wstring strText, GLUFElement* pElement, GLUF::GLUFRect prcDest, bool bShadow = false,
-		bool bCenter = false, bool bHardRect = false);
+		bool bHardRect = false);
 
 	// Attributes
 	//void                SetBackgroundColors(Color colorTopLeft, Color colorTopRight, Color colorBottomLeft,	Color colorBottomRight);
@@ -279,15 +284,16 @@ public:
 	void                SetMinimized(bool bMinimized)				{ m_bMinimized = bMinimized;				}
 	void                SetBackgroundColor(GLUF::Color color)				{ m_DlgElement.TextureColor.SetAll(color); }
 	void                EnableCaption(bool bEnable)					{ m_bCaption = bEnable;						}
-	float               GetCaptionHeight() const					{ return m_nCaptionHeight;					}
-	void                SetCaptionHeight(float nHeight)				{ m_nCaptionHeight = nHeight;				}
+	long                GetCaptionHeight() const					{ return m_nCaptionHeight;					}
+	void                SetCaptionHeight(long nHeight)				{ m_nCaptionHeight = nHeight; }
 	void                SetCaptionText(std::wstring pwszText)		{ m_wszCaption = pwszText;					}
 	void                GetLocation(GLUF::GLUFPoint& Pt) const			{ Pt.x = m_x; Pt.y = m_y;					}
-	void                SetLocation(float x, float y)				{ m_x = x; m_y = y;							}
-	void                SetSize(float width, float height)			{ m_width = width; m_height = height;		}
-	float               GetWidth()									{ return m_width;							}
-	float               GetHeight()									{ return m_height;							}
-	void LockPosition(bool lock = true)								{ m_bPosLocked = lock;						}
+	void                SetLocation(long x, long y)				{ m_x = x; m_y = y; }
+	void                SetSize(long width, long height)			{ m_width = width; m_height = height; }
+	long                GetWidth()									{ return m_width; }
+	long                GetHeight()									{ return m_height; }
+	void				Lock(bool lock = true)								{ m_bLocked = lock; }
+	void				EnableGrabAnywhere(bool enable = true)		{ m_bGrabAnywhere = enable; }
 	static void			SetRefreshTime(float fTime)					{ s_fTimeRefresh = fTime;					}
 
 	static GLUFControl* GetNextControl(GLUFControl* pControl);
@@ -335,7 +341,8 @@ private:
 
 	bool firstTime = true;
 
-	bool m_bPosLocked = true;
+	bool m_bLocked = true;
+	bool m_bGrabAnywhere = false;
 	bool m_bDragged = false;
 
 	int m_nDefaultControlID;
@@ -371,11 +378,11 @@ private:
 	std::wstring        m_wszCaption;
 
 	//these are assumed to be based on the origin (bottom left) AND normalized
-	float m_x;
-	float m_y;
-	float m_width;
-	float m_height;
-	float m_nCaptionHeight;
+	long m_x;
+	long m_y;
+	long m_width;
+	long m_height;
+	long m_nCaptionHeight;
 
 	/*Color m_colorTopLeft;
 	Color m_colorTopRight;
@@ -434,7 +441,7 @@ public:
 	}
 
 	void clear(){ vPos.clear(); vColor.clear(); vTex.clear(); }
-	unsigned long size(){ return vPos.size(); }
+	unsigned long size(){ return (unsigned long)vPos.size(); }
 };
 
 //-----------------------------------------------------------------------------
@@ -482,8 +489,8 @@ public:
 	GLUFFontNode* GetFontNode(int iIndex)		{ return m_FontCache[iIndex];		}
 	GLUFTextureNode* GetTextureNode(int iIndex)	{ return m_TextureCache[iIndex];	}
 
-	int		GetTextureCount(){ return m_TextureCache.size(); }
-	int     GetFontCount()   { return m_FontCache.size(); }
+	int		GetTextureCount(){ return (int)m_TextureCache.size(); }
+	int     GetFontCount()   { return (int)m_FontCache.size(); }
 
 	int     AddFont(GLUFFontPtr font, GLUF_FONT_WEIGHT weight);
 	int     AddTexture(GLuint texture);
@@ -572,8 +579,8 @@ protected:
 
 void BeginText(glm::mat4 orthoMatrix);
 
-//NOTE: this only supports char values, yes newlines, and only ASCII characters
-void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUF::GLUFRect rcScreen, GLUF::Color vFontColor, bool bCenter, bool bHardRect = false);
+
+void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Color vFontColor, unsigned int dwTextFlags, bool bHardRect = false);
 void EndText(GLUFFontPtr font);
 
 //-----------------------------------------------------------------------------
@@ -615,8 +622,8 @@ public:
 	virtual bool		GetVisible()					{ return m_bVisible;										}
 	int					GetID() const					{ return m_ID;												}
 	void				SetID(int ID)					{ m_ID = ID;												}
-	void				SetLocation(float x, float y)	{ m_x = x; m_y = y; UpdateRects();							}
-	void				SetSize(float width, float height){ m_width = width; m_height = height; UpdateRects();		}
+	void				SetLocation(long x, long y)	{ m_x = x; m_y = y; UpdateRects(); }
+	void				SetSize(long width, long height){ m_width = width; m_height = height; UpdateRects(); }
 	void				SetHotkey(int nHotkey)			{ m_nHotkey = nHotkey;										}
 	int					GetHotkey()						{ return m_nHotkey;											}
 	void				SetUserData(void* pUserData)	{ m_pUserData = pUserData;									}
@@ -633,8 +640,8 @@ public:
 	bool m_bIsDefault;              // Is the default control
 
 	// Size, scale, and positioning members
-	float m_x, m_y;
-	float m_width, m_height;
+	long m_x, m_y;
+	long m_width, m_height;
 
 	// These members are set by the container
 	GLUFDialog* m_pDialog;    // Parent container
@@ -863,13 +870,12 @@ public:
 	virtual void    UpdateRects();
 
 	long            GetStyle() const					{ return m_dwStyle;							}
-	int             GetSize() const						{ return m_Items.size();					}
+	int             GetSize() const						{ return (int)m_Items.size();					}
 	void            SetStyle(long dwStyle)				{ m_dwStyle = dwStyle;						}
-	float           GetScrollBarWidth() const			{ return m_fSBWidth; }
-	void            SetScrollBarWidth(float nWidth)		{ m_fSBWidth = nWidth; UpdateRects(); }
+	long           GetScrollBarWidth() const			{ return m_fSBWidth; }
+	void            SetScrollBarWidth(long nWidth)		{ m_fSBWidth = nWidth; UpdateRects(); }
 	//This should be in PIXELS
-	void            SetBorderPixels(int nBorder, int nMargin);
-	void            SetBorder(float fBorder, float fMargin){ m_fBorder = fBorder; m_fMargin = fMargin; }
+	void            SetBorder(long fBorder, long fMargin){ m_fBorder = fBorder; m_fMargin = fMargin; }
 	GLUF::GLUFResult      AddItem(std::wstring wszText, void* pData);
 	GLUF::GLUFResult      InsertItem(int nIndex, std::wstring wszText, void* pData);
 	void            RemoveItem(int nIndex);
@@ -891,10 +897,10 @@ protected:
 	GLUF::GLUFRect m_rcText;      // Text rendering bound
 	GLUF::GLUFRect m_rcSelection; // Selection box bound
 	GLUFScrollBar m_ScrollBar;
-	float m_fSBWidth;
-	float m_fBorder; //top / bottom
-	float m_fMargin;	//left / right
-	float m_fTextHeight;  // Height of a single line of text
+	long m_fSBWidth;
+	long m_fBorder; //top / bottom
+	long m_fMargin;	//left / right
+	long m_fTextHeight;  // Height of a single line of text
 	long m_dwStyle;     // List box style
 	std::vector<int> m_Selected;//this has a size of 1 for single selected boxes
 	bool m_bDrag;       // Whether the user is dragging the mouse to select
@@ -946,15 +952,15 @@ public:
 	int             FindItem(std::wstring strText, unsigned int iStart = 0);
 	void*			GetItemData(std::wstring strText);
 	void*			GetItemData(int nIndex);
-	void            SetDropHeight(float nHeight)			{ m_fDropHeight = nHeight; UpdateRects();		}
-	float           GetScrollBarWidth() const				{ return m_fSBWidth;							}
-	void            SetScrollBarWidth(float nWidth)			{ m_fSBWidth = nWidth; UpdateRects();			}
+	void            SetDropHeight(long nHeight)			{ m_fDropHeight = nHeight; UpdateRects(); }
+	long           GetScrollBarWidth() const				{ return m_fSBWidth; }
+	void            SetScrollBarWidth(long nWidth)			{ m_fSBWidth = nWidth; UpdateRects(); }
 
 	int             GetSelectedIndex() const				{ return m_iSelected;							}
 	void* GetSelectedData();
 	GLUFComboBoxItem* GetSelectedItem();
 
-	unsigned int      GetNumItems()							{ return m_Items.size();						}
+	unsigned int      GetNumItems()							{ return (unsigned int)m_Items.size();						}
 	GLUFComboBoxItem* GetItem(unsigned int index)			{ return m_Items[index];						}
 
 	GLUF::GLUFResult         SetSelectedByIndex(unsigned int index);
@@ -966,9 +972,9 @@ protected:
 
 	int m_iSelected;
 	int m_iFocused;
-	float m_fDropHeight;//normalized
+	long m_fDropHeight;
 	GLUFScrollBar m_ScrollBar;
-	float m_fSBWidth;
+	long m_fSBWidth;
 
 	bool m_bOpened;
 
@@ -1001,24 +1007,24 @@ public:
 
 	virtual void    Render(float fElapsedTime);
 
-	void            SetValue(float nValue){ SetValueInternal(nValue, false); }
-	float           GetValue() const{ return m_fValue; };
+	void            SetValue(int nValue){ SetValueInternal(nValue, false); }
+	int             GetValue() const{ return m_nValue; };
 
-	void            GetRange(float& nMin, float& nMax) const{ nMin = m_fMin; nMax = m_fMax; }
-	void            SetRange(float nMin, float nMax);
+	void            GetRange(int& nMin, int& nMax) const{ nMin = m_nMin; nMax = m_nMax; }
+	void            SetRange(int nMin, int nMax);
 
 protected:
-	void            SetValueInternal(float nValue, bool bFromInput);
-	float           ValueFromPos(float x);
+	void            SetValueInternal(int nValue, bool bFromInput);
+	int             ValueFromPos(long x);
 
-	float m_fValue;
+	int m_nValue;
 
-	float m_fMin;
-	float m_fMax;
+	int m_nMin;
+	int m_nMax;
 
-	float m_fDragX;      // Mouse position at start of drag
-	float m_fDragOffset; // Drag offset from the center of the button
-	float m_fButtonX;
+	long m_nDragX;      // Mouse position at start of drag
+	long m_nDragOffset; // Drag offset from the center of the button
+	long m_nButtonX;
 
 	bool m_bPressed;
 	GLUF::GLUFRect m_rcButton;
@@ -1044,15 +1050,15 @@ public:
 
 	void            SetText(std::wstring wszText, bool bSelected = false);
 	std::wstring     GetText(){ return m_strBuffer; }
-	int             GetTextLength(){ return m_strBuffer.length(); }  // Returns text length in chars excluding NULL.
+	int             GetTextLength(){ return (int)m_strBuffer.length(); }  // Returns text length in chars excluding NULL.
 	std::wstring     GetTextClamped();//this gets the text, but clamped to the bounding box, (NOTE: this will overflow off the bottom);
 	void            ClearText();
 	virtual void    SetTextColor(GLUF::Color Color){ m_TextColor = Color; }  // Text color
 	void            SetSelectedTextColor(GLUF::Color Color){ m_SelTextColor = Color; }  // Selected text color
 	void            SetSelectedBackColor(GLUF::Color Color){ m_SelBkColor = Color; }  // Selected background color
 	void            SetCaretColor(GLUF::Color Color){ m_CaretColor = Color; }  // Caret color
-	void            SetBorderWidth(float fBorderX, float fBorderY){ m_fBorderX = fBorderX; m_fBorderY = fBorderY; UpdateRects(); m_bAnalyseRequired = true; }  // Border of the window
-	void            SetSpacing(float fSpacingX, float fSpacingY){ m_fSpacingX = fSpacingX; m_fSpacingY = fSpacingY; UpdateRects(); m_bAnalyseRequired = true; }
+	void            SetBorderWidth(long fBorder){ m_fBorder = fBorder; UpdateRects(); m_bAnalyseRequired = true; }  // Border of the window
+	void            SetSpacing(long fSpacing){ m_fSpacing = fSpacing; UpdateRects(); m_bAnalyseRequired = true; }
 	//void            ParseFloatArray(float* pNumbers, int nCount);
 	//void            SetTextFloatArray(const float* pNumbers, int nCount);
 
@@ -1104,8 +1110,8 @@ protected:
 	std::vector<GLUF::GLUFRect> m_CharBoundingBoxes;//a buffer to hold all of the rects of the chars. the origin is the botom left of the text region also, this is based on m_strRenderBuffer, NOT m_strBuffer
 	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
 
-	float m_fBorderX, m_fBorderY;      // Border of the window
-	float m_fSpacingX, m_fSpacingY;     // Spacing between the text and the edge of border
+	long m_fBorder;      // Border of the window
+	long m_fSpacing;     // Spacing between the text and the edge of border
 	GLUF::GLUFRect m_rcText;       // Bounding GLUF::GLUFRectangle for the text
 	GLUF::GLUFRect            m_rcRender[9];  // Convenient Rectangles for rendering elements
 	double m_dfBlink;      // Caret blink time in milliseconds
@@ -1122,7 +1128,7 @@ protected:
 	//std::vector<int> m_CharLineBreaks;//a vector of the positions of line breaks
 
 	GLUFScrollBar m_ScrollBar;//TODO: impliment
-	float m_fSBWidth;
+	long m_fSBWidth;
 
 	// Mouse-specific
 	bool m_bMouseDrag;       // True to indicate drag in progress

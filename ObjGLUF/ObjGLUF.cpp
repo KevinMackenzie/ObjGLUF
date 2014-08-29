@@ -297,10 +297,10 @@ bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
 
 void GLUFSetRectEmpty(GLUFRect& rect)
 {
-	rect.top = rect.bottom = rect.left = rect.right = 0.0f;
+	rect.top = rect.bottom = rect.left = rect.right = 0;
 }
 
-void GLUFSetRect(GLUFRect& rect, float left, float top, float right, float bottom)
+void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom)
 {
 	rect.top = top;
 	rect.bottom = bottom;
@@ -308,7 +308,15 @@ void GLUFSetRect(GLUFRect& rect, float left, float top, float right, float botto
 	rect.right = right;
 }
 
-void GLUFOffsetRect(GLUFRect& rect, float x, float y)
+void GLUFSetRect(GLUFRectf& rect, float left, float top, float right, float bottom)
+{
+	rect.top = top;
+	rect.bottom = bottom;
+	rect.left = left;
+	rect.right = right;
+}
+
+void GLUFOffsetRect(GLUFRect& rect, long x, long y)
 {
 	rect.top += y;
 	rect.bottom += y;
@@ -316,21 +324,21 @@ void GLUFOffsetRect(GLUFRect& rect, float x, float y)
 	rect.right += x;
 }
 
-float GLUFRectHeight(GLUFRect rect)
+long GLUFRectHeight(GLUFRect rect)
 {
 	return rect.top - rect.bottom;
 }
 
-float GLUFRectWidth(GLUFRect rect)
+long GLUFRectWidth(GLUFRect rect)
 {
 	return rect.right - rect.left;
 }
 
 
-void GLUFInflateRect(GLUFRect& rect, float dx, float dy)
+void GLUFInflateRect(GLUFRect& rect, long dx, long dy)
 {
-	float dx2 = dx / 2.0f;
-	float dy2 = dy / 2.0f;
+	long dx2 = dx / 2;
+	long dy2 = dy / 2;
 	rect.left -= dx2;
 	rect.right += dx2;//remember to have opposites
 
@@ -392,44 +400,6 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 	return true;
 }
 
-GLUFRect GLUFScreenToClipspace(GLUFRect screenCoords)
-{
-
-	screenCoords.left = screenCoords.left * 2.0f;
-	screenCoords.bottom = screenCoords.bottom * 2.0f;
-	screenCoords.top = 1.0f - ((1.0f - screenCoords.top) * 2.0f);
-	screenCoords.right = 1.0f - ((1.0f - screenCoords.right) * 2.0f);
-
-	screenCoords.left -= 1.0f;
-	screenCoords.bottom -= 1.0f;
-
-	return screenCoords;
-}
-
-glm::vec3 GLUFScreenToClipspace(glm::vec3 vec)
-{
-	return glm::vec3(1.0f - ((1.0f - vec.x) * 2.0f), 1.0f - ((1.0f - vec.y) * 2.0f), 1.0f - ((1.0f - vec.z) * 2.0f));
-}
-
-void GLUFFlipPoint(GLUFPoint& pt)
-{
-	pt.y = 1.0f - pt.y;
-}
-
-void GLUFNormPoint(GLUFPoint& pt, GLUFPoint max)
-{
-	pt.x = pt.x / max.x;
-	pt.y = pt.y / max.y;
-}
-
-void GLUFNormRect(GLUFRect& rect, float xClamp, float yClamp)
-{
-	rect.left /= xClamp;
-	rect.right /= xClamp;
-	rect.top /= yClamp;
-	rect.bottom /= yClamp;
-}
-
 Color4f GLUFColorToFloat(Color color)
 {
 	Color4f col;
@@ -463,56 +433,132 @@ glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y)
 			return glm::vec2(rect.left, rect.bottom);
 }
 
+glm::vec2 GLUFGetVec2FromRect(GLUFRectf rect, bool x, bool y)
+{
+	if (x)
+		if (y)
+			return glm::vec2(rect.right, rect.top);
+		else
+			return glm::vec2(rect.right, rect.bottom);
+	else
+		if (y)
+			return glm::vec2(rect.left, rect.top);
+		else
+			return glm::vec2(rect.left, rect.bottom);
+}
+
+
+#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
+#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
+#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+
 GLuint LoadTextureDDS(char* rawData, unsigned int size)
 {
+	unsigned char header[124];
 
-	GLuint tex = 0;
-	gli::texture2D Texture(gli::load_dds_memory(rawData, size));
-	assert(!Texture.empty());
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
+
+	/* verify the type of file */
+	char filecode[4];
+	memcpy(filecode, rawData, 4);
+	if (strncmp(filecode, "DDS ", 4) != 0) 
+	{
+		//fclose(fp);
+		return 0;
+	}
+
+	/* get the surface desc */
+	memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
+
+	unsigned int height = *(unsigned int*)&(header[8]);
+	unsigned int width = *(unsigned int*)&(header[12]);
+	unsigned int linearSize = *(unsigned int*)&(header[16]);
+	unsigned int mipMapCount = *(unsigned int*)&(header[24]);
+	unsigned int fourCC = *(unsigned int*)&(header[80]);
+
+
+	char * buffer;
+	unsigned int bufsize;
+	/* how big is it going to be including all mipmaps? */
+	bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+	buffer = rawData + 128;
+	//memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
+
+	unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
+	unsigned int format;
+	switch (fourCC)
+	{
+	case FOURCC_DXT1:
+		format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+		break;
+	case FOURCC_DXT3:
+		format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+		break;
+	case FOURCC_DXT5:
+		format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		break;
+	default:
+		format = 0;//uncompressed
+	}
+
+	// Create one OpenGL texture
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+
+	// "Bind" the newly created texture : all future texture functions will modify this texture
+	glBindTexture(GL_TEXTURE_2D, textureID); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, GLint(Texture.levels() - 1));
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapCount);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-	glTexImage2D(GL_TEXTURE_2D, 0,
-		GLenum(gli::internal_format(Texture.format())),
-		GLsizei(Texture.dimensions().x),
-		GLsizei(Texture.dimensions().y), 0,
-		GLenum(gli::external_format(Texture.format())),
-		GLenum(gli::type_format(Texture.format())),
-		nullptr);
 
-	if (gli::is_compressed(Texture.format()))
+	if (format != 0)
 	{
-		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+		unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+		unsigned int offset = 0;
+
+		/* load the mipmaps */
+		for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D,
-				GLint(Level), 0, 0,
-				GLsizei(Texture[Level].dimensions().x),
-				GLsizei(Texture[Level].dimensions().y),
-				GLenum(gli::external_format(Texture.format())),
-				GLenum(Texture[Level].size()),
-				Texture[Level].data());
+			unsigned int size = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
+			glCompressedTexImage2D(GL_TEXTURE_2D, level, format, width, height,
+				0, size, buffer + offset);
+
+			offset += size;
+			width /= 2;
+			height /= 2;
+
+			// Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+			if (width < 1) width = 1;
+			if (height < 1) height = 1;
+
 		}
+
 	}
 	else
 	{
-		for (gli::texture2D::size_type Level = 0; Level < Texture.levels(); ++Level)
+		unsigned int offset = 0;
+
+		for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
 		{
-			glTexSubImage2D(GL_TEXTURE_2D,
-				GLint(Level), 0, 0,
-				GLsizei(Texture[Level].dimensions().x),
-				GLsizei(Texture[Level].dimensions().y),
-				GLenum(gli::external_format(Texture.format())),
-				GLenum(gli::type_format(Texture.format())),
-				Texture[Level].data());
+			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+
+
+			offset += size;
+			width /= 2;
+			height /= 2;
+
+			// Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+			if (width < 1) width = 1;
+			if (height < 1) height = 1;
 		}
 	}
 
-	return tex;
+
+	return textureID;
 }
 
 GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
@@ -520,7 +566,9 @@ GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 	unsigned long rawSize = 0;
 	char* data = GLUFLoadFileIntoMemory(filePath.c_str(), &rawSize);
 
-	return LoadTextureFromMemory(data, rawSize, format);
+	GLuint texId = LoadTextureFromMemory(data, rawSize, format);
+	free(data);
+	return texId;
 }
 
 
@@ -707,7 +755,7 @@ void GLUFShader::LoadFromMemory(char* shaderData, size_t length, bool append)
 	if (!append)
 		mTmpShaderText.clear();
 
-	gli::MemStreamBuf *streamData = new gli::MemStreamBuf(shaderData, length);
+	MemStreamBuf *streamData = new MemStreamBuf(shaderData, length);
 	std::istream inData(streamData);
 	if (inData)
 	{
@@ -747,7 +795,7 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 
 	std::string tmpText = mTmpShaderText;
 
-	GLint tmpSize = mTmpShaderText.length();
+	GLint tmpSize = (GLuint)mTmpShaderText.length();
 	tmpSize--; /*BECAUSE OF NULL TERMINATED STRINGS*/
 
 	const GLchar* text = tmpText.c_str();
@@ -1820,7 +1868,7 @@ GLUFVertexArray* LoadVertexArrayFromScene(const aiScene* scene, GLUFVertexAttrib
 		indices.push_back(curr.mIndices[1]);
 		indices.push_back(curr.mIndices[2]);
 	}
-	vertexData->BufferIndices(&indices[0], indices.size());
+	vertexData->BufferIndices(&indices[0], (unsigned int)indices.size());
 
 	return vertexData;
 }
