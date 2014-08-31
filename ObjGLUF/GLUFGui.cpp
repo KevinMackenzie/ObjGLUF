@@ -1868,10 +1868,11 @@ GLUFEditBox** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
 
-	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox((bool)(dwTextFlags & GT_MULTI_LINE), this);
+	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox((dwTextFlags & GT_MULTI_LINE) == GT_MULTI_LINE, this);
 
 	if (ppCreated)
 		*ppCreated = pEditBox;
+
 
 	if (!pEditBox)
 		return GR_OUTOFMEMORY;
@@ -6760,53 +6761,91 @@ GLUFEditBox::~GLUFEditBox()
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::PlaceCaret( int nCP)
 {
-	if (nCP == -1)
+	if (m_bMultiline)
 	{
-		m_ScrollBar.SetTrackPos(0);//top
-		m_nCaret = nCP;
+		if (nCP == -1)
+		{
+			m_ScrollBar.SetTrackPos(0);//top
+			m_nCaret = nCP;
+		}
+		else if (nCP >= GetTextLength())
+		{
+			//anything past this, set to the max
+			m_nCaret = GetTextLength() - 1;
+		}
+		else
+		{
+			//GLUF_ASSERT(nCP >= 0 && nCP <= GetTextLength());
+			m_nCaret = nCP;
+
+			//if it is a newline, jump to the next character
+			if (m_nCaret != GetTextLength() - 1 && m_strBuffer[m_nCaret + 1] == '\n')
+			{
+				m_nCaret++;
+			}
+
+			int rendCaret = GetStrRenderIndexFromStrIndex(nCP);
+			if (rendCaret == -2)
+			{
+				if (m_strRenderBuffer.size() == 0)
+					rendCaret = 0;
+				else
+					rendCaret = m_strRenderBuffer.back();
+			}
+
+			while (rendCaret == -1)
+			{
+				m_ScrollBar.Scroll(m_ScrollBar.GetPageSize() - 1);
+				Analyse();
+
+				rendCaret = GetStrRenderIndexFromStrIndex(nCP);
+			}
+
+			int line = GetLineNumberFromCharPos(rendCaret);
+
+			if (line < 0 || line >= m_ScrollBar.GetPageSize())
+			{
+				m_ScrollBar.SetTrackPos(line);
+			}
+			/*if (line < m_ScrollBar.GetTrackPos() || line > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
+				m_ScrollBar.SetTrackPos(line);*/
+		}
 	}
-	else if (nCP >= GetTextLength())
+	else if (!m_bMultiline)
 	{
-		//anything past this, set to the max
-		m_nCaret = GetTextLength() - 1;
-	}
-	else
-	{
-		//GLUF_ASSERT(nCP >= 0 && nCP <= GetTextLength());
-		m_nCaret = nCP;
 
-		int rendCaret = GetStrRenderIndexFromStrIndex(nCP);
-		if (rendCaret == -2)
+		if (nCP >= GetTextLength())
 		{
-			if (m_strRenderBuffer.size() == 0)
-				rendCaret = 0;
-			else
-				rendCaret = m_strRenderBuffer.back();
+			//anything past this, set to the max
+			m_nCaret = GetTextLength() - 1;
+		}
+		else
+		{
+			/*m_ScrollBar.SetTrackRange(0, GetTextLength());
+			if (nCP >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
+			m_ScrollBar.Scroll(delta);
+			else if (nCP < m_ScrollBar.GetTrackPos())
+			m_ScrollBar.SetTrackPos(nCP);*/
+
+			m_nCaret = nCP;
+
+			//Analyse();
+			/*
+			if (m_nCaret >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
+			m_ScrollBar.Scroll(-((m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize()) - m_nCaret));
+			else if (m_nCaret < m_ScrollBar.GetTrackPos())
+			m_ScrollBar.SetTrackPos(m_nCaret);*/
 		}
 
-		while (rendCaret == -1)
-		{
-			m_ScrollBar.Scroll(m_ScrollBar.GetPageSize() - 1);
-			Analyse();
-
-			rendCaret = GetStrRenderIndexFromStrIndex(nCP);
-		}
-
-		int line = GetLineNumberFromCharPos(rendCaret);
-
-		if (line < 0 || line >= m_ScrollBar.GetPageSize())
-		{
-			m_ScrollBar.SetTrackPos(line);
-		}
-		/*if (line < m_ScrollBar.GetTrackPos() || line > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
-			m_ScrollBar.SetTrackPos(line);*/
+		int rendCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
+		m_ScrollBar.SetTrackPos(rendCaret);
 	}
 }
 
 void GLUFEditBox::PlaceCaretRndBuffer(int nRndCp)
 {
 	m_nCaret = GetStrIndexFromStrRenderIndex(nRndCp);
-	//TODO:
+	PlaceCaret(m_nCaret);
 }
 
 int GLUFEditBox::GetLineNumberFromCharPos(unsigned int nCP)
@@ -7160,14 +7199,18 @@ int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 
 	//offset by the offset
 	ret -= m_strRenderBufferOffset;
-	if (ret < 0 || ret > m_strRenderBuffer.length())//if it is less than 0, then just return -1
+	if (ret < 0 || ret > m_strRenderBuffer.length() - 1)//if it is less than 0, then just return -1
 		return -1;
 
+	if (!m_bMultiline)
+		return ret;//if it is multiline, then get off here
 
 	//this is a little more complex
 	int offset = 0;
-	for (unsigned int i = 0; i < ret && i+offset < m_strRenderBuffer.length()/*this is usually hit first*/; ++i)
+	for (unsigned int i = 0; i+offset < m_strRenderBuffer.length()/*this is usually hit first*/; ++i)
 	{
+		if (i >= ret)
+			break;
 		//make sure to add an offset for each unmatching character
 		while (m_strRenderBuffer[i + offset] != m_strBuffer[i + m_strRenderBufferOffset])
 			++offset;
@@ -7392,7 +7435,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 {
 
 	// Let the scroll bar have a chance to handle it first
-	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM))
+	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM) && m_bMultiline)//if we are single line, the scroll bar is only here to give us auto scroll
 	{
 		m_bAnalyseRequired = true;
 		return true;
@@ -7448,12 +7491,14 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				PlaceCaret((int)m_strBuffer.length());
 				ResetCaretBlink();
 			}
-			return true;
+			bHandled = true;
+			break;
 		}
 		else
 		{
 			//ReleaseCapture();
 			m_bMouseDrag = false;
+			bHandled = true;
 			break;
 		}
 	case GM_CURSOR_POS:
@@ -7476,6 +7521,8 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		}
 		break;
 	case GM_SCROLL:
+		if (!m_bMultiline)
+			break;
 
 		if (!m_bHasFocus)
 			m_pDialog->RequestFocus(this);
@@ -7483,6 +7530,40 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		m_ScrollBar.Scroll(-(param2 / WHEEL_DELTA) / 2);
 		m_bAnalyseRequired = true;
 
+		bHandled = true;
+		break;
+	case GM_UNICODE_CHAR:
+		m_bAnalyseRequired = true;
+		//printible chars
+
+		// If there's a selection and the user
+		// starts to type, the selection should
+		// be deleted.
+		if (m_nCaret != m_nSelStart)
+			DeleteSelectionText();
+
+		// If we are in overwrite mode and there is already
+		// a char at the caret's position, simply replace it.
+		// Otherwise, we insert the char as normal.
+		if (!m_bInsertMode && m_nCaret < GetTextLength())
+		{
+			RemoveChar(m_nCaret + 1);
+			InsertChar(m_nCaret + 1, param1);
+			PlaceCaret(m_nCaret + 1);
+			m_nSelStart = m_nCaret;
+		}
+		else
+		{
+			// Insert the char
+			InsertChar(m_nCaret + 1, param1);
+			PlaceCaret(m_nCaret + 1);
+			m_nSelStart = m_nCaret;
+
+		}
+		ResetCaretBlink();
+		m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+
+		bHandled = true;
 		break;
 	case GM_KEY:
 	{
@@ -7508,7 +7589,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				break;
 
 			case GLFW_KEY_END:
-				PlaceCaret(GetTextLength()-1);
+				PlaceCaret(GetTextLength() - 1);
 				if (!param4 & GLFW_MOD_SHIFT)
 					// Shift is not down. Update selection
 					// start along with the caret.
@@ -7545,8 +7626,11 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				else
 				{
 					// Deleting one character
-					//if (m_Buffer.RemoveChar(m_nCaret))
-					//	m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+					if (m_nCaret != m_strBuffer.length() - 1)
+					{
+						RemoveChar(m_nCaret + 1);
+						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+					}
 				}
 				ResetCaretBlink();
 				bHandled = true;
@@ -7588,173 +7672,149 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				bHandled = true;
 				break;
 
-			case GLFW_KEY_UP:
 			case GLFW_KEY_DOWN:
+			case GLFW_KEY_UP:
+			{
+				bool bIsKeyUp;
+				if (param1 == GLFW_KEY_DOWN)
+					bIsKeyUp = false;
+				else
+					bIsKeyUp = true;
+
+				//case GLFW_KEY_DOWN:
 				// Trap up and down arrows so that the dialog
 				// does not switch focus to another control.
+
+				//determine the character that is closest above this
+
+				//if it is the top line, the scroll up one
+				GLUFRect rc = { 0L, 0L, 0L, 0L };
+
+
+				GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
+
+				do
+				{
+					int rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
+
+					if (m_strRenderBuffer.size() > 1 && rndCP == -1)//first character
+						rndCP = 0;
+
+					if (rndCP < m_strRenderBuffer.size() - 1)
+					{
+						if (m_strRenderBuffer[rndCP] == '\n' && std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCP) != m_strInsertedNewlineLocations.end())
+							rndCP++;
+
+						//if we have a situation like this:
+						/*
+
+						textextextextext
+						textextex
+						textextextextextext
+
+						*/
+
+						//THERE IS NOT CURRENTLY SUPPORT FOR THIS FEATURE
+
+						/*std::vector<std::wstring> lines = GLUFSplitStr(m_strRenderBuffer, '\n', true);
+						if (m_strRenderBuffer[rndCP + 1] == '\n')//if the newline is coming up, check to see if there is a 'clif' above or below
+						{
+							long width = 0;
+							unsigned int it = 0;
+							if (bIsKeyUp)
+							{
+								//if it is the up key, we need get to the beginning of the previous row
+								bool foundfirst = false;
+								bool foundsecond = false;
+								for (unsigned int i = rndCP; i > 0; --i)
+								{
+									if (m_strRenderBuffer[i] == '\n')
+									{
+										if (!foundfirst)
+											foundfirst = true;
+										else
+										{
+											it = i + 1;
+											break;
+										}
+									}
+								}
+							}
+							else
+							{
+								it = rndCP + 2;
+							}
+							for (; (bIsKeyUp ? it >=  0 : it < m_strRenderBuffer.length()); (bIsKeyUp ? (--it) : (++it)))
+							{
+								width += pFont->m_pFontType->GetCharAdvance(m_strRenderBuffer[it]);
+								if (m_strRenderBuffer[it] == '\n')
+								{
+									--it;
+									break;
+								}
+							}
+
+							if (width < m_CharBoundingBoxes[rndCP].right)//there is a cliff, so just put it at the end
+							{
+								PlaceCaretRndBuffer(it);
+							}
+							
+						}*/
+
+					}
+
+					if (CPtoRC(rndCP, &rc))
+					{
+						//is this the top line?
+						if ((bIsKeyUp ? rc.top == GLUFRectHeight(m_rcText) : rc.bottom < (long)pFont->m_Leading))
+						{
+							m_ScrollBar.Scroll(bIsKeyUp ? -1 : 1);
+							Analyse();
+							rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
+							if (!CPtoRC(rndCP, &rc))
+								break;
+						}
+
+						//we have scrolled up if necisary, now to determine what is the character above this one
+						int newCP = 0;
+						bool trail = false;
+						if (!PttoCP(GLUFPoint(rc.right, rc.bottom + long((bIsKeyUp ? 1.5 : -0.5) * (long)pFont->m_Leading)), &newCP, &trail))
+							break;
+												
+
+						if (trail == false)
+							--newCP;
+						//we have found something
+						PlaceCaretRndBuffer(newCP);
+					}
+				} while (false);//this is nice, because it allows me to use break instead of using 'goto'
+				//if it fails, then either it is less than 0.
+
+
 				bHandled = true;
 				break;
 
-			default:
-				bHandled = param1 != GLFW_KEY_ESCAPE;  // Let the application handle Esc.
 			}
-		}
-	}
-	}
-	
-	/*if (bHandled)
-		return true;*/
-	//TODO: fix
-
-
-	switch (msg)
-	{
-		// Make sure that while editing, the keyup and keydown messages associated with 
-		// WM_CHAR messages don't go to any non-focused controls or cameras
-	case GM_KEY:
-	//	return true;
-
-		m_bAnalyseRequired = true;
-		//TODO: unicode char support in editbox input
-	//case GM_UNICODE_CHAR: (suprisingly, the GM_KEY will work better, because at this time I do not support unicode chars)
-	if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
-	{
-		if (param1 <= 255 &&  param1 >= 32 &&  param1 != 127/*DEL*/ && (param4 == 0x0000 || param4 & GLFW_MOD_SHIFT))
-		{				
-			//printible chars
-
-			char ch = param1;
-
-			//apply shift modifier
-			if (param4 & GLFW_MOD_SHIFT)
-			{
-				switch (ch)
-				{
-				case 48:		//0 (shift = '0')
-					ch = 41;	//)
-					break;
-				case 49:		//1
-					ch = 33;	//!
-					break;
-				case 50:		//2
-					ch = 64;	//@
-					break;
-				case 51:		//3
-					ch = 35;	//#
-					break;
-				case 52:		//4
-					ch = 36;	//$
-					break;
-				case 53:		//5
-					ch = 37;	//%
-					break;
-				case 54:		//6
-					ch = 94;	//^
-					break;
-				case 55:		//7
-					ch = 38;	//&
-					break;
-				case 56:		//8
-					ch = 42;	//*
-					break;
-				case 57:		//9
-					ch = 40;	//(
-					break;
-				case 59:		//;
-					ch--;		//:
-					break;
-				case 44:		//,
-					ch = 60;	//<
-					break;
-				case 61:		//=
-					ch = 43;	//+
-					break;
-				case 46:		//.
-					ch = 62;	//>
-					break;
-				case 47:		// '/'
-					ch = 63;	//?
-					break;
-				case 39:		//'
-					ch = 34;	//"
-					break;
-				case 45:		//-
-					ch = 95;	//_
-					break;
-				case 96:		//`
-					ch = 126;	//~
-					break;
-				}
-				
-			}
-			else if (param4 == 0)
-			{
-				if (ch >= 65)
-				{
-					if (ch <= 93)
-					{
-						//if there is NO shift, then add 32 to these characters
-						ch += 32;
-					}
-				}
-			}
-
-			
-			// If there's a selection and the user
-			// starts to type, the selection should
-			// be deleted.
-			if (m_nCaret != m_nSelStart)
-				DeleteSelectionText();
-
-			// If we are in overwrite mode and there is already
-			// a char at the caret's position, simply replace it.
-			// Otherwise, we insert the char as normal.
-			if (!m_bInsertMode && m_nCaret < GetTextLength())
-			{
-				RemoveChar(m_nCaret);
-				InsertChar(m_nCaret, ch);
-				PlaceCaret(m_nCaret + 1);
-				m_nSelStart = m_nCaret;
-			}
-			else
-			{
-				// Insert the char
-				InsertChar(m_nCaret + 1, ch);
-				PlaceCaret(m_nCaret + 1);
-				m_nSelStart = m_nCaret;
-				
-			}
-			ResetCaretBlink();
-			m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-			
-		}
-		else
-		{
-
-			switch (param1)
-			{
-				// Backspace
 			case GLFW_KEY_BACKSPACE:
 			{
-				if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
+				// If there's a selection, treat this
+				// like a delete key.
+				if (m_nCaret != m_nSelStart)
 				{
-					// If there's a selection, treat this
-					// like a delete key.
-					if (m_nCaret != m_nSelStart)
-					{
-						DeleteSelectionText();
-						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-					}
-					else if (m_nCaret >= 0)
-					{
-						// Move the caret, then delete the char.
-						RemoveChar(m_nCaret);
-						PlaceCaret(m_nCaret - 1);
-						m_nSelStart = m_nCaret;
-						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-					}
-					ResetCaretBlink();
+					DeleteSelectionText();
+					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
 				}
+				else if (m_nCaret >= 0)
+				{
+					// Move the caret, then delete the char.
+					RemoveChar(m_nCaret);
+					PlaceCaret(m_nCaret - 1);
+					m_nSelStart = m_nCaret;
+					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+				}
+				ResetCaretBlink();
+				bHandled = true;
+				
 				break;
 			}
 
@@ -7770,7 +7830,10 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					{
 						DeleteSelectionText();
 						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+
 					}
+
+					bHandled = true;
 				}
 				break;
 			}
@@ -7782,6 +7845,8 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 				{
 					PasteFromClipboard();
 					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+
+					bHandled = true;
 				}
 				break;
 			}
@@ -7794,50 +7859,33 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					{
 						m_nSelStart = 0;
 						PlaceCaret(GetTextLength());
+
+						bHandled = true;
 					}
 				}
 				break;
 
 			case GLFW_KEY_ENTER:
+
+				if (!m_bMultiline)
+					break;
 				// Invoke the callback when the user presses Enter.
 				//m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
 				InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
 				PlaceCaret(m_nCaret + 1);
-				break;
+				bHandled = true;
 
-				// Junk characters we don't want in the string
-			/*case 26:  // Ctrl Z
-			case 2:   // Ctrl B
-			case 14:  // Ctrl N
-			case 19:  // Ctrl S
-			case 4:   // Ctrl D
-			case 6:   // Ctrl F
-			case 7:   // Ctrl G
-			case 10:  // Ctrl J
-			case 11:  // Ctrl K
-			case 12:  // Ctrl L
-			case 17:  // Ctrl Q
-			case 23:  // Ctrl W
-			case 5:   // Ctrl E
-			case 18:  // Ctrl R
-			case 20:  // Ctrl T
-			case 25:  // Ctrl Y
-			case 21:  // Ctrl U
-			case 9:   // Ctrl I
-			case 15:  // Ctrl O
-			case 16:  // Ctrl P
-			case 27:  // Ctrl [
-			case 29:  // Ctrl ]
-			case 28:  // Ctrl \ 
-				break;*/
+				break;
 
 			default:
-				break;
+				bHandled = param1 != GLFW_KEY_ESCAPE;  // Let the application handle Esc.
 			}
 		}
+	}
+	}
+	
+	if (bHandled)
 		return true;
-	}
-	}
 
 	return false;
 }
@@ -7852,8 +7900,6 @@ void GLUFEditBox::Render( float fElapsedTime)
 
 	//TODO: don't render scrollbar UNLESS there is necessity to scroll, change this on ALL controls
 
-	//render the scrollbar
-	m_ScrollBar.Render(fElapsedTime);
 
 
 	if (m_bVisible == false)
@@ -7880,6 +7926,9 @@ void GLUFEditBox::Render( float fElapsedTime)
 		m_pDialog->DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
 	}
 
+	//render the scrollbar
+	if (m_bMultiline)
+		m_ScrollBar.Render(fElapsedTime);
 
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pElement)
@@ -7899,7 +7948,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 						rcCaret = m_CharBoundingBoxes[0];
 				}
 				else
-					GLUFSetRect(rcCaret, 0, GLUFRectHeight(m_rcText), 2, GLUFRectHeight(m_rcText) - pFontNode->m_pFontType->mHeight);
+					GLUFSetRect(rcCaret, 0, GLUFRectHeight(m_rcText), 2, GLUFRectHeight(m_rcText) - pFontNode->m_Leading);
 
 				GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
 				m_pDialog->DrawRect(rcCaret, m_CaretColor);
@@ -7910,17 +7959,21 @@ void GLUFEditBox::Render( float fElapsedTime)
 				int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
 				if (rndCaret != -1 && rndCaret != -2 && !(rndCaret > m_strRenderBuffer.size()))//don't render off-screen
 				{
-					if (m_strRenderBuffer[rndCaret] == '\n')
+					if (m_strRenderBuffer[rndCaret] == '\n' && (std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCaret) == m_strInsertedNewlineLocations.end() || rndCaret == m_strRenderBuffer.back()))
 					{
 						//if it is a newline character, then give the leading edge of the first char of the line
-						GLUFSetRect(rcCaret, m_CharBoundingBoxes[0].left - 2, m_CharBoundingBoxes[rndCaret].bottom, 2, m_CharBoundingBoxes[rndCaret].bottom - pFontNode->m_Leading);
+
+						GLUFSetRect(rcCaret, m_CharBoundingBoxes[0].left - 2, m_CharBoundingBoxes[rndCaret].top, 2, m_CharBoundingBoxes[rndCaret].bottom);
 					}
-					else
-					{
-						GLUFSetRect(rcCaret,
-							m_CharBoundingBoxes[rndCaret].right, m_CharBoundingBoxes[rndCaret].top,
-							m_CharBoundingBoxes[rndCaret].right + 2, m_CharBoundingBoxes[rndCaret].bottom);
-					}
+					else if (m_strRenderBuffer[rndCaret] == '\n')
+						rndCaret++;
+					
+					if (rndCaret == m_CharBoundingBoxes.size())
+						rndCaret--;
+					GLUFSetRect(rcCaret,
+						m_CharBoundingBoxes[rndCaret].right, m_CharBoundingBoxes[rndCaret].top,
+						m_CharBoundingBoxes[rndCaret].right + 2, m_CharBoundingBoxes[rndCaret].bottom);
+					
 					// If we are in overwrite mode, adjust the caret rectangle
 					// to fill the entire character.
 					if (!m_bInsertMode)
@@ -7941,6 +7994,19 @@ void GLUFEditBox::Render( float fElapsedTime)
 		}
 	}
 
+	Color color = Color(255, 0, 255, 128);
+	for (auto it : m_CharBoundingBoxes)
+	{
+		GLUFRect copy = it;
+		GLUFOffsetRect(copy, m_rcText.left, m_rcText.bottom);
+		m_pDialog->DrawRect(copy, color);
+
+		if (color.r == 5)
+			color.g += 10;
+		else
+			color.r -= 10;
+	}
+
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
 	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText);
 
@@ -7957,12 +8023,12 @@ void GLUFEditBox::ResetCaretBlink()
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFEditBox::CPtoRC(int nCP, bool bTrail, GLUFRect *pRc)
+bool GLUFEditBox::CPtoRC(int nCP, GLUFRect *pRc)
 {
-	/*GLUF_ASSERT(pRc);
-	*pRc = { 0.0f, 0.0f, 0.0f, 0.0f };
+	GLUF_ASSERT(pRc);
+	*pRc = { 0L, 0L, 0L, 0L };
 
-	if (nCP + 1 > m_strBuffer.length())
+	if (nCP > m_strRenderBuffer.length() - 1 || nCP < 0)
 	{
 		return false;
 	}
@@ -7971,14 +8037,9 @@ bool GLUFEditBox::CPtoRC(int nCP, bool bTrail, GLUFRect *pRc)
 		Analyse();
 
 
-	if (bTrail)
-	{
-		nCP++;
-	}
+	*pRc = m_CharBoundingBoxes[nCP];
 
-	*pRc = m_CharBoundingBoxes[nCP];*/
-
-	return false;
+	return true;
 }
 
 
@@ -7996,9 +8057,15 @@ bool GLUFEditBox::PttoCP(GLUFPoint pt, int* pCP, bool* bTrail)
 
 	for (auto it : m_CharBoundingBoxes)
 	{
-		if (GLUFPtInRect(it, pt))
+		charRect = it;
+
+		//this deals with the bounding boxes leaving space between characters
+		if (it != m_CharBoundingBoxes.back())
+			charRect.right = m_CharBoundingBoxes[*pCP + 1].left;
+
+		if (GLUFPtInRect(charRect, pt))
 		{
-			if (GLUFPtInRect({ it.left, it.top, it.right - GLUFRectWidth(it) / 2, it.bottom }, pt))
+			if (GLUFPtInRect({ charRect.left, charRect.top, charRect.right - GLUFRectWidth(it) / 2, charRect.bottom }, pt))
 			{
 				//leading edge
 				*bTrail = false;
@@ -8032,44 +8099,61 @@ void GLUFEditBox::Analyse()
 	//take preexisting newlines, and make sure they have a space on either side, so they are their own words
 	//unsigned int addedCharactersCount = 0;
 	m_nAdditionalInsertedCharLocations.clear();
-	for (unsigned int it = 0; it < m_strBuffer.length(); ++it)
+
+	if (m_bMultiline)
 	{
-		if (m_strBuffer[it] == '\n')
+		for (unsigned int it = 0; it < m_strBuffer.length(); ++it)
 		{
+			if (m_strBuffer[it] == '\n')
+			{
 
-			if (it == 0) //if it is the first char
-			{
-				if (m_strBuffer[it + 1] != ' ')
+				if (it == 0) //if it is the first char
 				{
-					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
-					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					if (m_strBuffer[it + 1] != ' ')
+					{
+						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
+						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					}
 				}
-			}
-			else if (m_strBuffer.length() - 1)//if it is the last char
-			{
-				if (m_strBuffer[it - 1] != ' ')
+				else if (m_strBuffer.length() - 1)//if it is the last char
 				{
-					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
-					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					if (m_strBuffer[it - 1] != ' ')
+					{
+						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
+						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					}
 				}
-			}
-			else//anything else
-			{
-				if (m_strBuffer[it - 1] != ' ')
+				else//anything else
 				{
-					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
-					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
-				}
+					if (m_strBuffer[it - 1] != ' ')
+					{
+						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
+						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					}
 
-				if (m_strBuffer[it + 1] != ' ')										//AND
-				{
-					m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
-					m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					if (m_strBuffer[it + 1] != ' ')										//AND
+					{
+						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
+						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
+					}
 				}
 			}
 		}
 	}
+	else
+	{
+		//single line, DESTROY ALL NEWLINES
+		for (auto it = m_strBuffer.begin(); it != m_strBuffer.end(); ++it)
+		{
+			if (*it == '\n')
+			{
+				m_strBuffer.erase(it);
+			}
+		}
+		m_strRenderBuffer = m_strBuffer;
+	}
 
+	if (m_bMultiline)
 	{//new block just to remove these variables
 		long TextWidth = GLUFRectWidth(m_rcText);
 		long currXValue = 0;
@@ -8153,9 +8237,34 @@ void GLUFEditBox::Analyse()
 	//recalculate scroll bar (this has to be done in between analyzing steps)
 	if (pFontNode && pFontNode->m_pFontType->mHeight)
 	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_pFontType->mHeight));
-		m_ScrollBar.SetTrackRange(0, GetNumNewlines()+1);
+		if (m_bMultiline)
+		{
+			m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_pFontType->mHeight));
+			m_ScrollBar.SetTrackRange(0, GetNumNewlines() + 1);
+		}
+		else
+		{
+			m_ScrollBar.SetTrackRange(0, (int)m_strBuffer.length()-1);
 
+			GLUFFontSize strWidth = 0;
+			unsigned int count = 0;
+			long textWidth = GLUFRectWidth(m_rcText);
+			for (unsigned int i = m_ScrollBar.GetTrackPos(); i < m_strBuffer.length(); ++i)
+				if (strWidth < (unsigned long)textWidth)
+				{
+					strWidth += pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
+					++count;
+				}
+				else
+				{
+					strWidth -= pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
+					--count;
+					break;
+				}
+
+			m_ScrollBar.SetPageSize(count);
+			m_ScrollBar.ShowItem(m_nCaret);
+		}
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
 		//m_ScrollBar.ShowItem(GetLineNumberFromCharPos(m_nCaret));
@@ -8169,6 +8278,7 @@ void GLUFEditBox::Analyse()
 
 	//for each character, get the width, and add that to the width of the previous, also add initial 0
 	//m_CalcXValues.push_back(0);
+	if (m_bMultiline)
 	{
 		int currXValue = 0;
 		int distanceFromBottom = GLUFRectHeight(m_rcText);
@@ -8187,21 +8297,31 @@ void GLUFEditBox::Analyse()
 		{
 
 #pragma warning(disable : 4244)
-				thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+			thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
 #pragma warning(default : 4244)
 
 			rc = pFontNode->m_pFontType->GetCharRect(it);
-			rc.top = distanceFromBottom;
-			rc.bottom = distanceFromBottom - fontHeight;
-			rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
-			GLUFOffsetRect(rc, currXValue, 0);
-			//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
+			if (it == '\n')
+			{
+				rc.top = distanceFromBottom - fontHeight;
+				rc.bottom = rc.top - fontHeight;
+				rc.left = 0;
+				rc.right = 0;
+			}
+			else
+			{
+				rc.top = distanceFromBottom;
+				rc.bottom = distanceFromBottom - fontHeight;
+				rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+				GLUFOffsetRect(rc, currXValue, 0);
+				//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
+			}
 
 			//offset the whole block by the scroll level
 			GLUFOffsetRect(rc, 0, scrollbarOffset);
 
 			//cull the characters that will not fit on the page
-			if (lineNum > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1 || lineNum < m_ScrollBar.GetTrackPos())
+			if (lineNum > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() || lineNum < m_ScrollBar.GetTrackPos())
 			{
 				if (topCulled)//this is called once the top has been culled, then the body has been added
 					break;
@@ -8242,6 +8362,63 @@ void GLUFEditBox::Analyse()
 			++i;
 		}
 		m_strRenderBuffer = strRenderBufferTmp;
+	}
+	else
+	{
+		//for single line, we do HORIZONTAL culling
+		int currXValue = 0;
+		long top = GLUFRectHeight(m_rcText), bottom = top - pFontNode->m_Leading;
+
+		bool leftCulled = false;
+		int thisCharWidth = 0;
+		int scrollbarOffset = m_ScrollBar.GetTrackPos();
+		GLUFRect rc;
+
+		std::wstring strRenderBufferTmp = L"";
+		int i = 0;
+		for (auto it : m_strRenderBuffer)
+		{
+
+#pragma warning(disable : 4244)
+			thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+#pragma warning(default : 4244)
+
+			rc = pFontNode->m_pFontType->GetCharRect(it);
+			rc.top = top;
+			rc.bottom = bottom;
+			rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+			GLUFOffsetRect(rc, currXValue, 0);
+			//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
+
+			//offset the whole block by the scroll level
+			//GLUFOffsetRect(rc, 0, scrollbarOffset);
+
+			//cull the characters that will not fit on the page
+			if (i < m_ScrollBar.GetTrackPos() || i > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
+			{
+				if (!leftCulled)
+					++m_strRenderBufferOffset;
+			}
+			else
+			{
+				leftCulled = true;
+
+				//does fit on page
+				strRenderBufferTmp += it;
+				m_CharBoundingBoxes.push_back(rc);
+
+
+				currXValue += thisCharWidth;
+			}
+
+
+			++i;
+		}
+		m_strRenderBuffer = strRenderBufferTmp;
+
+		//for single lines, neither of these will happen
+		m_strInsertedNewlineLocations.clear();
+		m_nAdditionalInsertedCharLocations.clear();
 	}
 
 	m_bAnalyseRequired = false;  // Analysis is up-to-date
@@ -8322,7 +8499,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 			if (dwTextFlags & GT_CENTER)
 				CurX = rcScreen.left + centerOffset;
 			else if (dwTextFlags & GT_LEFT)
-				CurX = rcScreen.left + 5;
+				CurX = rcScreen.left;
 			else if (dwTextFlags & GT_RIGHT)
 				CurX = rcScreen.left + centerOffset * 2;
 

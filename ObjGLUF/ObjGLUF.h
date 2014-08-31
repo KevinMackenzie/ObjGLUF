@@ -185,6 +185,9 @@ public:
 struct OBJGLUF_API GLUFRect
 {
 	long left, top, right, bottom;
+
+
+
 };
 
 struct OBJGLUF_API GLUFRectf
@@ -222,6 +225,20 @@ inline GLUFPoint operator /(const GLUFPoint& pt0, const long& f)
 inline GLUFPoint operator -(const GLUFPoint& pt0, const GLUFPoint& pt1)
 {
 	return { pt0.x - pt1.x, pt0.y - pt1.y };
+}
+
+inline bool operator ==(const GLUFRect& rc0, const GLUFRect& rc1)
+{
+	return
+		(
+		rc0.left == rc1.left && rc0.right  == rc1.right &&
+		rc0.top  == rc1.top  && rc0.bottom == rc1.bottom
+		);
+}
+
+inline bool operator !=(const GLUFRect& rc0, const GLUFRect& rc1)
+{
+	return !(rc0 == rc1);
 }
 
 OBJGLUF_API bool		GLUFPtInRect(GLUFRect rect, GLUFPoint pt);

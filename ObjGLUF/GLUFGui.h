@@ -8,15 +8,15 @@ namespace GLUF
 //--------------------------------------------------------------------------------------
 // Macro definitions
 //--------------------------------------------------------------------------------------
-#define GT_CENTER	0x0001
-#define GT_LEFT		0x0002
-#define GT_RIGHT    0x0004
+#define GT_CENTER	(1<<0)
+#define GT_LEFT		(1<<1)
+#define GT_RIGHT    (1<<2)
 
-#define GT_VCENTER	0x0008//WARNING: this looks kind of funny with hard rect off
-#define GT_TOP      0x0010
-#define GT_BOTTOM   0x0020//WARNING: this looks kind of funny with hard rect off
+#define GT_VCENTER	(1<<3)//WARNING: this looks kind of funny with hard rect off
+#define GT_TOP      (1<<4)
+#define GT_BOTTOM   (1<<5)//WARNING: this looks kind of funny with hard rect off
 
-#define GT_MULTI_LINE 0x0030 //NOTE: this is ONLY used by EditBox
+#define GT_MULTI_LINE (1<<6) //NOTE: this is ONLY used by EditBox
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
@@ -1088,7 +1088,7 @@ protected:
 	void Analyse();
 	
 	//NOTE: input the cursor position in m_strRenderBuffer space
-	bool CPtoRC(int nCP, bool bTrail, GLUF::GLUFRect *pPt);
+	bool CPtoRC(int nCP, GLUF::GLUFRect *pPt);
 
 	//NOTE: outputs the cursor position in m_strRenderBuffer space
 	bool PttoCP(GLUF::GLUFPoint pt, int* pCP, bool* bTrail);

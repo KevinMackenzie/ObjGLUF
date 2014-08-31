@@ -95,7 +95,17 @@ int main(void)
 	dlg->EnableKeyboardInput(true);
 	//GLUFRect rc = { 0, 200, 200, 0 };
 
-	dlg->AddEditBox(10, L"EditBox", 100, 100, 400, 400);
+
+	std::wifstream t("text.txt");
+	std::wstring str;
+
+	t.seekg(0, std::ios::end);
+	str.reserve(t.tellg());
+	t.seekg(0, std::ios::beg);
+
+	str.assign((std::istreambuf_iterator<wchar_t>(t)),
+		std::istreambuf_iterator<wchar_t>());
+	dlg->AddEditBox(10, str, 100, 100, 400, 400, GT_LEFT | GT_TOP | GT_MULTI_LINE);
 
 	/*dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
 
