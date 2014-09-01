@@ -6813,7 +6813,6 @@ void GLUFEditBox::PlaceCaret( int nCP)
 	}
 	else if (!m_bMultiline)
 	{
-
 		if (nCP >= GetTextLength())
 		{
 			//anything past this, set to the max
@@ -6837,8 +6836,8 @@ void GLUFEditBox::PlaceCaret( int nCP)
 			m_ScrollBar.SetTrackPos(m_nCaret);*/
 		}
 
-		int rendCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
-		m_ScrollBar.SetTrackPos(rendCaret);
+		//int rendCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
+		Analyse();
 	}
 }
 
@@ -7994,7 +7993,8 @@ void GLUFEditBox::Render( float fElapsedTime)
 		}
 	}
 
-	Color color = Color(255, 0, 255, 128);
+	//debugging
+	/*Color color = Color(255, 0, 255, 128);
 	for (auto it : m_CharBoundingBoxes)
 	{
 		GLUFRect copy = it;
@@ -8005,7 +8005,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 			color.g += 10;
 		else
 			color.r -= 10;
-	}
+	}*/
 
 	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
 	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText);
@@ -8248,22 +8248,22 @@ void GLUFEditBox::Analyse()
 
 			GLUFFontSize strWidth = 0;
 			unsigned int count = 0;
-			long textWidth = GLUFRectWidth(m_rcText);
+			unsigned long textWidth = GLUFRectWidth(m_rcText);
 			for (unsigned int i = m_ScrollBar.GetTrackPos(); i < m_strBuffer.length(); ++i)
-				if (strWidth < (unsigned long)textWidth)
+				if (strWidth < textWidth)
 				{
 					strWidth += pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
 					++count;
 				}
 				else
 				{
-					strWidth -= pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
+					//strWidth -= pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
 					--count;
 					break;
 				}
 
 			m_ScrollBar.SetPageSize(count);
-			m_ScrollBar.ShowItem(m_nCaret);
+			m_ScrollBar.SetTrackPos(m_nCaret);
 		}
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
@@ -8296,29 +8296,7 @@ void GLUFEditBox::Analyse()
 		for (auto it : m_strRenderBuffer)
 		{
 
-#pragma warning(disable : 4244)
-			thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
-#pragma warning(default : 4244)
 
-			rc = pFontNode->m_pFontType->GetCharRect(it);
-			if (it == '\n')
-			{
-				rc.top = distanceFromBottom - fontHeight;
-				rc.bottom = rc.top - fontHeight;
-				rc.left = 0;
-				rc.right = 0;
-			}
-			else
-			{
-				rc.top = distanceFromBottom;
-				rc.bottom = distanceFromBottom - fontHeight;
-				rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
-				GLUFOffsetRect(rc, currXValue, 0);
-				//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
-			}
-
-			//offset the whole block by the scroll level
-			GLUFOffsetRect(rc, 0, scrollbarOffset);
 
 			//cull the characters that will not fit on the page
 			if (lineNum > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() || lineNum < m_ScrollBar.GetTrackPos())
@@ -8341,6 +8319,31 @@ void GLUFEditBox::Analyse()
 			else
 			{
 				topCulled = true;
+
+#pragma warning(disable : 4244)
+				thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+#pragma warning(default : 4244)
+
+				rc = pFontNode->m_pFontType->GetCharRect(it);
+				if (it == '\n')
+				{
+					rc.top = distanceFromBottom - fontHeight;
+					rc.bottom = rc.top - fontHeight;
+					rc.left = 0;
+					rc.right = 0;
+				}
+				else
+				{
+					rc.top = distanceFromBottom;
+					rc.bottom = distanceFromBottom - fontHeight;
+					rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+					GLUFOffsetRect(rc, currXValue, 0);
+					//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
+				}
+
+
+				//offset the whole block by the scroll level
+				GLUFOffsetRect(rc, 0, scrollbarOffset);
 
 				//does fit on page
 				strRenderBufferTmp += it;
@@ -8379,29 +8382,27 @@ void GLUFEditBox::Analyse()
 		for (auto it : m_strRenderBuffer)
 		{
 
-#pragma warning(disable : 4244)
-			thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
-#pragma warning(default : 4244)
-
-			rc = pFontNode->m_pFontType->GetCharRect(it);
-			rc.top = top;
-			rc.bottom = bottom;
-			rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
-			GLUFOffsetRect(rc, currXValue, 0);
-			//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
-
-			//offset the whole block by the scroll level
-			//GLUFOffsetRect(rc, 0, scrollbarOffset);
-
 			//cull the characters that will not fit on the page
 			if (i < m_ScrollBar.GetTrackPos() || i > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
 			{
 				if (!leftCulled)
 					++m_strRenderBufferOffset;
+				else
+					break;
 			}
 			else
 			{
 				leftCulled = true;
+
+#pragma warning(disable : 4244)
+				thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+#pragma warning(default : 4244)
+
+				rc = pFontNode->m_pFontType->GetCharRect(it);
+				rc.top = top;
+				rc.bottom = bottom;
+				rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+				GLUFOffsetRect(rc, currXValue, 0);
 
 				//does fit on page
 				strRenderBufferTmp += it;
@@ -8422,6 +8423,7 @@ void GLUFEditBox::Analyse()
 	}
 
 	m_bAnalyseRequired = false;  // Analysis is up-to-date
+	m_ScrollBar.ShowItem(m_nCaret);
 
 }
 

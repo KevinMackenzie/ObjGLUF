@@ -105,7 +105,8 @@ int main(void)
 
 	str.assign((std::istreambuf_iterator<wchar_t>(t)),
 		std::istreambuf_iterator<wchar_t>());
-	dlg->AddEditBox(10, str, 100, 100, 400, 400, GT_LEFT | GT_TOP | GT_MULTI_LINE);
+	//dlg->AddEditBox(10, str, 100, 100, 400, 400, GT_LEFT | GT_TOP | GT_MULTI_LINE);
+	dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, GT_LEFT | GT_TOP);
 
 	/*dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
 
