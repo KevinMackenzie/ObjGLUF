@@ -17,6 +17,8 @@ GLFWwindow* window;
 GLUFDialogResourceManager *resMan;
 GLUFDialog *dlg;
 
+extern GLUFFontPtr g_ArielDefault;
+
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
@@ -82,13 +84,13 @@ int main(void)
 	dlg = new GLUFDialog();
 	dlg->Init(resMan);
 	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
-	dlg->SetCaptionText(L"Caption");
-	dlg->SetCaptionHeight(50);
-	dlg->Lock(false);
+	//dlg->SetCaptionText(L"Caption");
+	//dlg->SetCaptionHeight(50);
+	//dlg->Lock(false);
 	dlg->EnableAutoClamp();
 	//dlg->EnableGrabAnywhere();
 	//dlg->SetMinimized(true);
-	dlg->EnableCaption(true);
+	dlg->EnableCaption(false);
 	dlg->SetSize(600, 600);
 	dlg->SetLocation(50, 50);
 	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
@@ -106,17 +108,19 @@ int main(void)
 	str.assign((std::istreambuf_iterator<wchar_t>(t)),
 		std::istreambuf_iterator<wchar_t>());
 	//dlg->AddEditBox(10, str, 100, 100, 400, 400, GT_LEFT | GT_TOP | GT_MULTI_LINE);
-	dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, GT_LEFT | GT_TOP);
+	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
-	/*dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
+	//dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
 
 	//dlg->AddCheckBox(2, L"Check Box", 150, 50, 20, 20);
-	//dlg->AddRadioButton(3, 0, L"Button 1", 200, 200, 20, 20, true);
-	//dlg->AddRadioButton(4, 0, L"Button 2", 200, 250, 20, 20);
-	//dlg->AddRadioButton(5, 0, L"Button 3", 200, 300, 20, 20);
+	dlg->AddRadioButton(3, 0, L"Button 1", 200, 200, 20, 20, true);
+	dlg->AddRadioButton(4, 0, L"Button 2", 200, 250, 20, 20);
+	dlg->AddRadioButton(5, 0, L"Button 3", 200, 300, 20, 20);
+
+	dlg->AddSlider (6, 100, 100, 400, 50, 0, 15, 5);
 	//dlg->AddButton(0, L"Button", 25, 10, 75, 20);
 
-	dlg->AddButton(0, L"Button", 50, 10, 125, 35);
+	/*dlg->AddButton(0, L"Button", 50, 10, 125, 35);
 
 	GLUFComboBox* box;
 	dlg->AddComboBox(1, 200, 200, 125, 35, 0, false, &box);
@@ -163,11 +167,22 @@ int main(void)
 	//GLUFProgramPtr frag, vert;
 	GLUFProgramPtr Prog;
 
-	GLUFShaderPathList paths;
-	paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
-	paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
+	//GLUFShaderPathList paths;
+	//paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+	//paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
 	
-	Prog = GLUFSHADERMANAGER.CreateProgram(paths);
+	GLUFShaderSourceList sources;
+	unsigned long len = 0;
+
+	std::string text = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", &len), len);
+	text += '\n';
+	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+
+	std::string text1 = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", &len), len);
+	text1 += '\n';
+	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+
+	Prog = GLUFSHADERMANAGER.CreateProgram(sources);
 
 	GLUFVariableLocMap attribs, uniforms;
 	attribs = GLUFSHADERMANAGER.GetShaderAttribLocations(Prog);
@@ -226,6 +241,83 @@ int main(void)
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);
 
+	GLUF::GLUFTextHelper *textHelper = new GLUF::GLUFTextHelper(resMan);
+	textHelper->Init(20);
+
+
+	GLuint skycubemap = GLUF::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
+
+	sources.clear();
+	text = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/vert.glsl", &len), len);
+	text += '\n';
+	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+
+	text1 = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/frag.glsl", &len), len);
+	text1 += '\n';
+	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+
+	GLUFProgramPtr sky = GLUFSHADERMANAGER.CreateProgram(sources);
+
+	GLUFVariableLocMap attribLocations = GLUFSHADERMANAGER.GetShaderAttribLocations(sky);
+	GLUFVariableLocMap unifLocations = GLUFSHADERMANAGER.GetShaderUniformLocations(sky);
+
+	GLuint sampLoc = unifLocations["m_tex0"];
+	GLuint mvpLoc = unifLocations["_mvp"];
+
+	GLUFVariableLocMap::iterator it;
+
+	GLUFVertexArray m_pVertexArray;
+	GLuint mPositionLoc = 0;
+
+	it = attribLocations.find("_position");
+	if (it != attribLocations.end())
+	{
+		m_pVertexArray.AddVertexAttrib(GLUFVertAttrib(it->second, 4, 3, GL_FLOAT));
+		mPositionLoc = it->second;
+	}
+
+	Vec3Array verts;
+	float depth;
+	float val = depth = 10.0f;
+	verts.push_back(glm::vec3(val, -val, -depth));
+	verts.push_back(glm::vec3(-val, -val, -depth));
+	verts.push_back(glm::vec3(-val, val, -depth));
+	verts.push_back(glm::vec3(val, val, -depth));
+
+	//front
+	verts.push_back(glm::vec3(-val, -val, depth));
+	verts.push_back(glm::vec3(val, -val, depth));
+	verts.push_back(glm::vec3(val, val, depth));
+	verts.push_back(glm::vec3(-val, val, depth));
+
+	std::vector<glm::u32vec3> mTriangles;
+
+	//north
+	mTriangles.push_back(glm::u32vec3(4, 5, 6));
+	mTriangles.push_back(glm::u32vec3(6, 7, 4));
+
+	//south
+	mTriangles.push_back(glm::u32vec3(0, 1, 2));
+	mTriangles.push_back(glm::u32vec3(2, 3, 0));
+
+	//east
+	mTriangles.push_back(glm::u32vec3(1, 4, 7));
+	mTriangles.push_back(glm::u32vec3(7, 2, 1));
+
+	//west
+	mTriangles.push_back(glm::u32vec3(5, 0, 3));
+	mTriangles.push_back(glm::u32vec3(3, 6, 5));
+
+	//top
+	mTriangles.push_back(glm::u32vec3(7, 6, 3));
+	mTriangles.push_back(glm::u32vec3(3, 2, 7));
+
+	//bottom
+	mTriangles.push_back(glm::u32vec3(1, 0, 5));
+	mTriangles.push_back(glm::u32vec3(5, 4, 1));
+
+	m_pVertexArray.BufferData(mPositionLoc, verts.size(), &verts[0][0]);
+	m_pVertexArray.BufferIndices(mTriangles);
 
 	do{
 
@@ -246,21 +338,23 @@ int main(void)
 		
 		
 		// Enable depth test
-		glEnable(GL_DEPTH_TEST);
+		/*glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
 		glDepthFunc(GL_LESS);
 
 		// Cull triangles which normal is not towards the camera
-		glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);*/
 
-		GLUFSHADERMANAGER.UseProgram(Prog);
-		glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(50), ratio, 0.1f, 1000.0f);
-		glm::mat4 ViewMatrix = glm::mat4();
-		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), glm::vec3(-1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
+		//GLUFSHADERMANAGER.UseProgram(Prog); 
+		glm::vec3 pos(3, 5, 6);
+		glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(70), ratio, 0.1f, 1000.f);
+		glm::mat4 ViewMatrix = glm::translate(glm::mat4(), -pos);
+		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), pos) * glm::toMat4(glm::quat(glm::vec3(0, DEG_TO_RAD_F(30) * currTime, 0)));// glm::translate(glm::mat4(), glm::vec3(-1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(GLUF_PI_F / 2, 2.0f * currTime, 0.0f)));
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
+		/*GLUFSHADERMANAGER.UseProgram(Prog);
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
@@ -285,12 +379,35 @@ int main(void)
 		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 		
-		vertexData2->Draw();
+		vertexData2->Draw();*/
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
-			dlg->OnRender(ellapsedTime);
+			//dlg->OnRender(ellapsedTime);
 			//dlg->DrawRect(rc, GLUF::Color(255, 0, 0, 255));
+
+		GLUFSHADERMANAGER.UseProgram(sky);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skycubemap);
+		glUniform1i(sampLoc, 0);
+		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &MVP[0][0]);
+		glDisable(GL_DEPTH_CLAMP);
+		glDepthMask(GL_FALSE);
+		glDisable(GL_CULL_FACE);
+		m_pVertexArray.Draw();
+		glEnable(GL_CULL_FACE);
+		glDepthMask(GL_TRUE);
+		glEnable(GL_DEPTH_CLAMP);
+
+		//glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		/*textHelper->Begin(0);
+		textHelper->SetInsertionPos(GLUFPoint(100, 100));
+		textHelper->DrawTextLine(L"TESTING");
+
+		GLUFSHADERMANAGER.UseProgram(linesprog);
+		glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
+		m_Squares.Draw();*/
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -307,7 +424,7 @@ int main(void)
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
-	GLUFTerminate();
+	GLUF::GLUFTerminate();
 
 	return 0;
 }

@@ -124,7 +124,11 @@ typedef unsigned long GLUFResult;
 
 OBJGLUF_API GLUFResult GLUFTrace(const char*, const char*, unsigned long, GLUFResult, const char*);
 
+
+//statistics methods
 OBJGLUF_API void GLUFStats_func();
+OBJGLUF_API const wchar_t* GLUFGetFrameStats();
+OBJGLUF_API const wchar_t* GLUFGetDeviceStats();
 
 //not defined if not windows
 #ifndef _T
@@ -164,6 +168,8 @@ OBJGLUF_API long GLUFLoadFileIntoMemory(const wchar_t* path, char* buffer, long 
 OBJGLUF_API char* GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize);
 OBJGLUF_API long GLUFLoadFileIntoMemory(const char* path, char* buffer, long len = -1);
 
+OBJGLUF_API std::string GLUFLoadBinaryArrayIntoString(char* data, long len);
+
 typedef std::vector<glm::vec4> Vec4Array;
 typedef std::vector<glm::vec3> Vec3Array;
 typedef std::vector<glm::vec2> Vec2Array;
@@ -172,6 +178,7 @@ typedef std::vector<GLuint>    IndexArray;
 class OBJGLUF_API GLUFMatrixStack
 {
 	std::stack<glm::mat4> mStack;
+	static glm::mat4 mIdentity;
 public:
 	void Push(const glm::mat4& matrix);
 	void Pop(void);
@@ -313,6 +320,7 @@ OBJGLUF_API GLUFPoint GLUFGetPointFromRect(GLUFRect rect, bool x, bool y);
 
 
 OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
+OBJGLUF_API Color3f GLUFColorToFloat3(Color color);//takes 0-255 to 0.0f - 1.0f
 
 
 
@@ -397,7 +405,8 @@ public:
 	//for creating things
 
 	GLUFShaderPtr CreateShaderFromFile(std::wstring filePath, GLUFShaderType type);
-	GLUFShaderPtr CreateShaderFromMemory(const char* text, GLUFShaderType type);
+	GLUFShaderPtr CreateShaderFromText(const char* str, GLUFShaderType type);
+	GLUFShaderPtr CreateShaderFromMemory(char* data, long len, GLUFShaderType type);
 
 	GLUFProgramPtr CreateProgram(GLUFShaderPtrList shaders, bool seperate = false);
 	GLUFProgramPtr CreateProgram(GLUFShaderSourceList shaderSources, bool seperate = false);
@@ -469,6 +478,7 @@ GLUFShaderPtr shad = CreateShader("shader.glsl", ST_VERTEX_SHADER);
 enum GLUFTextureFileFormat
 {
 	TFF_DDS = 0,//we will ONLY support dds's, because they are flexible enough, AND have mipmaps
+	TTF_DDS_CUBEMAP = 1
 };
 
 
@@ -533,6 +543,8 @@ public:
 	void DrawInstanced(GLuint instances);
 
 	void BufferIndices(GLuint* indices, unsigned int Count);
+	void BufferIndices(std::vector<glm::u32vec2> indices);
+	void BufferIndices(std::vector<glm::u32vec3> indices);
 	//void BufferFaces(GLuint* indices, unsigned int FaceCount);
 
 	virtual void EnableVertexAttributes();

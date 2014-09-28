@@ -88,6 +88,9 @@ typedef bool(*PGLUFCALLBACK)(GLUF_MESSAGE_TYPE, int, int, int, int);
 // input documentation for more information.
 OBJGLUF_API bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callbackFunc, GLuint controltex);
 
+//this is good for swapping callback methods, because it returns the old one
+OBJGLUF_API PGLUFCALLBACK GLUFChangeCallbackFunc(PGLUFCALLBACK newCallback);
+
 
 OBJGLUF_API void GLUFSetDefaultFont(GLUFFontPtr pDefFont);
 
@@ -165,6 +168,15 @@ enum GLUF_EVENT
 };
 
 
+enum Charset
+{
+	ASCII = 0,
+	ASCIIExtended = 1,
+	Numeric = 2,
+	Alphabetical = 3,
+	AlphaNumeric = 4,
+	Unicode = 5 
+};
 
 
 typedef void (*PCALLBACKGLUFGUIEVENT)(GLUF_EVENT nEvent, int nControlID, GLUFControl* pControl, void* pContext);
@@ -230,13 +242,13 @@ public:
 	bool                MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
 
 	// Control creation (all coordinates are based on normalzied device space)
-	GLUF::GLUFResult             AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
+	GLUF::GLUFResult             AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags = GT_LEFT | GT_TOP, bool bIsDefault = false, GLUFStatic** ppCreated = NULL);
 	GLUF::GLUFResult             AddButton(int ID, std::wstring strText, long x, long y, long width, long height, int nHotkey = 0, bool bIsDefault = false, GLUFButton** ppCreated = NULL);
 	GLUF::GLUFResult             AddCheckBox(int ID, std::wstring strText, long x, long y, long width, long height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFCheckBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, long x, long y, long width, long height, bool bChecked = false, int nHotkey = 0, bool bIsDefault = false, GLUFRadioButton** ppCreated = NULL);
 	GLUF::GLUFResult             AddComboBox(int ID, long x, long y, long width, long height, int nHotKey = 0, bool bIsDefault = false, GLUFComboBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddSlider(int ID, long x, long y, long width, long height, long min = 0.0f, long max = 0.25f, long value = 0.125f, bool bIsDefault = false, GLUFSlider** ppCreated = NULL);
-	GLUF::GLUFResult             AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags = GT_LEFT | GT_TOP, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
+	GLUF::GLUFResult             AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, Charset charset = Unicode, unsigned int dwTextFlags = GT_LEFT | GT_TOP, bool bIsDefault = false, GLUFEditBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddListBox(int ID, long x, long y, long width, long height, unsigned long dwStyle = 0, GLUFListBox** ppCreated = NULL);
 	GLUF::GLUFResult             AddControl(GLUFControl* pControl);
 	GLUF::GLUFResult             InitControl(GLUFControl* pControl);
@@ -688,7 +700,7 @@ struct GLUFElementHolder
 class GLUFStatic : public GLUFControl
 {
 public:
-	GLUFStatic(GLUFDialog* pDialog = NULL);
+	GLUFStatic(unsigned int dwTextFlags, GLUFDialog* pDialog = NULL);
 
 	virtual void    Render(float fElapsedTime);
 	virtual bool    ContainsPoint(GLUF::GLUFPoint pt){ return false; }
@@ -700,6 +712,7 @@ public:
 
 protected:
 	std::wstring     m_strText;      // Window text  
+	unsigned int     m_dwTextFlags;
 };
 
 
@@ -1037,13 +1050,15 @@ protected:
 	GLUF::GLUFRect m_rcButton;
 };
 
+
+
 //-----------------------------------------------------------------------------
 // EditBox control TODO: make text insertion AND fix things
 //-----------------------------------------------------------------------------
 class GLUFEditBox : public GLUFControl
 {
 public:
-	GLUFEditBox(bool isMultiline = false, GLUFDialog* pDialog = NULL);
+	GLUFEditBox(Charset charset = Charset::Unicode, bool isMultiline = false, GLUFDialog* pDialog = NULL);
 	virtual         ~GLUFEditBox();
 
 	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -1114,6 +1129,7 @@ protected:
 	std::vector<size_t> m_strInsertedNewlineLocations;//the location of all of the newlines that were inserted into the render string
 	std::vector<size_t> m_nAdditionalInsertedCharLocations;//the number of chars inserted NOTE: these are the locations within the renderspace string
 
+	Charset m_Charset;
 	std::vector<GLUF::GLUFRect> m_CharBoundingBoxes;//a buffer to hold all of the rects of the chars. the origin is the botom left of the text region also, this is based on m_strRenderBuffer, NOT m_strBuffer
 	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
 
@@ -1159,7 +1175,7 @@ protected:
 class OBJGLUF_API GLUFTextHelper
 {
 public:
-	GLUFTextHelper(GLUFDialogResourceManager* pManager, GLUFFontSize fLineHeight);
+	GLUFTextHelper(GLUFDialogResourceManager* pManager);
 	~GLUFTextHelper(){};
 
 	//line height = leadding
@@ -1184,7 +1200,6 @@ protected:
 	GLUF::Color m_clr;
 	GLUF::GLUFPoint m_pt;
 	GLUFFontSize m_fLineHeight;
-
 
 	GLUFDialogResourceManager* m_pManager;
 

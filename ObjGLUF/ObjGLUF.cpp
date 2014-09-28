@@ -83,9 +83,44 @@ bool GLUFInit()
 	return true;
 }
 
+double g_LastFrame = 0.0;
+double g_UpdateInterval = 1.0;//every second
+long long  g_FrameCount = 0;//this is since the last update
+float g_CurrFps = 0.0f;
+wchar_t* g_FrameStats = new wchar_t[MAXLEN];
+
 void GLUFStats_func()
 {
+	++g_FrameCount;
 
+	double thisFrame = GLUFGetTime();
+	if (thisFrame - g_LastFrame < g_UpdateInterval)
+		return;//don't update statistics
+
+	double deltaTime = thisFrame - g_LastFrame;
+
+	g_CurrFps = (float)((long double)g_FrameCount / (long double)deltaTime);
+
+	g_FrameCount = 0;//reset the frame count
+
+	//update frame statistic string
+	memset(g_FrameStats, 0, MAXLEN);
+	swprintf_s(g_FrameStats, MAXLEN, L"%0.2f fps", g_CurrFps);
+
+	//update device statistics
+	//TODO:
+
+	g_LastFrame = thisFrame;
+}
+
+const wchar_t* GLUFGetFrameStats()
+{
+	return g_FrameStats;
+}
+
+const wchar_t* GLUFGetDeviceStats()
+{
+	return L"WIP";
 }
 
 bool GLUFInitOpenGLExtentions()
@@ -135,7 +170,9 @@ bool GLUFInitOpenGLExtentions()
 char* GLUFLoadFileIntoMemory(const wchar_t* path, unsigned long* rawSize)
 {
 	GLUF_ASSERT(path);
-	GLUF_ASSERT(rawSize);
+	//GLUF_ASSERT(rawSize);
+	if (!rawSize)
+		rawSize = new unsigned long;
 
 	std::ifstream inFile(path, std::ios::binary);
 	if (!inFile)
@@ -248,8 +285,23 @@ long GLUFLoadFileIntoMemory(const char* path, char* buffer, long len)
 		GLUF_ERROR("Failed to load file into memory");
 	}
 
-	return (unsigned long)streamLen;
+	return len;
 }
+
+std::string GLUFLoadBinaryArrayIntoString(char* data, long len)
+{
+	std::istream indata(new MemStreamBuf(data, len));
+	char ch = ' ';
+
+	std::string inString;
+	while (indata.get(ch))
+		inString += ch;
+
+	return inString;
+}
+
+
+glm::mat4 GLUFMatrixStack::mIdentity = glm::mat4();
 
 void GLUFMatrixStack::Push(const glm::mat4& matrix)
 {
@@ -274,6 +326,10 @@ void GLUFMatrixStack::Pop(void)
 
 const glm::mat4& GLUFMatrixStack::Top(void)
 {
+	//if it is empty, then we want to return the identity
+	if (mStack.size() == 0)
+		return mIdentity;
+
 	return mStack.top();
 }
 
@@ -403,10 +459,19 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 Color4f GLUFColorToFloat(Color color)
 {
 	Color4f col;
-	col.x = std::min(1.0f, (float)color.x / 255.0f);
-	col.y = std::min(1.0f, (float)color.y / 255.0f);
-	col.z = std::min(1.0f, (float)color.z / 255.0f);
-	col.w = std::min(1.0f, (float)color.w / 255.0f);
+	col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
+	col.y = glm::clamp((float)color.y / 255.0f, 0.0f, 1.0f);
+	col.z = glm::clamp((float)color.z / 255.0f, 0.0f, 1.0f);
+	col.w = glm::clamp((float)color.w / 255.0f, 0.0f, 1.0f);
+	return col;
+}
+
+Color3f GLUFColorToFloat3(Color color)
+{
+	Color3f col;
+	col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
+	col.y = glm::clamp((float)color.y / 255.0f, 0.0f, 1.0f);
+	col.z = glm::clamp((float)color.z / 255.0f, 0.0f, 1.0f);
 	return col;
 }
 
@@ -569,6 +634,133 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
 	return textureID;
 }
 
+GLuint LoadTextureCubemapDDS(char* rawData, unsigned int length)
+{
+	unsigned char header[124];
+
+
+	/* verify the type of file */
+	char filecode[4];
+	memcpy(filecode, rawData, 4);
+	if (strncmp(filecode, "DDS ", 4) != 0)
+	{
+		//fclose(fp);
+		return 0;
+	}
+
+	/* get the surface desc */
+	memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
+
+	//this is all the data I need, but I just need to load it properly to opengl
+	unsigned int height = *(unsigned int*)&(header[8]);
+	unsigned int width = *(unsigned int*)&(header[12]);
+	unsigned int linearSize = *(unsigned int*)&(header[16]);
+	unsigned int mipMapCount = *(unsigned int*)&(header[24]);
+	unsigned int flags = *(unsigned int*)&(header[76]);
+	unsigned int fourCC = *(unsigned int*)&(header[80]);
+	unsigned int RGBBitCount = *(unsigned int*)&(header[84]);
+	unsigned int RBitMask = *(unsigned int*)&(header[88]);
+	unsigned int GBitMask = *(unsigned int*)&(header[92]);
+	unsigned int BBitMask = *(unsigned int*)&(header[96]);
+	unsigned int ABitMask = *(unsigned int*)&(header[100]);
+
+
+	char * buffer;
+	unsigned int bufsize;
+	/* how big is it going to be including all mipmaps? */
+	bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+	buffer = rawData + 128;
+	//memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
+
+	unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
+	unsigned int compressedFormat;
+	switch (fourCC)
+	{
+	case FOURCC_DXT1:
+		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+		break;
+	case FOURCC_DXT3:
+		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+		break;
+	case FOURCC_DXT5:
+		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		break;
+	default:
+		compressedFormat = 0;//uncompressed
+	}
+
+	// Create one OpenGL texture
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+
+	// "Bind" the newly created texture : all future texture functions will modify this texture
+	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);//REMEMBER it is max mip, NOT mip count
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_R, GL_RED);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	//this method is not the prettyest, but it is the easiest to load
+	if (compressedFormat != 0)
+	{
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+		unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+		unsigned int offset = 0;
+
+		unsigned int pertexSize = width;
+
+		unsigned int mipSize = ((pertexSize + 3) / 4)*((pertexSize + 3) / 4)*blockSize;
+		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, compressedFormat, pertexSize, pertexSize,
+			0, mipSize, buffer + offset);
+		offset += mipSize;
+		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
+			0, mipSize, buffer + offset);
+		offset += mipSize;
+		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, compressedFormat, pertexSize, pertexSize,
+			0, mipSize, buffer + offset);
+		offset += mipSize;
+		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
+			0, mipSize, buffer + offset);
+		offset += mipSize;
+		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
+			0, mipSize, buffer + offset);
+		offset += mipSize;
+		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
+			0, mipSize, buffer + offset);
+
+	}
+	else
+	{
+		unsigned int offset = 0;
+		unsigned int pertexSize = width;
+		unsigned int mipSize = (pertexSize * pertexSize * 4);
+
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+		offset += mipSize;
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+		offset += mipSize;
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+		offset += mipSize;
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+		offset += mipSize;
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+		offset += mipSize;
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+	}
+
+
+	return textureID;
+}
+
 GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
 {
 	unsigned long rawSize = 0;
@@ -587,6 +779,8 @@ GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFor
 	{
 	case TFF_DDS:
 		return LoadTextureDDS(data, length);
+	case TTF_DDS_CUBEMAP:
+		return LoadTextureCubemapDDS(data, length);
 	}
 
 	return 0;
@@ -732,7 +926,7 @@ void GLUFShader::Load(const char* shaderText, bool append)
 	if (!append)
 		mTmpShaderText.clear();
 
-	mTmpShaderText = shaderText;
+	mTmpShaderText.append(shaderText);
 }
 
 bool GLUFShader::LoadFromFile(const wchar_t* filePath, bool append)
@@ -913,8 +1107,6 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 		GLint maxLength;
 		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLength);
 
-		GLuint id = glGetAttribLocation(mProgramId, "_UV");
-
 		GLenum type;
 
 		GLint written, size;
@@ -1009,15 +1201,13 @@ GLUFShaderPtr GLUFShaderManager::CreateShaderFromFile(std::wstring filePath, GLU
 	return shader;
 }
 
-
-GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(const char* text, GLUFShaderType type)
+GLUFShaderPtr GLUFShaderManager::CreateShaderFromText(const char* str, GLUFShaderType type)
 {
 	//return CreateShader(text, type, false);
 	GLUFShaderPtr shader(new GLUFShader());
 	shader->Init(type);
 
-	//(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
-	shader->Load(text);
+	shader->Load(str);
 
 	GLUFShaderInfoStruct output;
 	shader->Compile(output);
@@ -1032,6 +1222,11 @@ GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(const char* text, GLUFSh
 	}
 
 	return shader;
+}
+
+GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(char* data, long len, GLUFShaderType type)
+{
+	return CreateShaderFromText((GLUFLoadBinaryArrayIntoString(data, len) + "\n").c_str(), type);
 }
 
 GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool seperate)
@@ -1065,7 +1260,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSourc
 	for (auto it : shaderSources)
 	{
 		//use the counter global to get a unique name  This is temperary anyway
-		shaders.push_back(CreateShaderFromMemory(it.second, it.first));
+		shaders.push_back(CreateShaderFromText(const_cast<char*>(it.second), it.first));
 
 		//make sure it didn't fail
 		if (!GetShaderLog(shaders[shaders.size()-1]))
@@ -1328,6 +1523,16 @@ void GLUFVertexArrayBase::BufferIndices(GLuint* indices, unsigned int count)
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * count, indices, mUsageType);
+}
+
+void GLUFVertexArrayBase::BufferIndices(std::vector<glm::u32vec2> indices)
+{
+	BufferIndices(&indices[0][0], indices.size() * 2);
+}
+
+void GLUFVertexArrayBase::BufferIndices(std::vector<glm::u32vec3> indices)
+{
+	BufferIndices(&indices[0][0], indices.size() * 3);
 }
 
 void GLUFVertexArrayBase::Draw()

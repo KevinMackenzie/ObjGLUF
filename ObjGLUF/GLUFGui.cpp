@@ -414,16 +414,16 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	return true;
 }
 
+PGLUFCALLBACK GLUFChangeCallbackFunc(PGLUFCALLBACK newCallback)
+{
+	PGLUFCALLBACK tmp = g_pCallback;
+	g_pCallback = newCallback;
+	return tmp;
+}
+
 void GLUFSetDefaultFont(GLUFFontPtr pDefFont)
 {
 	g_DefaultFont = pDefFont;
-}
-
-bool GLUFInitFont()
-{
-
-
-	return true;
 }
 
 GLUFResult GLUFTrace(const char* file, const char* function, unsigned long lineNum, GLUFResult value, const char* message)
@@ -547,8 +547,8 @@ void GLUFFont::Refresh()
 	//float fLargest = 0.0f;
 	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
 	//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	// Stop chararcters from bleeding over edges
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -1210,7 +1210,7 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 
 
 	m_MousePositionDialogSpace.x = m_MousePosition.x - m_x;
-	m_MousePositionDialogSpace.y = m_MousePosition.y - m_y - m_nCaptionHeight;
+	m_MousePositionDialogSpace.y = m_MousePosition.y - m_y - m_nCaptionHeight;//TODO: fix
 
 	//if (m_bCaption)
 	//	m_MousePositionDialogSpace.y -= m_nCaptionHeight;
@@ -1231,7 +1231,7 @@ bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, 
 		m_pManager->EnableKeyboardInputForAllDialogs();
 	}*/
 
-	if (!m_bKeyboardInput && msg == GM_KEY)
+	if (!m_bKeyboardInput && (msg == GM_KEY || msg == GM_UNICODE_CHAR))
 		return false;
 
 	// If caption is enable, check for clicks in the caption area.
@@ -1674,12 +1674,12 @@ GLUFElement* GLUFDialog::GetDefaultElement(GLUF_CONTROL_TYPE nControlType, unsig
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, bool bIsDefault,
+GLUFResult GLUFDialog::AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags, bool bIsDefault,
 GLUFStatic** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
 
-	GLUFStatic* pStatic = new (std::nothrow)GLUFStatic(this);
+	GLUFStatic* pStatic = new (std::nothrow)GLUFStatic(dwTextFlags, this);
 
 	if (ppCreated)
 		*ppCreated = pStatic;
@@ -1863,12 +1863,12 @@ bool bIsDefault, GLUFSlider** ppCreated)
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags, bool bIsDefault,
+GLUFResult GLUFDialog::AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, Charset charset, unsigned int dwTextFlags, bool bIsDefault,
 GLUFEditBox** ppCreated)
 {
 	GLUFResult hr = GR_SUCCESS;
 
-	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox((dwTextFlags & GT_MULTI_LINE) == GT_MULTI_LINE, this);
+	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox(charset, (dwTextFlags & GT_MULTI_LINE) == GT_MULTI_LINE, this);
 
 	if (ppCreated)
 		*ppCreated = pEditBox;
@@ -2219,8 +2219,8 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 	GLUFOffsetRect(rcScreen, m_x, m_y);
 
 	// If caption is enabled, offset the Y position by its height.
-	if (m_bCaption)
-		GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
+	//if (m_bCaption)
+	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
 
 	//float fBBWidth = (float)m_pManager->m_nBackBufferWidth;
 	//float fBBHeight = (float)m_pManager->m_nBackBufferHeight;
@@ -2242,7 +2242,7 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 	DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcScreen, vFontColor, pElement->dwTextFormat, bHardRect);
 
 	//reenable the control texture
-	GLUFTextureNode* pTextureNode = GetTexture(0);
+	//GLUFTextureNode* pTextureNode = GetTexture(0);
 	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
 
 	return GR_SUCCESS;
@@ -3533,11 +3533,11 @@ void GLUFControl::UpdateRects()
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
-GLUFStatic::GLUFStatic(GLUFDialog* pDialog)
+GLUFStatic::GLUFStatic(unsigned int dwTextFlags, GLUFDialog* pDialog)
 {
 	m_Type = GLUF_CONTROL_STATIC;
 	m_pDialog = pDialog;
-
+	m_dwTextFlags = dwTextFlags;
 	//ZeroMemory(&m_strText, sizeof(m_strText));
 
 	for (auto it = m_Elements.begin(); it != m_Elements.end(); ++it)
@@ -3562,6 +3562,7 @@ void GLUFStatic::Render(float fElapsedTime)
 		iState = GLUF_STATE_DISABLED;
 
 	GLUFElement* pElement = m_Elements[0];
+	pElement->dwTextFormat = m_dwTextFlags;
 
 	pElement->FontColor.Blend(iState, fElapsedTime);
 
@@ -3597,7 +3598,7 @@ GLUFResult GLUFStatic::SetText(std::wstring strText)
 // GLUFButton class
 //======================================================================================
 
-GLUFButton::GLUFButton(GLUFDialog* pDialog)
+GLUFButton::GLUFButton(GLUFDialog* pDialog) : GLUFStatic(GT_CENTER | GT_VCENTER)
 {
 	m_Type = GLUF_CONTROL_BUTTON;
 	m_pDialog = pDialog;
@@ -4841,7 +4842,7 @@ GLUFSlider::GLUFSlider( GLUFDialog* pDialog)
 
 	m_nMin = 0;
 	m_nMax = 100;
-	m_nValue = long(0.5f * (float)m_nMax);
+	m_nValue = 0;
 	m_bPressed = false;
 }
 
@@ -4863,7 +4864,7 @@ void GLUFSlider::UpdateRects()
 	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
 	GLUFOffsetRect(m_rcButton, -GLUFRectWidth(m_rcButton) / 2, 0);
 
-	m_nButtonX = (int)((m_nValue - m_nMin) * (float)GLUFRectWidth(m_rcBoundingBox) / (m_nMax - m_nMin));
+	m_nButtonX = (int)((float(m_nValue - m_nMin) / float(m_nMax - m_nMin)) * GLUFRectWidth(m_rcBoundingBox));
 	GLUFOffsetRect(m_rcButton, m_nButtonX, 0);
 }
 
@@ -4871,9 +4872,9 @@ void GLUFSlider::UpdateRects()
 //--------------------------------------------------------------------------------------
 int GLUFSlider::ValueFromPos(long x)
 {
-	//this name is not accurate
 	float fValuePerPixel = (float)(m_nMax - m_nMin) / GLUFRectWidth(m_rcBoundingBox);
-	return (int)(0.5f + m_nMin + fValuePerPixel * (x - m_rcBoundingBox.left));
+	float fPixelPerValue2 = 1.0f / (2.0f * fValuePerPixel);//use this to get it to change locations at the half way mark instead of using truncate int methods
+	return int(((x - m_x + fPixelPerValue2) * fValuePerPixel) + m_nMin);
 }
 
 
@@ -5156,14 +5157,13 @@ void GLUFSlider::SetRange(int nMin, int nMax)
 void GLUFSlider::SetValueInternal(int nValue, bool bFromInput)
 {
 	// Clamp to range
-	nValue = std::max(m_nMin, nValue);
-	nValue = std::min(m_nMax, nValue);
+	nValue = std::clamp(nValue, m_nMin, m_nMax);
 
 
 	if (nValue == m_nValue)
 		return;
 
-	//m_nValue = nValue;
+	m_nValue = nValue;
 
 	UpdateRects();
 
@@ -6600,7 +6600,7 @@ void GLUFListBox::UpdateItemRects()
 		//int nRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - pFont->m_Leading;
 
 		//for all of the ones before the displayed, just set them to something impossible
-		for (size_t i = 0; i < m_ScrollBar.GetTrackPos(); ++i)
+		for (size_t i = 0; i < (size_t)m_ScrollBar.GetTrackPos(); ++i)
 		{
 			GLUFSetRect(m_Items[i]->rcActive, 0, 0, 0, 0);
 		}
@@ -6710,6 +6710,32 @@ void GLUFListBox::Render( float fElapsedTime)
 }
 
 
+const wchar_t *g_Charsets[] = { 
+	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ",
+	L"0123456789",
+	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
+
+const unsigned int g_CharsetLengths[] = { 96, 223, 10, 52, 62 };
+
+bool CharsetContains(unsigned int codepoint, Charset charset)
+{
+	switch (charset)
+	{
+	case Unicode:
+		return true;
+	default:
+		for (unsigned int i = 0; i < g_CharsetLengths[charset]; ++i)
+		{
+			if (g_Charsets[charset][i] == codepoint)
+				return true;
+		}
+		return false;
+	}
+}
+
+
 //======================================================================================
 // GLUFEditBox class
 //======================================================================================
@@ -6722,7 +6748,7 @@ bool GLUFEditBox::s_bHideCaret;   // If true, we don't render the caret.
 #define EDITBOX_SCROLLEXTENT 4
 
 //--------------------------------------------------------------------------------------
-GLUFEditBox::GLUFEditBox(bool isMultiline, GLUFDialog* pDialog) : GLUFControl(pDialog), m_ScrollBar(pDialog), m_bMultiline(isMultiline)
+GLUFEditBox::GLUFEditBox(Charset charset, bool isMultiline, GLUFDialog* pDialog) : GLUFControl(pDialog), m_ScrollBar(pDialog), m_bMultiline(isMultiline), m_Charset(charset)
 {
 	m_Type = GLUF_CONTROL_EDITBOX;
 	m_pDialog = pDialog;
@@ -7054,6 +7080,11 @@ void GLUFEditBox::PasteFromClipboard()
 
 void GLUFEditBox::InsertString(int pos, std::wstring str)
 {
+	for (auto it : str)
+	{
+		if (!CharsetContains(it, m_Charset))
+			return;
+	}
 	//GLUF_ASSERT(pos < GetTextLength() - 1);
 	if (pos < 0)
 	{
@@ -7095,6 +7126,8 @@ void GLUFEditBox::RemoveString(int pos, int len)
 
 void GLUFEditBox::InsertChar(int pos, wchar_t ch)
 {
+	if (!CharsetContains(ch, m_Charset))
+		return;
 	//GLUF_ASSERT(pos < GetTextLength() - 1);
 	if (pos < 0)
 	{
@@ -7532,6 +7565,14 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 		bHandled = true;
 		break;
 	case GM_UNICODE_CHAR:
+
+		//is it within the charset?
+		if (!CharsetContains(param1, m_Charset))
+		{
+			bHandled = true;
+			break;
+		}
+
 		m_bAnalyseRequired = true;
 		//printible chars
 
@@ -7699,7 +7740,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 					if (m_strRenderBuffer.size() > 1 && rndCP == -1)//first character
 						rndCP = 0;
 
-					if (rndCP < m_strRenderBuffer.size() - 1)
+					if (rndCP < (int)m_strRenderBuffer.size() - 1)
 					{
 						if (m_strRenderBuffer[rndCP] == '\n' && std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCP) != m_strInsertedNewlineLocations.end())
 							rndCP++;
@@ -7932,7 +7973,7 @@ void GLUFEditBox::Render( float fElapsedTime)
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pElement)
 	{
-		if (/*m_bHasFocus && */m_bCaretOn && !s_bHideCaret)
+		if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
 		{
 			// Start the rectangle with insert mode caret
 			GLUFRect rcCaret;
@@ -8028,7 +8069,7 @@ bool GLUFEditBox::CPtoRC(int nCP, GLUFRect *pRc)
 	GLUF_ASSERT(pRc);
 	*pRc = { 0L, 0L, 0L, 0L };
 
-	if (nCP > m_strRenderBuffer.length() - 1 || nCP < 0)
+	if (nCP > (int)m_strRenderBuffer.length() - 1 || nCP < 0)
 	{
 		return false;
 	}
@@ -8473,7 +8514,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 		CurX = rcScreen.left + centerOffset * 2;
 	}
 
-	unsigned int numLines = 1;//always have one to get the GT_VCENTER correct
+	int numLines = 1;//always have one to get the GT_VCENTER correct
 	for (auto it : strText)
 	{
 		if (it == L'\n')
@@ -8482,7 +8523,10 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 
 	if (dwTextFlags & GT_VCENTER)
 	{
-		CurY -= (GLUFRectHeight(rcScreen) - numLines * font.m_pFontType->mHeight) / 2;
+		long value = GLUFRectHeight(rcScreen);
+		value = value - numLines * font.m_pFontType->mHeight;
+		value /= 2;
+		CurY -= (GLUFRectHeight(rcScreen) - (long)numLines * (long)font.m_pFontType->mHeight) / 2;
 	}
 	else if (dwTextFlags & GT_BOTTOM)
 	{
@@ -8620,7 +8664,7 @@ void EndText(GLUFFontPtr font)
 	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec2), g_TextVerticies.data_tex(), GL_STREAM_DRAW);
 
 	GLUFSHADERMANAGER.UseProgram(g_TextProgram);
-
+	
 	//first uniform: model-view matrix
 	glm::mat4 mv = g_TextOrtho;
 	glUniformMatrix4fv(g_TextShaderLocations.ortho, 1, GL_FALSE, glm::value_ptr(mv));
@@ -8638,6 +8682,9 @@ void EndText(GLUFFontPtr font)
 	glEnableVertexAttribArray(g_TextShaderLocations.position);//positions
 	glEnableVertexAttribArray(g_TextShaderLocations.uv);//uvs
 
+	//make sure to enable this with text
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDrawArrays(GL_TRIANGLES, 0, g_TextVerticies.size());
 
 	g_TextVerticies.clear();
@@ -8649,9 +8696,9 @@ void EndText(GLUFFontPtr font)
 
 
 //GLUFTextHelper
-GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager* pManager, GLUFFontSize fLineHeight) : 
+GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager* pManager) : 
 m_pManager(pManager), m_clr(0, 0, 0, 255), m_pt(0L, 0L), 
-m_fLineHeight(fLineHeight), m_nFont(0), m_fFontSize(0L), m_Weight(FONT_WEIGHT_NORMAL)
+m_fLineHeight(20L), m_nFont(0), m_fFontSize(15L), m_Weight(FONT_WEIGHT_NORMAL)
 {
 	GLUF_ASSERT(pManager);
 }
@@ -8667,6 +8714,7 @@ void GLUFTextHelper::Init(GLUFFontSize fLineHeight)
 void GLUFTextHelper::Begin(GLUFFontIndex fontToUse, GLUF_FONT_WEIGHT weight)
 {
 	m_nFont = fontToUse;
+
 	m_Weight = weight;
 
 	BeginText(m_pManager->GetOrthoMatrix());
@@ -8687,9 +8735,10 @@ GLUFResult GLUFTextHelper::DrawFormattedTextLine(const wchar_t* strMsg, size_t s
 
 GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg)
 {
+	m_pManager->GetFontNode(m_nFont)->m_Leading = m_fLineHeight;
 	std::wstring sMsg = strMsg;
 
-	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), sMsg, { m_pt.x, m_pt.y, 0L, 0L }, m_clr, 0);
+	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), sMsg, { m_pt.x, m_pt.y, m_pt.x + 50L, m_pt.y - 50L }, m_clr, GT_LEFT | GT_TOP);
 
 	//set the point down however many lines were drawn
 	for (auto it : sMsg)
@@ -8697,6 +8746,7 @@ GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg)
 		if (it == '\n')
 			m_pt.y += m_fLineHeight;
 	}
+	m_pt.y -= m_fLineHeight;//once no matter what because we are drawing a LINE of text
 
 	return GR_SUCCESS;
 }
@@ -8715,6 +8765,7 @@ GLUFResult GLUFTextHelper::DrawFormattedTextLine(const GLUFRect& rc, unsigned in
 
 GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg)
 {
+	m_pManager->GetFontNode(m_nFont)->m_Leading = m_fLineHeight;
 	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), strMsg, rc, m_clr, dwFlags, true);
 
 	return GR_SUCCESS;
