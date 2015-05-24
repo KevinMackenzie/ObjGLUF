@@ -324,7 +324,7 @@ void GLUFMatrixStack::Pop(void)
 	mStack.pop();
 }
 
-const glm::mat4& GLUFMatrixStack::Top(void)
+const glm::mat4& GLUFMatrixStack::Top(void) const
 {
 	//if it is empty, then we want to return the identity
 	if (mStack.size() == 0)
@@ -333,12 +333,12 @@ const glm::mat4& GLUFMatrixStack::Top(void)
 	return mStack.top();
 }
 
-size_t GLUFMatrixStack::Size(void)
+size_t GLUFMatrixStack::Size(void) const
 {
 	return mStack.size();
 }
 
-void GLUFMatrixStack::Empty(void)
+bool GLUFMatrixStack::Empty(void) const
 {
 	mStack.empty();
 }
@@ -851,12 +851,12 @@ public:
 	void AttachShader(GLUFShaderPtr shader);
 	void FlushShaders(void);
 
-	void Build(GLUFShaderInfoStruct& retStruct, bool seperate);
+	void Build(GLUFShaderInfoStruct& retStruct, bool separate);
 
 	GLuint GetId(){ return mProgramId; }
 };
 
-class GLUFSeperateProgram
+class GLUFSeparateProgram
 {
 	friend GLUFShaderManager;
 	GLuint mPPOId;
@@ -864,7 +864,7 @@ class GLUFSeperateProgram
 	GLUFProgramPtrStagesMap m_Programs;//so the programs don't go deleting themselves until the PPO is destroyed
 
 public:
-	~GLUFSeperateProgram();
+	~GLUFSeparateProgram();
 
 	void Init();
 	
@@ -874,21 +874,21 @@ public:
 
 ////////////////////////////////////////
 //
-//GLUFSeperateProgram Methods:
+//GLUFSeparateProgram Methods:
 //
 //
 
-GLUFSeperateProgram::~GLUFSeperateProgram()
+GLUFSeparateProgram::~GLUFSeparateProgram()
 {
 	glDeleteProgramPipelines(1, &mPPOId); 
 }
 
-void GLUFSeperateProgram::Init()
+void GLUFSeparateProgram::Init()
 {
 	glGenProgramPipelines(1, &mPPOId);
 }
 
-void GLUFSeperateProgram::AttachProgram(GLUFProgramPtr program, GLbitfield stages)
+void GLUFSeparateProgram::AttachProgram(GLUFProgramPtr program, GLbitfield stages)
 {
 	m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); 
 	glUseProgramStages(mPPOId, stages, program->GetId());
@@ -1072,10 +1072,10 @@ void GLUFProgram::FlushShaders(void)
 	mShaderBuff.clear();
 }
 
-void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
+void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 {
 	//make sure we enable separate shading
-	if (seperate){ glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE); }
+	if (separate){ glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE); }
 
 	//Link our program
 	glLinkProgram(mProgramId);
@@ -1137,7 +1137,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 
 ////////////////////////////////////////
 //
-//GLUFSeperateProgram Methods:
+//GLUFSeparateProgram Methods:
 //
 //
 
@@ -1153,7 +1153,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool seperate)
 //for creating things
 
 /*
-GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType type, bool file, bool seperate)
+GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType type, bool file, bool separate)
 {
 	GLUFShaderPtr shader(new GLUFShader());
 	shader->Init(type);
@@ -1229,7 +1229,7 @@ GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(char* data, long len, GL
 	return CreateShaderFromText((GLUFLoadBinaryArrayIntoString(data, len) + "\n").c_str(), type);
 }
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool seperate)
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool separate)
 {
 	GLUFProgramPtr program(new GLUFProgram());
 	program->Init();
@@ -1240,7 +1240,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool 
 	}
 
 	GLUFShaderInfoStruct out;
-	program->Build(out, seperate);
+	program->Build(out, separate);
 	mLinklogs.insert(std::pair<GLUFProgramPtr, GLUFShaderInfoStruct>(program, out));
 
 	if (!out)
@@ -1254,7 +1254,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool 
 }
 
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSources, bool seperate)
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSources, bool separate)
 {
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderSources)
@@ -1274,7 +1274,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSourc
 }
 
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths, bool seperate)
+GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths, bool separate)
 {
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderPaths)
@@ -1300,7 +1300,7 @@ GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths, 
 
 void GLUFShaderManager::DeleteShader(GLUFShaderPtr shader)
 {
-	delete shader.get();
+	
 }
 
 void GLUFShaderManager::DeleteProgram(GLUFProgramPtr program)
@@ -1364,9 +1364,9 @@ void GLUFShaderManager::UseProgramNull()
 	glBindProgramPipeline(0);//juse in case we are using pipelines
 }
 
-/*GLUFSepProgramPtr GLUFShaderManager::CreateSeperateProgram(GLUFProgramPtrStagesMap programs)
+/*GLUFSepProgramPtr GLUFShaderManager::CreateSeparateProgram(GLUFProgramPtrStagesMap programs)
 {
-	GLUFSepProgramPtr ret(new GLUFSeperateProgram);
+	GLUFSepProgramPtr ret(new GLUFSeparateProgram);
 	ret->Init();
 
 	for (auto it : programs)

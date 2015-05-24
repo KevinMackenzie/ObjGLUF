@@ -903,7 +903,7 @@ void GLUFDialog::Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog,
 void GLUFDialog::SetCallback(PCALLBACKGLUFGUIEVENT pCallback, void* pUserContext)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
-	// was made so that the GLUF's GUI could become seperate and optional from GLUF's core.  The 
+	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
 	// of the application if it wishes to use GLUF's GUI.
 	GLUF_ASSERT(m_pManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
@@ -1107,7 +1107,7 @@ void GLUFDialog::SendEvent(GLUF_EVENT nEvent, bool bTriggeredByUser, GLUFControl
 GLUFResult GLUFDialog::SetFont(GLUFFontIndex index, GLUFFontIndex resManFontIndex)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
-	// was made so that the GLUF's GUI could become seperate and optional from GLUF's core.  The 
+	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
 	// of the application if it wishes to use GLUF's GUI.
 	GLUF_ASSERT(m_pManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
@@ -1140,7 +1140,7 @@ GLUFFontNode* GLUFDialog::GetFont(unsigned int index) const
 GLUFResult GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resManIndex)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
-	// was made so that the GLUF's GUI could become seperate and optional from GLUF's core.  The 
+	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
 	// of the application if it wishes to use GLUF's GUI.
 	GLUF_ASSERT(m_pManager && L"To fix this, call GLUFDialog::Init() first.  See comments for details.");
