@@ -116,9 +116,10 @@ Debugging Macros and Setup Functions
 
 */
 
-using GLUFErrorMethod = void(*)(const char* message, const char* funcName, const char* sourceFile, unsigned int lineNum);
+using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName, const char* sourceFile, unsigned int lineNum);
 
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
+#define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << #chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE:" << #expr; GLUF_ERROR(ss.str().c_str()) } }
 
 OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
@@ -305,10 +306,11 @@ GLUFLoadBinaryArrayIntoString
 
     Throws:
         'std::invalid_argument': if 'rawMemory' == nullptr
+        'std::ios_base::failure': if memory streaming was unsuccessful
 
 */
 OBJGLUF_API void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& outString);
-OBJGLUF_API void GLUFLoadBinaryArrayIntoString(std::vector<char> rawMemory, std::string& outString);
+OBJGLUF_API void GLUFLoadBinaryArrayIntoString(const std::vector<char>& rawMemory, std::string& outString);
 
 
 /*
@@ -417,6 +419,7 @@ MemStreamBuf
 */
 class OBJGLUF_API MemStreamBuf : public std::streambuf
 {
+public:
 	MemStreamBuf(char* data, std::ptrdiff_t length)
 	{
 		setg(data, data, data + length);
@@ -642,6 +645,13 @@ class GLUFException : public std::exception
 {
     const std::string& mPostfix = " See Log For More Info.";
     
+    //automatically add message to log file when exception thrown
+    GLUFException()
+    {
+        std::stringstream ss;
+        ss << "GLUF Exception Thrown: \"" << what() << mPostfix << "\"";
+        GLUF_ERROR(ss.str());
+    }
 
     const char* what()
     {
@@ -728,7 +738,7 @@ public:
 
 	GLUFShaderPtr CreateShaderFromFile(const std::wstring& filePath, GLUFShaderType type);
 	GLUFShaderPtr CreateShaderFromText(const std::string& text, GLUFShaderType type);
-	GLUFShaderPtr CreateShaderFromMemory(std::vector<char> memory, GLUFShaderType type);
+	GLUFShaderPtr CreateShaderFromMemory(const std::vector<char>& memory, GLUFShaderType type);
 
 
     /*
@@ -1594,7 +1604,7 @@ LoadVertexArraysFromScene
     Throws:
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 */
-std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, unsigned int meshOffset = 0 unsigned int numMeshes = 1);
+std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, unsigned int meshOffset = 0, unsigned int numMeshes = 1);
 std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const GLUFVertexAttribMap&>& inputs, unsigned int meshOffset = 0 unsigned int numMeshes = 1);
 
 

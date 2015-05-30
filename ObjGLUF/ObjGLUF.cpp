@@ -11,9 +11,24 @@
 namespace GLUF
 {
 
+/*
+=======================================================================================================================================================================================================
+Global Instances
+
+
+*/
+
 GLUFErrorMethod ErrorMethod;
 //GLUFBufferManager g_BufferManager;
 GLUFShaderManager g_ShaderManager;
+
+
+/*
+=======================================================================================================================================================================================================
+Premade Attribute Info's which comply with Assimp capibilities, but are not exclusive to them
+
+
+*/
 
 //initialize the standard vertex attributes
 //							Name				bytes,	count,	location,				type
@@ -41,8 +56,21 @@ const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		GLUF_VERTEX_ATTRIB_BITAN,	G
 
 GLUFVertexAttribMap g_stdAttrib;
 
+/*
+
+Helpful OpenGL Constants
+
+*/
+
 GLuint g_GLVersionMajor = 0;
 GLuint g_GLVersionMinor = 0;
+
+
+/*
+======================================================================================================================================================================================================
+Debugging Macros and Setup Functions
+
+*/
 
 void GLUFRegisterErrorMethod(GLUFErrorMethod method)
 {
@@ -53,7 +81,7 @@ void GLFWErrorMethod(int error, const char* description)
 {
 	std::stringstream ss;
 	ss << "GLFW ERROR: Error Code:" << error << "; " << description << std::endl;
-	GLUF_ERROR(ss.str().c_str());
+	GLUF_ERROR(ss.str());
 }
 
 
@@ -70,6 +98,12 @@ GLUFErrorMethod GLUFGetErrorMethod()
 	"#version 430 core	layout(std140, binding = 0) uniform MatrixTransformations	{	mat4 m;	mat4 v; mat4 p; mat4 mv; mat4 mvp;};	in VS_OUT	{	vec2 uvCoord;	} fs_in; layout(location = 0) out vec4 color; layout(location = 5) uniform sampler2D TextureSampler;";
 	*/
 
+
+/*
+======================================================================================================================================================================================================
+GLUF API Core Controller Methods
+
+*/
 bool GLUFInit()
 {
 	glfwSetErrorCallback(GLFWErrorMethod);
@@ -83,14 +117,75 @@ bool GLUFInit()
 	return true;
 }
 
-double g_LastFrame = 0.0;
-double g_UpdateInterval = 1.0;//every second
-long long  g_FrameCount = 0;//this is since the last update
-float g_CurrFps = 0.0f;
-wchar_t* g_FrameStats = new wchar_t[MAXLEN];
+bool GLUFInitOpenGLExtentions()
+{
+    GLenum err = glewInit();
+    if (err != GLEW_OK)
+    {
+        GLUF_ERROR("Failed to initialize OpenGL Extensions using GLEW");
+        return false;
+    }
+
+
+    //setup global openGL version
+    const char* version = (const char*)glGetString(GL_VERSION);
+
+    std::vector<std::string> vsVec;
+    vsVec = GLUFSplitStr((const char*)version, L'.');//TODO: global openGL version
+    g_GLVersionMajor = std::stoi(vsVec[0]);
+    g_GLVersionMinor = std::stoi(vsVec[1]);
+
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, g_attribPOS));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, g_attribNORM));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, g_attribPOS));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR0, g_attribCOLOR0));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_TAN, g_attribTAN));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_BITAN, g_attribBITAN));
+
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV1, g_attribUV1));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV2, g_attribUV2));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV3, g_attribUV3));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV4, g_attribUV4));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV5, g_attribUV5));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV6, g_attribUV6));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV7, g_attribUV7));
+
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR1, g_attribCOLOR1));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR2, g_attribCOLOR2));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR3, g_attribCOLOR3));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR4, g_attribCOLOR4));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR5, g_attribCOLOR5));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR6, g_attribCOLOR6));
+    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR7, g_attribCOLOR7));
+
+    return true;
+}
+
+//void GLUFTerminate()
+//{
+//
+//}
+//See GLUFGui for this function; it destroys the font library
+
+/*
+======================================================================================================================================================================================================
+Statistics
+
+*/
+
+namespace Stats
+{
+    double g_LastFrame = 0.0;
+    double g_UpdateInterval = 1.0;//every second
+    unsigned long long  g_FrameCount = 0;//this is since the last update
+    float g_CurrFps = 0.0f;
+    std::wstring g_FrameStats;
+}
 
 void GLUFStats_func()
 {
+    using namespace Stats;
+
 	++g_FrameCount;
 
 	double thisFrame = GLUFGetTime();
@@ -99,13 +194,13 @@ void GLUFStats_func()
 
 	double deltaTime = thisFrame - g_LastFrame;
 
-	g_CurrFps = (float)((long double)g_FrameCount / (long double)deltaTime);
+	g_CurrFps = (float)((double)g_FrameCount / deltaTime);
 
 	g_FrameCount = 0;//reset the frame count
 
-	//update frame statistic string
-	memset(g_FrameStats, 0, MAXLEN);
-	swprintf_s(g_FrameStats, MAXLEN, L"%0.2f fps", g_CurrFps);
+    std::wstringstream wss;
+    //for now, only use whole FPS's
+    wss << (unsigned int)g_CurrFps << " fps";
 
 	//update device statistics
 	//TODO:
@@ -113,193 +208,142 @@ void GLUFStats_func()
 	g_LastFrame = thisFrame;
 }
 
-const wchar_t* GLUFGetFrameStats()
+const std::wstring& GLUFGetFrameStatsString()
 {
-	return g_FrameStats;
+	return Stats::g_FrameStats;
 }
 
-const wchar_t* GLUFGetDeviceStats()
+const std::wstring& GLUFGetDeviceStats()
 {
 	return L"WIP";
 }
 
-bool GLUFInitOpenGLExtentions()
+/*
+======================================================================================================================================================================================================
+IO and Stream Utilities
+
+*/
+
+void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
 {
-	GLenum err = glewInit();
-	if (err != GLEW_OK)
-	{
-		GLUF_ERROR("Failed to initialize OpenGL Extensions using GLEW");
-		return false;
-	}
+    //try to open file
+    std::ifstream inFile;
+    inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+    try
+    {
+        inFile.open(path, std::ios::binary);
+    }
+    catch (std::ios_base::failure e)
+    {
+        GLUF_ERROR_LONG("Failed to Open File: " << e.what());
+        throw;
+    }
 
+    //delete anything already in here
+    binMemory.clear();
 
-	//setup global openGL version
-	const char* version = (const char*)glGetString(GL_VERSION);
-	
-	std::vector<std::string> vsVec;
-	vsVec = GLUFSplitStr((const char*)version, L'.');//TODO: global openGL version
-	g_GLVersionMajor = std::stoi(vsVec[0]);
-	g_GLVersionMinor = std::stoi(vsVec[1]);
-
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, g_attribPOS));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, g_attribNORM));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, g_attribPOS));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR0, g_attribCOLOR0));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_TAN, g_attribTAN));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_BITAN, g_attribBITAN));
-
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV1, g_attribUV1));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV2, g_attribUV2));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV3, g_attribUV3));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV4, g_attribUV4));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV5, g_attribUV5));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV6, g_attribUV6));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV7, g_attribUV7));
-
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR1, g_attribCOLOR1));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR2, g_attribCOLOR2));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR3, g_attribCOLOR3));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR4, g_attribCOLOR4));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR5, g_attribCOLOR5));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR6, g_attribCOLOR6));
-	g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR7, g_attribCOLOR7));
-
-	return true;
-}
-
-char* GLUFLoadFileIntoMemory(const wchar_t* path, unsigned long* rawSize)
-{
-	GLUF_ASSERT(path);
-	//GLUF_ASSERT(rawSize);
-	if (!rawSize)
-		rawSize = new unsigned long;
-
-	std::ifstream inFile(path, std::ios::binary);
-	if (!inFile)
-		return false;
-
+    //get file length
 	inFile.seekg(0, std::ios::end);
-	*rawSize = (unsigned long)inFile.tellg();
+	unsigned long long rawSize = (unsigned long)inFile.tellg();
 	inFile.seekg(0, std::ios::beg);
 
-	char* rawData = (char*)malloc(*rawSize);
-	//if (sizeof(rawData) != *rawSize)
-	//	return false;
+    //resize the vector
+    binMemory.reserve(rawSize);//is this line needed?
+    binMemory.resize(rawSize);
 
-	if (inFile.read(rawData, *rawSize))
+    //try reading the memory
+    try
 	{
-		return rawData;
+        inFile.read(&binMemory[0], rawSize);
 	}
-	else
+    catch (std::ios_base::failure e)
 	{
-		GLUF_ERROR("Failed to load file into memory");
-		free(rawData);
-		rawData = nullptr;
-		*rawSize = 0;
-		return nullptr;
-	}
-	
-}
-
-long GLUFLoadFileIntoMemory(const wchar_t* path, char* buffer, long len)
-{
-	GLUF_ASSERT(path);
-	GLUF_ASSERT(buffer);
-
-	std::ifstream inFile(path, std::ios::binary);
-	if (!inFile)
-		return -1;
-	
-	std::streamsize streamLen = std::streamsize(len);
-	if (len == -1)
-	{
-		inFile.seekg(0, std::ios::end);
-		streamLen = inFile.tellg();
-		inFile.seekg(0, std::ios::beg);
-	}
-
-	//if (sizeof(rawData) != *rawSize)
-	//	return false;
-
-	if (!inFile.read(buffer, streamLen))
-	{
-		GLUF_ERROR("Failed to load file into memory");
-	}
-
-	return (unsigned long)streamLen;
-}
-
-char* GLUFLoadFileIntoMemory(const char* path, unsigned long* rawSize)
-{
-	GLUF_ASSERT(path);
-	GLUF_ASSERT(rawSize);
-
-	std::ifstream inFile(path, std::ios::binary);
-	if (!inFile)
-		return false;
-
-	inFile.seekg(0, std::ios::end);
-	*rawSize = (unsigned long)inFile.tellg();
-	inFile.seekg(0, std::ios::beg);
-
-	char* rawData = new char[*rawSize];
-	//if (sizeof(rawData) != *rawSize)
-	//	return false;
-
-	if (inFile.read(rawData, *rawSize))
-	{
-		return rawData;
-	}
-	else
-	{
-		GLUF_ERROR("Failed to load file into memory");
-		free(rawData);
-		rawData = nullptr;
-		*rawSize = 0;
-		return nullptr;
+		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+        throw;
 	}
 }
 
-long GLUFLoadFileIntoMemory(const char* path, char* buffer, long len)
+void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
 {
-	GLUF_ASSERT(path);
-	GLUF_ASSERT(buffer);
+    //try to open file
+    std::ifstream inFile;
+    inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+    try
+    {
+        inFile.open(path, std::ios::binary);
+    }
+    catch (std::ios_base::failure e)
+    {
+        GLUF_ERROR_LONG("Failed to Open File: " << e.what());
+        throw;
+    }
 
-	std::ifstream inFile(path, std::ios::binary);
-	if (!inFile)
-		return -1;
+    //delete anything already in here
+    binMemory.clear();
 
-	std::streamsize streamLen = std::streamsize(len);
-	if (len == -1)
-	{
-		inFile.seekg(0, std::ios::end);
-		streamLen = inFile.tellg();
-		inFile.seekg(0, std::ios::beg);
-	}
+    //get file length
+    inFile.seekg(0, std::ios::end);
+    unsigned long long rawSize = (unsigned long)inFile.tellg();
+    inFile.seekg(0, std::ios::beg);
 
-	//if (sizeof(rawData) != *rawSize)
-	//	return false;
+    //resize the vector
+    binMemory.reserve(rawSize);//is this line needed?
+    binMemory.resize(rawSize);
 
-	if (!inFile.read(buffer, streamLen))
-	{
-		GLUF_ERROR("Failed to load file into memory");
-	}
-
-	return len;
+    //try reading the memory
+    try
+    {
+        inFile.read(&binMemory[0], rawSize);
+    }
+    catch (std::ios_base::failure e)
+    {
+        GLUF_ERROR_LONG("Failed to load file into memory: " << e.what());
+        throw;
+    }
 }
 
-std::string GLUFLoadBinaryArrayIntoString(char* data, long len)
+void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& outString)
 {
-	std::istream indata(new MemStreamBuf(data, len));
+    if (rawMemory == nullptr)
+    {
+        GLUF_ERROR("Cannot Load Null Ptr Into String!");
+        throw std::invalid_argument("Cannot Load Null Ptr Into String!");
+    }
+    
+    //for automatic deletion if exception thrown
+    auto streamBuf = std::make_shared<MemStreamBuf>(rawMemory, size);
+   
+    std::istream indata(streamBuf.get());
+    indata.exceptions(std::ios_base::failbit | std::ifstream::badbit);
 	char ch = ' ';
 
-	std::string inString;
-	while (indata.get(ch))
-		inString += ch;
-
-	return inString;
+    try
+    {
+        while (indata.get(ch))
+            outString += ch;
+    }
+    catch (std::ios_base::failure e)
+    {
+        outString.clear();
+        GLUF_ERROR_LONG("Failed to load binary array into string: " << e.what());
+        throw;
+    }
 }
 
+
+void GLUFLoadBinaryArrayIntoString(const std::vector<char>& rawMemory, std::string& outString)
+{
+    //const cast is OK to use here, because we know 'rawMemory' will not be modified
+    GLUFLoadBinaryArrayIntoString(const_cast<char*>(&rawMemory[0]), rawMemory.size(), outString);
+}
+
+
+/*
+======================================================================================================================================================================================================
+Misc. GLUF Classes
+
+
+*/
 
 glm::mat4 GLUFMatrixStack::mIdentity = glm::mat4();
 
@@ -342,6 +386,13 @@ bool GLUFMatrixStack::Empty(void) const
 {
 	mStack.empty();
 }
+
+
+/*
+======================================================================================================================================================================================================
+OpenGL Basic Data Structures and Operators
+
+*/
 
 bool GLUFPtInRect(GLUFRect rect, GLUFPoint pt)
 {
@@ -456,6 +507,13 @@ bool GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect)
 	return true;
 }
 
+
+/*
+======================================================================================================================================================================================================
+Datatype Conversion Functions
+
+*/
+
 Color4f GLUFColorToFloat(Color color)
 {
 	Color4f col;
@@ -512,286 +570,67 @@ glm::vec2 GLUFGetVec2FromRect(GLUFRectf rect, bool x, bool y)
 			return glm::vec2(rect.left, rect.bottom);
 }
 
+/*
+======================================================================================================================================================================================================
+Shader API (Alpha)
 
-#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
-#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
-#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+Note:
+    Attaching shaders to programs and programs to ppo's does not check if shader compilation failed, or if program linking failed respectively
 
-GLuint LoadTextureDDS(char* rawData, unsigned int size)
+*/
+
+
+class CompileShaderException : public GLUFException
 {
-	//TODO support more compatibiulity, ie RGB, BGR, don't make it dependent on ABGR
-	unsigned char header[124];
+    virtual const std::string& MyUniqueMessage() override
+    {
+        return "Failed to Compile Shader!";
+    }
+};
 
-
-	/* verify the type of file */
-	char filecode[4];
-	memcpy(filecode, rawData, 4);
-	if (strncmp(filecode, "DDS ", 4) != 0) 
-	{
-		//fclose(fp);
-		return 0;
-	}
-
-	/* get the surface desc */
-	memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
-
-	//this is all the data I need, but I just need to load it properly to opengl
-	unsigned int height =		*(unsigned int*)&(header[8]);
-	unsigned int width =		*(unsigned int*)&(header[12]);
-	unsigned int linearSize =	*(unsigned int*)&(header[16]);
-	unsigned int mipMapCount =	*(unsigned int*)&(header[24]);
-	unsigned int flags =		*(unsigned int*)&(header[76]);
-	unsigned int fourCC =		*(unsigned int*)&(header[80]);
-	unsigned int RGBBitCount =	*(unsigned int*)&(header[84]);
-	unsigned int RBitMask =		*(unsigned int*)&(header[88]);
-	unsigned int GBitMask =		*(unsigned int*)&(header[92]);
-	unsigned int BBitMask =		*(unsigned int*)&(header[96]);
-	unsigned int ABitMask =		*(unsigned int*)&(header[100]);
-
-
-	char * buffer;
-	unsigned int bufsize;
-	/* how big is it going to be including all mipmaps? */
-	bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
-	buffer = rawData + 128;
-	//memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
-
-	unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
-	unsigned int compressedFormat;
-	switch (fourCC)
-	{
-	case FOURCC_DXT1:
-		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		break;
-	case FOURCC_DXT3:
-		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-		break;
-	case FOURCC_DXT5:
-		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		break;
-	default:
-		compressedFormat = 0;//uncompressed
-	}
-
-	// Create one OpenGL texture
-	GLuint textureID;
-	glGenTextures(1, &textureID);
-
-	// "Bind" the newly created texture : all future texture functions will modify this texture
-	glBindTexture(GL_TEXTURE_2D, textureID); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapCount - 1);//REMEMBER it is max mip, NOT mip count
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-
-	if (compressedFormat != 0)
-	{
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-		unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-		unsigned int offset = 0;
-
-		/* load the mipmaps */
-		for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
-		{
-			unsigned int mipSize = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
-			glCompressedTexImage2D(GL_TEXTURE_2D, level, compressedFormat, width, height,
-				0, mipSize, buffer + offset);
-
-			offset += mipSize;
-			width /= 2;
-			height /= 2;
-
-			// Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
-			if (width < 1) width = 1;
-			if (height < 1) height = 1;
-
-		}
-
-	}
-	else
-	{
-		unsigned int offset = 0;
-
-		for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
-		{
-			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-
-			unsigned int mipSize = (width * height * 4);
-			offset += mipSize;
-			width /= 2;
-			height /= 2;
-
-			// Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
-			if (width < 1) width = 1;
-			if (height < 1) height = 1;
-		}
-	}
-
-
-	return textureID;
-}
-
-GLuint LoadTextureCubemapDDS(char* rawData, unsigned int length)
+class CreateGLShaderException : public GLUFException
 {
-	unsigned char header[124];
+    virtual const std::string& MyUniqueMessage() override
+    {
+        return "OpenGL Failed to Create Shader Instance!";
+    }
+};
 
-
-	/* verify the type of file */
-	char filecode[4];
-	memcpy(filecode, rawData, 4);
-	if (strncmp(filecode, "DDS ", 4) != 0)
-	{
-		//fclose(fp);
-		return 0;
-	}
-
-	/* get the surface desc */
-	memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
-
-	//this is all the data I need, but I just need to load it properly to opengl
-	unsigned int height = *(unsigned int*)&(header[8]);
-	unsigned int width = *(unsigned int*)&(header[12]);
-	unsigned int linearSize = *(unsigned int*)&(header[16]);
-	unsigned int mipMapCount = *(unsigned int*)&(header[24]);
-	unsigned int flags = *(unsigned int*)&(header[76]);
-	unsigned int fourCC = *(unsigned int*)&(header[80]);
-	unsigned int RGBBitCount = *(unsigned int*)&(header[84]);
-	unsigned int RBitMask = *(unsigned int*)&(header[88]);
-	unsigned int GBitMask = *(unsigned int*)&(header[92]);
-	unsigned int BBitMask = *(unsigned int*)&(header[96]);
-	unsigned int ABitMask = *(unsigned int*)&(header[100]);
-
-
-	char * buffer;
-	unsigned int bufsize;
-	/* how big is it going to be including all mipmaps? */
-	bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
-	buffer = rawData + 128;
-	//memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
-
-	unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
-	unsigned int compressedFormat;
-	switch (fourCC)
-	{
-	case FOURCC_DXT1:
-		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		break;
-	case FOURCC_DXT3:
-		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-		break;
-	case FOURCC_DXT5:
-		compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		break;
-	default:
-		compressedFormat = 0;//uncompressed
-	}
-
-	// Create one OpenGL texture
-	GLuint textureID;
-	glGenTextures(1, &textureID);
-
-	// "Bind" the newly created texture : all future texture functions will modify this texture
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);//REMEMBER it is max mip, NOT mip count
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_R, GL_RED);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	//this method is not the prettyest, but it is the easiest to load
-	if (compressedFormat != 0)
-	{
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-		unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-		unsigned int offset = 0;
-
-		unsigned int pertexSize = width;
-
-		unsigned int mipSize = ((pertexSize + 3) / 4)*((pertexSize + 3) / 4)*blockSize;
-		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, compressedFormat, pertexSize, pertexSize,
-			0, mipSize, buffer + offset);
-		offset += mipSize;
-		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
-			0, mipSize, buffer + offset);
-		offset += mipSize;
-		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, compressedFormat, pertexSize, pertexSize,
-			0, mipSize, buffer + offset);
-		offset += mipSize;
-		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
-			0, mipSize, buffer + offset);
-		offset += mipSize;
-		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
-			0, mipSize, buffer + offset);
-		offset += mipSize;
-		glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
-			0, mipSize, buffer + offset);
-
-	}
-	else
-	{
-		unsigned int offset = 0;
-		unsigned int pertexSize = width;
-		unsigned int mipSize = (pertexSize * pertexSize * 4);
-
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-		offset += mipSize;
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-		offset += mipSize;
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-		offset += mipSize;
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-		offset += mipSize;
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-		offset += mipSize;
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
-	}
-
-
-	return textureID;
-}
-
-GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
+class LinkProgramException : public GLUFException
 {
-	unsigned long rawSize = 0;
-	char* data = GLUFLoadFileIntoMemory(filePath.c_str(), &rawSize);
+    virtual const std::string& MyUniqueMessage() override
+    {
+        return "Failed to Link Program!";
+    }
+};
 
-	GLuint texId = LoadTextureFromMemory(data, rawSize, format);
-	free(data);
-	return texId;
-}
-
-
-GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format)
+class CreateGLProgramException : public GLUFException
 {
+    virtual const std::string& MyUniqueMessage() override
+    {
+        return "OpenGL Failed to Create Program Instance!";
+    }
+};
 
-	switch (format)
-	{
-	case TFF_DDS:
-		return LoadTextureDDS(data, length);
-	case TTF_DDS_CUBEMAP:
-		return LoadTextureCubemapDDS(data, length);
-	}
-
-	return 0;
-}
-
-////////////////////////////
-//
-//Shader Stuff
-//////////////////////////
+class CreateGLPPOException : public GLUFException
+{
+    virtual const std::string& MyUniqueMessage() override
+    {
+        return "OpenGL Failed to Create PPO Instance!";
+    }
+};
 
 
+
+/*
+GLUFShader
+
+    Data Members:
+        'mShaderId': OpenGL-Assigned Shader id
+        'mTmpShaderText': shader text cache kept if shaders are appending eachother
+        'mShaderType': what shader type is it (i.e. GL_FRAGMENT_SHADER)
+
+*/
 class GLUFShader
 {
 	friend GLUFShaderManager;
@@ -803,27 +642,101 @@ class GLUFShader
 
 	GLUFShaderType mShaderType;
 
+    //disallow copy and assign, because these must always be refered to by pointers
+    GLUFShader(const GLUFShader& other) = delete;
+    GLUFShader& operator=(const GLUFShader& other) = delete;
 public:
 
+    /*
+    Constructor
+        Throws:
+            no-throw guarantee
+    
+    */
 	GLUFShader();
 	~GLUFShader();
 
 	//common shader is if the shader will not be deleted after building into a program
 	//this is used for things like lighting functions
+
+    /*
+    Init
+
+        Parameters:
+            'shaderType': which shader type it is
+
+        Throws:
+            no-throw guarantee
+    */
 	void Init(GLUFShaderType shaderType);
 
-	void Load(const char* shaderText, bool append = false);
-	void LoadFromMemory(char* shaderData, size_t length, bool append = false);
-	bool LoadFromFile(const wchar_t* filePath, bool append = false);
 
+    /*
+    Load
+        
+        Parameters:
+            'shaderText': text to be added
+            'append': append 'shaderText' to 'mTmpShaderText' or clear 'mTmpShaderText'
+
+        Throws:
+            may throw 'std::bad_alloc' if string allocation fails
+    */
+	void Load(const std::string& shaderText, bool append = false);
+
+    /*
+    LoadFromMemory
+
+        Parameters:
+            'shaderData': raw memory to read shader text from
+            'append': append text loaded from 'shaderData' to 'mTmpShaderText' or clear 'mTmpShaderText'
+
+        Throws:
+            may throw 'std::bad_alloc' if string allocation fails            
+    */
+	void LoadFromMemory(const std::vector<char>& shaderData, bool append = false);
+
+    /*
+    LoadFromFile
+
+        Parameters:
+            'filePath': path of the file to open
+            'append': append 'filePath' to 'MTmpShaderText' or clear 'mTmpShaderText'
+
+        Throws:
+            'std::ios_base::failure': if file fails to open or read
+    
+    */
+	bool LoadFromFile(const std::wstring& filePath, bool append = false);
+
+    /*
+    FlushText
+
+        Throws:
+            no-throw guarantee
+    */
 	void FlushText(void){ mTmpShaderText.clear(); }
 
+
+    /*
+    Compile
+        
+        -Take all of the loaded text and compile into a shader
+
+        Parameters:
+            'retStruct': the returned information about shader compilation.
+
+        Throws:
+            'CompileShaderException': if shader compilation fails
+            'CreateGLShaderException': if shader creaetion failes (because shader creation is stalled until compilation)
+    
+    */
 	void Compile(GLUFShaderInfoStruct& retStruct);
 
 
 };
 
-typedef std::pair<GLUFShaderType, GLUFShaderPtr > GLUFShaderP;
+using GLUFShaderP = std::pair<GLUFShaderType, GLUFShaderPtr>;
+
 //this is a special instance
 class GLUFComputeShader
 {
@@ -831,6 +744,17 @@ class GLUFComputeShader
 	//TODO: low priority
 };
 
+
+/*
+GLUFProgram
+
+    Data Members:
+        'mProgramId': OpenGL assigned id
+        'mShaderBuff': buffer of shaders before linking
+        'mAttributeLocations': location of vertex attributes in program
+        'mUniformLocations': location of the uniforms in programs
+
+*/
 class GLUFProgram
 {
 	friend GLUFShaderManager;
@@ -843,19 +767,80 @@ class GLUFProgram
 
 public:
 
+    /*
+    Constructor
+        Throws:
+            no-throw guarantee
+
+    */
 	GLUFProgram();
 	~GLUFProgram();
 
+    /*
+    Init
+        Throws:
+            'CreateGLProgramException': OpenGL failed to create program using glCreateProgram
+    */
 	void Init();
 
+    /*
+    AttachShader
+        
+        Note:
+            if a shader already exists for that stage, it will be overwritten
+
+        Parameters:
+            'shader': pointer to shader which is being attached
+
+        Throws:
+            'std::invalid_argument': if 'shader == nullptr' or 'shader' is invalid
+    */
 	void AttachShader(GLUFShaderPtr shader);
+
+    /*
+    FlushShaders
+
+        -Flush shader cache, but does not explicitly delete shaders
+
+        Throws:
+            no-throw guarantee
+    */
 	void FlushShaders(void);
 
+
+    /*
+    Build
+        
+        Parameters:
+            'retStruct': the returned information about program linking.  i.e. 'mSuccess'
+            'separate': WIP: whether this program will be used 'separately' (see OpenGL docs for definition)
+
+        Throws:
+            'LinkProgramException': if program linking fails
+    */
 	void Build(GLUFShaderInfoStruct& retStruct, bool separate);
 
+    /*
+    GetId
+
+        Returns:
+            OpenGL Id of the program
+    */
 	GLuint GetId(){ return mProgramId; }
 };
 
+/*
+GLUFSeparateProgram
+
+    --------------------WIP-----------------------
+
+    Data Members:
+        'mPPOId': id of programmible pipeline object
+        'm_Programs': list of programs used; kept here so they do not delete themselves while this pipeline object exists
+
+    Note:
+        WIP
+*/
 class GLUFSeparateProgram
 {
 	friend GLUFShaderManager;
@@ -866,17 +851,37 @@ class GLUFSeparateProgram
 public:
 	~GLUFSeparateProgram();
 
+    /*
+    Init
+
+        Throws:
+            
+    */
 	void Init();
 	
+    /*
+    AttachProgram
+
+        Parameters:
+            'program': program to attach
+            'stages': which stages to use this program for
+
+        Throws:
+            'std::invalid_argument': if 'program == nullptr' or 'program' is invalid
+
+    */
 	void AttachProgram(GLUFProgramPtr program, GLbitfield stages);
 
 };
 
-////////////////////////////////////////
-//
-//GLUFSeparateProgram Methods:
-//
-//
+
+
+/*
+===================================================================================================
+GLUFSeparateProgram Methods
+
+
+*/
 
 GLUFSeparateProgram::~GLUFSeparateProgram()
 {
@@ -886,19 +891,37 @@ GLUFSeparateProgram::~GLUFSeparateProgram()
 void GLUFSeparateProgram::Init()
 {
 	glGenProgramPipelines(1, &mPPOId);
+
+    if (mPPOId == 0)
+    {
+        throw CreateGLPPOException();
+    }
 }
 
 void GLUFSeparateProgram::AttachProgram(GLUFProgramPtr program, GLbitfield stages)
 {
+    if (program == nullptr)
+    {
+        throw std::invalid_argument("\"program\" == nullptr");
+    }
+
+    if (program->GetId() == 0)
+    {
+        throw std::invalid_argument("\"program\" not initialized correctly");
+    }
+
 	m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); 
 	glUseProgramStages(mPPOId, stages, program->GetId());
 }
 
-////////////////////////////////////////
-//
-//GLUFShader Methods:
-//
-//
+
+
+/*
+===================================================================================================
+GLUFShader Methods
+
+
+*/
 
 
 GLUFShader::GLUFShader()
@@ -921,7 +944,7 @@ void GLUFShader::Init(GLUFShaderType shaderType)
 	mShaderId = 0;
 }
 
-void GLUFShader::Load(const char* shaderText, bool append)
+void GLUFShader::Load(const std::string& shaderText, bool append)
 {
 	if (!append)
 		mTmpShaderText.clear();
@@ -929,60 +952,66 @@ void GLUFShader::Load(const char* shaderText, bool append)
 	mTmpShaderText.append(shaderText);
 }
 
-bool GLUFShader::LoadFromFile(const wchar_t* filePath, bool append)
+void GLUFShader::LoadFromMemory(const std::vector<char>& shaderData, bool append)
 {
 	if (!append)
 		mTmpShaderText.clear();
 
-	std::ifstream inFile(filePath);
-	if (inFile)
-	{
-#pragma warning (disable : 4244)
-		inFile.seekg(0, std::ios::end);
-		mTmpShaderText.resize(inFile.tellg());
-		inFile.seekg(0, std::ios::beg);
-		inFile.read(&mTmpShaderText[0], mTmpShaderText.size());
-		inFile.close();
-	}
-	else
-	{
-		return false;
-	}
+    std::string loadedText;
 
-	return true;
-}
-
-void GLUFShader::LoadFromMemory(char* shaderData, size_t length, bool append)
-{
-	if (!append)
-		mTmpShaderText.clear();
-
-	MemStreamBuf *streamData = new MemStreamBuf(shaderData, length);
-	std::istream inData(streamData);
-	if (inData)
-	{
-		inData.seekg(0, std::ios::end);
-		mTmpShaderText.resize(inData.tellg());
-		inData.seekg(0, std::ios::beg);
-		inData.read(&mTmpShaderText[0], mTmpShaderText.size());
+    try
+    {
+        GLUFLoadBinaryArrayIntoString(shaderData, loadedText);
+    }
+    catch (...)
+    {
+        GLUF_ERROR("Failed to load binary memory into shader string");
+        throw;
+    }
 
 #pragma warning (default : 4244)
-	}
-	else
-	{
-		delete streamData;
-		GLUF_ERROR("Failed to initialize stream to load shader data from");
-	}
 
-	delete streamData;
+    mTmpShaderText += loadedText;
+
+}
+
+bool GLUFShader::LoadFromFile(const std::wstring& filePath, bool append)
+{
+    if (!append)
+        mTmpShaderText.clear();
+
+    std::ifstream inFile(filePath);
+    inFile.exceptions(std::ios::badbit | std::ios::failbit);
+
+    try
+    {
+#pragma warning (disable : 4244)
+        std::string newString;
+
+        inFile.seekg(0, std::ios::end);
+        newString.resize(inFile.tellg());
+        inFile.seekg(0, std::ios::beg);
+
+        //TODO: DOES THIS NEED TO HAVE A +1 SOMEWHERE TO ACCOUNT FOR NULL CHARACTER
+        inFile.read(&newString[0], newString.size());
+        inFile.close();
+    }
+    catch (...)
+    {
+        GLUF_ERROR("Failed to load shader text from file!");
+        throw;
+    }
+
+    return true;
 }
 
 #define FAILED_COMPILE 'F'
 #define FAILED_LINK    'F'
 
+
 void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 {
-	//make sure we aren't trying to recompile with a previously successful one
+    //if the shader id is not 0, this means the previous compile attempt was successful, because if it was not, the program is deleted and reset to 0
 	if (mShaderId != 0)
 	{
 		returnStruct.mSuccess = false;
@@ -990,6 +1019,7 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 		return;
 	}
 
+    //create the shader
 	mShaderId = glCreateShader(mShaderType);
 
 	//start by adding the strings to glShader Source.  This is done right before the compile
@@ -1003,6 +1033,7 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 	const GLchar* text = tmpText.c_str();
 	glShaderSource(mShaderId, 1, &text, &tmpSize);
 
+    //flush text upon compile no matter what (if compile failed, why would we want to keep the error-ridden code)
 	FlushText();
 
 	glCompileShader(mShaderId);
@@ -1015,28 +1046,32 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 	glGetShaderiv(mShaderId, GL_INFO_LOG_LENGTH, &maxLength);
 
 	//The maxLength includes the NULL character
-	returnStruct.mLog = (char*)malloc(maxLength);
-	glGetShaderInfoLog(mShaderId, maxLength, &maxLength, returnStruct.mLog);
+	returnStruct.mLog.resize(maxLength);
+	glGetShaderInfoLog(mShaderId, maxLength, &maxLength, &returnStruct.mLog[0]);
 
 	//Provide the infolog in whatever manor you deem best.
 	//Exit with failure.
 
-	//if it failed, delete the shader
+	//if it failed, delete the shader, to have a universal way of determining failure
 	if (returnStruct.mSuccess == false)
 	{
 		glDeleteShader(mShaderId);
 		mShaderId = 0;
+        throw CompileShaderException();
 	}
 	return;
 }
 
 
 
-////////////////////////////////////////
-//
-//GLUFProgram Methods:
-//
-//
+
+
+/*
+===================================================================================================
+GLUFProgram Methods
+
+
+*/
 
 GLUFProgram::GLUFProgram()
 {
@@ -1059,12 +1094,26 @@ void GLUFProgram::Init()
 
 void GLUFProgram::AttachShader(GLUFShaderPtr shader)
 {
-	mShaderBuff.insert(GLUFShaderP(shader->mShaderType, shader));
+    GLUFShaderP toInsert{ shader->mShaderType, shader };
+    
+    //does this stage already have a shader assigned to it?
+    auto exists = mShaderBuff.find(shader->mShaderType);
+    if (exists != mShaderBuff.end())
+    {
+        //if it does, delete it
+        mShaderBuff.erase(exists);
+    }
+
+    //finally, insert the new one
+    mShaderBuff.insert(toInsert);
+
+    //and add it to OpenGL
 	glAttachShader(mProgramId, shader->mShaderId);
 }
 
 void GLUFProgram::FlushShaders(void)
 {
+    //simply go through all of the shaders, remove them, and clear the shader buffer
 	for (auto it : mShaderBuff)
 	{
 		glDetachShader(mProgramId, it.second->mShaderId);
@@ -1089,48 +1138,60 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 	glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
 
 	//The maxLength includes the NULL character
-	retStruct.mLog = (char*)malloc(maxLength);
-	glGetProgramInfoLog(mProgramId, maxLength, &maxLength, retStruct.mLog);
+	retStruct.mLog.resize(maxLength);
+	glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &retStruct.mLog[0]);
 
 	if (!retStruct.mSuccess)
 	{
-		//in the case of failure, DO NOT DELETE ANYTHING.
+		//in the case of failure, DO NOT DELETE ANYTHING, but do throw an error
+        throw LinkProgramException();
 	}
 	else
 	{
-		FlushShaders();//this removes the references to them from the program, but they will still exist unless they are 'common'
+		FlushShaders();//this removes the references to them from the program, but they will still exist unless this is the last reference to them
 		
-		//Load the variable names
+        /*
+        
+        This region loads uniform and attribute locations
+
+        */
+		
+        
+        //Load the variable names
 		GLint attribCount = 0;
 		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTES, &attribCount);
 
 		GLint maxLength;
 		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLength);
 
+        //TODO: right now, these are just placeholders, but perhaps a more in depth variable information structure is needed
 		GLenum type;
-
 		GLint written, size;
-		for (int i = 0; i < attribCount; ++i)
-		{
-			GLchar* data = (GLchar*)malloc(maxLength);
 
-			glGetActiveAttrib(mProgramId, i, maxLength, &written, &size, &type, data);
-			mAttributeLocations.insert(GLUFVariableLocPair(data, glGetAttribLocation(mProgramId, data)));
+        std::string data;
+        for (int i = 0; i < attribCount; ++i)
+        {
+            //resize and clear every time is a bit messy, but is the only way to make sure the string is the right length
+            data.resize(maxLength);
 
-			free(data);
-		}
+            glGetActiveAttrib(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
+            mAttributeLocations.insert(GLUFVariableLocPair(data, glGetAttribLocation(mProgramId, &data[0])));
+
+            data.clear();
+        }
 
 		GLint uniformCount = 0;
 		glGetProgramiv(mProgramId, GL_ACTIVE_UNIFORMS, &uniformCount);
 
 		for (int i = 0; i < uniformCount; ++i)
-		{
-			GLchar* data = (GLchar*)malloc(maxLength);
+        {
+            //resize and clear every time is a bit messy, but is the only way to make sure the string is the right length
+            data.resize(maxLength);
 
-			glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, data);
-			mUniformLocations.insert(GLUFVariableLocPair(data, glGetUniformLocation(mProgramId, data)));
+			glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
+			mUniformLocations.insert(GLUFVariableLocPair(data, glGetUniformLocation(mProgramId, &data[0])));
 
-			free(data);
+            data.clear();
 		}
 	}
 }
@@ -1456,7 +1517,304 @@ void GLUFShaderManager::UseProgram(GLUFSepProgramPtr program)
 
 
 
+/*
+======================================================================================================================================================================================================
 
+Buffer and Texture (alpha)
+
+
+*/
+
+
+/*
+
+Texture Utilities:
+
+*/
+
+
+
+#define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
+#define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
+#define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
+
+GLuint LoadTextureDDS(char* rawData, unsigned int size)
+{
+    //TODO support more compatibiulity, ie RGB, BGR, don't make it dependent on ABGR
+    unsigned char header[124];
+
+
+    /* verify the type of file */
+    char filecode[4];
+    memcpy(filecode, rawData, 4);
+    if (strncmp(filecode, "DDS ", 4) != 0)
+    {
+        //fclose(fp);
+        return 0;
+    }
+
+    /* get the surface desc */
+    memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
+
+    //this is all the data I need, but I just need to load it properly to opengl
+    unsigned int height = *(unsigned int*)&(header[8]);
+    unsigned int width = *(unsigned int*)&(header[12]);
+    unsigned int linearSize = *(unsigned int*)&(header[16]);
+    unsigned int mipMapCount = *(unsigned int*)&(header[24]);
+    unsigned int flags = *(unsigned int*)&(header[76]);
+    unsigned int fourCC = *(unsigned int*)&(header[80]);
+    unsigned int RGBBitCount = *(unsigned int*)&(header[84]);
+    unsigned int RBitMask = *(unsigned int*)&(header[88]);
+    unsigned int GBitMask = *(unsigned int*)&(header[92]);
+    unsigned int BBitMask = *(unsigned int*)&(header[96]);
+    unsigned int ABitMask = *(unsigned int*)&(header[100]);
+
+
+    char * buffer;
+    unsigned int bufsize;
+    /* how big is it going to be including all mipmaps? */
+    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+    buffer = rawData + 128;
+    //memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
+
+    unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
+    unsigned int compressedFormat;
+    switch (fourCC)
+    {
+    case FOURCC_DXT1:
+        compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+        break;
+    case FOURCC_DXT3:
+        compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+        break;
+    case FOURCC_DXT5:
+        compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        break;
+    default:
+        compressedFormat = 0;//uncompressed
+    }
+
+    // Create one OpenGL texture
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapCount - 1);//REMEMBER it is max mip, NOT mip count
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+
+    if (compressedFormat != 0)
+    {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+        unsigned int offset = 0;
+
+        /* load the mipmaps */
+        for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
+        {
+            unsigned int mipSize = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
+            glCompressedTexImage2D(GL_TEXTURE_2D, level, compressedFormat, width, height,
+                0, mipSize, buffer + offset);
+
+            offset += mipSize;
+            width /= 2;
+            height /= 2;
+
+            // Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+            if (width < 1) width = 1;
+            if (height < 1) height = 1;
+
+        }
+
+    }
+    else
+    {
+        unsigned int offset = 0;
+
+        for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
+        {
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+
+            unsigned int mipSize = (width * height * 4);
+            offset += mipSize;
+            width /= 2;
+            height /= 2;
+
+            // Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+            if (width < 1) width = 1;
+            if (height < 1) height = 1;
+        }
+    }
+
+
+    return textureID;
+}
+
+GLuint LoadTextureCubemapDDS(char* rawData, unsigned int length)
+{
+    unsigned char header[124];
+
+
+    /* verify the type of file */
+    char filecode[4];
+    memcpy(filecode, rawData, 4);
+    if (strncmp(filecode, "DDS ", 4) != 0)
+    {
+        //fclose(fp);
+        return 0;
+    }
+
+    /* get the surface desc */
+    memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
+
+    //this is all the data I need, but I just need to load it properly to opengl
+    unsigned int height = *(unsigned int*)&(header[8]);
+    unsigned int width = *(unsigned int*)&(header[12]);
+    unsigned int linearSize = *(unsigned int*)&(header[16]);
+    unsigned int mipMapCount = *(unsigned int*)&(header[24]);
+    unsigned int flags = *(unsigned int*)&(header[76]);
+    unsigned int fourCC = *(unsigned int*)&(header[80]);
+    unsigned int RGBBitCount = *(unsigned int*)&(header[84]);
+    unsigned int RBitMask = *(unsigned int*)&(header[88]);
+    unsigned int GBitMask = *(unsigned int*)&(header[92]);
+    unsigned int BBitMask = *(unsigned int*)&(header[96]);
+    unsigned int ABitMask = *(unsigned int*)&(header[100]);
+
+
+    char * buffer;
+    unsigned int bufsize;
+    /* how big is it going to be including all mipmaps? */
+    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+    buffer = rawData + 128;
+    //memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
+
+    unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
+    unsigned int compressedFormat;
+    switch (fourCC)
+    {
+    case FOURCC_DXT1:
+        compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+        break;
+    case FOURCC_DXT3:
+        compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+        break;
+    case FOURCC_DXT5:
+        compressedFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        break;
+    default:
+        compressedFormat = 0;//uncompressed
+    }
+
+    // Create one OpenGL texture
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 0);//REMEMBER it is max mip, NOT mip count
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_R, GL_RED);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_SWIZZLE_A, GL_ALPHA);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    //this method is not the prettyest, but it is the easiest to load
+    if (compressedFormat != 0)
+    {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
+        unsigned int offset = 0;
+
+        unsigned int pertexSize = width;
+
+        unsigned int mipSize = ((pertexSize + 3) / 4)*((pertexSize + 3) / 4)*blockSize;
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, compressedFormat, pertexSize, pertexSize,
+            0, mipSize, buffer + offset);
+        offset += mipSize;
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
+            0, mipSize, buffer + offset);
+        offset += mipSize;
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, compressedFormat, pertexSize, pertexSize,
+            0, mipSize, buffer + offset);
+        offset += mipSize;
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
+            0, mipSize, buffer + offset);
+        offset += mipSize;
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
+            0, mipSize, buffer + offset);
+        offset += mipSize;
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
+            0, mipSize, buffer + offset);
+
+    }
+    else
+    {
+        unsigned int offset = 0;
+        unsigned int pertexSize = width;
+        unsigned int mipSize = (pertexSize * pertexSize * 4);
+
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        offset += mipSize;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        offset += mipSize;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        offset += mipSize;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        offset += mipSize;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        offset += mipSize;
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+    }
+
+
+    return textureID;
+}
+
+GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
+{
+    unsigned long rawSize = 0;
+    char* data = GLUFLoadFileIntoMemory(filePath.c_str(), &rawSize);
+
+    GLuint texId = LoadTextureFromMemory(data, rawSize, format);
+    free(data);
+    return texId;
+}
+
+
+GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format)
+{
+
+    switch (format)
+    {
+    case TFF_DDS:
+        return LoadTextureDDS(data, length);
+    case TTF_DDS_CUBEMAP:
+        return LoadTextureCubemapDDS(data, length);
+    }
+
+    return 0;
+}
+
+
+
+
+/*
+
+Buffer Utilities
+
+*/
 
 GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
 {
