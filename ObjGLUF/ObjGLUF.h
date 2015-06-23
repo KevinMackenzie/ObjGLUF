@@ -121,6 +121,7 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
 #define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << #chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE:" << #expr; GLUF_ERROR(ss.str().c_str()) } }
+#define GLUF_NULLPTR_CHECK(ptr) {if (ptr == nullptr){throw std::invalid_argument("Null Pointer");}}
 
 OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
 OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
@@ -132,11 +133,12 @@ Utility Macros
 
 */
 
-#define GLUF_SAFE_DELETE(ptr) {}
 #define GLUF_SAFE_DELETE(ptr) {if(ptr){delete(ptr);} (ptr) = nullptr;}
 #define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
-
+#define NOEXCEPT_REGION_START try{
+#define NOEXCEPT_REGION_END }catch(...){}
+#define noexcept
 
 /*
 ======================================================================================================================================================================================================
@@ -145,9 +147,9 @@ Multithreading Macros
 */
 
 //for use with mutexes
-#define GLUF_TSAFE_BEGIN(Mutex) { std::unique_lock<std::mutex> __lock__(Mutex);
+#define GLUF_TSAFE_BEGIN(Mutex) { std::lock_guard<std::mutex> __lock__(Mutex);
 #define GLUF_TSAFE_END __lock__.unlock();}
-#define GLUF_TSAFE_REGION(Mutex) std::unique_lock<mutex> __lock__(Mutex);
+#define GLUF_TSAFE_SCOPE(Mutex) std::lock_guard<std::mutex> __lock__{Mutex};
 
 class LocalLock
 {
@@ -270,7 +272,7 @@ OBJGLUF_API bool GLUFInit();
 OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 //call this at the very last moment before application termination
-OBJGLUF_API void GLUFTerminate();
+/*OBJGLUF_API*/ void GLUFTerminate(){};//NOTE: WHEN GLUFGUI COMPLETED, REMOVE THESE BRACKETS AND ADD OBJGLUF_API!
 
 
 /*
@@ -519,7 +521,7 @@ GLUFArrToVec
 template<typename T>
 OBJGLUF_API inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len)
 {
-    if (!T)
+    if (!arr)
         throw std::invalid_argument("GLUFArrToVec: \'arr\' == nullptr");
 
     if (sizeof(arr) < sizeof(T) * len)
@@ -643,8 +645,9 @@ GLUFException
 */
 class GLUFException : public std::exception
 {
-    const std::string& mPostfix = " See Log For More Info.";
-    
+    const std::string mPostfix = " See Log For More Info.";
+ 
+public:
     //automatically add message to log file when exception thrown
     GLUFException()
     {
@@ -659,12 +662,12 @@ class GLUFException : public std::exception
     }
 
     
-    virtual const std::string& MyUniqueMessage(){};
+    virtual const std::string MyUniqueMessage() = 0;
 };
 
 class UseProgramException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Failed to Use Program!";
     }
@@ -672,7 +675,7 @@ class UseProgramException : public GLUFException
 
 class MakeShaderException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Shading Creation Failed!";
     }
@@ -680,7 +683,7 @@ class MakeShaderException : public GLUFException
 
 class MakeProgramException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Program Creation Failed!";
     }
@@ -701,8 +704,12 @@ GLUFShaderManager
     Data Members:
         'mCompileLogs': a map of logs for each compiled shader
         'mLinkLogs': a map of logs for each linked program
-        'mMutex': mutual exclution protection for logs
-        'mLock': single lock for protecting data interally
+        'mCompLogMutex': mutual exclution protection for compile logs
+        'mLinkLogMutex': mutual exclusion protection for link logs
+
+    Note:
+        Much of this is pass-by-reference in order to still have valid data members even
+            if exceptions are thrown
 
 */
 
@@ -713,8 +720,33 @@ class OBJGLUF_API GLUFShaderManager
 	std::map<GLUFShaderPtr, GLUFShaderInfoStruct>  mCompileLogs;
 	std::map<GLUFProgramPtr, GLUFShaderInfoStruct> mLinklogs;
 
-    std::mutex mMutex;
-    std::unique_lock<std::mutex> mLock;
+    mutable std::mutex mCompLogMutex;
+    mutable std::mutex mLinkLogMutex;
+
+    /*
+    AddCompileLog
+
+        Parameters:
+            'shader': shader to add to pair
+            'log': log to accompany it
+
+        Note:
+            This is meant to be use in order to handle thread-safe log access
+    */
+    void AddCompileLog(const GLUFShaderPtr& shader, const GLUFShaderInfoStruct& log);
+
+
+    /*
+    AddLinkLog
+
+    Parameters:
+        'program': program to add to pair
+        'log': log to accompany it
+
+    Note:
+        This is meant to be use in order to handle thread-safe log access
+    */
+    void AddLinkLog(const GLUFProgramPtr& program, const GLUFShaderInfoStruct& log);
 
 public:
 
@@ -726,9 +758,7 @@ public:
             'text': text to compile
             'memory': raw memory of text file loaded
             'type': self-explanitory
-
-        Returns:
-            -Your brand spankin' new Shader
+            'outShader': your brand spankin' new shader
 
         Throws:
             -CreateShaderFromFile: 'std::ios_base::failure': if file had issues reading
@@ -736,9 +766,9 @@ public:
     
     */
 
-	GLUFShaderPtr CreateShaderFromFile(const std::wstring& filePath, GLUFShaderType type);
-	GLUFShaderPtr CreateShaderFromText(const std::string& text, GLUFShaderType type);
-	GLUFShaderPtr CreateShaderFromMemory(const std::vector<char>& memory, GLUFShaderType type);
+	void CreateShaderFromFile(GLUFShaderPtr& outShader, const std::wstring& filePath, GLUFShaderType type);
+    void CreateShaderFromText(GLUFShaderPtr& outShader, const std::string& text, GLUFShaderType type);
+    void CreateShaderFromMemory(GLUFShaderPtr& outShader, const std::vector<char>& memory, GLUFShaderType type);
 
 
     /*
@@ -749,9 +779,7 @@ public:
             'shaderSources': a list of shader files in strings to be compiled
             'shaderPaths': a list of shader file paths to be loaded into strings and compiled
             'separate': WIP Don't Use
-
-        Returns:
-            -Your brank spankin' new Program
+            'outProgram': your brank spankin' new program
 
         Throws:
             'std::ios_base::failure': if file loading has issues
@@ -760,9 +788,9 @@ public:
     
     */
 
-	GLUFProgramPtr CreateProgram(GLUFShaderPtrList shaders, bool separate = false);
-	GLUFProgramPtr CreateProgram(GLUFShaderSourceList shaderSources, bool separate = false);
-	GLUFProgramPtr CreateProgram(GLUFShaderPathList shaderPaths, bool separate = false);
+	void CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrList shaders, bool separate = false);
+    void CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderSourceList shaderSources, bool separate = false);
+    void CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPathList shaderPaths, bool separate = false);
 
 
     /*
@@ -779,15 +807,16 @@ public:
 
         Throws:
             'std::invalid_argument': if 'prog' == nullptr
+            'std::invalid_argument': if 'varName' does not exist
     
     */
 
-	const GLuint GetShaderVariableLocation(const GLUFProgramPtr& prog, GLUFLocationType locType, const std::string& varName) const;
-    const GLUFVariableLocMap& GetShaderAttribLocations(const GLUFProgramPtr& prog) const;
-    const GLUFVariableLocMap& GetShaderUniformLocations(const GLUFProgramPtr& prog) const;
+	const GLuint GetShaderVariableLocation(const GLUFProgramPtr& program, GLUFLocationType locType, const std::string& varName) const;
+    const GLUFVariableLocMap& GetShaderAttribLocations(const GLUFProgramPtr& program) const;
+    const GLUFVariableLocMap& GetShaderUniformLocations(const GLUFProgramPtr& program) const;
 
-    const GLUFVariableLocMap &GetShaderAttribLocations(const GLUFSepProgramPtr& prog) const;
-    const GLUFVariableLocMap &GetShaderUniformLocations(const GLUFSepProgramPtr& prog) const;
+    const GLUFVariableLocMap GetShaderAttribLocations(const GLUFSepProgramPtr& program) const;
+    const GLUFVariableLocMap GetShaderUniformLocations(const GLUFSepProgramPtr& program) const;
 
 
     /*
@@ -798,16 +827,16 @@ public:
             'program': program to be deleted
 
         Note:
-            -This does not delete the smart pointers, it only deletes the program from an Open-GL
-                perspective.  Log files and variable/attribute location id's stay intact
+            -This does not delete the smart pointers, however it does bring the shader to a state
+                in which it can be reused
 
         Throws:
-            'std::invalid_argument': if shader/program == nullptr
+            no-throw guarantee
     
     */
 
-	void DeleteShader(GLUFShaderPtr shader);
-	void DeleteProgram(GLUFProgramPtr program);
+	void DeleteShader(GLUFShaderPtr& shader) noexcept;
+	void DeleteProgram(GLUFProgramPtr& program) noexcept;
 
 
     //self-explanitory
@@ -850,10 +879,10 @@ public:
     */
 
     void UseProgram(const GLUFProgramPtr& program) const;
-    void UseProgram(const GLUFSepProgramPtr& program) const;
+    void UseProgram(const GLUFSepProgramPtr& ppo) const;
 
     //bind program id and ppo id 0
-	void UseProgramNull();
+    void UseProgramNull() const noexcept;
 
     /*
     ======================================
@@ -876,6 +905,7 @@ public:
 
         Throws:
             'std::invalid_argument': if ppo == nullptr
+            'std::invalid_argument': if program(s) == nullptr
     */
 
     void AttachPrograms(const GLUFSepProgramPtr& ppo, const GLUFProgramPtrStagesMap& programs);
@@ -945,7 +975,7 @@ Texture Utilities:
 
 class TextureCreationException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Failed to Create Texture!";
     }
@@ -972,6 +1002,10 @@ LoadTextureFrom*
     Throws:
         'std::ios_base::failure': if filePath could not be found, or stream failed
         'TextureCreationException': if texture creation failed
+
+    Note:
+        All textures currently must be in ABGR format
+        If formats other than ABGR are supported, ABGR will likely be faster at loading
 
 */
 GLuint OBJGLUF_API LoadTextureFromFile(const std::wstring& filePath, GLUFTextureFileFormat format);
@@ -1020,17 +1054,9 @@ Vertex Array Exceptions
 
 */
 
-class NullVAOException : public GLUFException
-{
-    virtual const std::string& MyUniqueMessage() override
-    {
-        return "Attempt To Bind Null VAO!";
-    }
-};
-
 class MakeVOAException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "VAO Creation Failed!";
     }
@@ -1038,7 +1064,7 @@ class MakeVOAException : public GLUFException
 
 class InvalidSoABufferLenException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Buffer Passed Has Length Inconsistent With the Vertex Attributes!";
     }
@@ -1046,7 +1072,7 @@ class InvalidSoABufferLenException : public GLUFException
 
 class MakeBufferException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Buffer Creation Failed!";
     }
@@ -1054,7 +1080,7 @@ class MakeBufferException : public GLUFException
 
 class InvalidAttrubuteLocationException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Attribute Location Not Found in This Buffer!";
     }
@@ -1074,11 +1100,6 @@ GLUFVertexArrayBase
         'mIndexCount': the number of indices (number of faces * number of vertices per primitive)
         'mTempVAOId': the temperary id of the VAO; saved before binding this VAO
 
-    Note:
-        Safe to assume that if constructor does not throw 'MakeVAOException', then no other
-            member functions will throw a 'NullVAOException' unless move copy constructor or 
-            move assignment operator gets this passed to it
-        3rd party children modify this behavior
 */
 
 class OBJGLUF_API GLUFVertexArrayBase
@@ -1106,12 +1127,16 @@ protected:
             -reassign the OpenGL buffer attributes to VAO
         
         GetAttribInfoFromLoc:
-            -reverse vector lookup on mAttribInfos
+            -simple map lookup for location
+            -throws 'std::invalid_argument' if loc does not exist
 
+        BufferIndicesBase:
+            -similer code for each of the 'BufferIndices' functions
     
     */
-	virtual void RefreshDataBufferAttribute() = 0;
+	virtual void RefreshDataBufferAttribute() = 0 noexcept;
 	const GLUFVertexAttribInfo& GetAttribInfoFromLoc(GLUFAttribLoc loc) const;
+    void BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept;
 
 
     //disallow copy constructor and assignment operator
@@ -1129,6 +1154,7 @@ public:
 
         Throws:
             'MakeVAOException': if construction fails
+            'MakeBufferException': if index buffer fails to be created (This will not be thrown if 'index' = false)
     */
     
     GLUFVertexArrayBase(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool index = true);
@@ -1141,7 +1167,7 @@ public:
     Move Copy Constructor and Move Assignment Operator
         
         Throws:
-            TODO: what does std::map throw?
+            May Throw something in Map Copy Constructor
     */
 
     GLUFVertexArrayBase(GLUFVertexArrayBase&& other);
@@ -1155,8 +1181,7 @@ public:
             'loc': OpenGL location of the attribute to remove
 
         Throws:
-            'std::invalid_argument': if 'info' contains jibberish or if loc does not exist
-            'NullVAOException': if the VAO is failed to be created
+            'std::invalid_argument': if loc does not exist
     
     */
 	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
@@ -1169,7 +1194,7 @@ public:
         Binds this vertex array for modifications.
 
         Throws:
-            'NullVAOException': if the VAO failed to be created
+            no-throw guarantee
 
         Preconditions:
             Unkown VAO is bound
@@ -1177,15 +1202,18 @@ public:
         Postconditions
             This VAO is bound
     */
-	void BindVertexArray();
+    void BindVertexArray() noexcept;
 
     /*
     UnBindVertexArray
 
-        Binds old vertex array back
+        Binds old vertex array back; 
+
+        Note:
+            Undefined results if this is called before 'BindVertexArray'
 
         Throws:
-            'NullVAOException': if the VAO failed to be created
+            no-throw guarantee
 
         Preconditions:
             This VAO is bound
@@ -1193,7 +1221,7 @@ public:
         Postconditions
             Old Unknown VAO is bound
     */
-    void UnBindVertexArray();
+    void UnBindVertexArray() noexcept;
 
 
     /*
@@ -1208,7 +1236,7 @@ public:
             'instances': number of times to draw the object in instanced draw
 
         Throws:
-            'NullVAOException': if the VAO failed to be created
+            no-throw guarantee
 
         Draw:
             Draws the vertex array with the currently bound shader
@@ -1220,9 +1248,9 @@ public:
             Draws 'instances' number of the object.  NOTE: this will draw the object EXACTLY the same, so 
                 this is not very useful without a special instanced shader program
     */
-	void Draw();
-	void DrawRange(GLuint start, GLuint count);
-	void DrawInstanced(GLuint instances);
+    void Draw() noexcept;
+    void DrawRange(GLuint start, GLuint count) noexcept;
+    void DrawInstanced(GLuint instances) noexcept;
 
 
     /*
@@ -1232,14 +1260,18 @@ public:
             'indices': array of indices to be buffered
 
         Throws:
-            'NullVAOException': if VAO creation failed
+            no-throw guarantee
+
+        Note:
+            this could be a template, but is intentionally not to ensure the user
+                is entering reasonible data to give predictible results
     */
 
-	void BufferIndices(const std::vector<GLuint>& indices);
-	void BufferIndices(const std::vector<glm::u32vec2>& indices);
-    void BufferIndices(const std::vector<glm::u32vec3>& indices);
-    void BufferIndices(const std::vector<glm::u32vec4>& indices);
-	//void BufferFaces(GLuint* indices, unsigned int FaceCount);
+	void BufferIndices(const std::vector<GLuint>& indices) noexcept;
+    void BufferIndices(const std::vector<glm::u32vec2>& indices) noexcept;
+    void BufferIndices(const std::vector<glm::u32vec3>& indices) noexcept;
+    void BufferIndices(const std::vector<glm::u32vec4>& indices) noexcept;
+	//void BufferFaces(GLuint* indices, GLuint FaceCount);
 
     /*
     Enable/DisableVertexAttributes
@@ -1249,7 +1281,7 @@ public:
             for flexibility
 
         Throws:
-            'NullVAOException': if VAO creation failed
+            no-throw guarantee
 
         Preconditions:
             VAO is currently bound
@@ -1261,20 +1293,182 @@ public:
     
     */
 
-	virtual void EnableVertexAttributes() const;
-	virtual void DisableVertexAttributes() const;
+    virtual void EnableVertexAttributes() const noexcept;
+    virtual void DisableVertexAttributes() const noexcept;
 };
 
 
 
 /*
-GLUFAoSStruct
+GLUFVertexStruct
 
     Base struct for data used in 'GLUFVertexArrayAoS'
 
 */
 
-struct GLUFAoSStruct{};
+struct GLUFVertexStruct
+{
+    virtual void* operator&() const = 0;
+    virtual size_t size() const = 0;
+    virtual size_t n_elem_size(size_t element) = 0;
+    virtual void buffer_element(void* data, size_t element) = 0;
+};
+
+/*
+
+GLUFGLVector
+    
+    -a small excention to the std::vector class;
+    -use this just like you would std::vector, except T MUST be derived from 'GLUFVertexStruct'
+    -T::size() must be the same for every element of the vector, however it will only throw an exception when calling gl_data()
+
+    Data Members:
+        'mGLData': the cached data from 'gl_data()', gets destroyed when vector does
+*/
+
+template<typename T>
+class GLUFGLVector : public std::vector<T>
+{
+    mutable char* mGLData = nullptr;
+public:
+
+    /*
+    Default Constructor
+    */
+    GLUFGLVector(){}
+
+    /*
+
+    Move Copy Constructor and Move Assignment Operator
+
+        Throws:
+            May throw something in 'std::vector's move constructor or assignment operator
+    */
+
+    GLUFGLVector(GLUFGLVector&& other) : std::vector<T>(std::move(other))
+    {
+        mGLData = other.mGLData;
+        other.mGLData = 0;
+    }
+    GLUFGLVector& operator=(GLUFGLVector&& other)
+    {
+        std::vector<T>* thisParentPtr = dynamic_cast<std::vector<T>*>(this);
+        *thisParentPtr = std::move(other);
+
+        mGLData = other.mGLData;
+        other.mGLData = 0;
+
+        return *this
+    }
+
+    /*
+    Copy Constructor and Assignment Operator
+        
+        Throws:
+            May throw something in 'std::vector's copy constructor or assignment operator
+    */
+    GLUFGLVector(const GLUFGLVector& other) : std::vector<T>(other), mGLData(0) {}
+    GLUFGLVector& operator=(const GLUFGLVector& other)
+    {
+        std::vector<T>* thisParentPtr = dynamic_cast<std::vector<T>*>(this);
+        *thisParentPtr = other;
+
+        mGLData = 0;//begin at 0, because we don't actually want to copy over the old data, because it will likely be invalidated, otherwise there is no reason to copy
+    }
+
+    /*
+    gl_data
+
+        Returns:
+            contiguous, raw data of each element in the vector
+
+        Throws:
+            'std::length_error': if any two elements in the vector are not the same length
+
+    */
+    void* gl_data() const
+    {
+        if (size() == 0)
+            return nullptr;
+
+        {
+            size_t expcetedSize = front().size();
+            for (auto it : *this)
+            {
+                if (it.size() != front().size())
+                    throw std::length_error("Inconsistent Lengths Used in GLUFGLVector");
+            }
+        }
+
+        size_t stride = front().size();
+        size_t rawSize = stride * size();
+
+        //compile the data into one array of contiguous data
+
+        //recreate the cached data
+        gl_delete_data();
+        mGLData = new char[rawSize];
+
+        //add each element
+        for (size_t i = 0; i < size(); ++i)
+        {
+            void* mem = &(*this)[i];
+
+            //may be unsafe, but that's a later problem
+            std::memcpy(mGLData + i * stride, mem, stride);
+
+            delete[] mem;
+        }
+
+        return mGLData;
+    }
+
+    /*
+    gl_delete_data
+
+        deletes 'mGLData'
+
+        Returns:
+            always nullptr; usage: "rawData = vec.gl_delete_data();"
+
+        Throws:
+            no-throw guarantee
+    */
+    void* gl_delete_data() const
+    {
+        NOEXCEPT_REGION_START
+
+        delete[] mGLData;
+        return nullptr;
+
+        NOEXCEPT_REGION_END
+    }
+
+    /*
+    buffer_element
+
+        Parameters:
+            'data': raw data to buffer
+            'element': which element in the Vertex is it modifying 
+
+        Throws:
+            undefined
+    
+    */
+    void buffer_element(void* data, size_t element)
+    {
+        char* tmpUsableData = reinterpret_cast<char*>(data);
+        if (element >= front().size())
+            return;
+
+        size_t elementSize = front().n_elem_size(element);
+        for (unsigned int i = 0; i < size(); ++i)
+        {
+            (*this)[i].buffer_element(tmpUsableData, element);
+            tmpUsableData += elementSize;
+        }
+    }
+};
 
 /*
 
@@ -1292,6 +1486,7 @@ GLUFVertexArrayAoS:
 
 class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 {
+protected:
 	GLuint mDataBuffer = 0;
 
 
@@ -1322,8 +1517,8 @@ public:
 
     Move Copy Constructor and Move Assignment Operator
 
-    Throws:
-        TODO: whatever parent may throw
+        Throws:
+            May Throw something in Map Copy Constructor
 
     */
 
@@ -1340,7 +1535,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	unsigned int GetVertexSize() const;
+	GLuint GetVertexSize() const noexcept;
 
 
     /*
@@ -1350,27 +1545,247 @@ public:
 
         Parameters:
             'data': the array of structures 
+            'T': data structure derived from 'GLUFVertexStruct'
 
         Throws:
-            'NullVAOException': if VAO creation failed
-            'MakeBufferException': if buffer creation failed
+            'std::invalid_argument' if derived 'GLUFVertexStruct' is the wrong size or is not derived from 'GLUFVertexStruct', but this does NOT enforce the layout
     
     */
-	void BufferData(const std::vector<GLUFAoSStruct&>& data);
+    template<typename T>
+    void BufferData(const GLUFGLVector<T>& data);
 
 
     /*
     BufferSubData
 
-        -To modify vertices, or parts of vertices
+        -To modify vertices
 
         Parameters:
-            'ValueOffsetCount': start overwriting after this many elements
+            'vertexLocations': overwrite these vertices (if size == 1, then that will be the first vertex, then will overwrite sequentially)
             'data': List of Data which derives from GLUFAoSStruct
+            'isSorted': set this to 'true' if the vertex locations are in order (not necessessarily contiguous though)
+            
+        Template Parameters:
+            'T': vertex type, derived from GLUFVertexStruct, which CANNOT contain any pointers, it must only contain primative types, or structures of primative types
+
+        Throws:
+            'std::invalid_argument' if derived 'GLUFVertexStruct' is the wrong size, but this does NOT enforce the layout
+            'std::invalid_argument' if size of data array is not the size of the vertex locations, and the size of the vertex locations is not equal to 1
+            'std::invalid_argument' if 'T' is not the correct base
+            'std::invalid_argument' if 'vertexLocations' contains any duplicates
+
+        Note:
+            As efficient as possible, but still not fast.  If this is needed frequently, consider using 'GLUFVertexArraySoA'
+
+            ****TODO: Possibly one that accepts an array of vertex locations along with chunk sizes****
     */
-	void BufferSubData(const std::vector<GLUFAoSStruct&>& data, unsigned int ValueOffsetCount);
+    template<typename T>
+    void BufferSubData(GLUFGLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted = false);
 
 };
+
+/*
+
+Template Member Functions
+
+*/
+
+template<typename T>
+void GLUFVertexArrayAoS::BufferData(const GLUFGLVector<T>& data)
+{    
+    //a pretty logical first step
+    if (data.size() == 0)
+        return;
+
+    //next, make sure that 'data' contains data intentended for this buffer operation
+    try
+    {
+        //this means, if 'T' is not derived from GLUFVertexStructBase, then it cannot be used
+        T* tTest = new T();//T already needs a default constructor
+        dynamic_cast<GLUFVertexStruct*>(tTest);
+    }
+    catch (...)
+    {
+        throw std::invalid_argument("\"data\" Contains Data of Invalid Base!");
+    }
+
+    GLuint vertexSize = GetVertexSize();
+
+    if (data[0].size() != vertexSize)
+        throw std::invalid_argument("(GLUFVertexArrayAoS::BufferData): data vertex size is not compatible");
+
+    BindVertexArray();
+    glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+    //pass OpenGL the raw pointers
+    glBufferData(GL_ARRAY_BUFFER, data.size() * vertexSize, data.gl_data(), mUsageType);
+
+    mVertexCount = data.size();
+
+    UnBindVertexArray();
+
+}
+
+template<typename T>
+void GLUFVertexArrayAoS::BufferSubData(GLUFGLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted)
+{
+    //a pretty logical first step
+    if (data.size() == 0 || vertexLocations.size() == 0)
+        return;
+
+    //next, make sure that 'data' contains data intentended for this buffer operation
+    try
+    {
+        //this means, if 'T' is not derived from GLUFVertexStructBase, then it cannot be used
+        dynamic_cast<const GLUFVertexStruct*>(&data[0]);
+    }
+    catch (...)
+    {
+        throw std::invalid_argument("\"data\" Contains Data of Invalid Base!");
+    }
+
+    GLuint vertexSize = GetVertexSize();
+
+    if (data[0].size() != vertexSize)
+        throw std::invalid_argument("(GLUFVertexArrayAoS::BufferSubData): data vertex size is not compatible");
+
+    if (vertexLocations.size() != 1 && vertexLocations.size() != data.size())
+        throw std::invalid_argument("(GLUFVertexArrayAoS::BufferSubData): vertex location array size is too small");
+
+
+
+    //if the size is 1, do a simple sequential overwrite
+    if (vertexLocations.size() == 1)
+    {
+        BindVertexArray();
+        glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+        glBufferSubData(GL_ARRAY_BUFFER, vertexLocations[0] * vertexSize, data.size() * vertexSize, data.gl_data());
+    }
+    else//otherwise, split the data into contiguous chunks for best efficiency
+    {
+
+        /*
+
+        Overview:
+
+        Sort Vertex Locations
+        Check for Duplicates
+        Split Into Contiguous Chunks
+        Buffer Each Chunk
+
+        */
+
+        //Next, sort the possibly unordered vertex locations with Bubble Sort
+        if (!isSorted)
+        {
+            GLuint swap = 0;
+            for (GLuint c = 0; c < (vertexLocations.size() - 1); c++)
+            {
+                for (GLuint d = 0; d < vertexLocations.size() - c - 1; d++)
+                {
+                    if (vertexLocations[d] > vertexLocations[d + 1]) /* For decreasing order use < */
+                    {
+                        //note: std::swap increases efficiency of swapping
+
+                        //swap the vertices
+                        std::swap(vertexLocations[d], vertexLocations[d + 1]);
+
+                        //also remember to swap the data elements
+                        std::swap(data[d], data[d + 1]);
+                    }
+                }
+            }
+        }
+
+        //run through them all to make sure there are no duplicates, if there are, throw an exception
+        {
+            GLuint prev = 0;
+            GLuint curr = 0;
+            for (GLuint i = 0; i < vertexLocations.size(); ++i)
+            {
+                curr = vertexLocations[i];
+                if (i == 0)
+                {
+                    prev = curr;
+                    continue;
+                }
+
+                if (prev == curr)
+                {
+                    throw std::invalid_argument("Attempt to Buffer Subdata of Same Vertex Twice!");
+                }
+                else
+                {
+                    prev = curr;
+                }
+            }
+        }
+
+        //the chunks and offset for each chunk
+        std::vector<GLUFGLVector<T>> chunkedData;
+        std::vector<GLuint> chunkOffsets;
+
+        //the working chunk
+        GLUFGLVector<T> chunk;
+
+        //the previous vertex location
+        GLuint prevLocation = vertexLocations[0];
+
+        bool isFirst = true;
+        for (GLuint i = 0; i < vertexLocations.size(); ++i)
+        {
+            const T& itData = data[i];
+            GLuint itLocation = vertexLocations[i];
+
+            //initialize the first round and skip the rest
+            if (isFirst)
+            {
+                chunk.push_back(itData);
+                chunkOffsets.push_back(itLocation);
+
+                isFirst = false;
+                continue;
+            }
+
+            if (itLocation == vertexLocations.back())
+            {
+                //we have reached the end of the data
+                chunkedData.push_back(chunk);
+            }
+            else if (itLocation == prevLocation + 1)
+            {
+                chunk.push_back(itData);
+
+                prevLocation = itLocation;
+            }
+            else
+            {
+                //if this one is not contiguous, add the chunk to the list and clear the chunk
+                chunkedData.push_back(chunk);
+                chunk.clear();
+
+                //reinitialize the chunk if this data is not contiguous
+                chunk.push_back(itData);
+                chunkOffsets.push_back(itLocation);
+
+                //finally, reset the counter
+                prevLocation = itLocation;
+            }
+
+        }
+
+        //once it is all split into chunks, buffer the data chunk by chunk
+        for (GLuint i = 0; i < chunkedData.size(); ++i)
+        {
+            //for OpenGL safe-ness, bind the buffers at the last minute before buffering
+            BindVertexArray();
+            glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+            glBufferSubData(GL_ARRAY_BUFFER, chunkOffsets[i] * vertexSize, chunkedData[i].size() * vertexSize, (chunkedData[i]).gl_data());
+        }
+
+    }
+}
+
 
 
 /*
@@ -1423,19 +1838,31 @@ public:
 
     ~GLUFVertexArraySoA();
 
+    /*
+
+    Move Copy Constructor and Move Assignment Operator
+
+        Throws:
+            May Throw something in Map Copy Constructor
+
+    */
+
+    GLUFVertexArraySoA(GLUFVertexArraySoA&& other);
+    GLUFVertexArraySoA& operator=(GLUFVertexArraySoA&& other);
+
 
     /*
     GetBarebonesMesh
 
-        Returns:
-            Copy of barbones mesh data retrieved from OpenGL buffer
+        Parameters:
+            'inData': structure to be written to with OpenGL Buffer Data; all data already inside will be deleted
 
         Throws:
-            'MakeVAOException': if VAO creation failed
+            'InvalidAttrubuteLocationException': if this SoA does not have a position or index buffer
     
     */
 
-	GLUFMeshBarebones& GetBarebonesMesh();
+	void GetBarebonesMesh(GLUFMeshBarebones& inData);
 
     /*
     BufferData
@@ -1445,38 +1872,11 @@ public:
             'data': the data to buffer
 
         Throws:
-            'NullVAOException': if VAO creation failed
             'InvalidSoABufferLenException': if data.size() != mVertexCount
             'InvalidAttrubuteLocationException': if loc does not exist in this buffer
     */
     template<typename T>
-    void BufferData(GLUFAttribLoc loc, const std::vector<T>& data)
-    {
-        if (mVertexArrayId == 0)
-            throw NullVAOException();
-        if (mAttribInfos.find(loc) == mAttribInfos.end())
-            throw InvalidAttrubuteLocationException();
-
-        BindVertexArray();
-        glBindBuffer(GL_ARRAY_BUFFER, GetBufferIdFromAttribLoc(loc));
-        
-        if (mVertexCount != 0)
-        {
-            if (data.size() != mVertexCount)
-            {
-                throw InvalidSoABufferLenException();
-            }
-        }
-        else
-        {
-            mVertexCount = data.size();
-        }
-
-        GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
-        GLuint bytesPerValue = info.mBytesPerElement * info.mElementsPerValue;
-        glBufferData(GL_ARRAY_BUFFER, mVertexCount * bytesPerValue, data.data(), mUsageType);
-        UnBindVertexArray();
-    }
+    void BufferData(GLUFAttribLoc loc, const std::vector<T>& data);
 
     /*
     BufferSubData
@@ -1487,26 +1887,10 @@ public:
             'data': the data to buffer
 
         Throws:
-            'NullVAOException': if VAO creation failed
             'InvalidAttrubuteLocationException': if loc does not exist in this buffer
     */
     template<typename T>
-    void BufferSubData(GLUFAttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data)
-    {
-        if (mVertexArrayId == 0)
-            throw NullVAOException();
-        if (mAttribInfos.find(loc) == mAttribInfos.end())
-            throw InvalidAttrubuteLocationException();
-
-        BindVertexArray();
-        glBindBuffer(GL_ARRAY_BUFFER, GetBufferIdFromAttribLoc(loc));
-
-
-        GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
-        GLuint bytesPerValue = info.mBytesPerElement * info.mElementsPerValue;
-        glBufferSubData(GL_ARRAY_BUFFER, vertexOffsetCount * bytesPerValue, mVertexCount * bytesPerValue, data.data());
-        UnBindVertexArray();
-    }
+    void BufferSubData(GLUFAttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data);
 
 	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
 
@@ -1518,17 +1902,64 @@ public:
             'loc': location of the vertex attribute to remove
 
         Throws:
-            'NullVAOException': if VAO creation failed
+            no-throw guarantee
 
         Note:
             if 'info.mVertexAttribLocation' already exists, the new
                 attribute simply is not added
             if 'loc' does not exist, nothing is deleted
     */
-	virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info);
-	virtual void RemoveVertexAttrib(GLUFAttribLoc loc);
+	virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info) noexcept;
+	virtual void RemoveVertexAttrib(GLUFAttribLoc loc) noexcept;
 
 };
+
+/*
+
+Template Member Functions
+
+*/
+
+template<typename T>
+void GLUFVertexArraySoA::BufferData(GLUFAttribLoc loc, const std::vector<T>& data)
+{
+    auto buffId = GetBufferIdFromAttribLoc(loc);
+
+    BindVertexArray();
+    glBindBuffer(GL_ARRAY_BUFFER, buffId);
+
+    if (mVertexCount != 0)
+    {
+        if (data.size() != mVertexCount)
+        {
+            throw InvalidSoABufferLenException();
+        }
+    }
+    else
+    {
+        mVertexCount = data.size();
+    }
+
+    GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
+    GLuint bytesPerValue = info.mBytesPerElement * info.mElementsPerValue;
+    glBufferData(GL_ARRAY_BUFFER, mVertexCount * bytesPerValue, data.data(), mUsageType);
+    UnBindVertexArray();
+}
+
+template<typename T>
+void GLUFVertexArraySoA::BufferSubData(GLUFAttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data)
+{
+    auto buffId = GetBufferIdFromAttribLoc(loc);
+
+    BindVertexArray();
+    glBindBuffer(GL_ARRAY_BUFFER, buffId);
+
+
+    GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
+    GLuint bytesPerValue = info.mBytesPerElement * info.mElementsPerValue;
+    glBufferSubData(GL_ARRAY_BUFFER, vertexOffsetCount * bytesPerValue, mVertexCount * bytesPerValue, data.data());
+    UnBindVertexArray();
+}
 
 /*
 
@@ -1569,6 +2000,13 @@ using GLUFVertexAttribPair = std::pair<unsigned char, GLUFVertexAttribInfo>;
 
 
 /*
+
+Assimp Loading Exceptions
+
+*/
+
+
+/*
 LoadVertexArrayFromScene
 
     Parameters:
@@ -1580,11 +2018,13 @@ LoadVertexArrayFromScene
         shared pointer to the loaded vertex array
 
     Throws:
+        'std::invalid_argument': if 'meshNum' is higher than the number of meshes in 'scene'
+
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 
 */
-std::shared_ptr<GLUFVertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, unsigned int meshNum = 0);
-std::shared_ptr<GLUFVertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, const GLUFVertexAttribMap& inputs, unsigned int meshNum = 0);
+std::shared_ptr<GLUFVertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum = 0);
+std::shared_ptr<GLUFVertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, const GLUFVertexAttribMap& inputs, GLuint meshNum = 0);
 
 
 
@@ -1604,8 +2044,8 @@ LoadVertexArraysFromScene
     Throws:
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 */
-std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, unsigned int meshOffset = 0, unsigned int numMeshes = 1);
-std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const GLUFVertexAttribMap&>& inputs, unsigned int meshOffset = 0 unsigned int numMeshes = 1);
+std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset = 0, GLuint numMeshes = 1);
+std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const GLUFVertexAttribMap&>& inputs, GLuint meshOffset = 0, GLuint numMeshes = 1);
 
 
 //the unsigned char represents the below #defines (GLUF_VERTEX_ATTRIB_*)
@@ -1614,31 +2054,35 @@ std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromSc
 
 /*
 =======================================================================================================================================================================================================
-A Set of Guidelines for Attribute Locations
+A Set of Guidelines for Attribute Locations (organized by number of vector elements)
 
 */
-#define GLUF_VERTEX_ATTRIB_POSITION		0
-#define GLUF_VERTEX_ATTRIB_NORMAL		1
-#define GLUF_VERTEX_ATTRIB_UV0			2
-#define GLUF_VERTEX_ATTRIB_COLOR0		3
-#define GLUF_VERTEX_ATTRIB_TAN			4
-#define GLUF_VERTEX_ATTRIB_BITAN		5
+//2 elements
 
-#define GLUF_VERTEX_ATTRIB_UV1			10
-#define GLUF_VERTEX_ATTRIB_UV2			11
-#define GLUF_VERTEX_ATTRIB_UV3			12
-#define GLUF_VERTEX_ATTRIB_UV4			13
-#define GLUF_VERTEX_ATTRIB_UV5			14
-#define GLUF_VERTEX_ATTRIB_UV6			15
-#define GLUF_VERTEX_ATTRIB_UV7			16
+#define GLUF_VERTEX_ATTRIB_UV0			1
+#define GLUF_VERTEX_ATTRIB_UV1			2
+#define GLUF_VERTEX_ATTRIB_UV2			3
+#define GLUF_VERTEX_ATTRIB_UV3			4
+#define GLUF_VERTEX_ATTRIB_UV4			5
+#define GLUF_VERTEX_ATTRIB_UV5			6
+#define GLUF_VERTEX_ATTRIB_UV6			7
+#define GLUF_VERTEX_ATTRIB_UV7			8
+//3 elements
 
-#define GLUF_VERTEX_ATTRIB_COLOR1		17
-#define GLUF_VERTEX_ATTRIB_COLOR2		18
-#define GLUF_VERTEX_ATTRIB_COLOR3		19
-#define GLUF_VERTEX_ATTRIB_COLOR4		20
-#define GLUF_VERTEX_ATTRIB_COLOR5		21
-#define GLUF_VERTEX_ATTRIB_COLOR6		22
-#define GLUF_VERTEX_ATTRIB_COLOR7		23
+#define GLUF_VERTEX_ATTRIB_POSITION		9
+#define GLUF_VERTEX_ATTRIB_NORMAL		10
+#define GLUF_VERTEX_ATTRIB_TAN			11
+#define GLUF_VERTEX_ATTRIB_BITAN		12
+//4 elements
+
+#define GLUF_VERTEX_ATTRIB_COLOR0		13
+#define GLUF_VERTEX_ATTRIB_COLOR1		14
+#define GLUF_VERTEX_ATTRIB_COLOR2		15
+#define GLUF_VERTEX_ATTRIB_COLOR3		16
+#define GLUF_VERTEX_ATTRIB_COLOR4		17
+#define GLUF_VERTEX_ATTRIB_COLOR5		18
+#define GLUF_VERTEX_ATTRIB_COLOR6		19
+#define GLUF_VERTEX_ATTRIB_COLOR7		20
 
 
 /*
@@ -1688,17 +2132,17 @@ inline glm::vec2 AssimpToGlm3_2(aiVector3D v)
 {
 	return glm::vec2(v.x, v.y);
 }
-inline glm::vec2* AssimpToGlm(aiVector2D* v, unsigned int count)
+inline glm::vec2* AssimpToGlm(aiVector2D* v, GLuint count)
 {
 	glm::vec2* ret = new glm::vec2[count];
-	for (unsigned int i = 0; i < count; ++i)
+	for (GLuint i = 0; i < count; ++i)
 		ret[i] = AssimpToGlm(v[i]);
 	return ret;
 }
-inline glm::vec2* AssimpToGlm3_2(aiVector3D* v, unsigned int count)
+inline glm::vec2* AssimpToGlm3_2(aiVector3D* v, GLuint count)
 {
 	glm::vec2* ret = new glm::vec2[count];
-	for (unsigned int i = 0; i < count; ++i)
+	for (GLuint i = 0; i < count; ++i)
 		ret[i] = AssimpToGlm3_2(v[i]);
 	return ret;
 }
@@ -1709,10 +2153,10 @@ inline glm::vec3 AssimpToGlm(aiVector3D v)
 {
 	return glm::vec3(v.x, v.y, v.z);
 }
-inline glm::vec3* AssimpToGlm(aiVector3D* v, unsigned int count)
+inline glm::vec3* AssimpToGlm(aiVector3D* v, GLuint count)
 {
 	glm::vec3* ret = new glm::vec3[count];
-	for (unsigned int i = 0; i < count; ++i)
+	for (GLuint i = 0; i < count; ++i)
 		ret[i] = AssimpToGlm(v[i]);
 	return ret;
 }

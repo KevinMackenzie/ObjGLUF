@@ -213,9 +213,10 @@ const std::wstring& GLUFGetFrameStatsString()
 	return Stats::g_FrameStats;
 }
 
+std::wstring g_DeviceStatusCache = L"WIP";
 const std::wstring& GLUFGetDeviceStats()
 {
-	return L"WIP";
+    return g_DeviceStatusCache;
 }
 
 /*
@@ -244,7 +245,7 @@ void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemo
 
     //get file length
 	inFile.seekg(0, std::ios::end);
-	unsigned long long rawSize = (unsigned long)inFile.tellg();
+	unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
 	inFile.seekg(0, std::ios::beg);
 
     //resize the vector
@@ -283,7 +284,7 @@ void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemor
 
     //get file length
     inFile.seekg(0, std::ios::end);
-    unsigned long long rawSize = (unsigned long)inFile.tellg();
+    unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
     inFile.seekg(0, std::ios::beg);
 
     //resize the vector
@@ -384,7 +385,7 @@ size_t GLUFMatrixStack::Size(void) const
 
 bool GLUFMatrixStack::Empty(void) const
 {
-	mStack.empty();
+	return mStack.empty();
 }
 
 
@@ -582,7 +583,7 @@ Note:
 
 class CompileShaderException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Failed to Compile Shader!";
     }
@@ -590,7 +591,7 @@ class CompileShaderException : public GLUFException
 
 class CreateGLShaderException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "OpenGL Failed to Create Shader Instance!";
     }
@@ -598,7 +599,7 @@ class CreateGLShaderException : public GLUFException
 
 class LinkProgramException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "Failed to Link Program!";
     }
@@ -606,7 +607,7 @@ class LinkProgramException : public GLUFException
 
 class CreateGLProgramException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "OpenGL Failed to Create Program Instance!";
     }
@@ -614,7 +615,7 @@ class CreateGLProgramException : public GLUFException
 
 class CreateGLPPOException : public GLUFException
 {
-    virtual const std::string& MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() override
     {
         return "OpenGL Failed to Create PPO Instance!";
     }
@@ -653,8 +654,8 @@ public:
             no-throw guarantee
     
     */
-	GLUFShader();
-	~GLUFShader();
+	GLUFShader() noexcept;
+	~GLUFShader() noexcept;
 
 	//common shader is if the shader will not be deleted after building into a program
 	//this is used for things like lighting functions
@@ -668,7 +669,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void Init(GLUFShaderType shaderType);
+    void Init(GLUFShaderType shaderType) noexcept;
 
 
     /*
@@ -693,7 +694,7 @@ public:
         Throws:
             may throw 'std::bad_alloc' if string allocation fails            
     */
-	void LoadFromMemory(const std::vector<char>& shaderData, bool append = false);
+	//void LoadFromMemory(const std::vector<char>& shaderData, bool append = false);
 
     /*
     LoadFromFile
@@ -706,7 +707,7 @@ public:
             'std::ios_base::failure': if file fails to open or read
     
     */
-	bool LoadFromFile(const std::wstring& filePath, bool append = false);
+	//bool LoadFromFile(const std::wstring& filePath, bool append = false);
 
     /*
     FlushText
@@ -714,7 +715,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void FlushText(void){ mTmpShaderText.clear(); }
+    void FlushText(void) noexcept { mTmpShaderText.clear(); }
 
 
     /*
@@ -732,6 +733,17 @@ public:
     */
 	void Compile(GLUFShaderInfoStruct& retStruct);
 
+
+    /*
+    Destroy
+
+        -equivilent to destructor, except object itself is not destroyed (i.e. it can be reused)
+
+        Throws:
+            no-throw guarantee
+        
+    */
+    void Destroy() noexcept;
 
 };
 
@@ -773,8 +785,8 @@ public:
             no-throw guarantee
 
     */
-	GLUFProgram();
-	~GLUFProgram();
+    GLUFProgram() noexcept;
+    ~GLUFProgram() noexcept;
 
     /*
     Init
@@ -805,7 +817,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void FlushShaders(void);
+    void FlushShaders(void) noexcept;
 
 
     /*
@@ -827,6 +839,18 @@ public:
             OpenGL Id of the program
     */
 	GLuint GetId(){ return mProgramId; }
+
+
+    /*
+    Destroy
+
+        -equivilent to destructor, except object itself is not destroyed (i.e. it can be reused)
+
+        Throws:
+            no-throw guarantee
+
+    */
+    void Destroy() noexcept;
 };
 
 /*
@@ -846,7 +870,7 @@ class GLUFSeparateProgram
 	friend GLUFShaderManager;
 	GLuint mPPOId;
 
-	GLUFProgramPtrStagesMap m_Programs;//so the programs don't go deleting themselves until the PPO is destroyed
+	GLUFProgramPtrStagesMap mPrograms;//so the programs don't go deleting themselves until the PPO is destroyed
 
 public:
 	~GLUFSeparateProgram();
@@ -870,7 +894,7 @@ public:
             'std::invalid_argument': if 'program == nullptr' or 'program' is invalid
 
     */
-	void AttachProgram(GLUFProgramPtr program, GLbitfield stages);
+	void AttachProgram(const GLUFProgramPtr& program, GLbitfield stages);
 
 };
 
@@ -898,19 +922,16 @@ void GLUFSeparateProgram::Init()
     }
 }
 
-void GLUFSeparateProgram::AttachProgram(GLUFProgramPtr program, GLbitfield stages)
+void GLUFSeparateProgram::AttachProgram(const GLUFProgramPtr& program, GLbitfield stages)
 {
-    if (program == nullptr)
-    {
-        throw std::invalid_argument("\"program\" == nullptr");
-    }
+    GLUF_NULLPTR_CHECK(program);
 
     if (program->GetId() == 0)
     {
         throw std::invalid_argument("\"program\" not initialized correctly");
     }
 
-	m_Programs.insert(GLUFProgramPtrStagesPair(stages, program)); 
+	mPrograms.insert(GLUFProgramPtrStagesPair(stages, program)); 
 	glUseProgramStages(mPPOId, stages, program->GetId());
 }
 
@@ -952,7 +973,21 @@ void GLUFShader::Load(const std::string& shaderText, bool append)
 	mTmpShaderText.append(shaderText);
 }
 
-void GLUFShader::LoadFromMemory(const std::vector<char>& shaderData, bool append)
+void GLUFShader::Destroy()
+{
+    NOEXCEPT_REGION_START
+
+    if (mShaderId != 0)
+    {
+        glDeleteShader(mShaderId);
+        mShaderId = 0;
+    }
+    mTmpShaderText.clear();
+
+    NOEXCEPT_REGION_END
+}
+
+/*void GLUFShader::LoadFromMemory(const std::vector<char>& shaderData, bool append)
 {
 	if (!append)
 		mTmpShaderText.clear();
@@ -965,17 +1000,16 @@ void GLUFShader::LoadFromMemory(const std::vector<char>& shaderData, bool append
     }
     catch (...)
     {
-        GLUF_ERROR("Failed to load binary memory into shader string");
+        GLUF_ERROR("(GLUFShader): Failed to load binary memory into shader string");
         throw;
     }
 
-#pragma warning (default : 4244)
-
+    
     mTmpShaderText += loadedText;
 
-}
+}*/
 
-bool GLUFShader::LoadFromFile(const std::wstring& filePath, bool append)
+/*bool GLUFShader::LoadFromFile(const std::wstring& filePath, bool append)
 {
     if (!append)
         mTmpShaderText.clear();
@@ -998,12 +1032,12 @@ bool GLUFShader::LoadFromFile(const std::wstring& filePath, bool append)
     }
     catch (...)
     {
-        GLUF_ERROR("Failed to load shader text from file!");
+        GLUF_ERROR("(GLUFShader): Failed to load shader text from file!");
         throw;
     }
 
     return true;
-}
+}*/
 
 #define FAILED_COMPILE 'F'
 #define FAILED_LINK    'F'
@@ -1021,6 +1055,10 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 
     //create the shader
 	mShaderId = glCreateShader(mShaderType);
+
+    //if shader creation failed, throw an exception
+    if (mShaderId == 0)
+        throw CreateGLShaderException();
 
 	//start by adding the strings to glShader Source.  This is done right before the compile
 	//process becuase it is hard to remove it if there is any reason to flush the text
@@ -1196,22 +1234,29 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 	}
 }
 
-////////////////////////////////////////
-//
-//GLUFSeparateProgram Methods:
-//
-//
+void GLUFProgram::Destroy()
+{ 
+    NOEXCEPT_REGION_START
 
-/////////////////////////////////////////////////////////////////////////
-//
-//GLUFShaderManager Methods:
-//
-//
-//
-//
-//
+    if (mProgramId != 0)
+    {
+        glDeleteProgram(mProgramId);
+        mProgramId = 0;
+    }
+    mShaderBuff.clear();
+    mAttributeLocations.clear();
+    mUniformLocations.clear();
 
-//for creating things
+    NOEXCEPT_REGION_END
+}
+
+
+/*
+===================================================================================================
+GLUFShaderManager Methods
+
+
+*/
 
 /*
 GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType type, bool file, bool separate)
@@ -1237,136 +1282,206 @@ GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType 
 }
 */
 
-GLUFShaderPtr GLUFShaderManager::CreateShaderFromFile(std::wstring filePath, GLUFShaderType type)
+void GLUFShaderManager::AddCompileLog(const GLUFShaderPtr& shader, const GLUFShaderInfoStruct& log)
 {
-	//return CreateShader(filePath, type, true);
+    //TODO: vs2013 does not support shared locking
+    GLUF_TSAFE_SCOPE(mCompLogMutex);
 
-	GLUFShaderPtr shader(new GLUFShader());
-	shader->Init(type);
-
-	//(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
-	shader->LoadFromFile(filePath.c_str());
-
-	GLUFShaderInfoStruct output;
-	shader->Compile(output);
-	mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, output));
-
-	//log it if it failed
-	if (!output)
-	{
-		std::stringstream ss;
-		ss << "Shader Compilation Failed: \n" << output.mLog;
-		GLUF_ERROR(ss.str().c_str());
-	}
-
-	return shader;
+    mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, log));
 }
 
-GLUFShaderPtr GLUFShaderManager::CreateShaderFromText(const char* str, GLUFShaderType type)
+void GLUFShaderManager::AddLinkLog(const GLUFProgramPtr& program, const GLUFShaderInfoStruct& log)
 {
-	//return CreateShader(text, type, false);
-	GLUFShaderPtr shader(new GLUFShader());
-	shader->Init(type);
+    GLUF_TSAFE_SCOPE(mLinkLogMutex);
 
-	shader->Load(str);
-
-	GLUFShaderInfoStruct output;
-	shader->Compile(output);
-	mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, output));
-
-	//log it if it failed
-	if (!output)
-	{
-		std::stringstream ss;
-		ss << "Shader Compilation Failed: \n" << output.mLog;
-		GLUF_ERROR(ss.str().c_str());
-	}
-
-	return shader;
-}
-
-GLUFShaderPtr GLUFShaderManager::CreateShaderFromMemory(char* data, long len, GLUFShaderType type)
-{
-	return CreateShaderFromText((GLUFLoadBinaryArrayIntoString(data, len) + "\n").c_str(), type);
-}
-
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPtrList shaders, bool separate)
-{
-	GLUFProgramPtr program(new GLUFProgram());
-	program->Init();
-
-	for (auto it : shaders)
-	{
-		program->AttachShader(it);
-	}
-
-	GLUFShaderInfoStruct out;
-	program->Build(out, separate);
-	mLinklogs.insert(std::pair<GLUFProgramPtr, GLUFShaderInfoStruct>(program, out));
-
-	if (!out)
-	{
-		std::stringstream ss;
-		ss << "Program Link Failed: \n" << out.mLog;
-		GLUF_ERROR(ss.str().c_str());
-	}
-
-	return program;
+    mLinklogs.insert(std::pair<GLUFProgramPtr, GLUFShaderInfoStruct>(program, log));
 }
 
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderSourceList shaderSources, bool separate)
+void GLUFShaderManager::CreateShaderFromFile(GLUFShaderPtr& outShader, const std::wstring& filePath, GLUFShaderType type)
+{
+    //create the shader
+    outShader = std::make_shared<GLUFShader>();
+
+    //file to open
+    std::ifstream inFile;
+    inFile.exceptions(std::ios::badbit | std::ios::failbit);
+
+    GLUFShaderInfoStruct output;
+    try
+    {
+        //Load the text from the file
+        std::string newString;
+
+        //open the file
+        inFile.open(filePath);
+
+        //get the file length
+        inFile.seekg(0, std::ios::end);
+        newString.resize(static_cast<unsigned int>(inFile.tellg()));
+        inFile.seekg(0, std::ios::beg);
+
+        //TODO: DOES THIS NEED TO HAVE A +1 SOMEWHERE TO ACCOUNT FOR NULL CHARACTER
+        inFile.read(&newString[0], newString.size());
+        inFile.close();
+
+        //load it from the file
+        outShader->Load(newString);
+
+        //compile it
+        outShader->Compile(output);
+        AddCompileLog(outShader, output);
+    }
+    catch (const std::ios_base::failure& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): Shader File Load Failed: " << e.what());
+        throw;//rethrow here, because if file loading failed, the it never got to compilation
+    }
+    catch (const CompileShaderException& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        //add the log if file load failed
+        AddCompileLog(outShader, output);
+
+        throw MakeShaderException();
+    }
+    catch (const CreateGLShaderException& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        throw MakeShaderException();//don't add compile log if it did not successfully compile
+    }
+
+}
+
+void GLUFShaderManager::CreateShaderFromText(GLUFShaderPtr& outShader, const std::string& text, GLUFShaderType type)
+{
+    outShader = std::make_shared<GLUFShader>();
+
+    GLUFShaderInfoStruct output;
+    try
+    {
+        //load from the text
+        outShader->Load(text);
+
+        //compile it
+        outShader->Compile(output);
+        AddCompileLog(outShader, output);
+    }
+    catch (const CompileShaderException& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        //add the log if file load failed
+        AddCompileLog(outShader, output);
+
+        throw MakeShaderException();
+    }
+    catch (const CreateGLShaderException& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        throw MakeShaderException();//don't add compile log if it did not successfully compile
+    }
+}
+
+void GLUFShaderManager::CreateShaderFromMemory(GLUFShaderPtr& outShader, const std::vector<char>& memory, GLUFShaderType type)
+{
+    //load the string from the memory
+    std::string outString;
+    GLUFLoadBinaryArrayIntoString(memory, outString);
+
+    //newline here is needed, because end of loaded file might not have one, which is required for the end of a shader for some reason
+    return CreateShaderFromText(outShader, outString + "\n", type);
+}
+
+void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrList shaders, bool separate)
+{
+    outProgram = std::make_shared<GLUFProgram>();
+
+    GLUFShaderInfoStruct out;
+    try
+    {
+        //initialize
+        outProgram->Init();
+
+        //add the shaders
+        for (auto it : shaders)
+        {
+            outProgram->AttachShader(it);
+        }
+
+        //build the program
+        outProgram->Build(out, separate);
+        AddLinkLog(outProgram, out);
+    }
+    catch (const CreateGLProgramException& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        throw MakeShaderException();
+    }
+    catch (const LinkProgramException& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        AddLinkLog(outProgram, out);//if linking failed, still add the log
+    }
+    catch (const std::invalid_argument& e)
+    {
+        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        outProgram->FlushShaders();//if any of the shaders failed to add, flush so it is in a valid state
+        throw MakeShaderException();
+    }
+}
+
+
+void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderSourceList shaderSources, bool separate)
 {
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderSources)
 	{
-		//use the counter global to get a unique name  This is temperary anyway
-		shaders.push_back(CreateShaderFromText(const_cast<char*>(it.second), it.first));
+        //create the shader from the text
+        auto nowShader = std::make_shared<GLUFShader>();
+        CreateShaderFromText(nowShader, it.second, it.first);
 
-		//make sure it didn't fail
-		if (!GetShaderLog(shaders[shaders.size()-1]))
-		{
-			GLUF_ERROR("Program Creation Failed, Reason: Shader Compilation Failed");
-			return nullptr;
-		}
+        //add the shader to the list
+		shaders.push_back(nowShader);
+
+        //the exception hierarchy handles all errors for this method
 	}
 
-	return CreateProgram(shaders);
+    CreateProgram(outProgram, shaders);
 }
 
 
-GLUFProgramPtr GLUFShaderManager::CreateProgram(GLUFShaderPathList shaderPaths, bool separate)
+void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPathList shaderPaths, bool separate)
 {
 	GLUFShaderPtrList shaders;
 	for (auto it : shaderPaths)
 	{
+        //create the shader from the text
+        auto nowShader = std::make_shared<GLUFShader>();
+        CreateShaderFromFile(nowShader, it.second, it.first);
 
-		shaders.push_back(CreateShaderFromFile(it.second, it.first));
+        //add the shader to the list
+        shaders.push_back(nowShader);
 
-		//make sure it didn't fail
-		if (!GetShaderLog(shaders[shaders.size() - 1]))
-		{
-			GLUF_ERROR("Program Creation Failed, Reason: Shader Compilation Failed");
-			return nullptr;
-		}
+        //the exception hierarchy handles all errors for this method
 	}
 
-	return CreateProgram(shaders);
+	CreateProgram(outProgram, shaders);
 }
-
-
-
 
 //for removing things
 
-void GLUFShaderManager::DeleteShader(GLUFShaderPtr shader)
+void GLUFShaderManager::DeleteShader(GLUFShaderPtr& shader)
 {
-	
+    //make sure it exists
+    if (shader)
+        shader->Destroy();
 }
 
-void GLUFShaderManager::DeleteProgram(GLUFProgramPtr program)
+void GLUFShaderManager::DeleteProgram(GLUFProgramPtr& program)
 {
-	delete program.get();
+    //make sure it exists
+    if (program)
+        program->Destroy();
 }
 
 void GLUFShaderManager::FlushLogs()
@@ -1378,48 +1493,60 @@ void GLUFShaderManager::FlushLogs()
 
 //for accessing things
 
-const GLuint GLUFShaderManager::GetShaderId(GLUFShaderPtr shader) const
+const GLuint GLUFShaderManager::GetShaderId(const GLUFShaderPtr& shader) const
 {
-	GLUF_ASSERT(shader);
+    GLUF_NULLPTR_CHECK(shader);
 
 	return shader->mShaderId;
 }
 
 
-const GLUFShaderType GLUFShaderManager::GetShaderType(GLUFShaderPtr shader) const
+const GLUFShaderType GLUFShaderManager::GetShaderType(const GLUFShaderPtr& shader) const
 {
-	GLUF_ASSERT(shader);
+    GLUF_NULLPTR_CHECK(shader);
 
 	return shader->mShaderType;
 }
 
 
-const GLuint GLUFShaderManager::GetProgramId(GLUFProgramPtr program) const
+const GLuint GLUFShaderManager::GetProgramId(const GLUFProgramPtr& program) const
 {
-	GLUF_ASSERT(program);
+    GLUF_NULLPTR_CHECK(program);
 
 	return program->mProgramId;
 }
 
-const GLUFCompileOutputStruct GLUFShaderManager::GetShaderLog(GLUFShaderPtr shaderPtr) const
+const GLUFCompileOutputStruct GLUFShaderManager::GetShaderLog(const GLUFShaderPtr& shaderPtr) const
 {
+    GLUF_NULLPTR_CHECK(shaderPtr);
+    GLUF_TSAFE_SCOPE(mCompLogMutex);
+
 	return mCompileLogs.find(shaderPtr)->second;
 }
 
 
-const GLUFLinkOutputStruct GLUFShaderManager::GetProgramLog(GLUFProgramPtr programPtr) const
+const GLUFLinkOutputStruct GLUFShaderManager::GetProgramLog(const GLUFProgramPtr& programPtr) const
 {
+    GLUF_NULLPTR_CHECK(programPtr);
+    GLUF_TSAFE_SCOPE(mLinkLogMutex);
+
 	return mLinklogs.find(programPtr)->second;
 }
 
 //for using things
 
-void GLUFShaderManager::UseProgram(GLUFProgramPtr program)
+void GLUFShaderManager::UseProgram(const GLUFProgramPtr& program) const
 {
+    GLUF_NULLPTR_CHECK(program);
+
+    //binding a null program means the program is uninitialized or broken, which is an error
+    if (program->GetId() == 0)
+        throw UseProgramException();
+
 	glUseProgram(program->mProgramId);
 }
 
-void GLUFShaderManager::UseProgramNull()
+void GLUFShaderManager::UseProgramNull() const
 {
 	glUseProgram(0);
 	glBindProgramPipeline(0);//juse in case we are using pipelines
@@ -1437,41 +1564,45 @@ void GLUFShaderManager::UseProgramNull()
 	return ret;
 }*/
 
-GLuint GLUFShaderManager::GetShaderVariableLocation(GLUFProgramPtr prog, GLUFLocationType locType, std::string varName)
+const GLuint GLUFShaderManager::GetShaderVariableLocation(const GLUFProgramPtr& program, GLUFLocationType locType, const std::string& varName) const
 {
+    GLUF_NULLPTR_CHECK(program);
+
 	std::map<std::string, GLuint>::iterator it;
 
 	if (locType == GLT_ATTRIB)
 	{
-		it = prog->mAttributeLocations.find(varName);
+        it = program->mAttributeLocations.find(varName);
 	}
 	else
 	{
-		it = prog->mUniformLocations.find(varName);
+        it = program->mUniformLocations.find(varName);
 	}
 
+    if (it == program->mAttributeLocations.end())
+        throw std::invalid_argument("\"varName\" Could not be found when searching program attributes/uniforms!");
+
 	return it->second;
-	/*if (it)
-		return it->second;
-	else
-		return 0;//make better*/
 }
 
-GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(GLUFProgramPtr prog)
+const GLUFVariableLocMap& GLUFShaderManager::GetShaderAttribLocations(const GLUFProgramPtr& program) const
 {
-	return prog->mAttributeLocations;
+    GLUF_NULLPTR_CHECK(program);
+    return program->mAttributeLocations;
 }
 
-GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(GLUFProgramPtr prog)
+const GLUFVariableLocMap& GLUFShaderManager::GetShaderUniformLocations(const GLUFProgramPtr& program) const
 {
-	return prog->mUniformLocations;
+    GLUF_NULLPTR_CHECK(program);
+    return program->mUniformLocations;
 }
 
-GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(GLUFSepProgramPtr prog)
+const GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(const GLUFSepProgramPtr& program) const
 {
+    GLUF_NULLPTR_CHECK(program);
 	GLUFVariableLocMap ret;
 
-	for (auto it : prog->m_Programs)
+    for (auto it : program->mPrograms)
 	{
 		ret.insert(it.second->mAttributeLocations.begin(), it.second->mAttributeLocations.end());
 	}
@@ -1479,11 +1610,13 @@ GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(GLUFSepProgramPtr
 	return ret;
 }
 
-GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(GLUFSepProgramPtr prog)
+const GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(const GLUFSepProgramPtr& program) const
 {
+    GLUF_NULLPTR_CHECK(program);
+
 	GLUFVariableLocMap ret;
 
-	for (auto it : prog->m_Programs)
+    for (auto it : program->mPrograms)
 	{
 		ret.insert(it.second->mUniformLocations.begin(), it.second->mUniformLocations.end());
 	}
@@ -1491,30 +1624,38 @@ GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(GLUFSepProgramPt
 	return ret;
 }
 
-void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr ppo, GLbitfield stages, GLUFProgramPtr program)
+void GLUFShaderManager::AttachProgram(const GLUFSepProgramPtr& ppo, GLbitfield stages, const GLUFProgramPtr& program)
 {
+    GLUF_NULLPTR_CHECK(ppo);
+    GLUF_NULLPTR_CHECK(program);
+
 	ppo->AttachProgram(program, stages);
 }
 
-void GLUFShaderManager::AttachPrograms(GLUFSepProgramPtr ppo, GLUFProgramPtrStagesMap programs)
+void GLUFShaderManager::AttachPrograms(const GLUFSepProgramPtr& ppo, const GLUFProgramPtrStagesMap& programs)
 {
+    GLUF_NULLPTR_CHECK(ppo);
+
 	for (auto it : programs)
-	{
+    {
+        GLUF_NULLPTR_CHECK(it.second);
+
 		ppo->AttachProgram(it.second, it.first);
 	}
 }
 
-void GLUFShaderManager::ClearPrograms(GLUFSepProgramPtr ppo, GLbitfield stages)
+void GLUFShaderManager::ClearPrograms(const GLUFSepProgramPtr& ppo, GLbitfield stages)
 {
+    GLUF_NULLPTR_CHECK(ppo);
 	glUseProgramStages(ppo->mPPOId, stages, 0);
 }
 
-void GLUFShaderManager::UseProgram(GLUFSepProgramPtr program)
+void GLUFShaderManager::UseProgram(const GLUFSepProgramPtr& ppo) const
 {
+    GLUF_NULLPTR_CHECK(ppo);
 	glUseProgram(0);
-	glBindProgramPipeline(program->mPPOId);
+	glBindProgramPipeline(ppo->mPPOId);
 }
-
 
 
 /*
@@ -1538,44 +1679,61 @@ Texture Utilities:
 #define FOURCC_DXT3 0x33545844 // Equivalent to "DXT3" in ASCII
 #define FOURCC_DXT5 0x35545844 // Equivalent to "DXT5" in ASCII
 
-GLuint LoadTextureDDS(char* rawData, unsigned int size)
+/*
+LoadTextureDDS
+
+    Parameters:
+        'rawData': raw data loaded from file to put into OpenGL
+
+    Returns:
+        OpenGL Id of texture created
+
+    Throws:
+        'std::invalid_argument': if data is too small, is not the correct file format, 
+
+*/
+GLuint LoadTextureDDS(const std::vector<char>& rawData)
 {
-    //TODO support more compatibiulity, ie RGB, BGR, don't make it dependent on ABGR
-    unsigned char header[124];
+    //TODO support more compatibility, ie RGB, BGR, don't make it dependent on ABGR
 
 
-    /* verify the type of file */
-    char filecode[4];
-    memcpy(filecode, rawData, 4);
-    if (strncmp(filecode, "DDS ", 4) != 0)
+    //verify size of header
+    if (rawData.size() < 128)
     {
-        //fclose(fp);
-        return 0;
+        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small For Header!");
     }
 
-    /* get the surface desc */
-    memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
+    //verify the type of file
+    std::string filecode(rawData.begin(), rawData.begin() + 4);
+    if (filecode != "DDS ")
+    {
+        throw std::invalid_argument("(LoadTextureDDS): Incorrect File Format!");
+    }
 
-    //this is all the data I need, but I just need to load it properly to opengl
-    unsigned int height = *(unsigned int*)&(header[8]);
-    unsigned int width = *(unsigned int*)&(header[12]);
-    unsigned int linearSize = *(unsigned int*)&(header[16]);
-    unsigned int mipMapCount = *(unsigned int*)&(header[24]);
-    unsigned int flags = *(unsigned int*)&(header[76]);
-    unsigned int fourCC = *(unsigned int*)&(header[80]);
-    unsigned int RGBBitCount = *(unsigned int*)&(header[84]);
-    unsigned int RBitMask = *(unsigned int*)&(header[88]);
-    unsigned int GBitMask = *(unsigned int*)&(header[92]);
-    unsigned int BBitMask = *(unsigned int*)&(header[96]);
-    unsigned int ABitMask = *(unsigned int*)&(header[100]);
+    //load the header
 
+    //this is all the data I need, but I just need to load it properly to opengl (NOTE: this is all offset by 4 bytes because of the filecode)
+    unsigned int height = *(unsigned int*)&(rawData[12]);
+    unsigned int width = *(unsigned int*)&(rawData[16]);
+    unsigned int linearSize = *(unsigned int*)&(rawData[20]);
+    unsigned int mipMapCount = *(unsigned int*)&(rawData[28]);
+    unsigned int flags = *(unsigned int*)&(rawData[80]);
+    unsigned int fourCC = *(unsigned int*)&(rawData[84]);
+    unsigned int RGBBitCount = *(unsigned int*)&(rawData[88]);
+    unsigned int RBitMask = *(unsigned int*)&(rawData[92]);
+    unsigned int GBitMask = *(unsigned int*)&(rawData[96]);
+    unsigned int BBitMask = *(unsigned int*)&(rawData[100]);
+    unsigned int ABitMask = *(unsigned int*)&(rawData[104]);
 
-    char * buffer;
-    unsigned int bufsize;
-    /* how big is it going to be including all mipmaps? */
-    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
-    buffer = rawData + 128;
-    //memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
+    //how big is it going to be including all mipmaps?
+    unsigned int bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
+
+    //verify size of data again once header is loaded
+    if (rawData.size() < 128 + bufsize)
+    {
+        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small!");
+    }
+
 
     unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
     unsigned int compressedFormat;
@@ -1598,6 +1756,10 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
     GLuint textureID;
     glGenTextures(1, &textureID);
 
+    //make sure OpenGL successfully created the texture before loading it
+    if (textureID == 0)
+        throw TextureCreationException();
+
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
@@ -1612,14 +1774,14 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-        unsigned int offset = 0;
+        unsigned int offset = 128;// initial offset to compensate for header and file code
 
         /* load the mipmaps */
         for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
         {
             unsigned int mipSize = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
             glCompressedTexImage2D(GL_TEXTURE_2D, level, compressedFormat, width, height,
-                0, mipSize, buffer + offset);
+                0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
 
             offset += mipSize;
             width /= 2;
@@ -1634,11 +1796,11 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
     }
     else
     {
-        unsigned int offset = 0;
+        unsigned int offset = 128;// initial offset to compensate for header and file code
 
         for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
         {
-            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
 
             unsigned int mipSize = (width * height * 4);
             offset += mipSize;
@@ -1655,43 +1817,48 @@ GLuint LoadTextureDDS(char* rawData, unsigned int size)
     return textureID;
 }
 
-GLuint LoadTextureCubemapDDS(char* rawData, unsigned int length)
-{
-    unsigned char header[124];
+GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
+{    
+    //TODO support more compatibility, ie RGB, BGR, don't make it dependent on ABGR
 
 
-    /* verify the type of file */
-    char filecode[4];
-    memcpy(filecode, rawData, 4);
-    if (strncmp(filecode, "DDS ", 4) != 0)
+    //verify size of header
+    if (rawData.size() < 128)
     {
-        //fclose(fp);
-        return 0;
+        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small For Header!");
     }
 
-    /* get the surface desc */
-    memcpy(header, rawData + 4/*don't forget to add the offset*/, 124);
+    //verify the type of file 
+    std::string filecode(rawData.begin(), rawData.begin() + 4);
+    if (filecode != "DDS ")
+    {
+        throw std::invalid_argument("(LoadTextureDDS): Incorrect File Format!");
+    }
+    
+    //load the header
 
-    //this is all the data I need, but I just need to load it properly to opengl
-    unsigned int height = *(unsigned int*)&(header[8]);
-    unsigned int width = *(unsigned int*)&(header[12]);
-    unsigned int linearSize = *(unsigned int*)&(header[16]);
-    unsigned int mipMapCount = *(unsigned int*)&(header[24]);
-    unsigned int flags = *(unsigned int*)&(header[76]);
-    unsigned int fourCC = *(unsigned int*)&(header[80]);
-    unsigned int RGBBitCount = *(unsigned int*)&(header[84]);
-    unsigned int RBitMask = *(unsigned int*)&(header[88]);
-    unsigned int GBitMask = *(unsigned int*)&(header[92]);
-    unsigned int BBitMask = *(unsigned int*)&(header[96]);
-    unsigned int ABitMask = *(unsigned int*)&(header[100]);
+    //this is all the data I need, but I just need to load it properly to opengl (NOTE: this is all offset by 4 bytes because of the filecode)
+    unsigned int height = *(unsigned int*)&(rawData[12]);
+    unsigned int width = *(unsigned int*)&(rawData[16]);
+    unsigned int linearSize = *(unsigned int*)&(rawData[20]);
+    unsigned int mipMapCount = *(unsigned int*)&(rawData[28]);
+    unsigned int flags = *(unsigned int*)&(rawData[80]);
+    unsigned int fourCC = *(unsigned int*)&(rawData[84]);
+    unsigned int RGBBitCount = *(unsigned int*)&(rawData[88]);
+    unsigned int RBitMask = *(unsigned int*)&(rawData[92]);
+    unsigned int GBitMask = *(unsigned int*)&(rawData[96]);
+    unsigned int BBitMask = *(unsigned int*)&(rawData[100]);
+    unsigned int ABitMask = *(unsigned int*)&(rawData[104]);
 
+    //how big is it going to be including all mipmaps? 
+    unsigned int bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
 
-    char * buffer;
-    unsigned int bufsize;
-    /* how big is it going to be including all mipmaps? */
-    bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
-    buffer = rawData + 128;
-    //memcpy(buffer, rawData + 128/*header size + filecode size*/, bufsize);
+    //verify size of data again once header is loaded
+    if (rawData.size() < 128 + bufsize)
+    {
+        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small!");
+    }
+    
 
     unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
     unsigned int compressedFormat;
@@ -1713,6 +1880,11 @@ GLuint LoadTextureCubemapDDS(char* rawData, unsigned int length)
     // Create one OpenGL texture
     GLuint textureID;
     glGenTextures(1, &textureID);
+
+    //make sure OpenGL successfully created the texture before loading it
+    if (textureID == 0)
+        throw TextureCreationException();
+
 
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
@@ -1735,79 +1907,103 @@ GLuint LoadTextureCubemapDDS(char* rawData, unsigned int length)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         unsigned int blockSize = (compressedFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
-        unsigned int offset = 0;
+        unsigned int offset = 128;// initial offset to compensate for header and file code
 
         unsigned int pertexSize = width;
 
         unsigned int mipSize = ((pertexSize + 3) / 4)*((pertexSize + 3) / 4)*blockSize;
         glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, buffer + offset);
+            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
         glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, buffer + offset);
+            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
         glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, buffer + offset);
+            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
         glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, buffer + offset);
+            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
         glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, buffer + offset);
+            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
         glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, buffer + offset);
+            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
 
     }
     else
     {
-        unsigned int offset = 0;
+        unsigned int offset = 128;// initial offset to compensate for header and file code
         unsigned int pertexSize = width;
         unsigned int mipSize = (pertexSize * pertexSize * 4);
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer + offset);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
     }
 
 
     return textureID;
 }
 
-GLuint LoadTextureFromFile(std::wstring filePath, GLUFTextureFileFormat format)
-{
-    unsigned long rawSize = 0;
-    char* data = GLUFLoadFileIntoMemory(filePath.c_str(), &rawSize);
 
-    GLuint texId = LoadTextureFromMemory(data, rawSize, format);
-    free(data);
+
+GLuint LoadTextureFromFile(const std::wstring& filePath, GLUFTextureFileFormat format)
+{
+    std::vector<char> memory;
+
+    try
+    {
+        GLUFLoadFileIntoMemory(filePath, memory);
+    }
+    catch (const std::ios_base::failure& e)
+    {
+        GLUF_ERROR_LONG("(LoadTextureFromFile): " << e.what());
+    }
+
+    GLuint texId;
+    try
+    {
+        texId = LoadTextureFromMemory(memory, format);
+    }
+    catch (const TextureCreationException& e)
+    {
+        GLUF_ERROR_LONG("(LoadTextureFromFile): " << e.what());
+        throw;
+    }
+
     return texId;
 }
 
 
-GLuint LoadTextureFromMemory(char* data, unsigned int length, GLUFTextureFileFormat format)
+GLuint LoadTextureFromMemory(const std::vector<char>& data, GLUFTextureFileFormat format)
 {
 
-    switch (format)
+    try
     {
-    case TFF_DDS:
-        return LoadTextureDDS(data, length);
-    case TTF_DDS_CUBEMAP:
-        return LoadTextureCubemapDDS(data, length);
+        switch (format)
+        {
+        case TFF_DDS:
+            return LoadTextureDDS(data);
+        case TTF_DDS_CUBEMAP:
+            return LoadTextureCubemapDDS(data);
+        }
     }
-
+    catch (const TextureCreationException& e)
+    {
+        GLUF_ERROR_LONG("(LoadTextureFromMemory): " << e.what());
+        throw;
+    }
     return 0;
 }
-
-
 
 
 /*
@@ -1816,164 +2012,304 @@ Buffer Utilities
 
 */
 
+const GLUFVertexAttribInfo& GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttribLoc loc) const
+{
+    auto val = mAttribInfos.find(loc);
+    if (val == mAttribInfos.end())
+        throw std::invalid_argument("\"loc\" not found in attribute list");
+
+    return val->second;
+}
+
 GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
 {
 	glGenVertexArrayBindVertexArray(&mVertexArrayId);
 
+    if (mVertexArrayId == 0)
+        throw MakeVOAException();
+
 	if (index)
 	{
 		glGenBuffers(1, &mIndexBuffer);
+        if (mIndexBuffer == 0)
+        {
+            GLUF_ERROR("Failed to create index buffer!");
+            throw MakeBufferException();
+        }
+
+
 		glGenBuffers(1, &mRangedIndexBuffer);
+        if (mRangedIndexBuffer == 0)
+        {
+            GLUF_ERROR("Failed to create ranged index buffer!");
+            throw MakeBufferException();
+        }
 	}
 }
 
 GLUFVertexArrayBase::~GLUFVertexArrayBase()
 {
 	BindVertexArray();
+
 	glDeleteBuffers(1, &mIndexBuffer);
+    glDeleteBuffers(1, &mRangedIndexBuffer);
 	glDeleteVertexArrays(1, &mVertexArrayId);
 
-	glBindVertexArray(0);
+    UnBindVertexArray();
 }
 
-void GLUFVertexArrayBase::BindVertexArray()
+GLUFVertexArrayBase::GLUFVertexArrayBase(GLUFVertexArrayBase&& other)
 {
-	glBindVertexArray(mVertexArrayId);
+    //set this class
+    mVertexArrayId      = other.mVertexArrayId;
+    mVertexCount        = other.mVertexCount;
+    mUsageType          = other.mUsageType;
+    mPrimitiveType      = other.mPrimitiveType;
+    mAttribInfos        = std::move(other.mAttribInfos);
+    mIndexBuffer        = other.mIndexBuffer;
+    mRangedIndexBuffer  = other.mRangedIndexBuffer;
+    mIndexCount         = other.mIndexCount;
+    mTempVAOId          = other.mTempVAOId;//likely will be 0 anyways
+
+
+    //reset other class
+    other.mVertexArrayId        = 0;
+    other.mVertexCount          = 0;
+    other.mUsageType            = GL_STATIC_DRAW;
+    other.mPrimitiveType        = GL_TRIANGLES;
+    //other.mAttribInfos.clear();
+    other.mIndexBuffer          = 0;
+    other.mRangedIndexBuffer    = 0;
+    other.mIndexCount           = 0;
+    other.mTempVAOId            = 0;//likely will be 0 anyways
 }
 
-void GLUFVertexArrayBase::AddVertexAttrib(GLUFVertexAttribInfo info)
+GLUFVertexArrayBase& GLUFVertexArrayBase::operator=(GLUFVertexArrayBase&& other)
 {
-	BindVertexArray();
+    //set this class
+    mVertexArrayId = other.mVertexArrayId;
+    mVertexCount = other.mVertexCount;
+    mUsageType = other.mUsageType;
+    mPrimitiveType = other.mPrimitiveType;
+    mAttribInfos = std::move(other.mAttribInfos);
+    mIndexBuffer = other.mIndexBuffer;
+    mRangedIndexBuffer = other.mRangedIndexBuffer;
+    mIndexCount = other.mIndexCount;
+    mTempVAOId = other.mTempVAOId;//likely will be 0 anyways
 
-	mAttribInfos.push_back(info);
 
-	RefreshDataBufferAttribute();
+    //reset other class
+    other.mVertexArrayId = 0;
+    other.mVertexCount = 0;
+    other.mUsageType = GL_STATIC_DRAW;
+    other.mPrimitiveType = GL_TRIANGLES;
+    //other.mAttribInfos.clear();
+    other.mIndexBuffer = 0;
+    other.mRangedIndexBuffer = 0;
+    other.mIndexCount = 0;
+    other.mTempVAOId = 0;//likely will be 0 anyways
+
+    return *this;
+}
+
+void GLUFVertexArrayBase::AddVertexAttrib(const GLUFVertexAttribInfo& info)
+{
+    //don't do null checks, because BindVertexArray already does them for us
+    BindVertexArray();
+
+    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
+
+    RefreshDataBufferAttribute();
+
+    UnBindVertexArray();
 }
 
 void GLUFVertexArrayBase::RemoveVertexAttrib(GLUFAttribLoc loc)
 {
-	for (std::vector<GLUFVertexAttribInfo>::iterator it = mAttribInfos.begin(); it != mAttribInfos.end(); ++it)
-	{
-		if (it->VertexAttribLocation == loc)
-		{
-			mAttribInfos.erase(it);
-			break;
-		}
-	}
+    auto val = mAttribInfos.find(loc);
+    if (val == mAttribInfos.end())
+        throw std::invalid_argument("\"loc\" not found in attribute list");
+
+    mAttribInfos.erase(val);
 }
 
-GLUFVertexAttribInfo GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttribLoc loc)
+void GLUFVertexArrayBase::BindVertexArray()
 {
-	GLUFVertexAttribInfo ret = { 0, 0, 0, GL_FLOAT };
-	for (auto it : mAttribInfos)
-	{
-		if (it.VertexAttribLocation == loc)
-			return it;
-	}
+    NOEXCEPT_REGION_START
 
-	return ret;
+    //store the old one before binding this one
+    GLint tmpVAOId = 0;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &tmpVAOId);
+    mTempVAOId = static_cast<GLuint>(tmpVAOId);
+
+	glBindVertexArray(mVertexArrayId);
+
+    NOEXCEPT_REGION_END
 }
 
-void GLUFVertexArrayBase::BufferIndices(GLuint* indices, unsigned int count)
-{
-	BindVertexArray();
-	mIndexCount = count;
+void GLUFVertexArrayBase::UnBindVertexArray()
+{    
+    NOEXCEPT_REGION_START
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * count, indices, mUsageType);
-}
+    glBindVertexArray(mTempVAOId);
+    mTempVAOId = 0;
 
-void GLUFVertexArrayBase::BufferIndices(std::vector<glm::u32vec2> indices)
-{
-	BufferIndices(&indices[0][0], indices.size() * 2);
-}
-
-void GLUFVertexArrayBase::BufferIndices(std::vector<glm::u32vec3> indices)
-{
-	BufferIndices(&indices[0][0], indices.size() * 3);
+    NOEXCEPT_REGION_END
 }
 
 void GLUFVertexArrayBase::Draw()
 {
-	BindVertexArray();
-	EnableVertexAttributes();
-	
-	if (mIndexBuffer != 0)
-	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-		glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
-	}
-	else
-	{
-		glDrawArrays(mPrimitiveType, 0, mVertexCount);
-	}
+    NOEXCEPT_REGION_START
 
-	DisableVertexAttributes();
+    BindVertexArray();
+    EnableVertexAttributes();
+
+    if (mIndexBuffer != 0)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+        glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
+    }
+    else
+    {
+        glDrawArrays(mPrimitiveType, 0, mVertexCount);
+    }
+
+    DisableVertexAttributes();
+
+    NOEXCEPT_REGION_END
 }
 
 void GLUFVertexArrayBase::DrawRange(GLuint start, GLuint count)
 {
-	BindVertexArray();
-	EnableVertexAttributes();
+    NOEXCEPT_REGION_START
 
-	if (mIndexBuffer != 0)
-	{
-		//copy the range over an draw
-		glBindBuffer(GL_COPY_READ_BUFFER, mIndexBuffer);
-		glBindBuffer(GL_COPY_WRITE_BUFFER, mRangedIndexBuffer);
+    BindVertexArray();
+    EnableVertexAttributes();
 
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, sizeof(GLuint) * start, 0, sizeof(GLuint) * count);
-		
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mRangedIndexBuffer);
-		glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
-	}
-	else
-	{
-		glDrawArrays(mPrimitiveType, (start < 0 || start > mVertexCount) ? 0 : start, (count > mVertexCount) ? mVertexCount : count);
-	}
+    if (mIndexBuffer != 0)
+    {
+        //copy the range over an draw
+        glBindBuffer(GL_COPY_READ_BUFFER, mIndexBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, mRangedIndexBuffer);
 
-	DisableVertexAttributes();
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, sizeof(GLuint) * start, 0, sizeof(GLuint) * count);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mRangedIndexBuffer);
+        glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
+    }
+    else
+    {
+        glDrawArrays(mPrimitiveType, (start < 0 || start > mVertexCount) ? 0 : start, (count > mVertexCount) ? mVertexCount : count);
+    }
+
+    DisableVertexAttributes();
+
+    NOEXCEPT_REGION_END
 }
 
 void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
 {
-	BindVertexArray();
-	EnableVertexAttributes();
+    NOEXCEPT_REGION_START
 
-	if (mIndexBuffer != 0)
-	{
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-		glDrawElementsInstanced(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr, instances);
-	}
-	else
-	{
-		glDrawArraysInstanced(mPrimitiveType, 0, mVertexCount, instances);
-	}
+    BindVertexArray();
+    EnableVertexAttributes();
 
-	DisableVertexAttributes();
+    if (mIndexBuffer != 0)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+        glDrawElementsInstanced(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr, instances);
+    }
+    else
+    {
+        glDrawArraysInstanced(mPrimitiveType, 0, mVertexCount, instances);
+    }
+
+    DisableVertexAttributes();
+
+    NOEXCEPT_REGION_END
 }
 
-void GLUFVertexArrayBase::EnableVertexAttributes()
+//helper function
+void GLUFVertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data)
 {
+    NOEXCEPT_REGION_START
+
+    BindVertexArray();
+    mIndexCount = indexCount;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mIndexCount, data, mUsageType);
+
+    NOEXCEPT_REGION_END
+}
+
+void GLUFVertexArrayBase::BufferIndices(const std::vector<GLuint>& indices)
+{
+    BufferIndicesBase(indices.size(), &indices[0]);
+}
+
+void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec2>& indices)
+{
+    BufferIndicesBase(indices.size() * 2, &indices[0]);
+}
+
+void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec3>& indices)
+{
+    BufferIndicesBase(indices.size() * 3, &indices[0]);
+}
+
+void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices)
+{
+    BufferIndicesBase(indices.size() * 4, &indices[0]);
+}
+
+void GLUFVertexArrayBase::EnableVertexAttributes() const
+{
+    NOEXCEPT_REGION_START
+
 	for (auto it : mAttribInfos)
 	{
-		glEnableVertexAttribArray(it.VertexAttribLocation);
-	}
+		glEnableVertexAttribArray(it.second.mVertexAttribLocation);
+    }
+
+    NOEXCEPT_REGION_END
 }
 
-void GLUFVertexArrayBase::DisableVertexAttributes()
+void GLUFVertexArrayBase::DisableVertexAttributes() const
 {
+    NOEXCEPT_REGION_START
+
 	for (auto it : mAttribInfos)
 	{
-		glDisableVertexAttribArray(it.VertexAttribLocation);
-	}
+        glDisableVertexAttribArray(it.second.mVertexAttribLocation);
+    }
+
+    NOEXCEPT_REGION_END
 }
 
 
+/*
+RoundNearestMultiple
 
+    Parameters:
+        'num': Number to round
+        'multiple': which multiple to round to
+
+    Throws:
+        'std::invalid_argument' if multiple == 0
+       
+    Note:
+        This always rounds up to the next multiple
+        Usage is to make sure memory is within certain boundaries (i.e. 4 byte boundaries)
+
+*/
 int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 {
+    if (multiple == 0)
+        throw std::invalid_argument("Multiple Cannot Be 0");
+
 	unsigned int nearestMultiple = 0;
+
+    //loop up to the 
 	for (unsigned int i = 0; i < num; i += multiple)
 	{
 		nearestMultiple = i;
@@ -1985,17 +2321,21 @@ int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 
 void GLUFVertexArrayAoS::RefreshDataBufferAttribute()
 {
+    NOEXCEPT_REGION_START
+
 	BindVertexArray();
 
 	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
 
-	unsigned int stride = GetVertexSize();
+	GLuint stride = GetVertexSize();
 
 
 	for (auto it : mAttribInfos)
 	{
-		glVertexAttribPointer(it.VertexAttribLocation, it.ElementsPerValue, it.Type, GL_FALSE, stride, nullptr);
-	}
+        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, nullptr);
+    }
+
+    NOEXCEPT_REGION_END
 }
 
 GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
@@ -2003,6 +2343,9 @@ GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool i
 	//the VAO is already bound
 
 	glGenBuffers(1, &mDataBuffer);
+
+    if (mDataBuffer == 0)
+        throw MakeBufferException();
 }
 
 GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
@@ -2012,75 +2355,80 @@ GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
 	glDeleteBuffers(1, &mDataBuffer);
 }
 
-GLUFVertexArrayAoS::GLUFVertexArrayAoS(const GLUFVertexArrayAoS& other)
+GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLUFVertexArrayAoS&& other) : GLUFVertexArrayBase(std::move(other))
 {
-	mVertexArrayId = other.mVertexArrayId;
-	mVertexCount = other.mVertexCount;
-	mUsageType = other.mUsageType;
-	mPrimitiveType = other.mPrimitiveType;
-	mAttribInfos = other.mAttribInfos;
-	mIndexBuffer = other.mIndexBuffer;
-	mIndexCount = other.mIndexCount;
-
 	mDataBuffer = other.mDataBuffer;
+
+    other.mDataBuffer = 0;
 }
 
-unsigned int GLUFVertexArrayAoS::GetVertexSize()
+GLUFVertexArrayAoS& GLUFVertexArrayAoS::operator=(GLUFVertexArrayAoS&& other)
 {
-	unsigned int stride = 0;
-	char* data = nullptr;
+    //since there is no possibility for user error, not catching dynamic cast here is A-OK
+
+    GLUFVertexArrayBase* thisParentPtr = dynamic_cast<GLUFVertexArrayBase*>(this);
+    *thisParentPtr = std::move(other);
+
+    mDataBuffer = other.mDataBuffer;
+    other.mDataBuffer = 0;
+
+    return *this;
+}
+
+GLuint GLUFVertexArrayAoS::GetVertexSize() const noexcept
+{
+	GLuint stride = 0;
+    NOEXCEPT_REGION_START
+
+    //WOW: this before was allocating memory to find the size of the memory, then didn't even delete it
 	for (auto it : mAttribInfos)
 	{
 		//round to the 4 bytes bounderies
-		data = (char*)malloc(RoundNearestMultiple(it.BytesPerElement, 4));
-		stride += it.ElementsPerValue * sizeof(data);
+		stride += it.second.mElementsPerValue * RoundNearestMultiple(it.second.mBytesPerElement, 4);
 	}
+
+    NOEXCEPT_REGION_END
 
 	return stride;
 }
 
-void GLUFVertexArrayAoS::BufferData(void* data, unsigned int NumVertices)
+
+/*
+
+
+
+
+
+Ended Here!
+
+
+
+
+
+*/
+
+
+void GLUFVertexArraySoA::RefreshDataBufferAttribute()
 {
-	BindVertexArray();
-	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
-
-	glBufferData(GL_ARRAY_BUFFER, NumVertices * GetVertexSize(), data, mUsageType);
-
-	mVertexCount = NumVertices;
+    BindVertexArray();
+    for (auto it : mAttribInfos)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[it.second.mVertexAttribLocation]);
+        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, 0, nullptr);
+    }
 }
 
-void GLUFVertexArrayAoS::BufferSubData(unsigned int ValueOffsetCount, unsigned int NumValues, void* data)
+GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLoc(GLUFAttribLoc loc) const
 {
-	BindVertexArray();
-	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+    auto ret = mDataBuffers.find(loc);
+    if (ret == mDataBuffers.end())
+        throw InvalidAttrubuteLocationException();
 
-	unsigned int size = GetVertexSize();
-	glBufferSubData(GL_ARRAY_BUFFER, ValueOffsetCount * size, NumValues * size, data);
-}
-
-
-
-
-GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLocation(GLUFAttribLoc loc)
-{
-	return mDataBuffers.find(loc)->second;
+    return ret->second;
 }
 
 GLUFVertexArraySoA::GLUFVertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
 {
-}
-
-GLUFVertexArraySoA::GLUFVertexArraySoA(const GLUFVertexArraySoA& other)
-{
-	mVertexArrayId = other.mVertexArrayId;
-	mVertexCount = other.mVertexCount;
-	mUsageType = other.mUsageType;
-	mPrimitiveType = other.mPrimitiveType;
-	mAttribInfos = other.mAttribInfos;
-	mIndexBuffer = other.mIndexBuffer;
-	mIndexCount = other.mIndexCount;
-
-	mDataBuffers = other.mDataBuffers;
 }
 
 GLUFVertexArraySoA::~GLUFVertexArraySoA()
@@ -2090,105 +2438,95 @@ GLUFVertexArraySoA::~GLUFVertexArraySoA()
 		glDeleteBuffers(1, &it.second);
 }
 
-GLUFMeshBarebones GLUFVertexArraySoA::GetBarebonesMesh()
+GLUFVertexArraySoA::GLUFVertexArraySoA(GLUFVertexArraySoA&& other) : GLUFVertexArrayBase(std::move(other))
+{
+    mDataBuffers = std::move(other.mDataBuffers);
+}
+
+GLUFVertexArraySoA& GLUFVertexArraySoA::operator=(GLUFVertexArraySoA&& other)
+{
+    //since there is no possibility for user error, not catching dynamic cast here is A-OK
+
+    GLUFVertexArrayBase* thisParentPtr = dynamic_cast<GLUFVertexArrayBase*>(this);
+    *thisParentPtr = std::move(other);
+
+    mDataBuffers = std::move(other.mDataBuffers);
+
+    return *this;
+}
+
+void GLUFVertexArraySoA::GetBarebonesMesh(GLUFMeshBarebones& inData)
 {
 	BindVertexArray();
 
 	std::map<GLUFAttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
 	if (mIndexBuffer == 0 || it == mDataBuffers.end())
 	{
-		return GLUFMeshBarebones();
+        throw InvalidAttrubuteLocationException();
 	}
-
-	GLUFMeshBarebones ret;
 	
 	glBindBuffer(GL_ARRAY_BUFFER, it->second);
 	glm::vec3* pVerts = (glm::vec3*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 
-	ret.mVertices = GLUFArrToVec(pVerts, mVertexCount);
+    inData.mVertices = GLUFArrToVec(pVerts, mVertexCount);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 	GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
-	ret.mIndices = GLUFArrToVec(pIndices, mIndexCount);
-
-	return ret;
+    inData.mIndices = GLUFArrToVec(pIndices, mIndexCount);
 }
 
-void GLUFVertexArraySoA::BufferData(GLUFAttribLoc loc, GLuint VertexCount, void* data)
+void GLUFVertexArraySoA::AddVertexAttrib(const GLUFVertexAttribInfo& info)
 {
-	BindVertexArray();
-	glBindBuffer(GL_ARRAY_BUFFER, GetBufferIdFromAttribLocation(loc));
-	mVertexCount = VertexCount;
+    NOEXCEPT_REGION_START
 
-	GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
-	glBufferData(GL_ARRAY_BUFFER, VertexCount * info.BytesPerElement * info.ElementsPerValue, data, mUsageType);
-}
-
-void GLUFVertexArraySoA::BufferSubData(GLUFAttribLoc loc, GLuint VertexOffsetCount, GLuint VertexCount, void* data)
-{
-	BindVertexArray();
-	glBindBuffer(GL_ARRAY_BUFFER, GetBufferIdFromAttribLocation(loc));
-	
-	GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
-	glBufferSubData(GL_ARRAY_BUFFER, VertexOffsetCount * info.BytesPerElement * info.ElementsPerValue, VertexCount * info.BytesPerElement * info.ElementsPerValue, data);
-}
-
-void GLUFVertexArraySoA::AddVertexAttrib(GLUFVertexAttribInfo info)
-{
 	BindVertexArray();
 
-	mAttribInfos.push_back(info);
+    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
 
 	GLuint newBuff = 0;
 	glGenBuffers(1, &newBuff);
-	mDataBuffers.insert(std::pair<GLUFAttribLoc, GLuint>(info.VertexAttribLocation, newBuff));
+	mDataBuffers.insert(std::pair<GLUFAttribLoc, GLuint>(info.mVertexAttribLocation, newBuff));
 	
 	RefreshDataBufferAttribute();
+
+    UnBindVertexArray();
+
+    NOEXCEPT_REGION_END
 }
 
 void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
 {
+    NOEXCEPT_REGION_START
+
 	BindVertexArray();
 
-	std::map<GLUFAttribLoc, GLuint>::iterator it = mDataBuffers.find(loc);
+	auto it = mDataBuffers.find(loc);
 
 	glDeleteBuffers(1, &(it->second));
 	mDataBuffers.erase(it);
 
-	/*for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
-	{
-		if (mAttribInfos[i].VertexAttribLocation == loc)
-		{
-			glDeleteBuffers(1, &mDataBuffers[i]);
-			mDataBuffers.erase(mDataBuffers.begin() + i);
-		}
-	}
-	*/
+    GLUFVertexArrayBase::RemoveVertexAttrib(loc);
 
-	GLUFVertexArrayBase::RemoveVertexAttrib(loc);
+    UnBindVertexArray();
+
+    NOEXCEPT_REGION_END
 }
 
-void GLUFVertexArraySoA::RefreshDataBufferAttribute()
-{
-	BindVertexArray();
-	for (unsigned int i = 0; i < mAttribInfos.size(); ++i)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[mAttribInfos[i].VertexAttribLocation]);
-		glVertexAttribPointer(mAttribInfos[i].VertexAttribLocation, mAttribInfos[i].ElementsPerValue, mAttribInfos[i].Type, GL_FALSE, 0, nullptr);
-	}
-}
+/*
+=======================================================================================================================================================================================================
+Assimp Utility Functions
 
-GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int meshNum)
+*/
+
+std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum)
 {
-	if (meshNum > scene->mNumMeshes)
-		return nullptr;
+    if (meshNum > scene->mNumMeshes)
+        throw std::invalid_argument("\"meshNum\" is higher than number of meshes in \"scene\"");
 
 	//const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	GLUFVertexArray* arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
-	if (!arr)
-		return nullptr;
+	std::shared_ptr<GLUFVertexArray> arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
 
 	/*if (mesh->HasPositions())
 		vertexData->AddVertexAttrib(g_attribPOS);
@@ -2235,218 +2573,466 @@ GLUFVertexArray *LoadVertexArrayFromScene(const aiScene* scene, unsigned int mes
 
 
 	if (mesh->HasPositions())
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
-	if (mesh->HasNormals())
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
-	if (mesh->HasTextureCoords(0))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV0, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(1))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV1, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(2))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV2, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(3))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV3, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(4))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV4, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(5))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV5, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(6))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV6, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(7))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV7, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
+    if (mesh->HasNormals())
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
+    if (mesh->HasTextureCoords(0))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV0, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(1))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV1, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(2))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV2, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(3))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV3, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(4))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV4, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(5))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV5, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(6))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV6, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
+    if (mesh->HasTextureCoords(7))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_UV7, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
 
-	if (mesh->HasVertexColors(0))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR0, mesh->mNumVertices, mesh->mColors[0]);
-	if (mesh->HasVertexColors(1))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR1, mesh->mNumVertices, mesh->mColors[1]);
-	if (mesh->HasVertexColors(2))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR2, mesh->mNumVertices, mesh->mColors[2]);
-	if (mesh->HasVertexColors(3))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR3, mesh->mNumVertices, mesh->mColors[3]);
-	if (mesh->HasVertexColors(4))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR4, mesh->mNumVertices, mesh->mColors[4]);
-	if (mesh->HasVertexColors(5))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR5, mesh->mNumVertices, mesh->mColors[5]);
-	if (mesh->HasVertexColors(6))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR6, mesh->mNumVertices, mesh->mColors[6]);
-	if (mesh->HasVertexColors(7))
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR7, mesh->mNumVertices, mesh->mColors[7]);
-	if (mesh->HasTangentsAndBitangents())
-	{
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
-		vertexData->BufferData(GLUF_VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
-	}
+    if (mesh->HasVertexColors(0))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR0, mesh->mNumVertices, mesh->mColors[0]);
+    if (mesh->HasVertexColors(1))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR1, mesh->mNumVertices, mesh->mColors[1]);
+    if (mesh->HasVertexColors(2))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR2, mesh->mNumVertices, mesh->mColors[2]);
+    if (mesh->HasVertexColors(3))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR3, mesh->mNumVertices, mesh->mColors[3]);
+    if (mesh->HasVertexColors(4))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR4, mesh->mNumVertices, mesh->mColors[4]);
+    if (mesh->HasVertexColors(5))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR5, mesh->mNumVertices, mesh->mColors[5]);
+    if (mesh->HasVertexColors(6))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR6, mesh->mNumVertices, mesh->mColors[6]);
+    if (mesh->HasVertexColors(7))
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_COLOR7, mesh->mNumVertices, mesh->mColors[7]);
+    if (mesh->HasTangentsAndBitangents())
+    {
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
+    vertexData->BufferData(GLUF_VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+    }
 
-	std::vector<GLuint> indices;
-	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
-	{
-		aiFace curr = mesh->mFaces[i];
-		indices.push_back(curr.mIndices[0]);
-		indices.push_back(curr.mIndices[1]);
-		indices.push_back(curr.mIndices[2]);
-	}
-	vertexData->BufferIndices(&indices[0], indices.size());*/
+    std::vector<GLuint> indices;
+    for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+    {
+    aiFace curr = mesh->mFaces[i];
+    indices.push_back(curr.mIndices[0]);
+    indices.push_back(curr.mIndices[1]);
+    indices.push_back(curr.mIndices[2]);
+    }
+    vertexData->BufferIndices(&indices[0], indices.size());*/
 
-	return arr;
+return arr;
 }
 
-GLUFVertexArray* LoadVertexArrayFromScene(const aiScene* scene, GLUFVertexAttribMap inputs, unsigned int meshNum)
+/*
+
+GLUFAssimpVertexStruct
+
+
+*/
+
+struct GLUFAssimpVertexStruct : public GLUFVertexStruct
 {
-	if (meshNum > scene->mNumMeshes)
-		return false;
+    std::vector<aiVector2D> v2;
+    std::vector<aiVector3D> v3;
+    std::vector<aiColor4D> v4;
+
+    GLUFAssimpVertexStruct(size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
+    {
+        v2.resize(vec2Cnt);
+        v3.resize(vec3Cnt);
+        v4.resize(vec4Cnt);
+    }
+
+    GLUFAssimpVertexStruct(){};
+
+    virtual void* operator&() const override
+    {
+        char* ret = new char[size()];
+
+        size_t v2Size = 2 * v2.size();
+        size_t v3Size = 3 * v3.size();
+        size_t v4Size = 4 * v4.size();
+
+        memcpy(ret, v2.data(), v2Size);
+        memcpy(ret + v2Size, v3.data(), v3Size);
+        memcpy(ret + v3Size, v4.data(), v4Size);
+
+        return ret;
+    }
+
+    virtual size_t size() const override
+    {
+        return 4 * (2 * v2.size() + 3 * v3.size() + 4 * v4.size());
+    }
+
+    virtual size_t n_elem_size(size_t element)
+    {
+        size_t i = 0;
+        if (element < v2.size())
+            return sizeof(aiVector2D);
+
+        i += v2.size();
+
+        if (element < i + v3.size())
+            return sizeof(aiVector3D);
+
+        i += v3.size();
+
+        if (element < i + v4.size())
+            return sizeof(aiColor4D);
+
+        return 0;//if it is too big, just return 0; not worth an exception
+    }
+
+    virtual void buffer_element(void* data, size_t element) override
+    {
+        size_t i = 0;
+        if (element < v2.size())
+            v2[i] = static_cast<aiVector2D*>(data)[0];
+
+        i += v2.size();
+
+        if (element < i + v3.size())
+            v3[i] = static_cast<aiVector3D*>(data)[0];
+
+        i += v3.size();
+
+        if (element < i + v4.size())
+            v4[i] = static_cast<aiColor4D*>(data)[0];
+    }
+
+    static GLUFGLVector<GLUFAssimpVertexStruct> MakeMany(size_t howMany, size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
+    {
+        GLUFGLVector<GLUFAssimpVertexStruct> ret;
+        ret.reserve(howMany);
+
+        for (size_t i = 0; i < howMany; ++i)
+        {
+            ret.push_back(GLUFAssimpVertexStruct(vec2Cnt, vec3Cnt, vec4Cnt));
+        }
+
+        return ret;
+    }
+};
+
+/*
+
+
+
+
+
+
+
+Ended Work on Below Function and above struct
+
+
+
+
+
+
+
+
+
+
+
+*/
+std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, const GLUFVertexAttribMap& inputs, GLuint meshNum)
+{
+    if (meshNum > scene->mNumMeshes)
+        std::invalid_argument("\"meshNum\" is higher than the number of meshes in \"scene\"");
 
 	const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	GLUFVertexArray* vertexData = new GLUFVertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+	auto vertexData = std::make_shared<GLUFVertexArray>(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
-	GLUFVertexAttribMap::iterator it, itPos, itNorm, itUV0, itUV1, itUV2, itUV3, itUV4, itUV5, itUV6, itUV7, itCol0, itCol1, itCol2, itCol3, itCol4, itCol5, itCol6, itCol7, itTan, itBitan;
+    //which vertex attributes go where in assimp loading vertex struct
+    std::map<GLUFAttribLoc, int> vertexAttribLoc;
 
-	it = itPos = inputs.find(GLUF_VERTEX_ATTRIB_POSITION);
-	if (mesh->HasPositions() && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    //the number of each vec type
+    unsigned char numVec2 = 0;
+    unsigned char numVec3 = 0;
+    unsigned char numVec4 = 0;
 
-	it = itNorm = inputs.find(GLUF_VERTEX_ATTRIB_NORMAL);
-	if (mesh->HasNormals() && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+	auto itPos = inputs.find(GLUF_VERTEX_ATTRIB_POSITION);
+    auto it = itPos;
+    if (mesh->HasPositions() && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION] = numVec3;
+        ++numVec3;
+    }
 
-	it = itUV0 = inputs.find(GLUF_VERTEX_ATTRIB_UV0);
-	if (mesh->HasTextureCoords(0) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itNorm = inputs.find(GLUF_VERTEX_ATTRIB_NORMAL);
+    it = itNorm;
+    if (mesh->HasNormals() && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_NORMAL] = numVec3;
+        ++numVec3;
+    }
 
-	it = itUV1 = inputs.find(GLUF_VERTEX_ATTRIB_UV1);
-	if (mesh->HasTextureCoords(1) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV0 = inputs.find(GLUF_VERTEX_ATTRIB_UV0);
+    it = itUV0;
+    if (mesh->HasTextureCoords(0) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV0] = numVec2;
+        ++numVec2;
+    }
 
-	it = itUV2 = inputs.find(GLUF_VERTEX_ATTRIB_UV2);
-	if (mesh->HasTextureCoords(2) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV1 = inputs.find(GLUF_VERTEX_ATTRIB_UV1);
+    it = itUV1;
+    if (mesh->HasTextureCoords(1) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV1] = numVec2;
+        ++numVec2;
+    }
 
-	it = itUV3 = inputs.find(GLUF_VERTEX_ATTRIB_UV3);
-	if (mesh->HasTextureCoords(3) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV2 = inputs.find(GLUF_VERTEX_ATTRIB_UV2);
+    it = itUV2;
+    if (mesh->HasTextureCoords(2) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV2] = numVec2;
+        ++numVec2;
+    }
 
-	it = itUV4 = inputs.find(GLUF_VERTEX_ATTRIB_UV4);
-	if (mesh->HasTextureCoords(4) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV3 = inputs.find(GLUF_VERTEX_ATTRIB_UV3);
+    it = itUV3;
+    if (mesh->HasTextureCoords(3) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV3] = numVec2;
+        ++numVec2;
+    }
 
-	it = itUV5 = inputs.find(GLUF_VERTEX_ATTRIB_UV5);
-	if (mesh->HasTextureCoords(5) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV4 = inputs.find(GLUF_VERTEX_ATTRIB_UV4);
+    it = itUV4;
+    if (mesh->HasTextureCoords(4) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV4] = numVec2;
+        ++numVec2;
+    }
 
-	it = itUV6 = inputs.find(GLUF_VERTEX_ATTRIB_UV6);
-	if (mesh->HasTextureCoords(6) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV5 = inputs.find(GLUF_VERTEX_ATTRIB_UV5);
+    it = itUV5;
+    if (mesh->HasTextureCoords(5) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV5] = numVec2;
+        ++numVec2;
+    }
 
-	it = itUV7 = inputs.find(GLUF_VERTEX_ATTRIB_UV7);
-	if (mesh->HasTextureCoords(7) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itUV6 = inputs.find(GLUF_VERTEX_ATTRIB_UV6);
+    it = itUV6;
+    if (mesh->HasTextureCoords(6) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV6] = numVec2;
+        ++numVec2;
+    }
+
+    auto itUV7 = inputs.find(GLUF_VERTEX_ATTRIB_UV7);
+    it = itUV7;
+    if (mesh->HasTextureCoords(7) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV7] = numVec2;
+        ++numVec2;
+    }
 
 
 
-	it = itCol0 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR0);
-	if (mesh->HasVertexColors(0) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol0 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR0);
+    it = itCol0;
+    if (mesh->HasVertexColors(0) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR0] = numVec4;
+        ++numVec4;
+    }
 
-	it = itCol1 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR1);
-	if (mesh->HasVertexColors(1) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol1 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR1);
+    it = itCol1;
+    if (mesh->HasVertexColors(1) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR1] = numVec4;
+        ++numVec4;
+    }
 
-	it = itCol2 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR2);
-	if (mesh->HasVertexColors(2) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol2 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR2);
+    it = itCol2;
+    if (mesh->HasVertexColors(2) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR2] = numVec4;
+        ++numVec4;
+    }
 
-	it = itCol3 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR3);
-	if (mesh->HasVertexColors(3) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol3 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR3);
+    it = itCol3;
+    if (mesh->HasVertexColors(3) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR3] = numVec4;
+        ++numVec4;
+    }
 
-	it = itCol4 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR4);
-	if (mesh->HasVertexColors(4) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol4 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR4);
+    it = itCol4;
+    if (mesh->HasVertexColors(4) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4] = numVec4;
+        ++numVec4;
+    }
 	
-	it = itCol5 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR5);
-	if (mesh->HasVertexColors(5) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol5 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR5);
+    it = itCol5;
+    if (mesh->HasVertexColors(5) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR5] = numVec4;
+        ++numVec4;
+    }
 
-	it = itCol6 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR6);
-	if (mesh->HasVertexColors(6) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol6 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR6);
+    it = itCol6;
+    if (mesh->HasVertexColors(6) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR6] = numVec4;
+        ++numVec4;
+    }
 
-	it = itCol7 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR7);
-	if (mesh->HasVertexColors(7) && it != inputs.end())
-		vertexData->AddVertexAttrib(it->second);
+    auto itCol7 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR7);
+    it = itCol7;
+    if (mesh->HasVertexColors(7) && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7] = numVec4;
+        ++numVec4;
+    }
 
 
-	it = itTan = inputs.find(GLUF_VERTEX_ATTRIB_TAN);
-	it = itBitan = inputs.find(GLUF_VERTEX_ATTRIB_BITAN);
-	if (it != inputs.end())
+    auto itTan = inputs.find(GLUF_VERTEX_ATTRIB_TAN);
+    auto itBitan = inputs.find(GLUF_VERTEX_ATTRIB_BITAN);
+	if (mesh->HasTangentsAndBitangents() && itTan != inputs.end() && itBitan != inputs.end())
 	{
-		if (mesh->HasTangentsAndBitangents() && itTan != inputs.end())
-		{
-			vertexData->AddVertexAttrib(itTan->second);
-			vertexData->AddVertexAttrib(itBitan->second);
-		}
+		vertexData->AddVertexAttrib(itTan->second);
+        vertexData->AddVertexAttrib(itBitan->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN] = numVec3;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_BITAN] = numVec3 + 1;
+        numVec3 += 2;
 	}
 
 
-	if (mesh->HasPositions() && itPos != inputs.end())
-		vertexData->BufferData(itPos->second.VertexAttribLocation, mesh->mNumVertices, mesh->mVertices);
-	if (mesh->HasNormals() && itNorm != inputs.end())
-		vertexData->BufferData(itNorm->second.VertexAttribLocation, mesh->mNumVertices, mesh->mNormals);
-	if (mesh->HasTextureCoords(0) && itUV0 != inputs.end())
-		vertexData->BufferData(itUV0->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(1) && itUV1 != inputs.end())
-		vertexData->BufferData(itUV1->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[1], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(2) && itUV2 != inputs.end())
-		vertexData->BufferData(itUV2->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[2], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(3) && itUV3 != inputs.end())
-		vertexData->BufferData(itUV3->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[3], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(4) && itUV4 != inputs.end())
-		vertexData->BufferData(itUV4->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[4], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(5) && itUV5 != inputs.end())
-		vertexData->BufferData(itUV5->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[5], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(6) && itUV6 != inputs.end())
-		vertexData->BufferData(itUV6->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[6], mesh->mNumVertices));
-	if (mesh->HasTextureCoords(7) && itUV7 != inputs.end())
-		vertexData->BufferData(itUV7->second.VertexAttribLocation, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[7], mesh->mNumVertices));
+    //the custom vertex array
+    GLUFGLVector<GLUFAssimpVertexStruct> vertexBuffer = GLUFAssimpVertexStruct::MakeMany(mesh->mNumVertices, numVec2, numVec3, numVec4);
 
-	if (mesh->HasVertexColors(0) && itCol0 != inputs.end())
-		vertexData->BufferData(itCol0->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[0]);
-	if (mesh->HasVertexColors(1) && itCol1 != inputs.end())
-		vertexData->BufferData(itCol1->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[1]);
-	if (mesh->HasVertexColors(2) && itCol2 != inputs.end())
-		vertexData->BufferData(itCol2->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[2]);
-	if (mesh->HasVertexColors(3) && itCol3 != inputs.end())
-		vertexData->BufferData(itCol3->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[3]);
-	if (mesh->HasVertexColors(4) && itCol4 != inputs.end())
-		vertexData->BufferData(itCol4->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[4]);
-	if (mesh->HasVertexColors(5) && itCol5 != inputs.end())
-		vertexData->BufferData(itCol5->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[5]);
-	if (mesh->HasVertexColors(6) && itCol6 != inputs.end())
-		vertexData->BufferData(itCol6->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[6]);
-	if (mesh->HasVertexColors(7) && itCol7 != inputs.end())
-		vertexData->BufferData(itCol7->second.VertexAttribLocation, mesh->mNumVertices, mesh->mColors[7]);
+    if (mesh->HasPositions() && itPos != inputs.end())
+    {
+        //positions will ALWAYS be first
+        vertexBuffer.buffer_element(mesh->mVertices, vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION]);
+    }
+    if (mesh->HasNormals() && itNorm != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mNormals, vertexAttribLoc[GLUF_VERTEX_ATTRIB_NORMAL]);
+    }
+    if (mesh->HasTextureCoords(0) && itUV0 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[0], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV0]);
+    }
+    if (mesh->HasTextureCoords(1) && itUV1 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[1], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV1]);
+    }
+    if (mesh->HasTextureCoords(2) && itUV2 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[2], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV2]);
+    }
+    if (mesh->HasTextureCoords(3) && itUV3 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[3], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV3]);
+    }
+    if (mesh->HasTextureCoords(4) && itUV4 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[4], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV4]);
+    }
+    if (mesh->HasTextureCoords(5) && itUV5 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[5], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV5]);
+    }
+    if (mesh->HasTextureCoords(6) && itUV6 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[6], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV6]);
+    }
+    if (mesh->HasTextureCoords(7) && itUV7 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mTextureCoords[7], vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV7]);
+    }
+
+    if (mesh->HasVertexColors(0) && itCol0 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[0], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR0]);
+    }
+    if (mesh->HasVertexColors(1) && itCol1 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[1], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR1]);
+    }
+    if (mesh->HasVertexColors(2) && itCol2 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[2], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR2]);
+    }
+    if (mesh->HasVertexColors(3) && itCol3 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[3], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR3]);
+    }
+    if (mesh->HasVertexColors(4) && itCol4 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[4], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4]);
+    }
+    if (mesh->HasVertexColors(5) && itCol5 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[5], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR5]);
+    }
+    if (mesh->HasVertexColors(6) && itCol6 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[6], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR6]);
+    }
+    if (mesh->HasVertexColors(7) && itCol7 != inputs.end())
+    {
+        vertexBuffer.buffer_element(mesh->mColors[7], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7]);
+    }
 	if (mesh->HasTangentsAndBitangents() && itBitan != inputs.end() && itTan != inputs.end())
-	{
-		vertexData->BufferData(itBitan->second.VertexAttribLocation, mesh->mNumVertices, mesh->mBitangents);
-		vertexData->BufferData(itTan->second.VertexAttribLocation, mesh->mNumVertices, mesh->mTangents);
+    {
+        vertexBuffer.buffer_element(mesh->mTangents, vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN]);
+        vertexBuffer.buffer_element(mesh->mBitangents, vertexAttribLoc[GLUF_VERTEX_ATTRIB_BITAN]);
 	}
 
-	std::vector<GLuint> indices;
+	std::vector<glm::u32vec3> indices;
 	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
 	{
 		aiFace curr = mesh->mFaces[i];
-		indices.push_back(curr.mIndices[0]);
-		indices.push_back(curr.mIndices[1]);
-		indices.push_back(curr.mIndices[2]);
+        indices.push_back({ curr.mIndices[0], curr.mIndices[1], curr.mIndices[2] });
 	}
-	vertexData->BufferIndices(&indices[0], (unsigned int)indices.size());
+	vertexData->BufferIndices(indices);
 
 	return vertexData;
 }
 
-std::vector<GLUFVertexArray*> LoadVertexArraysFromScene(const aiScene* scene, unsigned int numMeshes)
+
+std::vector<std::shared_ptr<GLUFVertexArray>> LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset, GLuint numMeshes)
 {
-	std::vector<GLUFVertexArray*> arrays;
+	std::vector<std::shared_ptr<GLUFVertexArray>> arrays;
 
 	if (numMeshes > scene->mNumMeshes)
 	{

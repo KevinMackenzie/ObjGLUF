@@ -5,7 +5,8 @@
 #define USING_ASSIMP
 #define SUPPRESS_RADIAN_ERROR
 #define SUPPRESS_UTF8_ERROR
-#include "../ObjGLUF/GLUFGui.h"
+//#include "../ObjGLUF/GLUFGui.h"
+#include "../ObjGLUF/ObjGLUF.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
@@ -14,23 +15,23 @@ using namespace GLUF;
 
 GLFWwindow* window;
 
-GLUFDialogResourceManager *resMan;
-GLUFDialog *dlg;
+//GLUFDialogResourceManager *resMan;
+//GLUFDialog *dlg;
 
-extern GLUFFontPtr g_ArielDefault;
+//extern GLUFFontPtr g_ArielDefault;
 
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 }
-void ErrorMethod(const char* message, const char* func, const char* file, unsigned int line)
+void ErrorMethod(const std::string& message, const char* func, const char* file, unsigned int line)
 {
 	printf("(%s | %i): %s \n", func, line, message);
 	//hang
 	system("PAUSE");
 }
 
-bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
+/*bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 {
 	if (msg == GM_KEY)
 	{
@@ -52,8 +53,65 @@ void CtrlMsgProc(GLUF_EVENT evt, int controlId, GLUFControl* pControl, void* pCo
 	{
 		printf("HORRAY\n");
 	}
-}
+}*/
 
+
+struct JustPositions : GLUFVertexStruct
+{
+    glm::vec3 pos;
+
+    JustPositions(){};
+
+    virtual void* operator&() const override
+    {
+        return (void*)&pos;
+    }
+
+    virtual size_t size() const override
+    {
+        return 12;
+    }
+
+    virtual size_t n_elem_size(size_t element)
+    {
+        return 12;
+    }
+
+    virtual void buffer_element(void* data, size_t element) override
+    {
+        pos = *static_cast<glm::vec3*>(data);
+    }
+
+    static GLUFGLVector<JustPositions> MakeMany(size_t howMany)
+    {
+        GLUFGLVector<JustPositions> ret;
+        ret.reserve(howMany);
+
+        for (size_t i = 0; i < howMany; ++i)
+        {
+            ret.push_back(JustPositions());
+        }
+
+        return ret;
+    }
+
+    JustPositions& operator=(const glm::vec3& other)
+    {
+        pos = other;
+        return *this;
+    }
+
+    JustPositions& operator=(const JustPositions& other)
+    {
+        pos = other.pos;
+        return *this;
+    }
+    JustPositions& operator=(JustPositions&& other)
+    {
+        pos = other.pos;
+        return *this;
+    }
+};
 
 int main(void)
 {
@@ -77,28 +135,28 @@ int main(void)
 	GLUFInitOpenGLExtentions();
 
 
-	GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
-	GLUFInitGui(window, MsgProc, ctrlTex);
+	//GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
+	//GLUFInitGui(window, MsgProc, ctrlTex);
 
-	resMan = new GLUFDialogResourceManager();
-	dlg = new GLUFDialog();
-	dlg->Init(resMan);
-	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
+	//resMan = new GLUFDialogResourceManager();
+	//dlg = new GLUFDialog();
+	//dlg->Init(resMan);
+	//dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
 	//dlg->SetCaptionText(L"Caption");
 	//dlg->SetCaptionHeight(50);
 	//dlg->Lock(false);
-	dlg->EnableAutoClamp();
+	//dlg->EnableAutoClamp();
 	//dlg->EnableGrabAnywhere();
 	//dlg->SetMinimized(true);
-	dlg->EnableCaption(false);
-	dlg->SetSize(600, 600);
-	dlg->SetLocation(50, 50);
-	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
-	dlg->EnableKeyboardInput(true);
+	//dlg->EnableCaption(false);
+	//dlg->SetSize(600, 600);
+	//dlg->SetLocation(50, 50);
+	//dlg->SetBackgroundColor(Color(0, 128, 0, 128));
+	//dlg->EnableKeyboardInput(true);
 	//GLUFRect rc = { 0, 200, 200, 0 };
 
 
-	std::wifstream t("text.txt");
+	/*std::wifstream t("text.txt");
 	std::wstring str;
 
 	t.seekg(0, std::ios::end);
@@ -162,7 +220,7 @@ int main(void)
 	box->AddItem(L"Item 28", nullptr);
 	box->AddItem(L"Item 29", nullptr);*/
 
-
+    
 	//load shaders
 	//GLUFProgramPtr frag, vert;
 	GLUFProgramPtr Prog;
@@ -174,15 +232,21 @@ int main(void)
 	GLUFShaderSourceList sources;
 	unsigned long len = 0;
 
-	std::string text = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", &len), len);
+    std::string text;
+    std::vector<char> rawMem;
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text);
+
 	text += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
-	std::string text1 = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", &len), len);
+    std::string text1;
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text1);
 	text1 += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-	Prog = GLUFSHADERMANAGER.CreateProgram(sources);
+	GLUFSHADERMANAGER.CreateProgram(Prog, sources);
 
 	GLUFVariableLocMap attribs, uniforms;
 	attribs = GLUFSHADERMANAGER.GetShaderAttribLocations(Prog);
@@ -218,11 +282,11 @@ int main(void)
 
 	//load up the locations
 
-	GLUFVertexArray* vertexData = LoadVertexArrayFromScene(scene, attributes);
+	std::shared_ptr<GLUFVertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData)
 		EXIT_FAILURE;
 
-	GLUFVertexArray* vertexData2 = LoadVertexArrayFromScene(scene, attributes);
+	std::shared_ptr<GLUFVertexArray> vertexData2 = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData2)
 		EXIT_FAILURE;
 
@@ -241,22 +305,25 @@ int main(void)
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);
 
-	GLUF::GLUFTextHelper *textHelper = new GLUF::GLUFTextHelper(resMan);
-	textHelper->Init(20);
+	//GLUF::GLUFTextHelper *textHelper = new GLUF::GLUFTextHelper(resMan);
+	//textHelper->Init(20);
 
 
 	GLuint skycubemap = GLUF::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
 
-	sources.clear();
-	text = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/vert.glsl", &len), len);
+    sources.clear();
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text);
 	text += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
-	text1 = GLUFLoadBinaryArrayIntoString(GLUFLoadFileIntoMemory(L"Shaders/frag.glsl", &len), len);
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text1);
 	text1 += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-	GLUFProgramPtr sky = GLUFSHADERMANAGER.CreateProgram(sources);
+    GLUFProgramPtr sky;
+    GLUFSHADERMANAGER.CreateProgram(sky, sources);
 
 	GLUFVariableLocMap attribLocations = GLUFSHADERMANAGER.GetShaderAttribLocations(sky);
 	GLUFVariableLocMap unifLocations = GLUFSHADERMANAGER.GetShaderUniformLocations(sky);
@@ -276,19 +343,19 @@ int main(void)
 		mPositionLoc = it->second;
 	}
 
-	Vec3Array verts;
+    GLUFGLVector<JustPositions> verts = JustPositions::MakeMany(8);
 	float depth;
 	float val = depth = 10.0f;
-	verts.push_back(glm::vec3(val, -val, -depth));
-	verts.push_back(glm::vec3(-val, -val, -depth));
-	verts.push_back(glm::vec3(-val, val, -depth));
-	verts.push_back(glm::vec3(val, val, -depth));
+    verts[0] = glm::vec3(val, -val, -depth);
+    verts[1] = glm::vec3(-val, -val, -depth);
+    verts[2] = glm::vec3(-val, val, -depth);
+    verts[3] = glm::vec3(val, val, -depth);
 
 	//front
-	verts.push_back(glm::vec3(-val, -val, depth));
-	verts.push_back(glm::vec3(val, -val, depth));
-	verts.push_back(glm::vec3(val, val, depth));
-	verts.push_back(glm::vec3(-val, val, depth));
+    verts[4] = glm::vec3(-val, -val, depth);
+    verts[5] = glm::vec3(val, -val, depth);
+    verts[6] = glm::vec3(val, val, depth);
+    verts[7] = glm::vec3(-val, val, depth);
 
 	std::vector<glm::u32vec3> mTriangles;
 
@@ -316,7 +383,7 @@ int main(void)
 	mTriangles.push_back(glm::u32vec3(1, 0, 5));
 	mTriangles.push_back(glm::u32vec3(5, 4, 1));
 
-	m_pVertexArray.BufferData(mPositionLoc, verts.size(), &verts[0][0]);
+	m_pVertexArray.BufferData(verts);
 	m_pVertexArray.BufferIndices(mTriangles);
 
 	do{
