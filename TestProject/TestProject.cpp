@@ -55,7 +55,6 @@ void CtrlMsgProc(GLUF_EVENT evt, int controlId, GLUFControl* pControl, void* pCo
 	}
 }*/
 
-
 struct JustPositions : GLUFVertexStruct
 {
     glm::vec3 pos;
@@ -241,12 +240,12 @@ int main(void)
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
     std::string text1;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
     GLUFLoadBinaryArrayIntoString(rawMem, text1);
 	text1 += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-	GLUFSHADERMANAGER.CreateProgram(Prog, sources);
+	GLUFSHADERMANAGER.CreateProgram(Prog, sources);//currently fails here
 
 	GLUFVariableLocMap attribs, uniforms;
 	attribs = GLUFSHADERMANAGER.GetShaderAttribLocations(Prog);
@@ -309,7 +308,7 @@ int main(void)
 	//textHelper->Init(20);
 
 
-	GLuint skycubemap = GLUF::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
+	/*GLuint skycubemap = GLUF::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
 
     sources.clear();
     GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
@@ -317,7 +316,7 @@ int main(void)
 	text += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
     GLUFLoadBinaryArrayIntoString(rawMem, text1);
 	text1 += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
@@ -384,7 +383,7 @@ int main(void)
 	mTriangles.push_back(glm::u32vec3(5, 4, 1));
 
 	m_pVertexArray.BufferData(verts);
-	m_pVertexArray.BufferIndices(mTriangles);
+	m_pVertexArray.BufferIndices(mTriangles);*/
 
 	do{
 
@@ -421,7 +420,7 @@ int main(void)
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		/*GLUFSHADERMANAGER.UseProgram(Prog);
+		GLUFSHADERMANAGER.UseProgram(Prog);
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
@@ -446,14 +445,15 @@ int main(void)
 		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 		
-		vertexData2->Draw();*/
+		vertexData2->Draw();
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
 			//dlg->OnRender(ellapsedTime);
 			//dlg->DrawRect(rc, GLUF::Color(255, 0, 0, 255));
 
-		GLUFSHADERMANAGER.UseProgram(sky);
+        //sky box rendering stuff
+		/*GLUFSHADERMANAGER.UseProgram(sky);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, skycubemap);
 		glUniform1i(sampLoc, 0);
@@ -464,7 +464,7 @@ int main(void)
 		m_pVertexArray.Draw();
 		glEnable(GL_CULL_FACE);
 		glDepthMask(GL_TRUE);
-		glEnable(GL_DEPTH_CLAMP);
+		glEnable(GL_DEPTH_CLAMP);*/
 
 		//glEnable(GL_BLEND);
 		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -477,7 +477,7 @@ int main(void)
 		m_Squares.Draw();*/
 
 		// Swap buffers
-		glfwSwapBuffers(window);
+        glfwSwapBuffers(window);
 		glfwPollEvents();
 
 		//prevTime = currTime;

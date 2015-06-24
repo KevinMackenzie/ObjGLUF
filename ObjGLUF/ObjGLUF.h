@@ -119,7 +119,7 @@ Debugging Macros and Setup Functions
 using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName, const char* sourceFile, unsigned int lineNum);
 
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
-#define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << #chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
+#define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE:" << #expr; GLUF_ERROR(ss.str().c_str()) } }
 #define GLUF_NULLPTR_CHECK(ptr) {if (ptr == nullptr){throw std::invalid_argument("Null Pointer");}}
 
@@ -656,18 +656,18 @@ public:
         GLUF_ERROR(ss.str());
     }
 
-    const char* what()
+    const char* what() const
     {
         return (MyUniqueMessage() + mPostfix).c_str();
     }
 
     
-    virtual const std::string MyUniqueMessage() = 0;
+    virtual const std::string MyUniqueMessage() const = 0;
 };
 
 class UseProgramException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Failed to Use Program!";
     }
@@ -675,7 +675,7 @@ class UseProgramException : public GLUFException
 
 class MakeShaderException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Shading Creation Failed!";
     }
@@ -683,7 +683,7 @@ class MakeShaderException : public GLUFException
 
 class MakeProgramException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Program Creation Failed!";
     }
@@ -975,7 +975,7 @@ Texture Utilities:
 
 class TextureCreationException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Failed to Create Texture!";
     }
@@ -1056,7 +1056,7 @@ Vertex Array Exceptions
 
 class MakeVOAException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "VAO Creation Failed!";
     }
@@ -1064,7 +1064,7 @@ class MakeVOAException : public GLUFException
 
 class InvalidSoABufferLenException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Buffer Passed Has Length Inconsistent With the Vertex Attributes!";
     }
@@ -1072,7 +1072,7 @@ class InvalidSoABufferLenException : public GLUFException
 
 class MakeBufferException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Buffer Creation Failed!";
     }
@@ -1080,7 +1080,7 @@ class MakeBufferException : public GLUFException
 
 class InvalidAttrubuteLocationException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Attribute Location Not Found in This Buffer!";
     }
@@ -1457,7 +1457,7 @@ public:
     */
     void buffer_element(void* data, size_t element)
     {
-        char* tmpUsableData = reinterpret_cast<char*>(data);
+        char* tmpUsableData = static_cast<char*>(data);
         if (element >= front().size())
             return;
 

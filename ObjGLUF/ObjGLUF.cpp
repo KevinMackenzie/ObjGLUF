@@ -315,7 +315,7 @@ void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::strin
     auto streamBuf = std::make_shared<MemStreamBuf>(rawMemory, size);
    
     std::istream indata(streamBuf.get());
-    indata.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+    indata.exceptions(std::ifstream::badbit);
 	char ch = ' ';
 
     try
@@ -583,7 +583,7 @@ Note:
 
 class CompileShaderException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Failed to Compile Shader!";
     }
@@ -591,7 +591,7 @@ class CompileShaderException : public GLUFException
 
 class CreateGLShaderException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "OpenGL Failed to Create Shader Instance!";
     }
@@ -599,7 +599,7 @@ class CreateGLShaderException : public GLUFException
 
 class LinkProgramException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "Failed to Link Program!";
     }
@@ -607,7 +607,7 @@ class LinkProgramException : public GLUFException
 
 class CreateGLProgramException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "OpenGL Failed to Create Program Instance!";
     }
@@ -615,7 +615,7 @@ class CreateGLProgramException : public GLUFException
 
 class CreateGLPPOException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() override
+    virtual const std::string MyUniqueMessage() const override
     {
         return "OpenGL Failed to Create PPO Instance!";
     }
@@ -1206,6 +1206,21 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 		GLenum type;
 		GLint written, size;
 
+        //this is used to trim the null charactors from the end of the string
+        auto TrimString = [](std::string& toTrim)
+        {
+            for (unsigned int i = 0; i < toTrim.size(); ++i)
+            {
+                if (toTrim[i] == '\0')
+                {
+                    toTrim.erase(toTrim.begin() + i, toTrim.end());
+                    break;
+                }
+
+            }
+        };
+
+
         std::string data;
         for (int i = 0; i < attribCount; ++i)
         {
@@ -1213,6 +1228,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
             data.resize(maxLength);
 
             glGetActiveAttrib(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
+            TrimString(data);
             mAttributeLocations.insert(GLUFVariableLocPair(data, glGetAttribLocation(mProgramId, &data[0])));
 
             data.clear();
@@ -1226,7 +1242,8 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
             //resize and clear every time is a bit messy, but is the only way to make sure the string is the right length
             data.resize(maxLength);
 
-			glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
+            glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
+            TrimString(data);
 			mUniformLocations.insert(GLUFVariableLocPair(data, glGetUniformLocation(mProgramId, &data[0])));
 
             data.clear();
@@ -1360,6 +1377,9 @@ void GLUFShaderManager::CreateShaderFromText(GLUFShaderPtr& outShader, const std
     GLUFShaderInfoStruct output;
     try
     {
+        //initialize the shader
+        outShader->Init(type);
+
         //load from the text
         outShader->Load(text);
 
@@ -1437,7 +1457,7 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderSour
 	for (auto it : shaderSources)
 	{
         //create the shader from the text
-        auto nowShader = std::make_shared<GLUFShader>();
+        std::shared_ptr<GLUFShader> nowShader;
         CreateShaderFromText(nowShader, it.second, it.first);
 
         //add the shader to the list
@@ -1729,10 +1749,11 @@ GLuint LoadTextureDDS(const std::vector<char>& rawData)
     unsigned int bufsize = mipMapCount > 1 ? linearSize * 2 : linearSize;
 
     //verify size of data again once header is loaded
-    if (rawData.size() < 128 + bufsize)
+                                                            //this does not work when the file is compressed
+    /*if (rawData.size() < 128 + bufsize)
     {
         throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small!");
-    }
+    }*/
 
 
     unsigned int components = (fourCC == FOURCC_DXT1) ? 3 : 4;
@@ -1777,17 +1798,20 @@ GLuint LoadTextureDDS(const std::vector<char>& rawData)
         unsigned int offset = 128;// initial offset to compensate for header and file code
 
         /* load the mipmaps */
-        for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
+        for (unsigned int level = 0; level < mipMapCount/* && (width || height)*/; ++level)
         {
             unsigned int mipSize = ((width + 3) / 4)*((height + 3) / 4)*blockSize;
-            glCompressedTexImage2D(GL_TEXTURE_2D, level, compressedFormat, width, height,
-                0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+            glCompressedTexImage2D(GL_TEXTURE_2D, 
+                level, compressedFormat, 
+                width, height,
+                0, mipSize, 
+                rawData.data() + offset);
 
             offset += mipSize;
             width /= 2;
             height /= 2;
 
-            // Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+            // Deal with Non-Power-Of-Two textures
             if (width < 1) width = 1;
             if (height < 1) height = 1;
 
@@ -1798,21 +1822,26 @@ GLuint LoadTextureDDS(const std::vector<char>& rawData)
     {
         unsigned int offset = 128;// initial offset to compensate for header and file code
 
-        for (unsigned int level = 0; level < mipMapCount && (width || height); ++level)
+        for (unsigned int level = 0; level < mipMapCount/* && (width || height)*/; ++level)
         {
-            glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+            glTexImage2D(GL_TEXTURE_2D, 
+                level, GL_RGBA, 
+                width, height, 
+                0, GL_RGBA, GL_UNSIGNED_BYTE, 
+                rawData.data() + offset);
 
             unsigned int mipSize = (width * height * 4);
             offset += mipSize;
             width /= 2;
             height /= 2;
 
-            // Deal with Non-Power-Of-Two textures. This code is not included in the webpage to reduce clutter.
+            // Deal with Non-Power-Of-Two textures
             if (width < 1) width = 1;
             if (height < 1) height = 1;
         }
     }
 
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     return textureID;
 }
@@ -2175,6 +2204,7 @@ void GLUFVertexArrayBase::Draw()
     }
 
     DisableVertexAttributes();
+    UnBindVertexArray();
 
     NOEXCEPT_REGION_END
 }
@@ -2203,6 +2233,7 @@ void GLUFVertexArrayBase::DrawRange(GLuint start, GLuint count)
     }
 
     DisableVertexAttributes();
+    UnBindVertexArray();
 
     NOEXCEPT_REGION_END
 }
@@ -2225,6 +2256,7 @@ void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
     }
 
     DisableVertexAttributes();
+    UnBindVertexArray();
 
     NOEXCEPT_REGION_END
 }
@@ -2239,6 +2271,7 @@ void GLUFVertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* dat
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mIndexCount, data, mUsageType);
 
+    UnBindVertexArray();
     NOEXCEPT_REGION_END
 }
 
@@ -2335,6 +2368,7 @@ void GLUFVertexArrayAoS::RefreshDataBufferAttribute()
         glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, nullptr);
     }
 
+    UnBindVertexArray();
     NOEXCEPT_REGION_END
 }
 
@@ -2353,6 +2387,8 @@ GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
 	BindVertexArray();
 
 	glDeleteBuffers(1, &mDataBuffer);
+
+    UnBindVertexArray();
 }
 
 GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLUFVertexArrayAoS&& other) : GLUFVertexArrayBase(std::move(other))
@@ -2393,21 +2429,6 @@ GLuint GLUFVertexArrayAoS::GetVertexSize() const noexcept
 }
 
 
-/*
-
-
-
-
-
-Ended Here!
-
-
-
-
-
-*/
-
-
 void GLUFVertexArraySoA::RefreshDataBufferAttribute()
 {
     BindVertexArray();
@@ -2416,6 +2437,7 @@ void GLUFVertexArraySoA::RefreshDataBufferAttribute()
         glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[it.second.mVertexAttribLocation]);
         glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, 0, nullptr);
     }
+    UnBindVertexArray();
 }
 
 GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLoc(GLUFAttribLoc loc) const
@@ -2435,7 +2457,8 @@ GLUFVertexArraySoA::~GLUFVertexArraySoA()
 {
 	BindVertexArray();
 	for (auto it : mDataBuffers)
-		glDeleteBuffers(1, &it.second);
+        glDeleteBuffers(1, &it.second);
+    UnBindVertexArray();
 }
 
 GLUFVertexArraySoA::GLUFVertexArraySoA(GLUFVertexArraySoA&& other) : GLUFVertexArrayBase(std::move(other))
@@ -2474,6 +2497,8 @@ void GLUFVertexArraySoA::GetBarebonesMesh(GLUFMeshBarebones& inData)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 	GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
     inData.mIndices = GLUFArrToVec(pIndices, mIndexCount);
+
+    UnBindVertexArray();
 }
 
 void GLUFVertexArraySoA::AddVertexAttrib(const GLUFVertexAttribInfo& info)
@@ -2693,17 +2718,26 @@ struct GLUFAssimpVertexStruct : public GLUFVertexStruct
     {
         size_t i = 0;
         if (element < v2.size())
-            v2[i] = static_cast<aiVector2D*>(data)[0];
+        {
+            v2[element] = static_cast<aiVector2D*>(data)[0];
+            return;
+        }
 
         i += v2.size();
 
         if (element < i + v3.size())
-            v3[i] = static_cast<aiVector3D*>(data)[0];
+        {
+            v3[element - i] = static_cast<aiVector3D*>(data)[0];
+            return;
+        }
 
         i += v3.size();
 
         if (element < i + v4.size())
-            v4[i] = static_cast<aiColor4D*>(data)[0];
+        {
+            v4[element - i] = static_cast<aiColor4D*>(data)[0];
+            return;
+        }
     }
 
     static GLUFGLVector<GLUFAssimpVertexStruct> MakeMany(size_t howMany, size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
@@ -2758,26 +2792,8 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     unsigned char numVec3 = 0;
     unsigned char numVec4 = 0;
 
-	auto itPos = inputs.find(GLUF_VERTEX_ATTRIB_POSITION);
-    auto it = itPos;
-    if (mesh->HasPositions() && it != inputs.end())
-    {
-        vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION] = numVec3;
-        ++numVec3;
-    }
-
-    auto itNorm = inputs.find(GLUF_VERTEX_ATTRIB_NORMAL);
-    it = itNorm;
-    if (mesh->HasNormals() && it != inputs.end())
-    {
-        vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_NORMAL] = numVec3;
-        ++numVec3;
-    }
-
     auto itUV0 = inputs.find(GLUF_VERTEX_ATTRIB_UV0);
-    it = itUV0;
+    auto it = itUV0;
     if (mesh->HasTextureCoords(0) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
@@ -2849,13 +2865,46 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     }
 
 
+    //vec3's go between vec2's and vec4's
+    auto itPos = inputs.find(GLUF_VERTEX_ATTRIB_POSITION);
+    it = itPos;
+    if (mesh->HasPositions() && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION] = numVec3 + numVec2;
+        ++numVec3;
+    }
+
+    auto itNorm = inputs.find(GLUF_VERTEX_ATTRIB_NORMAL);
+    it = itNorm;
+    if (mesh->HasNormals() && it != inputs.end())
+    {
+        vertexData->AddVertexAttrib(it->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_NORMAL] = numVec3 + numVec2;
+        ++numVec3;
+    }
+
+
+    auto itTan = inputs.find(GLUF_VERTEX_ATTRIB_TAN);
+    auto itBitan = inputs.find(GLUF_VERTEX_ATTRIB_BITAN);
+    if (mesh->HasTangentsAndBitangents() && itTan != inputs.end() && itBitan != inputs.end())
+    {
+        vertexData->AddVertexAttrib(itTan->second);
+        vertexData->AddVertexAttrib(itBitan->second);
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN] = numVec3 + numVec2;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_BITAN] = numVec3 + 1 + numVec2;
+        numVec3 += 2;
+    }
+
+    //to keep from doing unncessessary addition
+    unsigned char runningTotal = numVec3 + numVec2;
 
     auto itCol0 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR0);
     it = itCol0;
     if (mesh->HasVertexColors(0) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR0] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR0] = numVec4 + runningTotal;
         ++numVec4;
     }
 
@@ -2864,7 +2913,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(1) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR1] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR1] = numVec4 + runningTotal;
         ++numVec4;
     }
 
@@ -2873,7 +2922,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(2) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR2] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR2] = numVec4 + runningTotal;
         ++numVec4;
     }
 
@@ -2882,7 +2931,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(3) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR3] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR3] = numVec4 + runningTotal;
         ++numVec4;
     }
 
@@ -2891,7 +2940,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(4) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4] = numVec4 + runningTotal;
         ++numVec4;
     }
 	
@@ -2900,7 +2949,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(5) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR5] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR5] = numVec4 + runningTotal;
         ++numVec4;
     }
 
@@ -2909,7 +2958,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(6) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR6] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR6] = numVec4 + runningTotal;
         ++numVec4;
     }
 
@@ -2918,21 +2967,10 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
     if (mesh->HasVertexColors(7) && it != inputs.end())
     {
         vertexData->AddVertexAttrib(it->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7] = numVec4;
+        vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7] = numVec4 + runningTotal;
         ++numVec4;
     }
 
-
-    auto itTan = inputs.find(GLUF_VERTEX_ATTRIB_TAN);
-    auto itBitan = inputs.find(GLUF_VERTEX_ATTRIB_BITAN);
-	if (mesh->HasTangentsAndBitangents() && itTan != inputs.end() && itBitan != inputs.end())
-	{
-		vertexData->AddVertexAttrib(itTan->second);
-        vertexData->AddVertexAttrib(itBitan->second);
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN] = numVec3;
-        vertexAttribLoc[GLUF_VERTEX_ATTRIB_BITAN] = numVec3 + 1;
-        numVec3 += 2;
-	}
 
 
     //the custom vertex array
@@ -2940,7 +2978,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
 
     if (mesh->HasPositions() && itPos != inputs.end())
     {
-        //positions will ALWAYS be first
+        //positions will ALWAYS be the first vec3
         vertexBuffer.buffer_element(mesh->mVertices, vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION]);
     }
     if (mesh->HasNormals() && itNorm != inputs.end())
