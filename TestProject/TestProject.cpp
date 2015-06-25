@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
+#include <iostream>
+#include <vector>
 
 using namespace GLUF;
 
@@ -26,7 +28,7 @@ static void error_callback(int error, const char* description)
 }
 void ErrorMethod(const std::string& message, const char* func, const char* file, unsigned int line)
 {
-	printf("(%s | %i): %s \n", func, line, message);
+	printf("(%s | %i): %s \n", func, line, message.c_str());
 	//hang
 	system("PAUSE");
 }
@@ -219,7 +221,7 @@ int main(void)
 	box->AddItem(L"Item 28", nullptr);
 	box->AddItem(L"Item 29", nullptr);*/
 
-    
+
 	//load shaders
 	//GLUFProgramPtr frag, vert;
 	GLUFProgramPtr Prog;

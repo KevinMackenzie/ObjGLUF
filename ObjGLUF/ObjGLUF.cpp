@@ -176,48 +176,49 @@ Statistics
 
 namespace Stats
 {
-    double g_LastFrame = 0.0;
-    double g_UpdateInterval = 1.0;//every second
-    unsigned long long  g_FrameCount = 0;//this is since the last update
-    float g_CurrFps = 0.0f;
-    std::wstring g_FrameStats;
+    GLUFStatsData g_StatsData;
 }
 
 void GLUFStats_func()
 {
     using namespace Stats;
 
-	++g_FrameCount;
+    ++g_StatsData.mFrameCount;
 
 	double thisFrame = GLUFGetTime();
-	if (thisFrame - g_LastFrame < g_UpdateInterval)
+    if (thisFrame - g_StatsData.mPreviousFrame < g_StatsData.mUpdateInterval)
 		return;//don't update statistics
 
-	double deltaTime = thisFrame - g_LastFrame;
+    double deltaTime = thisFrame - g_StatsData.mPreviousFrame;
 
-	g_CurrFps = (float)((double)g_FrameCount / deltaTime);
+    g_StatsData.mCurrFPS = (float)((double)g_StatsData.mFrameCount / deltaTime);
 
-	g_FrameCount = 0;//reset the frame count
+    g_StatsData.mFrameCount = 0;//reset the frame count
 
     std::wstringstream wss;
     //for now, only use whole FPS's
-    wss << (unsigned int)g_CurrFps << " fps";
+    wss << (unsigned int)g_StatsData.mCurrFPS << " fps";
 
 	//update device statistics
 	//TODO:
 
-	g_LastFrame = thisFrame;
+    g_StatsData.mPreviousFrame = thisFrame;
 }
 
 const std::wstring& GLUFGetFrameStatsString()
 {
-	return Stats::g_FrameStats;
+    return Stats::g_StatsData.mFormattedStatsData;
 }
 
 std::wstring g_DeviceStatusCache = L"WIP";
-const std::wstring& GLUFGetDeviceStats()
+const std::wstring& GLUFGetDeviceStatus()
 {
     return g_DeviceStatusCache;
+}
+
+const GLUFStatsData& GLUFGetFrameStats()
+{
+    return Stats::g_StatsData;
 }
 
 /*
@@ -1942,23 +1943,41 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
         unsigned int pertexSize = width;
 
         unsigned int mipSize = ((pertexSize + 3) / 4)*((pertexSize + 3) / 4)*blockSize;
-        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
+            0, compressedFormat, 
+            pertexSize, pertexSize,
+            0, mipSize, 
+            rawData.data() + offset);
         offset += mipSize;
-        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 
+            0, compressedFormat, 
+            pertexSize, pertexSize,
+            0, mipSize, 
+            rawData.data() + offset);
         offset += mipSize;
-        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 
+            0, compressedFormat, 
+            pertexSize, pertexSize,
+            0, mipSize, 
+            rawData.data() + offset);
         offset += mipSize;
-        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 
+            0, compressedFormat, 
+            pertexSize, pertexSize,
+            0, mipSize, 
+            rawData.data() + offset);
         offset += mipSize;
-        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 
+            0, compressedFormat, 
+            pertexSize, pertexSize,
+            0, mipSize, 
+            rawData.data() + offset);
         offset += mipSize;
-        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, compressedFormat, pertexSize, pertexSize,
-            0, mipSize, (const GLvoid*)&(rawData.begin() + offset));
+        glCompressedTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 
+            0, compressedFormat, 
+            pertexSize, pertexSize,
+            0, mipSize, 
+            rawData.data() + offset);
 
     }
     else
@@ -1967,17 +1986,41 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
         unsigned int pertexSize = width;
         unsigned int mipSize = (pertexSize * pertexSize * 4);
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 
+            0, GL_RGBA, 
+            pertexSize, pertexSize, 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 
+            0, GL_RGBA, 
+            pertexSize, pertexSize, 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 
+            0, GL_RGBA, 
+            pertexSize, pertexSize, 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 
+            0, GL_RGBA, 
+            pertexSize, pertexSize, 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 
+            0, GL_RGBA, 
+            pertexSize, pertexSize, 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            (const GLvoid*)&(rawData.begin() + offset));
         offset += mipSize;
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, pertexSize, pertexSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const GLvoid*)&(rawData.begin() + offset));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 
+            0, GL_RGBA, 
+            pertexSize, pertexSize, 
+            0, GL_RGBA, GL_UNSIGNED_BYTE, 
+            (const GLvoid*)&(rawData.begin() + offset));
     }
 
 

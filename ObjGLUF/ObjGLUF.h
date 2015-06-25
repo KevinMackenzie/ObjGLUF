@@ -120,7 +120,7 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
 #define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
-#define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE:" << #expr; GLUF_ERROR(ss.str().c_str()) } }
+#define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; GLUF_ERROR(ss.str().c_str()) } }
 #define GLUF_NULLPTR_CHECK(ptr) {if (ptr == nullptr){throw std::invalid_argument("Null Pointer");}}
 
 OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
@@ -134,7 +134,7 @@ Utility Macros
 */
 
 #define GLUF_SAFE_DELETE(ptr) {if(ptr){delete(ptr);} (ptr) = nullptr;}
-#define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))
+#define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))//may be deprecated
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
 #define NOEXCEPT_REGION_START try{
 #define NOEXCEPT_REGION_END }catch(...){}
@@ -151,6 +151,13 @@ Multithreading Macros
 #define GLUF_TSAFE_END __lock__.unlock();}
 #define GLUF_TSAFE_SCOPE(Mutex) std::lock_guard<std::mutex> __lock__{Mutex};
 
+/*
+
+Local Lock
+
+    A 'unique_lock' helper class for locking a scope
+
+*/
 class LocalLock
 {
     std::unique_lock<std::mutex>& mLock;
@@ -183,13 +190,17 @@ Statistics
 class GLUFStatsData
 {
 public:
-    //TODO:
+    double mPreviousFrame = 0.0;
+    double mUpdateInterval = 1.0;//time in seconds
+    unsigned long long mFrameCount = 0LL;//frame count since previous update
+    float mCurrFPS = 0.0f;
+    std::wstring mFormattedStatsData = L"";
 };
 
 OBJGLUF_API void GLUFStats_func();
 OBJGLUF_API const std::wstring& GLUFGetFrameStatsString();
-OBJGLUF_API const GLUFStatsData& GLUFGetFrameStats();//WIP
-OBJGLUF_API const std::wstring& GLUFGetDeviceStats();
+OBJGLUF_API const GLUFStatsData& GLUFGetFrameStats();
+OBJGLUF_API const std::wstring& GLUFGetDeviceStatus();
 
 #define GLUFStats GLUF::GLUFStats_func
 
@@ -221,7 +232,7 @@ Timing Macros (Uses GLFW Built-In Timer)
 
 #define GLUFGetTime() glfwGetTime()
 #define GLUFGetTimef() ((float)glfwGetTime())
-#define GLUFGetTimeMs() ((int)(glfwGetTime() * 1000.0))
+#define GLUFGetTimeMs() ((unsigned int)(glfwGetTime() * 1000.0))
 
 
 /*
@@ -254,9 +265,9 @@ Mathematical and Conversion Macros
 #define DEG_TO_RAD_F(value) ((value) *(GLUF_PI_F / 180))
 #define DEG_TO_RAD_LD(value) ((value) *(GLUF_PI_LD / 180))
 
-#define RAD_TO_DEG(value) ((value) *(180 / GLUFPI))
-#define RAD_TO_DEG_F(value) ((value) *(180 / GLUFPI_F))
-#define RAD_TO_DEG_LD(value) ((value) *(180 / GLUFPI_LD))
+#define RAD_TO_DEG(value) ((value) *(180 / GLUF_PI))
+#define RAD_TO_DEG_F(value) ((value) *(180 / GLUF_PI_F))
+#define RAD_TO_DEG_LD(value) ((value) *(180 / GLUF_PI_LD))
 
 
 /*
@@ -318,6 +329,8 @@ OBJGLUF_API void GLUFLoadBinaryArrayIntoString(const std::vector<char>& rawMemor
 /*
 ======================================================================================================================================================================================================
 OpenGL Basic Data Structures and Operators
+
+Note: these only play a significant role in GLUFGui, but are presented here as basic types and utilities which can be used independently of the GLUFGui
 
 */
 
@@ -451,7 +464,7 @@ GLUFSplitStr
         'elems'
 */
 
-OBJGLUF_API inline std::vector<std::wstring> &GLUFSplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false)
+inline std::vector<std::wstring> &GLUFSplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false)
 {
 	std::wstringstream ss(s);
 	std::wstring item;
@@ -464,14 +477,14 @@ OBJGLUF_API inline std::vector<std::wstring> &GLUFSplitStr(const std::wstring &s
 	return elems;
 }
 
-OBJGLUF_API inline std::vector<std::wstring> GLUFSplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false)
+inline std::vector<std::wstring> GLUFSplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false)
 {
 	std::vector<std::wstring> elems;
 	GLUFSplitStr(s, delim, elems, keepDelim);
 	return elems;
 }
 
-OBJGLUF_API inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false)
+inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false)
 {
 	std::stringstream ss(s);
 	std::string item;
@@ -484,7 +497,7 @@ OBJGLUF_API inline std::vector<std::string> &GLUFSplitStr(const std::string &s, 
 	return elems;
 }
 
-OBJGLUF_API inline std::vector<std::string> GLUFSplitStr(const std::string &s, char delim, bool keepDelim = false)
+inline std::vector<std::string> GLUFSplitStr(const std::string &s, char delim, bool keepDelim = false)
 {
 	std::vector<std::string> elems;
 	GLUFSplitStr(s, delim, elems, keepDelim);
@@ -519,7 +532,7 @@ GLUFArrToVec
             so avoid using C-Style arrays to begin with!
 */
 template<typename T>
-OBJGLUF_API inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len)
+inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len)
 {
     if (!arr)
         throw std::invalid_argument("GLUFArrToVec: \'arr\' == nullptr");
@@ -528,6 +541,49 @@ OBJGLUF_API inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len)
         throw std::invalid_argument("GLUFArrToVec: \'arr\' is too small");
 
     return std::vector<T>(arr, arr + len);
+}
+
+
+/*
+GLUFAdoptArray
+
+    Parameters:
+        'arr': array to have vector adopt
+        'len': length in elements of 'arr'
+
+    Returns:
+        -vector containing 'arr'
+
+    Throws:
+        'std::invalid_argument' if 'arr' == nullptr OR if 'arr' size < len
+        'std::bad_cast':
+
+    Note:
+        This actually tells the vector to use the C-Style array, and the C-Style array parameter will be set to 'nullptr'
+
+*/
+
+template<typename T>
+inline std::vector<T> GLUFAdoptArray(T*& arr, unsigned long len) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    //the return data;
+    std::vector<T> ret;
+
+    //the (hidden) internal vector member variables which contain the vector's memory internals
+    ret._Myfirst = arr;
+    ret._Mylast = arr + len;
+    ret._Myend = arr + len;//in this case _Myend and _Mylast will be the same, because the the array is the exact size of all of the elements
+
+    //reset the 'arr' parameter to nullptr in order to prevent the vector from being damaged externally
+    arr = nullptr;
+
+    return ret;
+
+    NOEXCEPT_REGION_END
+
+    return std::vector <T>();//to keep the compiler from complaining
 }
 
 //used for getting vertices from rects 0,0 is bottom left
@@ -641,7 +697,7 @@ Shader Exceptions
 GLUFException
 
     Serves as base class for all other GLUF exceptions.  
-    Override myUniqueMessage in children
+    Override MyUniqueMessage in children
 */
 class GLUFException : public std::exception
 {
