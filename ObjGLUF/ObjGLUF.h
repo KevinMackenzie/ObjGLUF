@@ -1005,6 +1005,7 @@ LoadTextureFrom*
 
     Note:
         All textures currently must be in ABGR format
+        When using loaded textures, flip the UV coords of your meshes (the included mesh loaders do that for you) due to the DDS files loading upside-down
         If formats other than ABGR are supported, ABGR will likely be faster at loading
 
 */
@@ -1045,6 +1046,7 @@ struct OBJGLUF_API GLUFVertexAttribInfo
 	unsigned short mElementsPerValue;//vec4 would be 4
 	GLUFAttribLoc  mVertexAttribLocation;
 	GLenum         mType;//float would be GL_FLOAT
+    GLuint         mOffset;//this is always 0; it is used internally in 'GLUFVertexArrayAoS'
 };
 
 /*
@@ -1412,11 +1414,13 @@ public:
         //add each element
         for (size_t i = 0; i < size(); ++i)
         {
+            //this doesn't actually take the memory location of the element, because the '&' operator is overloaded to return a contiguous array of bytes containing each element's data
             void* mem = &(*this)[i];
 
             //may be unsafe, but that's a later problem
             std::memcpy(mGLData + i * stride, mem, stride);
 
+            //safe to delete, because when each element creates the raw data to add, it does not automatically delete it
             delete[] mem;
         }
 
@@ -1486,8 +1490,24 @@ GLUFVertexArrayAoS:
 
 class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 {
+
+
+    /*
+    Add/RemoveVertexAttrib
+        
+        "AddVertexAttrib" is deleted on GLUFVertexArrayAoS, because this needs an offset parameter for adding attributes
+
+        "RemoveVertexAttrib" is disabled, because removing an attribute will mess up the offset and strides of the buffer
+
+    */
+    //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+    virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info) sealed {}
+    virtual void RemoveVertexAttrib(GLUFAttribLoc loc) sealed {}
+
 protected:
 	GLuint mDataBuffer = 0;
+
+
 
 
     //see 'GLUFVertexArrayBase' Docs
@@ -1536,6 +1556,22 @@ public:
             no-throw guarantee
     */
 	GLuint GetVertexSize() const noexcept;
+
+
+
+    /*
+    Add/RemoveVertexAttrib
+
+        Parameters:
+            'info': data structure containing the attribute information
+            'offset': offset within data buffer of each element within the vertex
+
+        Throws:
+            no-throw guarantee
+
+    */
+    //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+    virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuint offset);
 
 
     /*
@@ -1603,6 +1639,7 @@ void GLUFVertexArrayAoS::BufferData(const GLUFGLVector<T>& data)
         //this means, if 'T' is not derived from GLUFVertexStructBase, then it cannot be used
         T* tTest = new T();//T already needs a default constructor
         dynamic_cast<GLUFVertexStruct*>(tTest);
+        delete tTest;
     }
     catch (...)
     {

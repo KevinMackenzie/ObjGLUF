@@ -404,12 +404,12 @@ int main(void)
 		
 		
 		// Enable depth test
-		/*glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
 		glDepthFunc(GL_LESS);
 
 		// Cull triangles which normal is not towards the camera
-		glEnable(GL_CULL_FACE);*/
+		glEnable(GL_CULL_FACE);
 
 		//GLUFSHADERMANAGER.UseProgram(Prog); 
 		glm::vec3 pos(3, 5, 6);
@@ -434,7 +434,7 @@ int main(void)
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
 		glUniform1i(TextureID, 0);
 
-		vertexData->Draw();
+		//vertexData->Draw();
 
 		ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
 		MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
