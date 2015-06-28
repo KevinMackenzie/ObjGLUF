@@ -11,6 +11,7 @@ varying vec3 Position_worldspace;
 varying vec3 Normal_cameraspace;
 varying vec3 EyeDirection_cameraspace;
 varying vec3 LightDirection_cameraspace;
+varying float Distance;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MVP;
@@ -40,5 +41,8 @@ void main(){
 	
 	// UV of the vertex. No special space for this one.
 	UV = vertexUV;
+	
+	// Distance to the light
+	Distance = length( LightPosition_worldspace - Position_worldspace );
 }
 

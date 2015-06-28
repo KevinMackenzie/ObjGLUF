@@ -6,6 +6,7 @@
 // defined with this macro as being exported.
 #pragma once
 
+
 #pragma warning (disable : 4251)
 
 #ifdef _WIN32
@@ -64,6 +65,16 @@
 #ifndef SUPPRESS_UTF8_ERROR
 #error "ATTENTION, all strings MUST be in utf8 encoding"
 #endif
+#endif
+
+//uncomment this to build in release mode (i.e. no non-critical exceptions)
+#define GLUF_DEBUG
+#ifndef GLUF_DEBUG
+    #if _MSC_VER
+        #pragma message ("Warning, Debug Mode Disabled, No Non-Critical Exceptions will not be thrown!")
+    #elif
+        #warning ("Warning, Debug Mode Disabled, No Non-Critical Exceptions will not be thrown!")
+    #endif
 #endif
 
 
@@ -284,6 +295,25 @@ OBJGLUF_API bool GLUFInitOpenGLExtentions();
 
 //call this at the very last moment before application termination
 /*OBJGLUF_API*/ void GLUFTerminate(){};//NOTE: WHEN GLUFGUI COMPLETED, REMOVE THESE BRACKETS AND ADD OBJGLUF_API!
+
+
+
+/*
+======================================================================================================================================================================================================
+Context Controller Methods
+
+*/
+
+#define EnableVSync() glfwSwapInterval(0)
+#define DisableVSync() glfwSwapInterval(1)
+#define SetVSyncState(value) glfwSwapInterval(value ? 1 : 0)
+
+
+//NOTE: All methods below this must be called BEFORE window creation
+#define SetMSAASamples(numSamples) glfwWindowHint(GLFW_SAMPLES, 4)//make sure to call EnableMSAA()
+
+//NOTE: All methods below this must be called AFTER window creation
+#define EnableMSAA() glEnable(GL_MULTISAMPLE)//make sure to call SetMSAASamples() before calling this
 
 
 /*
@@ -525,7 +555,7 @@ GLUFArrToVec
         -vector representing 'arr'
 
     Throws:
-        'std::invalid_argument' if 'arr' == nullptr OR if 'arr' size < len
+        'std::invalid_argument' if 'arr' == nullptr
 
     Note:
         This is only for legacy purposes; it is not efficient to do this regularly,
@@ -536,9 +566,6 @@ inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len)
 {
     if (!arr)
         throw std::invalid_argument("GLUFArrToVec: \'arr\' == nullptr");
-
-    if (sizeof(arr) < sizeof(T) * len)
-        throw std::invalid_argument("GLUFArrToVec: \'arr\' is too small");
 
     return std::vector<T>(arr, arr + len);
 }
@@ -555,8 +582,7 @@ GLUFAdoptArray
         -vector containing 'arr'
 
     Throws:
-        'std::invalid_argument' if 'arr' == nullptr OR if 'arr' size < len
-        'std::bad_cast':
+        'std::invalid_argument' if 'arr' == nullptr
 
     Note:
         This actually tells the vector to use the C-Style array, and the C-Style array parameter will be set to 'nullptr'
@@ -566,6 +592,9 @@ GLUFAdoptArray
 template<typename T>
 inline std::vector<T> GLUFAdoptArray(T*& arr, unsigned long len) noexcept
 {
+    if (arr == nullptr)
+        throw std::invalid_argument("GLUFAdoptArray: \'arr\' == nullptr");
+
     NOEXCEPT_REGION_START
 
     //the return data;
@@ -637,6 +666,26 @@ enum GLUFShaderType
 	SH_FRAGMENT_SHADER = GL_FRAGMENT_SHADER
 };
 
+enum GLUFProgramStage
+{
+    PPO_INVALID_SHADER_BIT = 0,//this is 0, since passing a null bitfield signifies not to use this program for any stage
+    PPO_VERTEX_SHADER_BIT = GL_VERTEX_SHADER_BIT,
+    PPO_TESS_CONTROL_SHADER_BIT = GL_TESS_CONTROL_SHADER_BIT,
+    PPO_TESS_EVALUATION_SHADER_BIT = GL_TESS_EVALUATION_SHADER_BIT,
+    PPO_GEOMETRY_SHADER_BIT = GL_GEOMETRY_SHADER_BIT,
+    PPO_FRAGMENT_SHADER_BIT = GL_FRAGMENT_SHADER_BIT
+};
+
+/*
+GLUFShaderTypeToProgramStage
+
+    Parameters:
+        'type': which shader type it is
+
+    Returns:
+        corresponding 'GLUFProgramStage' to 'type'
+*/
+GLUFProgramStage GLUFShaderTypeToProgramStage(GLUFShaderType type);
 
 //use type alias because the compile and link output are both the same
 using GLUFCompileOutputStruct = GLUFShaderInfoStruct;
@@ -676,8 +725,6 @@ using GLUFShaderNameList        = std::vector<std::wstring>;
 using GLUFProgramNameList       = std::vector<std::wstring>;
 using GLUFShaderPtrList         = std::vector<GLUFShaderPtr>;
 using GLUFProgramPtrList        = std::vector<GLUFProgramPtr>;
-using GLUFProgramPtrStagesMap   = std::map<GLbitfield, GLUFProgramPtr>;
-using GLUFProgramPtrStagesPair  = std::pair<GLbitfield, GLUFProgramPtr>;
 using GLUFProgramPtrMap         = std::map<GLUFShaderType, GLUFProgramPtr>;
 using GLUFShaderPtrListWeak     = std::vector<GLUFShaderPtrWeak>;
 using GLUFProgramPtrListWeak    = std::vector<GLUFProgramPtrWeak>;
@@ -691,7 +738,12 @@ Shader Exceptions
 
 */
 
-
+//macro for forcing an exception to show up on the log upon contruction
+#define EXCEPTION_CONSTRUCTOR(class_name) \
+class_name() \
+{ \
+    GLUF_ERROR_LONG("GLUF Exception Thrown: \"" << what() << "\""); \
+}
 
 /*
 GLUFException
@@ -700,49 +752,65 @@ GLUFException
     Override MyUniqueMessage in children
 */
 class GLUFException : public std::exception
-{
-    const std::string mPostfix = " See Log For More Info.";
- 
+{ 
 public:
-    //automatically add message to log file when exception thrown
-    GLUFException()
-    {
-        std::stringstream ss;
-        ss << "GLUF Exception Thrown: \"" << what() << mPostfix << "\"";
-        GLUF_ERROR(ss.str());
-    }
-
-    const char* what() const
-    {
-        return (MyUniqueMessage() + mPostfix).c_str();
-    }
-
     
-    virtual const std::string MyUniqueMessage() const = 0;
+    const char* what() const = 0;
 };
 
 class UseProgramException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Failed to Use Program!";
     }
+
+    EXCEPTION_CONSTRUCTOR(UseProgramException)
 };
 
 class MakeShaderException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Shading Creation Failed!";
     }
+
+    EXCEPTION_CONSTRUCTOR(MakeShaderException)
 };
 
 class MakeProgramException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Program Creation Failed!";
     }
+
+    EXCEPTION_CONSTRUCTOR(MakeProgramException)
+};
+
+class MakePPOException : public GLUFException
+{
+public:
+    virtual const char* what() const override
+    {
+        return "PPO Creation Failed!";
+    }
+
+    EXCEPTION_CONSTRUCTOR(MakePPOException)
+};
+
+class NoActiveProgramUniformException : public GLUFException
+{
+public:
+    virtual const char* what() const override
+    {
+        return "Attempt to Buffer Uniform to PPO with no Active Program!";
+    }
+
+    EXCEPTION_CONSTRUCTOR(NoActiveProgramUniformException)
 };
 
 /*
@@ -755,6 +823,8 @@ GLUFShaderManager
             'GetShader*Location(s)'
             'Get*Log'
             'FlushLogs'
+            'GL*'
+            'GetUniformIdFromName'
 
 
     Data Members:
@@ -803,6 +873,21 @@ class OBJGLUF_API GLUFShaderManager
         This is meant to be use in order to handle thread-safe log access
     */
     void AddLinkLog(const GLUFProgramPtr& program, const GLUFShaderInfoStruct& log);
+
+    /*
+    GetUniformIdFromName
+
+        Parameters:
+            'prog': the program to access
+            'ppo': the ppo to access
+            'name': the name of the uniform
+
+        Returns:
+            the id of the uniform
+    
+    */
+    GLuint GetUniformIdFromName(const GLUFSepProgramPtr& ppo, const std::string& name) const;
+    GLuint GetUniformIdFromName(const GLUFProgramPtr& prog, const std::string& name) const;
 
 public:
 
@@ -955,7 +1040,7 @@ public:
 
         Parameters:
             'ppo': the programmible pipeline object
-            'programs': the list of programs to add and respective stages to add
+            'programs': the list of programs to add
             'stages': which stages to add program to
             'program': single program to add
 
@@ -964,8 +1049,8 @@ public:
             'std::invalid_argument': if program(s) == nullptr
     */
 
-    void AttachPrograms(const GLUFSepProgramPtr& ppo, const GLUFProgramPtrStagesMap& programs);
-    void AttachProgram(const GLUFSepProgramPtr& ppo, GLbitfield stages, const GLUFProgramPtr& program);
+    void AttachPrograms(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const;
+    void AttachProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtr& program) const;
 
 
     /*
@@ -979,12 +1064,174 @@ public:
             'std::invalid_argument': if ppo == nullptr
     */
 
-    void ClearPrograms(const GLUFSepProgramPtr& ppo, GLbitfield stages = GL_ALL_SHADER_BITS);
+    void ClearPrograms(GLUFSepProgramPtr& ppo, GLbitfield stages = GL_ALL_SHADER_BITS) const;
 
 
-    //program pipelines are broken
-    //GLUFSepProgramPtr CreateSeparateProgram(const GLUFProgramPtrStagesMap& programs);
+    /*
+    CreateSeparateProgram
 
+        Parameters:
+            'ppo': a null pointer reference to the ppo that will be created
+            'programs': the list of programs to initialize the ppo with
+
+        Throws:
+            'std::invalid_argument': if any of the programs are nullptr or have an id of 0
+            'MakePPOException': if ppo creation failed
+    
+    */
+    void CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const;
+    /*
+    GLUniform*
+
+    Note:  
+        the 'program' parameter is used as a look-up when the 'name' parameter is used,
+            however you still must call 'UseProgram' before calling this
+
+    Parameters:
+        'program': the program which the uniform will be set to
+        'value': the data to set as the uniform
+        'loc': the location of the uniform
+        'name': the name of the uniform
+
+    Throws:
+        'std::invalid_argument': 'name' does not exist
+
+    */
+
+    void GLUniform1f(GLuint loc, const GLfloat& value) const noexcept;
+    void GLUniform2f(GLuint loc, const glm::vec2& value) const noexcept;
+    void GLUniform3f(GLuint loc, const glm::vec3& value) const noexcept;
+    void GLUniform4f(GLuint loc, const glm::vec4& value) const noexcept;
+    void GLUniform1i(GLuint loc, const GLint& value) const noexcept;
+    void GLUniform2i(GLuint loc, const glm::i32vec2& value) const noexcept;
+    void GLUniform3i(GLuint loc, const glm::i32vec3& value) const noexcept;
+    void GLUniform4i(GLuint loc, const glm::i32vec4& value) const noexcept;
+    void GLUniform1ui(GLuint loc, const GLuint& value) const noexcept;
+    void GLUniform2ui(GLuint loc, const glm::u32vec2& value) const noexcept;
+    void GLUniform3ui(GLuint loc, const glm::u32vec3& value) const noexcept;
+    void GLUniform4ui(GLuint loc, const glm::u32vec4& value) const noexcept;
+
+    void GLUniformMatrix2f(GLuint loc, const glm::mat2& value) const noexcept;
+    void GLUniformMatrix3f(GLuint loc, const glm::mat3& value) const noexcept;
+    void GLUniformMatrix4f(GLuint loc, const glm::mat4& value) const noexcept;
+    void GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3& value) const noexcept;
+    void GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2& value) const noexcept;
+    void GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4& value) const noexcept;
+    void GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2& value) const noexcept;
+    void GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4& value) const noexcept;
+    void GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3& value) const noexcept;
+
+
+
+    void GLUniform1f(const GLUFProgramPtr& prog, const std::string& name, const GLfloat& value) const;
+    void GLUniform2f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec2& value) const;
+    void GLUniform3f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec3& value) const;
+    void GLUniform4f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec4& value) const;
+    void GLUniform1i(const GLUFProgramPtr& prog, const std::string& name, const GLint& value) const;
+    void GLUniform2i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const;
+    void GLUniform3i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec3& value) const;
+    void GLUniform4i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const;
+    void GLUniform1ui(const GLUFProgramPtr& prog, const std::string& name, const GLuint& value) const;
+    void GLUniform2ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const;
+    void GLUniform3ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const;
+    void GLUniform4ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec4& value) const;
+
+    void GLUniformMatrix2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2& value) const;
+    void GLUniformMatrix3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3& value) const;
+    void GLUniformMatrix4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4& value) const;
+    void GLUniformMatrix2x3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2x3& value) const;
+    void GLUniformMatrix3x2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3x2& value) const;
+    void GLUniformMatrix2x4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2x4& value) const;
+    void GLUniformMatrix4x2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4x2& value) const;
+    void GLUniformMatrix3x4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3x4& value) const;
+    void GLUniformMatrix4x3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4x3& value) const;
+
+    /*
+    GLProgramUniform*
+    
+        Note:
+            this is only useful when using PPO's; if using regular programs, just use 'GLUniform*'
+            the stage of the program which is being modified is set by 'GLActiveShaderProgram'
+
+        Parameters:
+            'ppo': ppo set the uniform
+            'value': the data to set as the uniform
+            'loc': the location of the uniform
+            'name': the name of the uniform
+
+        Throws:
+            'std::invalid_argument': if 'ppo' == nullptr
+            'std::invalid_argument': if 'loc' or 'name' does not exist in active program
+            'NoActiveProgramUniformException': if 'GLActiveShaderProgram' was not called first
+    
+    */
+
+    void GLProgramUniform1f(const GLUFSepProgramPtr& ppo, GLuint loc, const GLfloat& value) const;
+    void GLProgramUniform2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec2& value) const;
+    void GLProgramUniform3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec3& value) const;
+    void GLProgramUniform4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec4& value) const;
+    void GLProgramUniform1i(const GLUFSepProgramPtr& ppo, GLuint loc, const GLint& value) const;
+    void GLProgramUniform2i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec2& value) const;
+    void GLProgramUniform3i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec3& value) const;
+    void GLProgramUniform4i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec4& value) const;
+    void GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, GLuint loc, const GLuint& value) const;
+    void GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec2& value) const;
+    void GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec3& value) const;
+    void GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec4& value) const;
+
+    void GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2& value) const;
+    void GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3& value) const;
+    void GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4& value) const;
+    void GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2x3& value) const;
+    void GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3x2& value) const;
+    void GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2x4& value) const;
+    void GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4x2& value) const;
+    void GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3x4& value) const;
+    void GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4x3& value) const;
+
+
+
+    void GLProgramUniform1f(const GLUFSepProgramPtr& ppo, const std::string& name, const GLfloat& value) const;
+    void GLProgramUniform2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec2& value) const;
+    void GLProgramUniform3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec3& value) const;
+    void GLProgramUniform4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec4& value) const;
+    void GLProgramUniform1i(const GLUFSepProgramPtr& ppo, const std::string& name, const GLint& value) const;
+    void GLProgramUniform2i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec2& value) const;
+    void GLProgramUniform3i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec3& value) const;
+    void GLProgramUniform4i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec4& value) const;
+    void GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, const std::string& name, const GLuint& value) const;
+    void GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec2& value) const;
+    void GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec3& value) const;
+    void GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec4& value) const;
+
+    void GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2& value) const;
+    void GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3& value) const;
+    void GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4& value) const;
+    void GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2x3& value) const;
+    void GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3x2& value) const;
+    void GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2x4& value) const;
+    void GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4x2& value) const;
+    void GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3x4& value) const;
+    void GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4x3& value) const;
+
+
+    /*
+    GLActiveShaderProgram
+
+        Parameters:
+            'ppo': the ppo object to look for the shader program in
+            'stage': the program stage to bind
+
+        Note:
+            this is called before 'GLProgramUniform*'
+
+            this tells OpenGL which program to look in to find the following uniforms
+
+            'stage' may be part of a program with multiple stages, however this will not affect performance
+            
+    */
+
+    void GLActiveShaderProgram(GLUFSepProgramPtr& ppo, GLUFShaderType stage) const;
 
 };
 
@@ -1031,10 +1278,13 @@ Texture Utilities:
 
 class TextureCreationException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Failed to Create Texture!";
     }
+
+    EXCEPTION_CONSTRUCTOR(TextureCreationException)
 };
 
 enum GLUFTextureFileFormat
@@ -1114,34 +1364,46 @@ Vertex Array Exceptions
 
 class MakeVOAException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "VAO Creation Failed!";
     }
+
+    EXCEPTION_CONSTRUCTOR(MakeVOAException)
 };
 
 class InvalidSoABufferLenException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Buffer Passed Has Length Inconsistent With the Vertex Attributes!";
     }
+
+    EXCEPTION_CONSTRUCTOR(InvalidSoABufferLenException)
 };
 
 class MakeBufferException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Buffer Creation Failed!";
     }
+
+    EXCEPTION_CONSTRUCTOR(MakeBufferException)
 };
 
 class InvalidAttrubuteLocationException : public GLUFException
 {
-    virtual const std::string MyUniqueMessage() const override
+public:
+    virtual const char* what() const override
     {
         return "Attribute Location Not Found in This Buffer!";
     }
+
+    EXCEPTION_CONSTRUCTOR(InvalidAttrubuteLocationException)
 };
 
 /*

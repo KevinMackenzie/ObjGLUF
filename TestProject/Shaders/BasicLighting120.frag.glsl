@@ -6,11 +6,10 @@ varying vec3 Position_worldspace;
 varying vec3 Normal_cameraspace;
 varying vec3 EyeDirection_cameraspace;
 varying vec3 LightDirection_cameraspace;
+varying float Distance;
 
 // Values that stay constant for the whole mesh.
 uniform sampler2D myTextureSampler;
-uniform mat4 MV;
-uniform vec3 LightPosition_worldspace;
 
 void main(){
 
@@ -23,9 +22,6 @@ void main(){
 	vec3 MaterialDiffuseColor = texture2D( myTextureSampler, UV ).rgb;
 	vec3 MaterialAmbientColor = vec3(0.1,0.1,0.1) * MaterialDiffuseColor;
 	vec3 MaterialSpecularColor = vec3(0.3,0.3,0.3);
-
-	// Distance to the light
-	float distance = length( LightPosition_worldspace - Position_worldspace );
 
 	// Normal of the computed fragment, in camera space
 	vec3 n = normalize( Normal_cameraspace );
@@ -52,8 +48,8 @@ void main(){
 		// Ambient : simulates indirect lighting
 		MaterialAmbientColor +
 		// Diffuse : "color" of the object
-		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (distance*distance) +
+		MaterialDiffuseColor * LightColor * LightPower * cosTheta / (Distance*Distance) +
 		// Specular : reflective highlight, like a mirror
-		MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha,5) / (distance*distance);
+		MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha,5) / (Distance*Distance);
 
 }

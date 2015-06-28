@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #define USING_ASSIMP
+#define GLUF_DEBUG
 #define SUPPRESS_RADIAN_ERROR
 #define SUPPRESS_UTF8_ERROR
 //#include "../ObjGLUF/GLUFGui.h"
@@ -28,9 +29,10 @@ static void error_callback(int error, const char* description)
 }
 void ErrorMethod(const std::string& message, const char* func, const char* file, unsigned int line)
 {
-	printf("(%s | %i): %s \n", func, line, message.c_str());
-	//hang
-	system("PAUSE");
+    std::cout << "(" << func << " | " << line << "): " << message << std::endl;
+	//pause
+    char c;
+    std::cin >> c;
 }
 
 /*bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
@@ -113,6 +115,8 @@ struct JustPositions : GLUFVertexStruct
         return *this;
     }
 };
+
+#define USE_SEPARATE
 
 int main(void)
 {
@@ -224,7 +228,7 @@ int main(void)
 
 	//load shaders
 	//GLUFProgramPtr frag, vert;
-	GLUFProgramPtr Prog;
+	/*GLUFProgramPtr Prog;
 
 	//GLUFShaderPathList paths;
 	//paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
@@ -247,7 +251,46 @@ int main(void)
 	text1 += '\n';
 	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-	GLUFSHADERMANAGER.CreateProgram(Prog, sources);//currently fails here
+	GLUFSHADERMANAGER.CreateProgram(Prog, sources);*/
+
+    GLUFProgramPtrList Progs;
+
+    //GLUFShaderPathList paths;
+    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
+
+    GLUFShaderSourceList VertSources, FragSources;
+    unsigned long len = 0;
+
+    std::string text;
+    std::vector<char> rawMem;
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text);
+
+    text += '\n';
+    VertSources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+
+    GLUFProgramPtr Vert;
+    GLUFSHADERMANAGER.CreateProgram(Vert, VertSources, true);
+
+    std::string text1;
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text1);
+    text1 += '\n';
+    FragSources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+
+    GLUFProgramPtr Frag;
+    GLUFSHADERMANAGER.CreateProgram(Frag, FragSources, true);
+
+    GLUFProgramPtrList programs;
+    programs.push_back(Vert);
+    programs.push_back(Frag);
+
+    GLUFSepProgramPtr Prog;
+
+    GLUFSHADERMANAGER.CreateSeparateProgram(Prog, programs);
+
+
 
 	GLUFVariableLocMap attribs, uniforms;
 	attribs = GLUFSHADERMANAGER.GetShaderAttribLocations(Prog);
@@ -423,10 +466,8 @@ int main(void)
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		GLUFSHADERMANAGER.UseProgram(Prog);
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 
+#ifndef USE_SEPARATE
 		glm::vec3 lightPos = glm::vec3(4, 4, 4);
 		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
 
@@ -448,6 +489,34 @@ int main(void)
 		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
 		
 		vertexData2->Draw();
+
+#else
+
+        GLUFSHADERMANAGER.GLActiveShaderProgram(Prog, SH_FRAGMENT_SHADER);
+
+        // Bind our texture in Texture Unit 0
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        // Set our "myTextureSampler" sampler to user Texture Unit 0
+        GLUFSHADERMANAGER.GLProgramUniform1i(Prog, TextureID, 0);
+
+        ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
+        MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+        GLUFSHADERMANAGER.GLActiveShaderProgram(Prog, SH_VERTEX_SHADER);
+
+        // Send our transformation to the currently bound shader, 
+        // in the "MVP" uniform
+        GLUFSHADERMANAGER.GLProgramUniformMatrix4f(Prog, MatrixID, MVP);
+        GLUFSHADERMANAGER.GLProgramUniformMatrix4f(Prog, ModelMatrixID, ModelMatrix);
+        GLUFSHADERMANAGER.GLProgramUniformMatrix4f(Prog, ViewMatrixID, ViewMatrix);
+
+        glm::vec3 lightPos = glm::vec3(4, 4, 4);
+        GLUFSHADERMANAGER.GLProgramUniform3f(Prog, LightID, lightPos);
+
+        vertexData2->Draw();
+
+#endif
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
