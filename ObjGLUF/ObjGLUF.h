@@ -117,8 +117,9 @@ Helpful OpenGL Constants
 
 */
 
-extern GLuint OBJGLUF_API g_GLVersionMajor;
-extern GLuint OBJGLUF_API g_GLVersionMinor;
+extern GLuint OBJGLUF_API gGLVersionMajor;
+extern GLuint OBJGLUF_API gGLVersionMinor;
+extern GLuint OBJGLUF_API gGLVersion2Digit;
 
 
 /*
@@ -132,7 +133,22 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 #define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
 #define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; GLUF_ERROR(ss.str().c_str()) } }
+
+#ifdef GLUF_DEBUG
+
 #define GLUF_NULLPTR_CHECK(ptr) {if (ptr == nullptr){throw std::invalid_argument("Null Pointer");}}
+
+#define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
+#define GLUF_NON_CRITICAL_EXCEPTION(exception) throw exception;
+
+#else
+
+#define GLUF_NULLPTR_CHECK(ptr)
+
+#define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
+#define GLUF_NON_CRITICAL_EXCEPTION(exception) ;
+
+#endif
 
 OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
 OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
@@ -291,12 +307,12 @@ GLUF API Core Controller Methods
 OBJGLUF_API bool GLUFInit();
 
 //call this after calling glfwMakeContextCurrent on the window
-OBJGLUF_API bool GLUFInitOpenGLExtentions();
+OBJGLUF_API bool GLUFInitOpenGLExtensions();
 
 //call this at the very last moment before application termination
 /*OBJGLUF_API*/ void GLUFTerminate(){};//NOTE: WHEN GLUFGUI COMPLETED, REMOVE THESE BRACKETS AND ADD OBJGLUF_API!
 
-
+OBJGLUF_API const std::vector<std::string>& GLUFGetGLExtensions();
 
 /*
 ======================================================================================================================================================================================================
@@ -730,7 +746,7 @@ using GLUFShaderPtrListWeak     = std::vector<GLUFShaderPtrWeak>;
 using GLUFProgramPtrListWeak    = std::vector<GLUFProgramPtrWeak>;
 
 using GLUFVariableLocMap    = std::map<std::string, GLuint>;
-using GLUFVariableLocPair   = std::pair<std::string, GLuint>;
+using GLUFVariableLocPair = std::pair < std::string, GLuint > ;
 
 /*
 
@@ -739,6 +755,8 @@ Shader Exceptions
 */
 
 //macro for forcing an exception to show up on the log upon contruction
+#define EXCEPTION_CONSTRUCTOR_BODY \
+    GLUF_ERROR_LONG("GLUF Exception Thrown: \"" << what() << "\"");
 #define EXCEPTION_CONSTRUCTOR(class_name) \
 class_name() \
 { \
@@ -1025,15 +1043,6 @@ public:
     //bind program id and ppo id 0
     void UseProgramNull() const noexcept;
 
-    /*
-    ======================================
-    ========        NOTE:
-    =====================================
-    
-        Until further notice, PPO are not supported and your application will not link
-    */
-
-
 
     /*
     AttachPrograms
@@ -1080,12 +1089,16 @@ public:
     
     */
     void CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const;
+
     /*
     GLUniform*
 
     Note:  
         the 'program' parameter is used as a look-up when the 'name' parameter is used,
             however you still must call 'UseProgram' before calling this
+
+    OpenGL Version Restrictions:
+        -GLUniform*ui* requires openGL version 3.0 or lator
 
     Parameters:
         'program': the program which the uniform will be set to
@@ -1501,7 +1514,7 @@ public:
             'loc': OpenGL location of the attribute to remove
 
         Throws:
-            'std::invalid_argument': if loc does not exist
+            'std::invalid_argument': if loc does not exist or if 'mBytesPerElement == 0' of if 'mElementsPerValue == 0'
     
     */
 	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
@@ -1613,8 +1626,8 @@ public:
     
     */
 
-    virtual void EnableVertexAttributes() const noexcept;
-    virtual void DisableVertexAttributes() const noexcept;
+    virtual void EnableVertexAttributes() const noexcept = 0;
+    virtual void DisableVertexAttributes() const noexcept = 0;
 };
 
 
@@ -1885,7 +1898,7 @@ public:
             'offset': offset within data buffer of each element within the vertex
 
         Throws:
-            no-throw guarantee
+            'std::invalid_argument': if 'mBytesPerElement == 0' or if 'mElementsPerValue == 0'
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
@@ -1935,6 +1948,15 @@ public:
     */
     template<typename T>
     void BufferSubData(GLUFGLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted = false);
+
+    /*
+    Enable/DisableVertexAttrib
+
+        See 'GLUFVertexArrayBase' for doc's
+    
+    */
+    virtual void EnableVertexAttributes() const noexcept override;
+    virtual void DisableVertexAttributes() const noexcept override;
 
 };
 
@@ -2267,6 +2289,15 @@ public:
 	virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info) noexcept;
 	virtual void RemoveVertexAttrib(GLUFAttribLoc loc) noexcept;
 
+
+    /*
+    Enable/DisableVertexAttrib
+
+    See 'GLUFVertexArrayBase' for doc's
+
+    */
+    virtual void EnableVertexAttributes() const noexcept override;
+    virtual void DisableVertexAttributes() const noexcept override;
 };
 
 /*

@@ -10,27 +10,112 @@
 #include <vadefs.h>
 
 
-//internal macros for debugging
-#ifdef GLUF_DEBUG
+/*
 
-#define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
-#define GLUF_NON_CRITICAL_EXCEPTION(exception) throw exception;
+Internal Macros
 
-#define GLUF_DEBUG_REGION_BEGIN
-#define GLUF_DEBUG_REGION_END
-
-#else
-
-#define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
-#define GLUF_NON_CRITICAL_EXCEPTION(exception) ;
-
-#define GLUF_DEBUG_REGION_BEGIN  if(false){
-#define GLUF_DEBUG_REGION_END }
-
-#endif
+*/
+#define RETHROW throw;
 
 namespace GLUF
 {
+
+/*
+GLExtensions
+
+    Data Members:
+        'mExtensionList': a map of the extensions.  Maps are used for fast lookups O(log n), however only the key is needed
+        'mBufferedExtensionList': a map of extensions that have been requested, and true or false depending on whether they are supported
+        'mCachedExtensionVector': a variable whose sole purpose is act as a point of data to reference to when calling 'GLUFGetGLExtensions()'
+
+    Note:
+        even though 'std::map' may have a O(log n) lookup speed, keeping a separate map for extensions that are actually requested only slightly slows down
+            randomly accessed extension support
+
+*/
+class GLExtensions
+{
+    std::map<std::string, bool> mExtensionList;
+
+    std::map<std::string, bool> mBufferedExtensionList;
+
+    std::vector<std::string> mCachedExtensionVector;
+
+    void Init(const std::vector<std::string>& extensions)
+    {
+        for (auto it : extensions)
+        {
+            mExtensionList.insert({ it, true });
+        }
+
+        mCachedExtensionVector = extensions;
+    }
+
+    friend bool GLUFInitOpenGLExtensions();
+public:
+
+    operator const std::vector<std::string>&() const
+    {
+        return mCachedExtensionVector;
+    }
+
+    bool HasExtension(const std::string& str)
+    {
+        //first look in the buffered list
+        auto buffIt = mBufferedExtensionList.find(str);
+        if (buffIt != mBufferedExtensionList.end())
+            return buffIt->second;
+
+        bool success = false;
+        auto it = mExtensionList.find(str);
+        if (it == mExtensionList.end())
+        {
+            //success = false; //defaults to false
+        }
+        else
+        {
+            success = true;
+        }
+
+        //buffer this one
+        mBufferedExtensionList.insert({ str, success });
+        
+        //then return
+        return success;
+    }
+};
+
+class UnsupportedExtensionException : public GLUFException
+{
+    const std::string mExt;
+public:
+    virtual const char* what() const override
+    {
+        std::stringstream ss;
+        ss << "Unsupported Extension: \"" << mExt << "\"";
+        return ss.str().c_str();
+    }
+
+    UnsupportedExtensionException(const std::string& ext) : mExt(ext)
+    {
+        EXCEPTION_CONSTRUCTOR_BODY
+    }
+};
+
+#define EXT_TO_TEXT(ext) #ext
+#define ASSERT_EXTENTION(ext) if(!gExtensions.HasExtension(#ext)) GLUF_CRITICAL_EXCEPTION(UnsupportedExtensionException(#ext));
+
+//for switch statements based on opengl extensions being present
+#define SWITCH_GL_EXT(ext) if(gExtensions.HasExtension(#ext))
+
+//for switch statements based on opengl version
+#define SWITCH_GL_VERSION if(false){}
+#define GL_VERSION_GREATER(val) else if(gGLVersion2Digit > val)
+#define GL_VERSION_GREATER_EQUAL(val) else if(gGLVersion2Digit >= val)
+#define GL_VERSION_LESS(val) else if(gGLVersion2Digit < val)
+#define GL_VERSION_LESS_EQUAL(val) else if(gGLVersion2Digit <= val)
+
+GLExtensions gExtensions;
 
 /*
 =======================================================================================================================================================================================================
@@ -83,8 +168,9 @@ Helpful OpenGL Constants
 
 */
 
-GLuint g_GLVersionMajor = 0;
-GLuint g_GLVersionMinor = 0;
+GLuint gGLVersionMajor = 0;
+GLuint gGLVersionMinor = 0;
+GLuint gGLVersion2Digit = 0;
 
 
 /*
@@ -138,7 +224,7 @@ bool GLUFInit()
 	return true;
 }
 
-bool GLUFInitOpenGLExtentions()
+bool GLUFInitOpenGLExtensions()
 {
     GLenum err = glewInit();
     if (err != GLEW_OK)
@@ -147,14 +233,26 @@ bool GLUFInitOpenGLExtentions()
         return false;
     }
 
+    //get the list of extensions
+    const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+    gExtensions.Init(GLUFSplitStr(extensions, ' '));
+
 
     //setup global openGL version
     const char* version = (const char*)glGetString(GL_VERSION);
 
     std::vector<std::string> vsVec;
     vsVec = GLUFSplitStr((const char*)version, L'.');//TODO: global openGL version
-    g_GLVersionMajor = std::stoi(vsVec[0]);
-    g_GLVersionMinor = std::stoi(vsVec[1]);
+    gGLVersionMajor = std::stoi(vsVec[0]);
+    gGLVersionMinor = std::stoi(vsVec[1]);
+    gGLVersion2Digit = gGLVersionMajor * 10 + gGLVersionMinor;
+
+    //if the version is less than 2.1, do not allow to continue
+    if ((gGLVersionMajor == 2 && gGLVersionMinor < 1) || gGLVersionMajor < 2)
+    {
+        GLUF_ERROR("OpenGL Version To Low!");
+        return false;
+    }
 
     g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, g_attribPOS));
     g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, g_attribNORM));
@@ -180,6 +278,12 @@ bool GLUFInitOpenGLExtentions()
     g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR7, g_attribCOLOR7));
 
     return true;
+}
+
+
+const std::vector<std::string>& GLUFGetGLExtensions()
+{
+    return gExtensions;
 }
 
 //void GLUFTerminate()
@@ -259,7 +363,7 @@ void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemo
     catch (std::ios_base::failure e)
     {
         GLUF_ERROR_LONG("Failed to Open File: " << e.what());
-        throw;
+        RETHROW;
     }
 
     //delete anything already in here
@@ -282,7 +386,7 @@ void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemo
     catch (std::ios_base::failure e)
 	{
 		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-        throw;
+        RETHROW;
 	}
 }
 
@@ -298,7 +402,7 @@ void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemor
     catch (std::ios_base::failure e)
     {
         GLUF_ERROR_LONG("Failed to Open File: " << e.what());
-        throw;
+        RETHROW;
     }
 
     //delete anything already in here
@@ -321,7 +425,7 @@ void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemor
     catch (std::ios_base::failure e)
     {
         GLUF_ERROR_LONG("Failed to load file into memory: " << e.what());
-        throw;
+        RETHROW;
     }
 }
 
@@ -330,7 +434,7 @@ void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::strin
     if (rawMemory == nullptr)
     {
         GLUF_ERROR("Cannot Load Null Ptr Into String!");
-        throw std::invalid_argument("Cannot Load Null Ptr Into String!");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Cannot Load Null Ptr Into String!"));
     }
     
     //for automatic deletion if exception thrown
@@ -349,7 +453,7 @@ void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::strin
     {
         outString.clear();
         GLUF_ERROR_LONG("Failed to load binary array into string: " << e.what());
-        throw;
+        RETHROW;
     }
 }
 
@@ -946,6 +1050,7 @@ class GLUFSeparateProgram
     GLUFProgramPtr mActiveProgram;//this is used as the 'active program' when assigning uniforms
 
 public:
+    GLUFSeparateProgram();
 	~GLUFSeparateProgram();
 
     /*
@@ -1027,6 +1132,12 @@ GLUFSeparateProgram Methods
 
 */
 
+GLUFSeparateProgram::GLUFSeparateProgram()
+{
+    //prevents from attempting to create separate shaders w/o the extension
+    ASSERT_EXTENTION(GL_ARB_separate_shader_objects);
+}
+
 GLUFSeparateProgram::~GLUFSeparateProgram()
 {
     NOEXCEPT_REGION_START
@@ -1042,7 +1153,7 @@ void GLUFSeparateProgram::Init()
 
     if (mPPOId == 0)
     {
-        throw CreateGLPPOException();
+        GLUF_CRITICAL_EXCEPTION(CreateGLPPOException());
     }
 }
 
@@ -1244,7 +1355,7 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 
     //if shader creation failed, throw an exception
     if (mShaderId == 0)
-        throw CreateGLShaderException();
+        GLUF_CRITICAL_EXCEPTION(CreateGLShaderException());
 
 	//start by adding the strings to glShader Source.  This is done right before the compile
 	//process becuase it is hard to remove it if there is any reason to flush the text
@@ -1281,7 +1392,7 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 	{
 		glDeleteShader(mShaderId);
 		mShaderId = 0;
-        throw CompileShaderException();
+        GLUF_CRITICAL_EXCEPTION(CompileShaderException());
 	}
 	return;
 }
@@ -1312,8 +1423,8 @@ void GLUFProgram::Init()
 	//unlike with the shader, this will be created during initialization
 	mProgramId = glCreateProgram();
 
-	//for uniforms
-	//glGenBuffers(1, &mUniformBuffId);
+    if (mProgramId == 0)
+        GLUF_CRITICAL_EXCEPTION(CreateGLProgramException());
 }
 
 void GLUFProgram::AttachShader(GLUFShaderPtr shader)
@@ -1381,7 +1492,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 	if (!retStruct.mSuccess)
 	{
 		//in the case of failure, DO NOT DELETE ANYTHING, but do throw an error
-        throw LinkProgramException();
+        GLUF_CRITICAL_EXCEPTION(LinkProgramException());
 	}
 	else
 	{
@@ -1587,7 +1698,7 @@ void GLUFShaderManager::CreateShaderFromFile(GLUFShaderPtr& outShader, const std
     catch (const std::ios_base::failure& e)
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): Shader File Load Failed: " << e.what());
-        throw;//rethrow here, because if file loading failed, the it never got to compilation
+        RETHROW;//rethrow here, because if file loading failed, the it never got to compilation
     }
     catch (const CompileShaderException& e)
     {
@@ -1595,12 +1706,12 @@ void GLUFShaderManager::CreateShaderFromFile(GLUFShaderPtr& outShader, const std
         //add the log if file load failed
         AddCompileLog(outShader, output);
 
-        throw MakeShaderException();
+        GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
     catch (const CreateGLShaderException& e)
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
-        throw MakeShaderException();//don't add compile log if it did not successfully compile
+        GLUF_CRITICAL_EXCEPTION(MakeShaderException());//don't add compile log if the shader could not be created
     }
 
 }
@@ -1628,12 +1739,12 @@ void GLUFShaderManager::CreateShaderFromText(GLUFShaderPtr& outShader, const std
         //add the log if file load failed
         AddCompileLog(outShader, out);
 
-        throw MakeShaderException();
+        GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
     catch (const CreateGLShaderException& e)
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
-        throw MakeShaderException();//don't add compile log if it did not successfully compile
+        GLUF_CRITICAL_EXCEPTION(MakeShaderException());//don't add compile log if the shader could not be created
     }
 }
 
@@ -1670,7 +1781,7 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrL
     catch (const CreateGLProgramException& e)
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
-        throw MakeShaderException();
+        GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
     catch (const LinkProgramException& e)
     {
@@ -1681,7 +1792,7 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrL
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
         outProgram->FlushShaders();//if any of the shaders failed to add, flush so it is in a valid state
-        throw MakeShaderException();
+        GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
 }
 
@@ -1796,7 +1907,7 @@ void GLUFShaderManager::UseProgram(const GLUFProgramPtr& program) const
 
     //binding a null program means the program is uninitialized or broken, which is an error
     if (program->GetId() == 0)
-        throw UseProgramException();
+        GLUF_NON_CRITICAL_EXCEPTION(UseProgramException());
 
 	glUseProgram(program->mProgramId);
 }
@@ -1820,7 +1931,7 @@ void GLUFShaderManager::CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUF
         {
             GLUF_NULLPTR_CHECK(it);
             if (it->GetId() == 0)
-                throw std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO");
+                GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
 
             ppo->AttachProgram(it);
         }
@@ -1828,12 +1939,12 @@ void GLUFShaderManager::CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUF
     catch (const CreateGLPPOException& e)
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
-        throw MakePPOException();
+        GLUF_CRITICAL_EXCEPTION(MakePPOException());
     }
     catch (const std::invalid_argument& e)
     {
         GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
-        throw;
+        RETHROW;
     }
 }
 
@@ -1853,7 +1964,7 @@ const GLuint GLUFShaderManager::GetShaderVariableLocation(const GLUFProgramPtr& 
 	}
 
     if (it == program->mAttributeLocations.end())
-        throw std::invalid_argument("\"varName\" Could not be found when searching program attributes/uniforms!");
+        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program attributes/uniforms!"));
 
 	return it->second;
 }
@@ -1903,7 +2014,7 @@ void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr& ppo, const GLUFProgramP
     GLUF_NULLPTR_CHECK(program);
 
     if (program->GetId() == 0)
-        throw std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
 
 	ppo->AttachProgram(program);
 }
@@ -1916,7 +2027,7 @@ void GLUFShaderManager::AttachPrograms(GLUFSepProgramPtr& ppo, const GLUFProgram
     {
         GLUF_NULLPTR_CHECK(it);
         if (it->GetId() == 0)
-            throw std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO");
+            GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
 
 		ppo->AttachProgram(it);
 	}
@@ -2195,7 +2306,15 @@ GLProgramUniform*
 */
 
 //macro for easier readibility; the purpose of this line is to throw a 'NoActiveProgramUniformException' in debug mode 
-#define HAS_ACTIVE_PROGRAM(ppo) GLUF_DEBUG_REGION_BEGIN ppo->GetActiveProgram(); GLUF_DEBUG_REGION_END
+#ifdef GLUF_DEBUG
+
+#define HAS_ACTIVE_PROGRAM(ppo) ppo->GetActiveProgram();
+
+#else
+
+#define HAS_ACTIVE_PROGRAM(ppo)
+
+#endif
 
 /*
 
@@ -2517,14 +2636,14 @@ GLuint LoadTextureDDS(const std::vector<char>& rawData)
     //verify size of header
     if (rawData.size() < 128)
     {
-        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small For Header!");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("(LoadTextureDDS): Raw Data Too Small For Header!"));
     }
 
     //verify the type of file
     std::string filecode(rawData.begin(), rawData.begin() + 4);
     if (filecode != "DDS ")
     {
-        throw std::invalid_argument("(LoadTextureDDS): Incorrect File Format!");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("(LoadTextureDDS): Incorrect File Format!"));
     }
 
     //load the header
@@ -2576,7 +2695,7 @@ GLuint LoadTextureDDS(const std::vector<char>& rawData)
 
     //make sure OpenGL successfully created the texture before loading it
     if (textureID == 0)
-        throw TextureCreationException();
+        GLUF_CRITICAL_EXCEPTION(TextureCreationException());
 
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, textureID);
@@ -2651,14 +2770,14 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
     //verify size of header
     if (rawData.size() < 128)
     {
-        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small For Header!");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("(LoadTextureDDS): Raw Data Too Small For Header!"));
     }
 
     //verify the type of file 
     std::string filecode(rawData.begin(), rawData.begin() + 4);
     if (filecode != "DDS ")
     {
-        throw std::invalid_argument("(LoadTextureDDS): Incorrect File Format!");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("(LoadTextureDDS): Incorrect File Format!"));
     }
     
     //load the header
@@ -2682,7 +2801,7 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
     //verify size of data again once header is loaded
     if (rawData.size() < 128 + bufsize)
     {
-        throw std::invalid_argument("(LoadTextureDDS): Raw Data Too Small!");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("(LoadTextureDDS): Raw Data Too Small!"));
     }
     
 
@@ -2709,7 +2828,7 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
 
     //make sure OpenGL successfully created the texture before loading it
     if (textureID == 0)
-        throw TextureCreationException();
+        GLUF_CRITICAL_EXCEPTION(TextureCreationException());
 
 
     // "Bind" the newly created texture : all future texture functions will modify this texture
@@ -2845,7 +2964,7 @@ GLuint LoadTextureFromFile(const std::wstring& filePath, GLUFTextureFileFormat f
     catch (const TextureCreationException& e)
     {
         GLUF_ERROR_LONG("(LoadTextureFromFile): " << e.what());
-        throw;
+        RETHROW;
     }
 
     return texId;
@@ -2868,7 +2987,7 @@ GLuint LoadTextureFromMemory(const std::vector<char>& data, GLUFTextureFileForma
     catch (const TextureCreationException& e)
     {
         GLUF_ERROR_LONG("(LoadTextureFromMemory): " << e.what());
-        throw;
+        RETHROW;
     }
     return 0;
 }
@@ -2884,17 +3003,22 @@ const GLUFVertexAttribInfo& GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttrib
 {
     auto val = mAttribInfos.find(loc);
     if (val == mAttribInfos.end())
-        throw std::invalid_argument("\"loc\" not found in attribute list");
+        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"loc\" not found in attribute list"));
 
     return val->second;
 }
 
 GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
 {
-	glGenVertexArrayBindVertexArray(&mVertexArrayId);
+    SWITCH_GL_VERSION
+    GL_VERSION_GREATER_EQUAL(30)
+    {
+        glGenVertexArrayBindVertexArray(&mVertexArrayId);
 
-    if (mVertexArrayId == 0)
-        throw MakeVOAException();
+        if (mVertexArrayId == 0)
+            GLUF_CRITICAL_EXCEPTION(MakeVOAException());
+
+    }
 
 	if (index)
 	{
@@ -2902,7 +3026,7 @@ GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool
         if (mIndexBuffer == 0)
         {
             GLUF_ERROR("Failed to create index buffer!");
-            throw MakeBufferException();
+            GLUF_CRITICAL_EXCEPTION(MakeBufferException());
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
@@ -2911,7 +3035,7 @@ GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool
         if (mRangedIndexBuffer == 0)
         {
             GLUF_ERROR("Failed to create ranged index buffer!");
-            throw MakeBufferException();
+            GLUF_CRITICAL_EXCEPTION(MakeBufferException());
         }
 	}
 }
@@ -2922,7 +3046,10 @@ GLUFVertexArrayBase::~GLUFVertexArrayBase()
 
 	glDeleteBuffers(1, &mIndexBuffer);
     glDeleteBuffers(1, &mRangedIndexBuffer);
-	glDeleteVertexArrays(1, &mVertexArrayId);
+
+    SWITCH_GL_VERSION
+    GL_VERSION_GREATER_EQUAL(30)
+	    glDeleteVertexArrays(1, &mVertexArrayId);
 
     UnBindVertexArray();
 }
@@ -2986,6 +3113,10 @@ void GLUFVertexArrayBase::AddVertexAttrib(const GLUFVertexAttribInfo& info)
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
 
+    //make sure the attribute contains valid data
+    if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
+
     mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
 
     //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
@@ -3001,7 +3132,7 @@ void GLUFVertexArrayBase::RemoveVertexAttrib(GLUFAttribLoc loc)
 {
     auto val = mAttribInfos.find(loc);
     if (val == mAttribInfos.end())
-        throw std::invalid_argument("\"loc\" not found in attribute list");
+        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"loc\" not found in attribute list"));
 
     mAttribInfos.erase(val);
 
@@ -3012,12 +3143,16 @@ void GLUFVertexArrayBase::BindVertexArray()
 {
     NOEXCEPT_REGION_START
 
-    //store the old one before binding this one
-    GLint tmpVAOId = 0;
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &tmpVAOId);
-    mTempVAOId = static_cast<GLuint>(tmpVAOId);
+    SWITCH_GL_VERSION
+    GL_VERSION_GREATER_EQUAL(30)
+    {
+        //store the old one before binding this one
+        GLint tmpVAOId = 0;
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &tmpVAOId);
+        mTempVAOId = static_cast<GLuint>(tmpVAOId);
 
-	glBindVertexArray(mVertexArrayId);
+        glBindVertexArray(mVertexArrayId);
+    }
 
     NOEXCEPT_REGION_END
 }
@@ -3026,8 +3161,12 @@ void GLUFVertexArrayBase::UnBindVertexArray()
 {    
     NOEXCEPT_REGION_START
 
-    glBindVertexArray(mTempVAOId);
-    mTempVAOId = 0;
+    SWITCH_GL_VERSION
+    GL_VERSION_GREATER_EQUAL(30)
+    {
+        glBindVertexArray(mTempVAOId);
+        mTempVAOId = 0;
+    }
 
     NOEXCEPT_REGION_END
 }
@@ -3037,16 +3176,27 @@ void GLUFVertexArrayBase::Draw()
     NOEXCEPT_REGION_START
 
     BindVertexArray();
-    //EnableVertexAttributes();  No need to enable them before drawing, because unless someone was naughty 
-    //                               and disabled them without reenabling them, they will be enabled by default
+
+    SWITCH_GL_VERSION
+    GL_VERSION_LESS(30)
+    {
+        EnableVertexAttributes();//must disable and re-enable every time with openGL less than 3.0
+    }
 
     if (mIndexBuffer != 0)
     {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
         glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
     }
     else
     {
         glDrawArrays(mPrimitiveType, 0, mVertexCount);
+    }
+
+    SWITCH_GL_VERSION
+    GL_VERSION_LESS(30)
+    {
+        DisableVertexAttributes();
     }
 
     UnBindVertexArray();
@@ -3059,8 +3209,12 @@ void GLUFVertexArrayBase::DrawRange(GLuint start, GLuint count)
     NOEXCEPT_REGION_START
 
     BindVertexArray();
-    //EnableVertexAttributes();  No need to enable them before drawing, because unless someone was naughty 
-    //                               and disabled them without reenabling them, they will be enabled by default
+
+    SWITCH_GL_VERSION
+    GL_VERSION_LESS(30)
+    {
+        EnableVertexAttributes();//must disable and re-enable every time with openGL less than 3.0
+    }
 
     if (mIndexBuffer != 0)
     {
@@ -3079,6 +3233,12 @@ void GLUFVertexArrayBase::DrawRange(GLuint start, GLuint count)
         glDrawArrays(mPrimitiveType, (start < 0 || start > mVertexCount) ? 0 : start, (count > mVertexCount) ? mVertexCount : count);
     }
 
+    SWITCH_GL_VERSION
+    GL_VERSION_LESS(30)
+    {
+        DisableVertexAttributes();
+    }
+
     UnBindVertexArray();
 
     NOEXCEPT_REGION_END
@@ -3089,8 +3249,12 @@ void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
     NOEXCEPT_REGION_START
 
     BindVertexArray();
-    //EnableVertexAttributes();  No need to enable them before drawing, because unless someone was naughty 
-    //                               and disabled them without reenabling them, they will be enabled by default
+
+    SWITCH_GL_VERSION
+    GL_VERSION_LESS(30)
+    {
+        EnableVertexAttributes();//must disable and re-enable every time with openGL less than 3.0
+    }
 
     if (mIndexBuffer != 0)
     {
@@ -3100,6 +3264,12 @@ void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
     else
     {
         glDrawArraysInstanced(mPrimitiveType, 0, mVertexCount, instances);
+    }
+
+    SWITCH_GL_VERSION
+    GL_VERSION_LESS(30)
+    {
+        DisableVertexAttributes();
     }
 
     UnBindVertexArray();
@@ -3141,30 +3311,6 @@ void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices
     BufferIndicesBase(indices.size() * 4, &indices[0]);
 }
 
-void GLUFVertexArrayBase::EnableVertexAttributes() const
-{
-    NOEXCEPT_REGION_START
-
-	for (auto it : mAttribInfos)
-	{
-		glEnableVertexAttribArray(it.second.mVertexAttribLocation);
-    }
-
-    NOEXCEPT_REGION_END
-}
-
-void GLUFVertexArrayBase::DisableVertexAttributes() const
-{
-    NOEXCEPT_REGION_START
-
-	for (auto it : mAttribInfos)
-	{
-        glDisableVertexAttribArray(it.second.mVertexAttribLocation);
-    }
-
-    NOEXCEPT_REGION_END
-}
-
 
 /*
 RoundNearestMultiple
@@ -3184,7 +3330,10 @@ RoundNearestMultiple
 int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 {
     if (multiple == 0)
-        throw std::invalid_argument("Multiple Cannot Be 0");
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("Multiple Cannot Be 0"));
+        return 0;//if the multiple is 0, still needs to return something in release mode
+    }
 
 	unsigned int nearestMultiple = 0;
 
@@ -3202,18 +3351,24 @@ void GLUFVertexArrayAoS::RefreshDataBufferAttribute()
 {
     NOEXCEPT_REGION_START
 
-	BindVertexArray();
+    SWITCH_GL_VERSION
+    GL_VERSION_GREATER_EQUAL(30)//this is done at draw time in opengl less than 3.0
+    {
 
-	glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+        BindVertexArray();
 
-    GLuint stride = GetVertexSize();
-	for (auto it : mAttribInfos)
-	{
-        //the last parameter might be wrong
-        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(it.second.mOffset)));
+        glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+        GLuint stride = GetVertexSize();
+        for (auto it : mAttribInfos)
+        {
+            //the last parameter might be wrong
+            glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(it.second.mOffset)));
+        }
+
+        UnBindVertexArray();
     }
 
-    UnBindVertexArray();
     NOEXCEPT_REGION_END
 }
 
@@ -3224,7 +3379,7 @@ GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool i
 	glGenBuffers(1, &mDataBuffer);
 
     if (mDataBuffer == 0)
-        throw MakeBufferException();
+        GLUF_CRITICAL_EXCEPTION(MakeBufferException());
 }
 
 GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
@@ -3278,6 +3433,10 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuin
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
 
+    //make sure the attribute contains valid data
+    if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
+
     //integrate the offset into the data
     GLUFVertexAttribInfo tmpCopy = info;
     tmpCopy.mOffset = offset;
@@ -3288,28 +3447,65 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuin
     RefreshDataBufferAttribute();
 
     //enable the new attribute
-    glEnableVertexAttribArray(info.mVertexAttribLocation);
+    glEnableVertexAttribArray(info.mVertexAttribLocation);//not harmful in opengl less than 3.0
 
     UnBindVertexArray();
 }
 
+void GLUFVertexArrayAoS::EnableVertexAttributes() const
+{
+    NOEXCEPT_REGION_START
+
+    glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+    GLuint stride = GetVertexSize();
+    for (auto it : mAttribInfos)
+    {
+        glEnableVertexAttribArray(it.second.mVertexAttribLocation);
+        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(it.second.mOffset)));
+    }
+
+
+    NOEXCEPT_REGION_END
+}
+
+void GLUFVertexArrayAoS::DisableVertexAttributes() const
+{
+    NOEXCEPT_REGION_START
+
+    glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+
+    for(auto it : mAttribInfos)
+    {
+        glDisableVertexAttribArray(it.second.mVertexAttribLocation);
+    }
+
+    NOEXCEPT_REGION_END
+}
+
+
 
 void GLUFVertexArraySoA::RefreshDataBufferAttribute()
 {
-    BindVertexArray();
-    for (auto it : mAttribInfos)
+    //this is done at draw time less than opengl 3.0
+    SWITCH_GL_VERSION
+    GL_VERSION_GREATER_EQUAL(30)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[it.second.mVertexAttribLocation]);
-        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, 0, nullptr);
+        BindVertexArray();
+        for (auto it : mAttribInfos)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[it.second.mVertexAttribLocation]);
+            glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, 0, nullptr);
+        }
+        UnBindVertexArray();
     }
-    UnBindVertexArray();
 }
 
 GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLoc(GLUFAttribLoc loc) const
 {
     auto ret = mDataBuffers.find(loc);
     if (ret == mDataBuffers.end())
-        throw InvalidAttrubuteLocationException();
+        GLUF_CRITICAL_EXCEPTION(InvalidAttrubuteLocationException());
 
     return ret->second;
 }
@@ -3350,7 +3546,7 @@ void GLUFVertexArraySoA::GetBarebonesMesh(GLUFMeshBarebones& inData)
 	std::map<GLUFAttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
 	if (mIndexBuffer == 0 || it == mDataBuffers.end())
 	{
-        throw InvalidAttrubuteLocationException();
+        GLUF_CRITICAL_EXCEPTION(InvalidAttrubuteLocationException());
 	}
 	
 	glBindBuffer(GL_ARRAY_BUFFER, it->second);
@@ -3359,9 +3555,12 @@ void GLUFVertexArraySoA::GetBarebonesMesh(GLUFMeshBarebones& inData)
     inData.mVertices = GLUFArrToVec(pVerts, mVertexCount);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 	GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
+
     inData.mIndices = GLUFArrToVec(pIndices, mIndexCount);
+    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
     UnBindVertexArray();
 }
@@ -3403,6 +3602,36 @@ void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
     NOEXCEPT_REGION_END
 }
 
+void GLUFVertexArraySoA::EnableVertexAttributes() const
+{
+    NOEXCEPT_REGION_START
+
+    auto it = mDataBuffers.begin();
+    for (auto itAttrib : mAttribInfos)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, it->second);
+        glEnableVertexAttribArray(itAttrib.second.mVertexAttribLocation);
+        glVertexAttribPointer(itAttrib.second.mVertexAttribLocation, itAttrib.second.mElementsPerValue, itAttrib.second.mType, GL_FALSE, 0, nullptr);
+        ++it;
+    }
+
+    NOEXCEPT_REGION_END
+}
+
+void GLUFVertexArraySoA::DisableVertexAttributes() const
+{
+    NOEXCEPT_REGION_START
+
+    for (auto it : mAttribInfos)
+    {
+        glDisableVertexAttribArray(it.second.mVertexAttribLocation);
+    }
+
+    NOEXCEPT_REGION_END
+}
+
+
+
 /*
 =======================================================================================================================================================================================================
 Assimp Utility Functions
@@ -3412,7 +3641,7 @@ Assimp Utility Functions
 std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum)
 {
     if (meshNum > scene->mNumMeshes)
-        throw std::invalid_argument("\"meshNum\" is higher than number of meshes in \"scene\"");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than number of meshes in \"scene\""));
 
 	//const aiMesh* mesh = scene->mMeshes[meshNum];
 
@@ -3620,31 +3849,11 @@ struct GLUFAssimpVertexStruct : public GLUFVertexStruct
     }
 };
 
-/*
 
-
-
-
-
-
-
-Ended Work on Below Function and above struct
-
-
-
-
-
-
-
-
-
-
-
-*/
 std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, const GLUFVertexAttribMap& inputs, GLuint meshNum)
 {
     if (meshNum > scene->mNumMeshes)
-        std::invalid_argument("\"meshNum\" is higher than the number of meshes in \"scene\"");
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than the number of meshes in \"scene\""));
 
 	const aiMesh* mesh = scene->mMeshes[meshNum];
 

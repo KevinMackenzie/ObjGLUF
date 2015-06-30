@@ -137,8 +137,12 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 
-	GLUFInitOpenGLExtentions();
-
+	GLUFInitOpenGLExtensions();
+    
+    //for testing purposes
+    /*gGLVersionMajor = 2;
+    gGLVersionMinor = 0;
+    gGLVersion2Digit = 20;*/
 
 	//GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
 	//GLUFInitGui(window, MsgProc, ctrlTex);
@@ -253,6 +257,7 @@ int main(void)
 
 	GLUFSHADERMANAGER.CreateProgram(Prog, sources);*/
 
+#ifdef USE_SEPARATE
     GLUFProgramPtrList Progs;
 
     //GLUFShaderPathList paths;
@@ -290,6 +295,32 @@ int main(void)
 
     GLUFSHADERMANAGER.CreateSeparateProgram(Prog, programs);
 
+#else
+    //GLUFShaderPathList paths;
+    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
+
+    GLUFProgramPtr Prog;
+
+    GLUFShaderSourceList Sources;
+    unsigned long len = 0;
+
+    std::string text;
+    std::vector<char> rawMem;
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text);
+
+    text += '\n';
+    Sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+
+    std::string text1;
+    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    GLUFLoadBinaryArrayIntoString(rawMem, text1);
+    text1 += '\n';
+    Sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+
+    GLUFSHADERMANAGER.CreateProgram(Prog, Sources);
+#endif
 
 
 	GLUFVariableLocMap attribs, uniforms;
@@ -326,9 +357,9 @@ int main(void)
 
 	//load up the locations
 
-	std::shared_ptr<GLUFVertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
+	/*std::shared_ptr<GLUFVertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData)
-		EXIT_FAILURE;
+		EXIT_FAILURE;*/
 
 	std::shared_ptr<GLUFVertexArray> vertexData2 = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData2)
@@ -344,7 +375,7 @@ int main(void)
 	float currTime = 0.0f;
 
 
-	printf("%i.%i", g_GLVersionMajor, g_GLVersionMinor);
+	printf("%i.%i", gGLVersionMajor, gGLVersionMinor);
 
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);
@@ -468,25 +499,24 @@ int main(void)
 		GLUFSHADERMANAGER.UseProgram(Prog);
 
 #ifndef USE_SEPARATE
+
 		glm::vec3 lightPos = glm::vec3(4, 4, 4);
-		glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+		GLUFSHADERMANAGER.GLUniform3f(LightID, lightPos);
 
 		// Bind our texture in Texture Unit 0
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
-		glUniform1i(TextureID, 0);
-
-		//vertexData->Draw();
+		GLUFSHADERMANAGER.GLUniform1i(TextureID, 0);
 
 		ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
 		MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-		glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+		GLUFSHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
+        GLUFSHADERMANAGER.GLUniformMatrix4f(ModelMatrixID, ModelMatrix);
+        GLUFSHADERMANAGER.GLUniformMatrix4f(ViewMatrixID, ViewMatrix);
 		
 		vertexData2->Draw();
 

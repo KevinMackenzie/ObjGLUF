@@ -17,6 +17,7 @@ out vec3 Position_worldspace;
 out vec3 Normal_cameraspace;
 out vec3 EyeDirection_cameraspace;
 out vec3 LightDirection_cameraspace;
+out float Distance;
 
 // Values that stay constant for the whole mesh.
 //layout(std140, binding = 0) uniform MatrixTransformations
@@ -56,5 +57,8 @@ void main(){
 	
 	// UV of the vertex. No special space for this one.
 	vs_out.uvCoord = _UV;
+	
+	// Distance to the light
+	Distance = length( LightPosition_worldspace - Position_worldspace );
 }
 
