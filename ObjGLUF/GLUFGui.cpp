@@ -830,7 +830,6 @@ m_bNonUserEvents(false),
 m_bKeyboardInput(false),
 m_bMouseInput(true)
 {
-	m_wszCaption[0] = L'\0';
 
 	m_pNextDialog = this;
 	m_pPrevDialog = this;
@@ -1932,7 +1931,7 @@ GLUFResult GLUFDialog::InitControl(GLUFControl* pControl)
 
 	pControl->m_Index = static_cast<unsigned int>(m_Controls.size());
 
-	// Look for a default Element entries
+	// Look for a default Element entry
 	for (auto it = m_DefaultElements.begin(); it != m_DefaultElements.end(); ++it)
 	{
 		if ((*it)->nControlType == pControl->GetType())
@@ -2780,31 +2779,7 @@ void GLUFDialog::InitDefaultElements()
 
 //--------------------------------------------------------------------------------------
 GLUFDialogResourceManager::GLUFDialogResourceManager() :
-//m_pVSRenderUI11(nullptr),
-//m_pPSRenderUI11(nullptr),
-//m_pPSRenderUIUntex11(nullptr),
-//m_pDepthStencilStateUI11(nullptr),
-//m_pRasterizerStateUI11(nullptr),
-//m_pBlendStateUI11(nullptr),
-//m_pSamplerStateUI11(nullptr),
-//m_pDepthStencilStateStored11(nullptr),
-//m_pRasterizerStateStored11(nullptr),
-//m_pBlendStateStored11(nullptr),
-//m_pSamplerStateStored11(nullptr),
-//m_pInputLayout11(nullptr),
-m_pVBScreenQuadVAO(0),
-m_pVBScreenQuadIndicies(0),
-m_pVBScreenQuadPositions(0),
-m_pVBScreenQuadColor(0),
-m_pVBScreenQuadUVs(0),
-//m_pVBScreenQuad11(nullptr),
-//m_pSpriteBuffer11(nullptr),
-//m_SpriteBufferBytes11(0)
-m_SpriteBufferVao(0),
-m_SpriteBufferPos(0),
-m_SpriteBufferColors(0),
-m_SpriteBufferTexCoords(0),
-m_SpriteBufferIndices(0)
+mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be changed every frame
 {
 	glGenVertexArrayBindVertexArray(&m_pVBScreenQuadVAO);
 	//glGenBuffers(1, &m_pVBScreenQuadIndicies);
@@ -3605,6 +3580,17 @@ GLUFButton::GLUFButton(GLUFDialog* pDialog) : GLUFStatic(GT_CENTER | GT_VCENTER)
 
 	m_bPressed = false;
 	m_nHotkey = 0;
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFButton::OnHotkey()
+{
+    GLUFDialogPtr dlg = mDialog.lock();
+    if (dlg->IsKeyboardInputEnabled())
+    {
+        dlg->RequestFocus(shared_from_this());
+        dlg->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
+    }
 }
 
 //--------------------------------------------------------------------------------------

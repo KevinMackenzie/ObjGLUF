@@ -117,9 +117,9 @@ Helpful OpenGL Constants
 
 */
 
-extern GLuint OBJGLUF_API gGLVersionMajor;
-extern GLuint OBJGLUF_API gGLVersionMinor;
-extern GLuint OBJGLUF_API gGLVersion2Digit;
+OBJGLUF_API GLuint GetGLVersionMajor();
+OBJGLUF_API GLuint GetGLVersionMinor();
+OBJGLUF_API GLuint GetGLVersion2Digit();// if OpenGL Version 4.3, this would return 43
 
 
 /*
@@ -140,6 +140,9 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 
 #define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
 #define GLUF_NON_CRITICAL_EXCEPTION(exception) throw exception;
+
+//used for defining private constructors which can be accessed by 'std::make_shared'; NOTE: all parameters must be const references
+#define GLUF_FORCE_SMART_POINTERS(CLASSNAME, ...) CLASSNAME(__VA_ARGS__); friend std::shared_ptr<CLASSNAME> std::make_shared<CLASSNAME>(__VA_ARGS__);
 
 #else
 
@@ -430,16 +433,18 @@ inline bool operator !=(const GLUFRect& rc0, const GLUFRect& rc1)
     return !(rc0 == rc1);
 }
 
-OBJGLUF_API bool		GLUFPtInRect(GLUFRect rect, GLUFPoint pt);
+OBJGLUF_API bool		GLUFPtInRect(const GLUFRect& rect, const GLUFPoint& pt);
 OBJGLUF_API void		GLUFSetRectEmpty(GLUFRect& rect);
 OBJGLUF_API void		GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom);
 OBJGLUF_API void		GLUFSetRect(GLUFRectf& rect, float left, float top, float right, float bottom);
 OBJGLUF_API void		GLUFOffsetRect(GLUFRect& rect, long x, long y);
-OBJGLUF_API long		GLUFRectHeight(GLUFRect rect);
-OBJGLUF_API long		GLUFRectWidth(GLUFRect rect);
-OBJGLUF_API void		GLUFInflateRect(GLUFRect& rect, long dx, long dy);
-OBJGLUF_API bool		GLUFIntersectRect(GLUFRect rect0, GLUFRect rect1, GLUFRect& rectIntersect);
-OBJGLUF_API GLUFPoint	GLUFMultPoints(GLUFPoint pt0, GLUFPoint pt1);
+OBJGLUF_API void        GLUFRepositionRect(GLUFRect& rect, long newX, long newY);
+OBJGLUF_API long		GLUFRectHeight(const GLUFRect& rect);
+OBJGLUF_API long		GLUFRectWidth(const GLUFRect& rect);
+OBJGLUF_API void		GLUFInflateRect(GLUFRect& rect, long dx, long dy);//center stays in same spot
+OBJGLUF_API void        GLUFResizeRect(GLUFRect& rect, long newWidth, long newHeight);//bottom left stays in same spot
+OBJGLUF_API bool		GLUFIntersectRect(const GLUFRect& rect0, const GLUFRect& rect1, GLUFRect& rectIntersect);
+OBJGLUF_API GLUFPoint	GLUFMultPoints(const GLUFPoint& pt0, const GLUFPoint& pt1);
 
 /*
 ======================================================================================================================================================================================================
@@ -631,16 +636,24 @@ inline std::vector<T> GLUFAdoptArray(T*& arr, unsigned long len) noexcept
     return std::vector <T>();//to keep the compiler from complaining
 }
 
-//used for getting vertices from rects 0,0 is bottom left
-OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(GLUFRect rect, bool x, bool y);
-OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(GLUFRectf rect, bool x, bool y);
+/*
+GLUFGetVec2FromRect
+    
+    Parameters:
+        'rect': the rect to retreive from
+        'x': true: right; false: left
+        'y': true: top; false: bottom
+
+*/
+OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(const GLUFRect& rect, bool x, bool y);
+OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(const GLUFRectf& rect, bool x, bool y);
 
 //used for getting vertices from rects 0,0 is bottom left
-OBJGLUF_API GLUFPoint GLUFGetPointFromRect(GLUFRect rect, bool x, bool y);
+OBJGLUF_API GLUFPoint GLUFGetPointFromRect(const GLUFRect& rect, bool x, bool y);
 
 
-OBJGLUF_API Color4f GLUFColorToFloat(Color color);//takes 0-255 to 0.0f - 1.0f
-OBJGLUF_API Color3f GLUFColorToFloat3(Color color);//takes 0-255 to 0.0f - 1.0f
+OBJGLUF_API Color4f GLUFColorToFloat(const Color& color);//takes 0-255 to 0.0f - 1.0f
+OBJGLUF_API Color3f GLUFColorToFloat3(const Color& color);//takes 0-255 to 0.0f - 1.0f
 
 
 
