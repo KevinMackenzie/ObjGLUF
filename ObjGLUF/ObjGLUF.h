@@ -142,7 +142,7 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 #define GLUF_NON_CRITICAL_EXCEPTION(exception) throw exception;
 
 //used for defining private constructors which can be accessed by 'std::make_shared'; NOTE: all parameters must be const references
-#define GLUF_FORCE_SMART_POINTERS(CLASSNAME, ...) CLASSNAME(__VA_ARGS__); friend std::shared_ptr<CLASSNAME> std::make_shared<CLASSNAME>(__VA_ARGS__);
+#define GLUF_FORCE_SMART_POINTERS(CLASSNAME, ...) CLASSNAME(__VA_ARGS__); friend std::shared_ptr<CLASSNAME> std::make_shared<CLASSNAME>(__VA_ARGS__); CLASSNAME() = delete;
 
 #else
 
@@ -168,7 +168,7 @@ Utility Macros
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
 #define NOEXCEPT_REGION_START try{
 #define NOEXCEPT_REGION_END }catch(...){}
-#define noexcept
+#define noexcept throw()
 
 /*
 ======================================================================================================================================================================================================

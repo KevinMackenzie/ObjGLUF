@@ -180,7 +180,6 @@ using GLUFCheckBoxPtr               = std::shared_ptr < GLUFCheckBox > ;
 using GLUFComboBoxPtr               = std::shared_ptr < GLUFComboBox > ;
 using GLUFControlPtr                = std::shared_ptr < GLUFControl > ;
 using GLUFDialogPtr                 = std::shared_ptr < GLUFDialog > ;
-using GLUFDialogPtrWeak             = std::weak_ptr   < GLUFDialog > ;
 using GLUFDialogResourceManagerPtr  = std::shared_ptr < GLUFDialogResourceManager > ;
 using GLUFEditBoxPtr                = std::shared_ptr < GLUFEditBox > ;
 using GLUFElementPtr                = std::shared_ptr < GLUFElement > ;
@@ -204,6 +203,8 @@ using GLUFRadioButtonGroup  = glm::uint32_t;
 using GLUFBitfield          = glm::uint32_t;
 using GLUFBitfieldL         = glm::uint64_t;
 using GLUFSize              = glm::uint32_t;
+using GLUFValue             = glm::int32_t;
+using GLUFUValue            = glm::uint32_t;
 using GLUFIndex             = glm::uint32_t;   
 using GLUFKeyId             = glm::uint32_t;
 
@@ -1434,20 +1435,6 @@ protected:
 
 };
 
-/*
-
-Random Text Helping functions
-
-================================================= TODO: ==================================================
-    Relocate these methods into a more sensible spot/container/namespace/whatever
-        Probably in a source file instead of a header file
-
-*/
-void BeginText(const glm::mat4& orthoMatrix);
-
-
-void DrawTextGLUF(const GLUFFontNode& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect = false);
-void EndText(const GLUFFontPtr& font);
 
 
 /*
@@ -1506,9 +1493,8 @@ class GLUFControl : public std::enable_shared_from_this<GLUFControl>
             'dialog': the parent dialog
 
     */
-    GLUF_FORCE_SMART_POINTERS(GLUFControl, const GLUFDialogPtr& dialog);
+    GLUF_FORCE_SMART_POINTERS(GLUFControl, GLUFDialog& dialog);
 
-    GLUFControl() = delete;
 protected:
     GLUFControlIndex mID;
     GLUFControlType mType;
@@ -1522,7 +1508,7 @@ protected:
 
     GLUFRect mRegion;
 
-    GLUFDialogPtrWeak mDialog;
+    GLUFDialog& mDialog;
     GLUFControlIndex mIndex;
 
     //use a map, because there may be gaps in indices
@@ -1654,7 +1640,7 @@ protected:
             This method is used to recreate the regions for different elements when the main rect changes
 
     */
-    virtual void UpdateRects(){}
+    virtual void UpdateRects() noexcept{}
 };
 
 
@@ -1697,9 +1683,8 @@ protected:
     std::wstring     mText;
     GLUFBitfield     mTextFlags;
 
-    GLUF_FORCE_SMART_POINTERS(GLUFStatic, const GLUFDialogPtr& dialog);
+    GLUF_FORCE_SMART_POINTERS(GLUFStatic, GLUFDialog& dialog);
     
-    GLUFStatic() = delete;
 public:
 
 
@@ -1729,7 +1714,7 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-    virtual void Render(float elapsedTime) override;
+    virtual void Render(float elapsedTime) noexcept override;
 };
 
 
@@ -1743,9 +1728,8 @@ GLUFButton
 class GLUFButton : public GLUFStatic
 {
 
-    GLUF_FORCE_SMART_POINTERS(GLUFButton, const GLUFDialogPtr& dialog);
+    GLUF_FORCE_SMART_POINTERS(GLUFButton, GLUFDialog& dialog);
 
-    GLUFButton() = delete;
 protected:
     bool mPressed;
 
@@ -1756,9 +1740,9 @@ public:
     
     */
     virtual bool CanHaveFocus()	const override	{ return (mVisible && mEnabled); }
-    virtual void Render(float elapsedTime) override;
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) override;
-    virtual void OnHotkey() override;
+    virtual void Render(float elapsedTime) noexcept override;
+    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+    virtual void OnHotkey() noexcept override;
 
 };
 
@@ -1777,9 +1761,8 @@ GLUFCheckBox
 */
 class GLUFCheckBox : public GLUFButton
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFCheckBox, const GLUFDialogPtr& dialog);
+    GLUF_FORCE_SMART_POINTERS(GLUFCheckBox, GLUFDialog& dialog);
 
-    GLUFCheckBox() = delete;
 protected:
     bool mChecked;
     GLUF::GLUFRect mButtonRegion;
@@ -1787,9 +1770,9 @@ protected:
 
 public:
 
-	virtual void    OnHotkey(){	if (m_pDialog->IsKeyboardInputEnabled()) 
+	/*virtual void    OnHotkey() noexcept{	if (m_pDialog->IsKeyboardInputEnabled()) 
 									m_pDialog->RequestFocus(this);
-								SetCheckedInternal(!m_bChecked, true);}
+								SetCheckedInternal(!m_bChecked, true);}*/
 
 
 
@@ -1807,11 +1790,11 @@ public:
     Overridden Unambiguous Member Functions
     
     */
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) override;
-	virtual void Render(float elapsedTime) override;
-    virtual void OnHotkey() override;
+    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual void Render(float elapsedTime) noexcept override;
+    virtual void OnHotkey() noexcept override;
     virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const override;
-    virtual void UpdateRects() override;
+    virtual void UpdateRects() noexcept override;
 
 protected:
 
@@ -1846,15 +1829,12 @@ class GLUFRadioButton : public GLUFCheckBox
 {
     GLUF_FORCE_SMART_POINTERS(GLUFRadioButton, const GLUFDialog& dialog);
 
-    GLUFRadioButton() = delete;
 protected:
     GLUFRadioButtonGroup mButtonGroup;
 
 public:
 
-	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//virtual bool    HandleMouse(UINT uMsg, GLUF::GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual void    OnHotkey()
+	virtual void    OnHotkey() noexcept
 	{
 		if (m_pDialog->IsKeyboardInputEnabled()) 
 			m_pDialog->RequestFocus(this);
@@ -1876,7 +1856,7 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) override;
+	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
 
 protected:
 
@@ -1940,9 +1920,8 @@ public:
     };
 private:
 
-    GLUF_FORCE_SMART_POINTERS(GLUFScrollBar, const GLUFDialogPtr& dialog);
+    GLUF_FORCE_SMART_POINTERS(GLUFScrollBar, GLUFDialog& dialog);
 
-    GLUFScrollBar() = delete;
 protected:
 
     bool mShowThumb;
@@ -1951,10 +1930,10 @@ protected:
     GLUF::GLUFRect mDownButtonRegion;
     GLUF::GLUFRect mTrackRegion;
     GLUF::GLUFRect mThumbRegion;
-    int mPosition;
-    int mPageSize;
-    int mStart;
-    int mEnd;
+    GLUFValue mPosition;
+    GLUFValue mPageSize;
+    GLUFValue mStart;
+    GLUFValue mEnd;
     GLUF::GLUFPoint mPreviousMousePos;
     GLUFArrowState mArrow;
     double mArrowTS;
@@ -2002,9 +1981,9 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) override;
-	virtual void Render(float elapsedTime) override;
-	virtual void UpdateRects() override;
+    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual void Render(float elapsedTime) noexcept override;
+	virtual void UpdateRects() noexcept override;
 
 protected:
     
@@ -2015,7 +1994,7 @@ protected:
             This resizes the thumbnail based on how many items there are, and where the thumbnail is based on 'mPosition'
     
     */
-    void            UpdateThumbRect();
+    void UpdateThumbRect();
 
 
     /*
@@ -2025,7 +2004,7 @@ protected:
             This acts like a clamp function; it ensures 'mPosition' is within legal range
     
     */
-    void            Cap();
+    void Cap();
 };
 
 
@@ -2074,6 +2053,9 @@ public:
 /*
 GLUFListBox
 
+    Parents:
+        'GLUFControl'
+
     Data Members:
         'mTextRegion': the bounding box for the text
         'mSelectionRegion': the bounding box of the selected elements
@@ -2091,7 +2073,6 @@ class GLUFListBox : public GLUFControl
 {
     GLUF_FORCE_SMART_POINTERS(GLUFListBox, const GLUFDialog& dialog);
 
-    GLUFListBox() = delete;
 protected:
 
     GLUF::GLUFRect mTextRegion;
@@ -2338,12 +2319,12 @@ public:
     
 
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) override;
-	virtual void OnInit() override              { mDialog.lock()->InitControl(&m_ScrollBar);	}
-	virtual bool CanHaveFocus() const override	{ return (mVisible && mEnabled);			    }
-	virtual void Render(float elapsedTime) override;
-	virtual void UpdateRects() override;
-	virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const override{ return GLUFControl::ContainsPoint(pt) || m_ScrollBar.ContainsPoint(pt); }
+	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual void OnInit() override                      { mDialog.InitControl(&m_ScrollBar);	}
+	virtual bool CanHaveFocus() const noexcept override	{ return (mVisible && mEnabled);			    }
+	virtual void Render(float elapsedTime) noexcept override;
+	virtual void UpdateRects() noexcept override;
+	virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override{ return GLUFControl::ContainsPoint(pt) || m_ScrollBar.ContainsPoint(pt); }
 
 protected:
 
@@ -2366,6 +2347,9 @@ protected:
 /*
 GLUFComboBox
 
+    Parents:   
+        'GLUFButton'
+
     Data Members:
         'mSelected': the index of the selected item
         'mFocused': the index of the focused item (i.e. when opened, the one the mouse is over)
@@ -2382,9 +2366,7 @@ GLUFComboBox
 */
 class GLUFComboBox : public GLUFButton
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFComboBox, const GLUFDialogPtr& dialog);
-
-    GLUFComboBox() = delete;
+    GLUF_FORCE_SMART_POINTERS(GLUFComboBox, GLUFDialog& dialog);
 
 protected:
 
@@ -2429,8 +2411,8 @@ public:
     GLUFComboBoxItemPtr GetItem(const std::wstring& text, GLUFIndex start = 0) const;
     GLUFComboBoxItemPtr GetItem(GLUFIndex index) const		{ return mItems[index]; }
 
-    void                SetDropHeight(GLUFSize nHeight)			{ mDropHeight = nHeight; UpdateRects(); }
-    void                SetScrollBarWidth(GLUFSize width) noexcept                 { mSBWidth = width; UpdateRects();                              }
+    void                SetDropHeight(GLUFSize nHeight)			    { mDropHeight = nHeight; UpdateRects(); }
+    void                SetScrollBarWidth(GLUFSize width) noexcept  { mSBWidth = width; UpdateRects();      }
 
     /*
     AddItem
@@ -2578,12 +2560,12 @@ public:
     
     
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) override;
-	virtual void OnHotkey() override;
+	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual void OnHotkey() noexcept override;
 	virtual bool CanHaveFocus() const override{ return (mVisible && mEnabled); }
 	virtual void OnFocusOut() override;
 	virtual void Render(float elapsedTime) override;
-	virtual void UpdateRects() override;
+	virtual void UpdateRects() noexcept override;
 	virtual void OnInit() override{ return m_pDialog->InitControl(&m_ScrollBar); }
 	virtual void SetTextColor(const GLUF::Color& Color) override;
 
@@ -2605,74 +2587,182 @@ protected:
 
 
 /*
+GLUFSlider
 
+    Parents:
+        'GLUFControl'
 
-Stopped Here June 3 2015
-
+    Data Members:
+        'mValue': the value between 'mMin' and 'mMax' where the slider is at
+        'mMin': the minimum value the slider can have
+        'mMax': the maximum value the slider can have
+        'mDragX': the mouse position at the start of the drag
+        'mDragOffset': the difference between the 'mDragX' and the current mouse position; updated every frame
+        'mButtonX': the X value of the button position in pixels
+        'mPressed': is the button pressed to be dragged
+        'mButtonRegion': the region the button occupies
 
 */
-
-//-----------------------------------------------------------------------------
-// Slider control TODO: support horizontal sliders as well
-//-----------------------------------------------------------------------------
 class GLUFSlider : public GLUFControl
 {
-public:
-	GLUFSlider(GLUFDialog* pDialog = nullptr);
-
-	virtual bool    ContainsPoint(GLUF::GLUFPoint pt);
-	virtual bool    CanHaveFocus(){ return (m_bVisible && m_bEnabled); }
-	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//virtual bool    HandleMouse(UINT uMsg, GLUF::GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-
-	virtual bool	MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
-
-	virtual void    UpdateRects();
-
-	virtual void    Render(float elapsedTime);
-
-	void            SetValue(int nValue){ SetValueInternal(nValue, false); }
-	int             GetValue() const{ return m_nValue; };
-
-	void            GetRange(int& nMin, int& nMax) const{ nMin = m_nMin; nMax = m_nMax; }
-	void            SetRange(int nMin, int nMax);
+    GLUF_FORCE_SMART_POINTERS(GLUFSlider, GLUFDialog& dialog);
 
 protected:
-	void            SetValueInternal(int nValue, bool bFromInput);
-	int             ValueFromPos(long x);
 
-	int m_nValue;
+    GLUFValue mValue;
+    GLUFValue mMin;
+    GLUFValue mMax;
+    GLUFValue mDragX;
+    GLUFValue mDragOffset;
+    GLUFValue mButtonX;
+    bool mPressed;
+    GLUF::GLUFRect mButtonRegion;
 
-	int m_nMin;
-	int m_nMax;
+public:
 
-	long m_nDragX;      // Mouse position at start of drag
-	long m_nDragOffset; // Drag offset from the center of the button
-	long m_nButtonX;
+    /*
+    Setters and Getters
 
-	bool m_bPressed;
-	GLUF::GLUFRect m_rcButton;
+        Throws:
+            no-throw guarantee
+    
+    */
+    GLUFValue   GetValue() const noexcept           { return mValue;                    }
+    void        GetRange(GLUFValue& nMin, GLUFValue& nMax) const noexcept
+                                                    { nMin = mMin; nMax = mMax;         }
+    void        SetValue(GLUFValue nValue) noexcept { SetValueInternal(nValue, false);  }
+    void        SetRange(GLUFValue  nMin, GLUFValue  nMax) noexcept;
+
+    /*
+    Overridden Unambiguous Member Functions
+    
+    
+    */
+    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+    virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override;
+    virtual bool CanHaveFocus()const noexcept override{ return (mVisible && mEnabled); }
+    virtual void UpdateRects() noexcept override;
+    virtual void Render(float elapsedTime) noexcept override;
+
+protected:
+    /*
+    SetValueInternal
+
+        Note:
+            sets the position of the slider, and throws an event if it is from the user
+
+        Parameters:
+            'value': the value to set the slider to
+            'fromInput': whether the this value came from the user or not
+    
+        Throws:
+            no-throw guarantee
+    */
+	void      SetValueInternal(int nValue, bool bFromInput) noexcept;
+
+    /*
+    ValueFromXPos
+    
+        Note:  
+            Gets the value to set the slider given a pixel X coordinate
+
+        Parameters:
+            'xPos': the screen position in pixels 
+
+        Returns:
+            The value to set the slider from the given X coordinate
+
+        Throws:
+            no-throw guarantee
+
+    */
+	GLUFValue ValueFromXPos(GLUFUValue xPos) const noexcept;
+
 };
 
 
 
-//-----------------------------------------------------------------------------
-// EditBox control TODO: make text insertion AND fix things
-//-----------------------------------------------------------------------------
-class GLUFEditBox : public GLUFControl
+/*
+
+
+Stopped Here June 4 2015
+
+
+*/
+
+
+/*
+GLUFEditBox
+
+    Temp:
+        This is a total rebuild of the edit box class
+
+    Parents:
+        'GLUFControl'
+
+    Data Members:
+        'mText': the source text buffer
+        'mFormattedText': the text which will be rendered (not guaranteed to contain all of the text)
+        'mCharset': the available character set for user input (denies anything not within the charset)
+        'mAnalyseRequired': has the string changed since the previous analysis
+        'mBorder': the boarder on every edge of the edit box
+        'mSpacing': the spacing between the text and the edge of the boarder
+        'mTextRegion': the region the text occupies
+        'mBlinkPeriod': the time between caret blinks in seconds
+        'mPreviousBlink': the previous blink time of the caret
+        'mCaretOn': whether the caret is currently visible due to blinking periods
+        'mCaretPos': the caret position in characters of the original string buffer
+        'mInsertMode': true: insert mode; false: overwrite mode
+        'mSelectStart': the starting position of the selection; the caret marks the end
+        'mTextColor': the color of the text
+        'mSelectTextColor': the color of the selected text
+        'mSelectBkgrndColor': the color of the selected region's highlight
+        'mCaretColor': the color of the caret
+        'mScrollBar': the internal scrollbar used in single-line, and one which is displayed in multi-line
+        'mSBWidth': the width of the scrollbar
+        'mMouseDrag': indicates if a drag is in progress
+        'mMultiline': whether or not the box is multiline or not
+        'mHideCaret': whether or not to hide the caret completely
+
+*/
+/*class GLUFEditBox : public GLUFControl
 {
+    GLUF_FORCE_SMART_POINTERS(GLUFEditBox, GLUFCharset& charset, bool& isMultiline, GLUFDialog& dialog);
+
+protected:
+
+    std::wstring mText;
+    std::wstring mFormattedText;
+
+    GLUFCharset mCharset;
+    bool mAnalyseRequired;
+
+    GLUFSize mBorder;
+    GLUFSize mSpacing;
+    GLUF::GLUFRect mTextRegion;
+
+    double mBlinkPeriod;
+    double mPreviousBlink;
+    bool mMouseDrag;
+    bool mMultiline = true;
+    bool mCaretOn;
+    bool mHideCaret;
+    GLUFValue mCaretPos;
+    bool mInsertMode;
+    GLUFValue mSelStart;
+
+    GLUF::Color mTextColor;
+    GLUF::Color mSelTextColor;
+    GLUF::Color mSelBkColor;
+    GLUF::Color mCaretColor;
+
+    GLUFScrollBar mScrollBar;
+    GLUFSize mSBWidth;
+
 public:
-	GLUFEditBox(Charset charset = Charset::Unicode, bool isMultiline = false, GLUFDialog* pDialog = nullptr);
 	virtual         ~GLUFEditBox();
 
-	//virtual bool    HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	//virtual bool    HandleMouse(UINT uMsg, GLUF::GLUFPoint pt, WPARAM wParam, LPARAM lParam);
-	virtual bool    MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4);
-	virtual void    UpdateRects();
-	virtual bool    CanHaveFocus(){ return (m_bVisible && m_bEnabled); }
-	virtual void    Render(float elapsedTime);
-	virtual void    OnFocusIn();
-	virtual GLUF::GLUFResult OnInit(){ return m_pDialog->InitControl(&m_ScrollBar); }
+    //ended updating here!
 
 	void            SetText(std::wstring wszText, bool bSelected = false);
 	std::wstring     GetText(){ return m_strBuffer; }
@@ -2687,6 +2777,19 @@ public:
 	void            SetSpacing(long fSpacing){ m_fSpacing = fSpacing; UpdateRects(); m_bAnalyseRequired = true; }
 	//void            ParseFloatArray(float* pNumbers, int nCount);
 	//void            SetTextFloatArray(const float* pNumbers, int nCount);
+
+
+    /*
+    Overriden Unambiguous Member Functions
+
+    
+    
+	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual void UpdateRects() noexcept override;
+	virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
+	virtual void Render(float elapsedTime) noexcept override;
+	virtual void OnFocusIn() noexcept override;
+	virtual void OnInit() override { return mDialog.InitControl(mScrollBar); }
 
 
 protected:
@@ -2724,92 +2827,150 @@ protected:
 	void GetPriorItemPos(int pos, int& prior);
 
 	int GetNumNewlines();
-
-	//GLUFUniBuffer m_Buffer;     // Buffer to hold text
-
-	std::wstring m_strBuffer; //buffer to hold the text
-	std::wstring m_strRenderBuffer;//this stores the string that will be rendered, this inclues newlines inserted at the end of the rect
-	unsigned int m_strRenderBufferOffset;//the distance between the start of the string buffer, and the start of the render string buffer
-	std::vector<size_t> m_strInsertedNewlineLocations;//the location of all of the newlines that were inserted into the render string
-	std::vector<size_t> m_nAdditionalInsertedCharLocations;//the number of chars inserted NOTE: these are the locations within the renderspace string
-
-	Charset m_Charset;
-	std::vector<GLUF::GLUFRect> m_CharBoundingBoxes;//a buffer to hold all of the rects of the chars. the origin is the botom left of the text region also, this is based on m_strRenderBuffer, NOT m_strBuffer
-	bool m_bAnalyseRequired;            // True if the string has changed since last analysis.
-
-	long m_fBorder;      // Border of the window
-	long m_fSpacing;     // Spacing between the text and the edge of border
-	GLUF::GLUFRect m_rcText;       // Bounding GLUF::GLUFRectangle for the text
-	GLUF::GLUFRect            m_rcRender[9];  // Convenient Rectangles for rendering elements
-	double m_dfBlink;      // Caret blink time in milliseconds
-	double m_dfLastBlink;  // Last timestamp of caret blink
-	bool m_bCaretOn;     // Flag to indicate whether caret is currently visible
-	int m_nCaret;       // Caret position, in characters (of the original string buffer)
-	bool m_bInsertMode;  // If true, control is in insert mode. Else, overwrite mode.
-	int m_nSelStart;    // Starting position of the selection. The caret marks the end.
-	int m_nFirstVisible;// First visible character in the edit control
-	GLUF::Color m_TextColor;    // Text color
-	GLUF::Color m_SelTextColor; // Selected text color
-	GLUF::Color m_SelBkColor;   // Selected background color
-	GLUF::Color m_CaretColor;   // Caret color
-	//std::vector<int> m_CharLineBreaks;//a vector of the positions of line breaks
-
-	GLUFScrollBar m_ScrollBar;//TODO: impliment
-	long m_fSBWidth;
-
-	// Mouse-specific
-	bool m_bMouseDrag;       // True to indicate drag in progress
-
-	bool m_bMultiline = true;
-
-	// Static
-	static bool s_bHideCaret;   // If true, we don't render the caret.
-};
+};*/
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
-//
-//Text Controls Below
-//
-//
+/*
+======================================================================================================================================================================================================
+Text Controls Below
+
+/*
+
+Random Text Helping functions
+
+================================================= TODO: ==================================================
+    Relocate these methods into a more sensible spot/container/namespace/whatever
+        Probably in a source file instead of a header file
+
+*/
+void BeginText(const glm::mat4& orthoMatrix);
 
 
+void DrawTextGLUF(const GLUFFontNode& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect = false);
+void EndText(const GLUFFontPtr& font);
 
+
+/*
+GLUFTextHelper
+
+    Note:
+        This class's purpose is to provide a way to draw text outside of a dialog
+
+    Data Members:
+        'mColor': the text color
+        'mPoint': where to start drawing the text
+        'mManager': a reference to the dialog resource manager
+        'mFontIndex': the index of the font within the DRM
+        'mFontSize': the font size in points
+*/
 class OBJGLUF_API GLUFTextHelper
 {
+    GLUF_FORCE_SMART_POINTERS(GLUFTextHelper, GLUFDialogResourceManager& drm);
+protected:
+    GLUF::Color mColor;
+    GLUF::GLUFPoint mPoint;
+
+    GLUFDialogResourceManager& mManager;
+
+    GLUFFontIndex mFontIndex;
+    GLUFFontSize mFontSize;
+
+
 public:
-	GLUFTextHelper(GLUFDialogResourceManager* pManager);
 	~GLUFTextHelper(){};
 
-	//line height = leadding
-	void Init(GLUFFontSize fLineHeight = 0.025f);
+    /*
+    Setters and Getters    
+    
+        Throws: 
+            no-throw guarantee
 
-	void SetInsertionPos(GLUF::GLUFPoint pt)
-	{
-		m_pt = pt;
-	}
-	void SetForegroundColor(GLUF::Color clr) { m_clr = clr; }
+    */
+    GLUFFontIndex   GetActiveFontIndex() const noexcept                 { return mFontIndex;    }
+    GLUFFontSize    GetFontSize() const noexcept                        { return mFontSize;     }
+	void            SetInsertionPos(const GLUF::GLUFPoint& pt) noexcept { mPoint = pt;	        }
+	void            SetForegroundColor(const GLUF::Color& clr) noexcept { mColor = clr;         }
 
-	void       Begin(GLUFFontIndex fontToUse, GLUF_FONT_WEIGHT weight = FONT_WEIGHT_NORMAL);
-	GLUF::GLUFResult DrawFormattedTextLine(const wchar_t* strMsg, size_t strLen, ...);
-	GLUF::GLUFResult DrawTextLine(const wchar_t* strMsg);
-	//GLUF::GLUFResult DrawFormattedTextLine(const GLUF::GLUFRect& rc, _In_ DWORD dwFlags, const WCHAR* strMsg, ...);
-	//GLUF::GLUFResult DrawTextLine(_In_ const GLUF::GLUFRect& rc, _In_ DWORD dwFlags, _In_z_ const WCHAR* strMsg);
-	GLUF::GLUFResult DrawFormattedTextLine(const GLUF::GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen, ...);
-	GLUF::GLUFResult DrawTextLine(const GLUF::GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg);
-	void	   End();
+    /*
+    Begin
 
-protected:
-	GLUF::Color m_clr;
-	GLUF::GLUFPoint m_pt;
-	GLUFFontSize m_fLineHeight;
+        Note:
+            Call this before calling any text drawing calls
 
-	GLUFDialogResourceManager* m_pManager;
+        Parameters:
+            'drmFont': the index of the font to use
+            'size': the size of font to draw
 
-	GLUFFontIndex m_nFont;
-	GLUFFontSize m_fFontSize;
-	GLUF_FONT_WEIGHT m_Weight;
+        Throws:
+            'std::out_of_range': if 'drmFont': is out of the range within the DRM
+    */
+	void Begin(GLUFFontIndex drmFont, GLUFFontSize size);
+
+    /*
+    DrawFormattedTextLine
+
+        Note:
+            This is used like printf WIP
+
+        Parameters:
+            'format': the format and text
+            'args': the data to put in 'format'
+            'rc': the rect to render the text within
+            'flags': the flags for drawing
+
+        Throws:
+            no-throw guarantee
+    */
+    template<class... Types>
+    void DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept;
+
+    template<class... Types>
+    void DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args) noexcept;
+
+    /*
+    DrawTextLine
+
+        Parameters:
+            'text': the text to draw
+            'rc': the rect to render the text within
+            'flags': the flags for drawing within the rect (i.e. GT_CENTER)
+
+        Throws:
+            no-throw guarantee
+    */
+	void DrawTextLine(const std::wstring& text) noexcept;
+	void DrawTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& text) noexcept;
+
+    /*
+    End
+
+        Note:
+            This actually renders the text; the previous functions just buffer it
+
+        Throws:
+            no-throw guarantee
+    
+    */
+	void End() noexcept;
 };
+
+/*
+
+GLUFTextHelper Template Functions
+
+*/
+
+template<class... Types>
+void GLUFTextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args)
+{
+    //TODO: Impliment
+}
+
+template<class... Types>
+void GLUFTextHelper::DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args)
+{
+    //TODO: impliment
+}
 
 }
