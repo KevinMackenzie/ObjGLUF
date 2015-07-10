@@ -185,6 +185,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="GLUFGuiTemplates.inl" />
+    <None Include="ObjGLUFTemplates.inl" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

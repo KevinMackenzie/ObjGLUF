@@ -5,26 +5,21 @@
 #include FT_FREETYPE_H
 
 #include <algorithm>
-#include <stdio.h>
-#include <cstdarg>
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//IMPORTANT///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//																						//////////////////////////////////////
-//																						//////////////////////////////////////
-//	I WILL NOT be using the api declared in ObjGLUF.h in this file UNTIL i get it		//////////////////////////////////////
-//		to a more reliable state														//////////////////////////////////////
-//																						//////////////////////////////////////
-//																						//////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+
+Random Text Helping functions
+
+================================================= TODO: ==================================================
+    Relocate these methods into a more sensible spot/container/namespace/whatever
+        Probably in a source file instead of a header file
+
+void BeginText(const glm::mat4& orthoMatrix);
+
+
+void DrawTextGLUF(const GLUFFontNode& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect = false);
+void EndText(const GLUFFontPtr& font); 
+*/
 
 namespace GLUF
 {
@@ -45,109 +40,117 @@ namespace GLUF
 #define GLUF_MAX_GUI_SPRITES 500
 #define WHEEL_DELTA 400//TODO:
 
-// GLUF_MAX_EDITBOXLENGTH is the maximum string length allowed in edit boxes,
-// including the nul terminator.
-// 
-// Uniscribe does not support strings having bigger-than-16-bits length.
-// This means that the string must be less than 65536 characters long,
-// including the nul terminator.
-#define GLUF_MAX_EDITBOXLENGTH 0xFFFF
-
 //this is just a constant to be a little bit less windows api dependent (TODO: make this a setting)
 unsigned int GetCaretBlinkTime()
 {
 	return 400;
 }
 
-double                 GLUFDialog::s_fTimeRefresh = 0.0f;
-GLUFControl*           GLUFDialog::s_pControlFocus = nullptr;        // The control which has focus
-GLUFControl*           GLUFDialog::s_pControlPressed = nullptr;      // The control currently pressed
+
+/*
+======================================================================================================================================================================================================
+GLFW Callbacks
 
 
+*/
 
-//======================================================================================
-// GLFWCallback methods that ALL redirect to a universal callback
-//======================================================================================
+void MessageProcedure(GLUFMessageType, int, int, int, int);
 
-void MessageProcedure(GLUF_MESSAGE_TYPE, int, int, int, int);
+/*
+===================================================================================================
+GLFW Window Callbacks
 
-//=====
-//	GLFW Window Callback
-//=====
+*/
 
+//--------------------------------------------------------------------------------------
 void GLFWWindowPosCallback(GLFWwindow*, int x, int y)
 {
 	MessageProcedure(GM_POS, x, y, 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWWindowSizeCallback(GLFWwindow*, int width, int height)
 {
 	MessageProcedure(GM_RESIZE, width, height, 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWWindowCloseCallback(GLFWwindow*)
 {
 	MessageProcedure(GM_CLOSE, 0, 0, 0, 0);
 }
 /*
+//--------------------------------------------------------------------------------------
 void GLFWWindowRefreshCallback(GLFWwindow*)
 {
 	MessageProcedure(GM_REFRESH, 0, 0, 0, 0);
 }*/
 
+//--------------------------------------------------------------------------------------
 void GLFWWindowFocusCallback(GLFWwindow*, int focused)
 {
 	MessageProcedure(GM_FOCUS, focused, 0, 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWWindowIconifyCallback(GLFWwindow*, int iconified)
 {
 	MessageProcedure(GM_ICONIFY, iconified, 0, 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWFrameBufferSizeCallback(GLFWwindow*, int width, int height)
 {
 	MessageProcedure(GM_FRAMEBUFFER_SIZE, width, height, 0, 0);
 }
 
-//=====
-//	GLFW Input Callback
-//=====
+/*
+===================================================================================================
+GLFW Input Callback
 
+*/
+
+//--------------------------------------------------------------------------------------
 void GLFWMouseButtonCallback(GLFWwindow*, int button, int action, int mods)
 {
 	MessageProcedure(GM_MB, button, action, mods, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWCursorPosCallback(GLFWwindow*, double xPos, double yPos)
 {
 	MessageProcedure(GM_CURSOR_POS, (int)xPos, (int)yPos, 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWCursorEnterCallback(GLFWwindow*, int entered)
 {
 	MessageProcedure(GM_CURSOR_ENTER, entered, 0, 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWScrollCallback(GLFWwindow*, double xoffset, double yoffset)
 {
 	MessageProcedure(GM_SCROLL, (int)(xoffset * 1000.0), (int)(yoffset * 1000.0), 0, 0);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWKeyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 {
 	MessageProcedure(GM_KEY, key, scancode, action, mods);
 }
 
+//--------------------------------------------------------------------------------------
 void GLFWCharCallback(GLFWwindow*, unsigned int codepoint)
 {
 	MessageProcedure(GM_UNICODE_CHAR, (int)codepoint, 0, 0, 0);
 }
 
 
-PGLUFCALLBACK g_pCallback;
+GLUFCallbackFuncPtr g_pCallback;
 
-void MessageProcedure(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+//--------------------------------------------------------------------------------------
+void MessageProcedure(GLUFMessageType msg, int param1, int param2, int param3, int param4)
 {
 	if (g_pCallback(msg, param1, param2, param3, param4))
 	{
@@ -159,10 +162,20 @@ void MessageProcedure(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3,
 
 
 
-//======================================================================================
-// Various Structs that are used exclusively for UI
-//======================================================================================
 
+/*
+======================================================================================================================================================================================================
+Various Structs Used For UI
+
+
+*/
+
+/*
+
+Ended here July 10 2015
+
+
+*/
 struct GLUFScreenVertex
 {
 	glm::vec3 pos;

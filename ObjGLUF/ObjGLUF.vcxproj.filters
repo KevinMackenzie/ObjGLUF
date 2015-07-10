@@ -49,5 +49,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="GLUFGuiTemplates.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="ObjGLUFTemplates.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

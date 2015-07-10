@@ -70,6 +70,7 @@ class OBJGLUF_API GLUFScrollBar;
 class OBJGLUF_API GLUFElement;
 class OBJGLUF_API GLUFFont;
 class OBJGLUF_API GLUFDialog;
+class OBJGLUF_API GLUFTextHelper;
 struct GLUFElementHolder;
 struct GLUFTextureNode;
 struct GLUFFontNode;
@@ -2835,20 +2836,7 @@ protected:
 ======================================================================================================================================================================================================
 Text Controls Below
 
-/*
-
-Random Text Helping functions
-
-================================================= TODO: ==================================================
-    Relocate these methods into a more sensible spot/container/namespace/whatever
-        Probably in a source file instead of a header file
-
 */
-void BeginText(const glm::mat4& orthoMatrix);
-
-
-void DrawTextGLUF(const GLUFFontNode& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect = false);
-void EndText(const GLUFFontPtr& font);
 
 
 /*
@@ -2876,6 +2864,16 @@ protected:
     GLUFFontIndex mFontIndex;
     GLUFFontSize mFontSize;
 
+    /*
+    Helper overloads for RenderString
+    
+    */
+
+    template<typename T1, typename... Types>
+    void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg1, Types... args);
+
+    template<typename T1>
+    void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg);
 
 public:
 	~GLUFTextHelper(){};
@@ -2911,7 +2909,7 @@ public:
     DrawFormattedTextLine
 
         Note:
-            This is used like printf WIP
+            this replaces each % with a the next argument, more features will come in the future
 
         Parameters:
             'format': the format and text
@@ -2953,24 +2951,33 @@ public:
     
     */
 	void End() noexcept;
+
+    /*
+    RenderText
+
+        Note:
+            This is a very simple version of vsprintf with no formatting; each % will be replaced with the next value
+
+        Parameters:
+            'format': the format to take
+            'outString': where the output will be stored
+            'args': the parameters to insert into 'format'
+
+        Throws:
+            no-throw guarantee
+    
+    
+    */
+    template<class... Types>
+    static void RenderText(const std::wstring& format, std::wstring& outString, Types&... args);
 };
+
+
+}
 
 /*
 
-GLUFTextHelper Template Functions
+The Implementation for all template functions
 
 */
-
-template<class... Types>
-void GLUFTextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args)
-{
-    //TODO: Impliment
-}
-
-template<class... Types>
-void GLUFTextHelper::DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args)
-{
-    //TODO: impliment
-}
-
-}
+#include "GLUFGuiTemplates.inl"
