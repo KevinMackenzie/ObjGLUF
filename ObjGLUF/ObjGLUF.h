@@ -313,7 +313,7 @@ OBJGLUF_API bool GLUFInit();
 OBJGLUF_API bool GLUFInitOpenGLExtensions();
 
 //call this at the very last moment before application termination
-/*OBJGLUF_API*/ void GLUFTerminate(){};//NOTE: WHEN GLUFGUI COMPLETED, REMOVE THESE BRACKETS AND ADD OBJGLUF_API!
+OBJGLUF_API void GLUFTerminate();
 
 OBJGLUF_API const std::vector<std::string>& GLUFGetGLExtensions();
 

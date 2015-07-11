@@ -215,9 +215,14 @@ public:
 	unsigned long size(){ return (unsigned long)vPos.size(); }
 };
 
-//======================================================================================
-// Initialization and globals
-//======================================================================================
+
+/*
+======================================================================================================================================================================================================
+Initialization and Globals
+
+
+*/
+
 
 FT_Library g_FtLib;
 
@@ -229,46 +234,52 @@ GLUFProgramPtr g_UIProgram = nullptr;
 GLUFProgramPtr g_UIProgramUntex = nullptr;
 GLUFProgramPtr g_TextProgram = nullptr;
 GLUFTextVertexArray g_TextVerticies;
-GLuint g_TextVAO;
-GLuint g_TextPos;
-GLuint g_TextTexCoords;
-GLuint g_TextIndices;
+GLUFVertexArray g_TextVertexArray(GL_TRIANGLES, GL_STREAM_DRAW, true);
 
 GLFWwindow* g_pGLFWWindow;
 GLuint g_pControlTexturePtr;
 int g_ControlTextureResourceManLocation = -1;
 
 
+
 //uniform locations
 struct UIShaderLocations_t
 {
-	GLuint position = 0;
-	GLuint color = 0;
-	GLuint uv = 0;
-	GLuint ortho = 0;
-	GLuint sampler = 0;
+    GLuint position = 0;
+    GLuint color = 0;
+    GLuint uv = 0;
+    GLuint ortho = 0;
+    GLuint sampler = 0;
 
 }g_UIShaderLocations;
 
 struct UIShaderLocationsUntex_t
 {
-	GLuint position = 0;
-	GLuint color = 0;
-	GLuint ortho = 0;
+    GLuint position = 0;
+    GLuint color = 0;
+    GLuint ortho = 0;
 
 }g_UIShaderLocationsUntex;
 
 struct TextShaderLocations_t
 {
-	GLuint position = 0;
-	GLuint uv = 0;
-	GLuint ortho = 0;
-	GLuint color = 0;
-	GLuint sampler = 0;
+    GLuint position = 0;
+    GLuint uv = 0;
+    GLuint ortho = 0;
+    GLuint color = 0;
+    GLuint sampler = 0;
 
 }g_TextShaderLocations;
 
-const char* g_UIShaderVert =
+
+/*
+======================================================================================================================================================================================================
+Shaders for UI Elements
+
+
+*/
+
+std::string g_UIShaderVert =
 "#version 120														\n"\
 "attribute vec3 _Position;											\n"\
 "attribute vec2 _UV;												\n"\
@@ -285,7 +296,7 @@ const char* g_UIShaderVert =
 /*the V's are inverted because the texture is loaded bottom to top*/
 
 
-const char* g_UIShaderFrag =
+std::string g_UIShaderFrag =
 "#version 120														\n"\
 "varying vec4 Color;												\n"\
 "varying vec2 uvCoord;												\n"\
@@ -299,7 +310,7 @@ const char* g_UIShaderFrag =
 "	gl_FragColor = oColor;											\n"\
 "}																	\n"; 
 
-const char* g_UIShaderFragUntex =
+std::string g_UIShaderFragUntex =
 "#version 120														\n"\
 "varying vec4 Color;												\n"\
 "varying vec2 uvCoord;												\n"\
@@ -308,7 +319,7 @@ const char* g_UIShaderFragUntex =
 "	gl_FragColor = Color;											\n"\
 "}																	\n";
 
-const char* g_TextShaderVert =
+std::string g_TextShaderVert =
 "#version 120														\n"\
 "attribute vec3 _Position;											\n"\
 "attribute vec2 _UV;												\n"\
@@ -320,7 +331,7 @@ const char* g_TextShaderVert =
 "	gl_Position = vec4(_Position, 1.0f) * _Ortho;					\n"\
 "}																	\n";
 
-const char* g_TextShaderFrag =
+std::string g_TextShaderFrag =
 "#version 120														\n"\
 "uniform vec4 _Color;												\n"\
 "uniform sampler2D _TS;												\n"\
@@ -337,8 +348,15 @@ const char* g_TextShaderFrag =
 "}																	\n";
 
 
+/*
+======================================================================================================================================================================================================
+Initialization Functions
 
-bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLuint controltex)
+
+*/
+
+//--------------------------------------------------------------------------------------
+bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, GLUFCallbackFuncPtr callback, GLuint controltex)
 {
 	g_pGLFWWindow = pInitializedGLFWWindow;
 	g_pCallback = callback;
@@ -361,20 +379,19 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 
 	//load the ui shaders
 	GLUFShaderSourceList sources;
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, g_UIShaderVert));
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_UIShaderFrag));
-	g_UIProgram = GLUFSHADERMANAGER.CreateProgram(sources);
+    sources.insert({ SH_VERTEX_SHADER, g_UIShaderVert });
+    sources.insert({ SH_FRAGMENT_SHADER, g_UIShaderFrag });
+	GLUFSHADERMANAGER.CreateProgram(g_UIProgram, sources);
 	sources.clear();
 
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, g_UIShaderVert));
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_UIShaderFragUntex));
-	g_UIProgramUntex = GLUFSHADERMANAGER.CreateProgram(sources);
+    sources.insert({ SH_VERTEX_SHADER, g_UIShaderVert });
+    sources.insert({ SH_FRAGMENT_SHADER, g_UIShaderFragUntex });
+	GLUFSHADERMANAGER.CreateProgram(g_UIProgramUntex, sources);
 	sources.clear();
 
-
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, g_TextShaderVert));
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, g_TextShaderFrag));
-	g_TextProgram = GLUFSHADERMANAGER.CreateProgram(sources);
+    sources.insert({ SH_VERTEX_SHADER, g_TextShaderVert });
+    sources.insert({ SH_FRAGMENT_SHADER, g_TextShaderFrag });
+	GLUFSHADERMANAGER.CreateProgram(g_TextProgram, sources);
 
 
 	//load the locations
@@ -395,7 +412,7 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	g_TextShaderLocations.sampler		= GLUFSHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
 
 	//create the text arrrays
-	glGenVertexArrayBindVertexArray(&g_TextVAO);
+	/*glGenVertexArrayBindVertexArray(&g_TextVAO);
 	glGenBuffers(1, &g_TextPos);
 	glGenBuffers(1, &g_TextTexCoords);
 
@@ -405,7 +422,10 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
 	glVertexAttribPointer(g_TextShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
+
+    g_TextVertexArray.AddVertexAttrib({ 4, 3, GL_FLOAT, 0 }, 0);
+    g_TextVertexArray.AddVertexAttrib({ 4, 2, GL_FLOAT, 0 }, 12);
 
 	//initialize the freetype library.
 	FT_Error err = FT_Init_FreeType(&g_FtLib);
@@ -427,51 +447,63 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, PGLUFCALLBACK callback, GLu
 	return true;
 }
 
-PGLUFCALLBACK GLUFChangeCallbackFunc(PGLUFCALLBACK newCallback)
+//--------------------------------------------------------------------------------------
+GLUFCallbackFuncPtr GLUFChangeCallbackFunc(GLUFCallbackFuncPtr newCallback)
 {
-	PGLUFCALLBACK tmp = g_pCallback;
+    GLUFCallbackFuncPtr tmp = g_pCallback;
 	g_pCallback = newCallback;
 	return tmp;
 }
 
-void GLUFSetDefaultFont(GLUFFontPtr pDefFont)
-{
-	g_DefaultFont = pDefFont;
-}
-
-GLUFResult GLUFTrace(const char* file, const char* function, unsigned long lineNum, GLUFResult value, const char* message)
-{
-	//this might be more elaborate in the future
-	GLUFGetErrorMethod()(message, function, file, lineNum);
-	return value;
-}
-
+//--------------------------------------------------------------------------------------
 void GLUFTerminate()
 {
 	FT_Done_FreeType(g_FtLib);
 }
 
 
-//======================================================================================
-// GLUFFont
-//======================================================================================
+/*
+======================================================================================================================================================================================================
+Font Stuff
 
 
-struct character_info 
+*/
+
+
+//--------------------------------------------------------------------------------------
+void GLUFSetDefaultFont(GLUFFontPtr pDefFont)
 {
-	GLUFFontSize ax; // advance.x
-	GLUFFontSize ay; // advance.y
+    g_DefaultFont = pDefFont;
+}
 
-	GLUFFontSize bw; // bitmap.width;
-	GLUFFontSize bh; // bitmap.rows;
+/*
+CharacterInfo
 
-	GLUFFontSize bl; // bitmap_left;
-	GLUFFontSize bt; // bitmap_top;
+    Data Members:
+        'mAdvance': advance of glyph
+        'mBitSize': {bitmap.width, bitmap.rows}
+        'mBitLoc': {bitmap_left, bitmap_top}; location of bitmap within texture
+        'mTexXOffset': the x offset of glyph in texture coordinates
 
-	float tx; // x offset of glyph in texture coordinates
+*/
+struct CharacterInfo
+{
+	glm::u32vec2 mAdvance;
+    glm::u32vec2 mBitSize;
+    glm::u32vec2 mBitLoc;
+    float mTexXOffset;
 };
 
-//TODO: setup with languages
+
+/*
+GLUFFont
+    
+    Todo:
+        Setup with languages
+
+
+
+*/
 class GLUFFont
 {	
 public:
@@ -487,7 +519,7 @@ public:
 	//unsigned int* mTexOffsets;
 	//unsigned int* mAdvance
 
-	character_info* mCharAtlas;
+    std::vector<CharacterInfo> mCharAtlas;
 
 	unsigned int mCharacterOffset = 32;
 	unsigned int mCharacterEnd = 128;
