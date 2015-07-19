@@ -315,11 +315,35 @@ using GLUFFontSize = glm::uint32_t;//in 'points'
 #define GLUF_PICAS_TO_POINTERS(picas) ((picas) * 6.0)
 
 
-OBJGLUF_API void GLUFSetDefaultFont(GLUFFontPtr pDefFont);
+OBJGLUF_API void GLUFSetDefaultFont(GLUFFontPtr& pDefFont);
 
 
-OBJGLUF_API GLUFFontPtr GLUFLoadFont(void* rawData, uint64_t rawSize, GLUFFontSize fontHeight);
-OBJGLUF_API GLUFFontSize GLUFGetFontHeight(GLUFFontPtr font);
+class LoadFontException : public GLUFException
+{
+public:
+    virtual const char* what() const
+    {
+        return "Error Loading Freetype Font";
+    }
+
+    EXCEPTION_CONSTRUCTOR(LoadFontException);
+};
+
+/*
+GLUFLoadFont
+
+    Parameters:
+        'font': an uninitialized font
+        'rawData': the raw data to load font from
+        'fontHeight': how tall should the font be in points?
+
+    Throws:
+        'LoadFontException': if font loading failed
+
+*/
+OBJGLUF_API void GLUFLoadFont(GLUFFontPtr& font, const std::vector<char>& rawData, GLUFFontSize fontHeight);
+
+OBJGLUF_API GLUFFontSize GLUFGetFontHeight(const GLUFFontPtr& font);
 
 
 

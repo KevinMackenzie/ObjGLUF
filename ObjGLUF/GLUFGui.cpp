@@ -471,7 +471,7 @@ Font Stuff
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSetDefaultFont(GLUFFontPtr pDefFont)
+void GLUFSetDefaultFont(GLUFFontPtr& pDefFont)
 {
     g_DefaultFont = pDefFont;
 }
@@ -501,8 +501,13 @@ GLUFFont
     Todo:
         Setup with languages
 
-
-
+    Data Members:
+        'mFtFont': the freetype font instance
+        'mHeight': the height of the font
+        'mAtlasSize': the width and height of the atlas
+        'mCharAtlas': the character atlas
+        'mCharacterOffset': the offset within the charset to start creating the texture, default to 32, because that is where ascii characters start
+        'mCharacterEnd': the end of the writable characters
 */
 class GLUFFont
 {	
@@ -510,39 +515,111 @@ public:
 
 	FT_Face mFtFont;
 	GLUFFontSize mHeight;
-
-	int mAtlasHeight = 0;//pixels
-	int mAtlasWidth = 0;//pixels
-
+    glm::u32vec2 mAtlasSize;
 	GLuint mTexId = 0;
-
-	//unsigned int* mTexOffsets;
-	//unsigned int* mAdvance
-
     std::vector<CharacterInfo> mCharAtlas;
-
-	unsigned int mCharacterOffset = 32;
-	unsigned int mCharacterEnd = 128;
-
-	//GLfloat GetTextureXOffset(wchar_t ch);
+	glm::uint32 mCharacterOffset = 32;
+    glm::uint32 mCharacterEnd = 128;
 	
-	//this probably isn't what you want, use GetCharAdvance instead
+
+    /*
+    GetCharWidth
+
+        Note:
+            Gets the character width in pixles, which is usually wider than the character, usually use 'GetCharAdvance' instead
+    
+        Parameters:
+            'ch': the character to get from
+    
+        Throws:
+            'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd
+
+    */
 	GLUFFontSize GetCharWidth(wchar_t ch);
+
+    /*
+    GetCharHeight
+
+        Parameters:
+            'ch': the character to get from  
+    
+        Throws:
+            'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd  
+    
+    */
 	GLUFFontSize GetCharHeight(wchar_t ch);
+
+    /*
+    GetCharAdvance
+
+        Note:
+            Gets the distance between this character and the next character when drawing, i.e. the 't' character will have a smaller advance than width
+
+        Parameters:
+            'ch': the character to get from
+    
+        Throws:
+            'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd
+    
+    */
 	GLUFFontSize GetCharAdvance(wchar_t ch);
-	//float GetStringWidthNDC(std::wstring str);//this just automatically conversts the output to NDC space
-	GLUFFontSize GetStringWidth(std::wstring str);
-	bool Init(void* data, uint64_t rawSize, GLUFFontSize fontHeight);
 
-	//this is called when the window is resized
-	void Refresh();
+    /*
+    GetStringWidth
 
+        Note:
+            This is a gets how wide the string is.  This adds the advance of each character together for the width
+    
+    
+        Throws:
+            'std::out_of_range': if any characters within the string are not within mCharacterOffset and mCharacterEnd
+    
+    */
+	GLUFFontSize GetStringWidth(const std::wstring& str);
+
+    /*
+    Init
+    
+        Note:
+            Creates a font from a set of data
+
+        Parameters:
+            'data': the data to be created from
+            'fontHeight': the height of the font to load
+            
+        Throws:
+            'GLUFLoadFontException': if loading failed
+    */
+	void Init(const std::vector<char>& data, GLUFFontSize fontHeight);
+
+    /*
+    Refresh
+
+        Note:
+            This should be called when the window is resized
+
+        Throws:
+            no-throw guarantee
+    
+    */
+	void Refresh() noexcept;
+
+    /*
+    GetChar*Rect
+
+        Note:
+            Gets the window pixel rect or normalized rect within the texture respectively
+
+        Parameters:
+            'ch': the character to lookup
+    
+        Throws:
+            'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd
+    
+    */
 	GLUFRect GetCharRect(wchar_t ch);
-	//GLUFRect GetCharRectNDC(wchar_t ch);
 	GLUFRectf GetCharTexRect(wchar_t ch);
-
-	//font properties
-
+    
 };
 
 GLUFFontSize GLUFGetFontHeight(GLUFFontPtr font)
@@ -554,11 +631,10 @@ void GLUFFont::Refresh()
 {
 
 	//reset variables
-	mAtlasWidth = 0;
-	mAtlasHeight = 0;
+    mAtlasSize = { 0, 0 };
 
 
-	int mult = (g_WndHeight >= g_WndWidth) ? g_WndWidth : g_WndHeight;
+	//int mult = (g_WndHeight >= g_WndWidth) ? g_WndWidth : g_WndHeight;
 
 	int pxlHeight = mHeight;
 
@@ -579,8 +655,8 @@ void GLUFFont::Refresh()
 			continue;
 		}
 
-		mAtlasWidth += g->bitmap.width + GLYPH_PADDING;
-		mAtlasHeight = std::max(mAtlasHeight, g->bitmap.rows);
+		mAtlasSize.x += g->bitmap.width + GLYPH_PADDING;
+		mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
 
 	}
 
@@ -588,12 +664,15 @@ void GLUFFont::Refresh()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mTexId);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	// Fonts should be rendered at native resolution so no need for texture filtering
 	//float fLargest = 0.0f;
 	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
 	//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 	// Stop chararcters from bleeding over edges
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -601,11 +680,11 @@ void GLUFFont::Refresh()
 	GLfloat transparent[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, transparent);//any overflow will be transparent
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasWidth, mAtlasHeight, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasSize.x, mAtlasSize.y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
 
 	//load texture data
-	char* dat0 = new char[GLYPH_PADDING * mAtlasHeight];
-	for (int i = 0; i < GLYPH_PADDING * mAtlasHeight; ++i)
+	char* dat0 = new char[GLYPH_PADDING * mAtlasSize.y];
+    for (int i = 0; i < GLYPH_PADDING * mAtlasSize.y; ++i)
 		dat0[i] = 0;
 
 	int x = 0;
@@ -622,16 +701,16 @@ void GLUFFont::Refresh()
 			if (FT_Load_Glyph(mFtFont, spId, FT_LOAD_RENDER))
 				continue;
 
-			mCharAtlas[p].ax = (mFtFont->glyph->advance.x >> 6);
-			mCharAtlas[p].ay = 0L;
+			mCharAtlas[p].mAdvance.x = (mFtFont->glyph->advance.x >> 6);
+			mCharAtlas[p].mAdvance.y = 0L;
 
-			mCharAtlas[p].bw = mCharAtlas[p].ax;//this is useful in the edit box.
-			mCharAtlas[p].bh = mAtlasHeight;
+			mCharAtlas[p].mBitSize.x = mCharAtlas[p].mAdvance.x;//this is useful in the edit box.
+			mCharAtlas[p].mBitSize.y = mAtlasSize.y;
 
-			mCharAtlas[p].bl = 0L;
-			mCharAtlas[p].bt = 0L;
+			mCharAtlas[p].mBitLoc.x = 0L;
+			mCharAtlas[p].mBitLoc.y = 0L;
 
-			mCharAtlas[p].tx = float(mAtlasWidth - GLYPH_PADDING);
+			mCharAtlas[p].mTexXOffset = static_cast<float>(mAtlasSize.x - GLYPH_PADDING);
 
 			continue;
 		}
@@ -639,47 +718,50 @@ void GLUFFont::Refresh()
 		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING), 0, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
 
 		//this adds padding to keep the characters looking clean
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING) + g->bitmap.width, 0, GLYPH_PADDING, mAtlasHeight, GL_LUMINANCE, GL_UNSIGNED_BYTE, dat0);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING) + g->bitmap.width, 0, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, dat0);
 
-		mCharAtlas[p].tx = (float)(x + (p * GLYPH_PADDING)) / (float)mAtlasWidth;
+		mCharAtlas[p].mTexXOffset = static_cast<float>(x + (p * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
 
 		x += g->bitmap.width;
 
-		mCharAtlas[p].ax = (g->advance.x >> 6);
-		mCharAtlas[p].ay = (g->advance.y >> 6);
+		mCharAtlas[p].mAdvance.x = (g->advance.x >> 6);
+		mCharAtlas[p].mAdvance.y = (g->advance.y >> 6);
 
-		mCharAtlas[p].bw = g->bitmap.width;
-		mCharAtlas[p].bh = g->bitmap.rows;
+		mCharAtlas[p].mBitSize.x = g->bitmap.width;
+		mCharAtlas[p].mBitSize.y = g->bitmap.rows;
 
-		mCharAtlas[p].bl = g->bitmap_left;
-		mCharAtlas[p].bt = g->bitmap_top;
+		mCharAtlas[p].mBitLoc.x = g->bitmap_left;
+		mCharAtlas[p].mBitLoc.y = g->bitmap_top;
 
 	}
 
 	//FT_Done_Face(mFtFont);
 	g = 0;
-
-	/*for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
-		wprintf(L"%c: %f\n", (wchar_t)i, GetCharWidth(i));*/
 }
 
-bool GLUFFont::Init(void* data, uint64_t rawSize, GLUFFontSize fontHeight)
+void GLUFFont::Init(const std::vector<char>& data, GLUFFontSize fontHeight)
 {
 	mHeight = fontHeight;
-	mCharAtlas = new character_info[mCharacterEnd - mCharacterOffset];
+	mCharAtlas.resize(mCharacterEnd - mCharacterOffset);
 
-	if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data, (FT_Long)rawSize, 0, &mFtFont))
-		return false;
+    if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data.data(), (FT_Long)data.size(), 0, &mFtFont))
+        throw LoadFontException();
 
 	glGenTextures(1, &mTexId);
 
-	Refresh();
+    if (mTexId == 0)
+    {
+        throw LoadFontException();
+    }
 
-	return true;
+	Refresh();
 }
 
 GLUFRect GLUFFont::GetCharRect(wchar_t ch)
 {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd)
+        throw std::out_of_range("Character Not In Atlas!");
+
 	GLUFRect rc = { 0, GetCharHeight(ch), GetCharWidth(ch), 0 };
 
 	if (ch < mCharacterOffset)
@@ -689,7 +771,7 @@ GLUFRect GLUFFont::GetCharRect(wchar_t ch)
 	//if there is a dropdown, make sure it is accounted for
 	//float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
 	//GLUFOffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, dy);
-	GLUFOffsetRect(rc, mCharAtlas[ch - mCharacterOffset].bl, -(long)(mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt));
+	GLUFOffsetRect(rc, mCharAtlas[ch - mCharacterOffset].mBitLoc.x, -(long)(mCharAtlas[ch - mCharacterOffset].mBitSize.y - mCharAtlas[ch - mCharacterOffset].mBitLoc.y));
 	return rc;
 }
 
@@ -706,44 +788,51 @@ GLUFRect GLUFFont::GetCharRect(wchar_t ch)
 
 GLUFRectf GLUFFont::GetCharTexRect(wchar_t ch)
 {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd)
+        throw std::out_of_range("Character Not In Atlas!");
+
 	float l = 0, t = 0, r = 0, b = 0;
-	if (ch >= mCharacterOffset)
-	{
-		l = mCharAtlas[ch - mCharacterOffset].tx;
-		t = 0.0f;
-		r = mCharAtlas[ch - mCharacterOffset].tx + (float)GetCharWidth(ch) / (float)mAtlasWidth;
-		b = (float)mCharAtlas[ch - mCharacterOffset].bh / (float)mAtlasHeight;
-	}
+
+	l = mCharAtlas[ch - mCharacterOffset].mTexXOffset;
+	t = 0.0f;
+    r = mCharAtlas[ch - mCharacterOffset].mTexXOffset + static_cast<float>(GetCharWidth(ch)) / static_cast<float>(mAtlasSize.x);
+	b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y);
 
 	return{ l, t, r, b };
 };
 
 GLUFFontSize GLUFFont::GetCharAdvance(wchar_t ch)
 {
-	if (ch < mCharacterOffset)
-		return 0;
+    if (ch < mCharacterOffset || ch >= mCharacterEnd)
+        throw std::out_of_range("Character Not In Atlas!");
 
-	return mCharAtlas[ch - mCharacterOffset].ax;
+	return mCharAtlas[ch - mCharacterOffset].mAdvance.x;
 }
 
 GLUFFontSize GLUFFont::GetCharWidth(wchar_t ch)
 {
-	if (ch < mCharacterOffset)
-		return 0;
+    if (ch < mCharacterOffset || ch >= mCharacterEnd)
+        throw std::out_of_range("Character Not In Atlas!");
 
-	return mCharAtlas[ch - mCharacterOffset].bw;
+	return mCharAtlas[ch - mCharacterOffset].mBitSize.x;
 }
 
 GLUFFontSize GLUFFont::GetCharHeight(wchar_t ch)
 {
-	if (ch < mCharacterOffset)
-		return 0;
+    if (ch < mCharacterOffset || ch >= mCharacterEnd)
+        throw std::out_of_range("Character Not In Atlas!");
 
-	return mCharAtlas[ch - mCharacterOffset].bh;
+	return mCharAtlas[ch - mCharacterOffset].mBitSize.y;
 }
 
-GLUFFontSize GLUFFont::GetStringWidth(std::wstring str)
+GLUFFontSize GLUFFont::GetStringWidth(const std::wstring& str)
 {
+    for (auto ch : str)
+    {
+        if (ch < mCharacterOffset || ch >= mCharacterEnd)
+            throw std::out_of_range("Character Not In Atlas!");
+    }
+
 	GLUFFontSize tmp = 0;
 	for (auto it : str)
 	{
@@ -752,22 +841,31 @@ GLUFFontSize GLUFFont::GetStringWidth(std::wstring str)
 	return tmp;
 }
 
-/*float GLUFFont::GetStringWidthNDC(std::wstring str)
-{
-	return GLUF_FONT_HEIGHT_NDC(GetStringWidth(str));
-}*/
 
-
-GLUFFontPtr GLUFLoadFont(void* rawData, uint64_t rawSize, GLUFFontSize fontHeight)
+GLUFFontPtr GLUFLoadFont(GLUFFontPtr& font, const std::vector<char>& rawData, GLUFFontSize fontHeight)
 {
-	GLUFFontPtr ret(new GLUFFont());
-	if (!ret->Init(rawData, rawSize, fontHeight))
-	{
-		GLUF_ERROR("Failed to load font!");
-		return nullptr;
-	}
-	return ret;
+    font = std::make_shared<GLUFFont>();
+
+    font->Init(rawData, fontHeight);
 }
+
+
+
+/*
+
+
+
+
+Ended Here July 19 2015
+
+
+
+
+
+
+
+
+*/
 
 //======================================================================================
 // GLUFBlendColor
