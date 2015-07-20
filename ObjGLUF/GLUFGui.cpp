@@ -921,41 +921,38 @@ void GLUFBlendColor::SetAll(const Color& color)
 	SetCurrent(color);
 }
 
-//======================================================================================
-// GLUFElement
-//======================================================================================
+
+
+/*
+======================================================================================================================================================================================================
+GLUFElement Functions
+
+
+*/
 
 //--------------------------------------------------------------------------------------
-
-void GLUFElement::SetTexture(unsigned int iTexture, GLUFRectf* prcTexture, Color defaultTextureColor)
+void GLUFElement::SetTexture(GLUFTextureIndex textureIndex, const GLUFRectf& uvRect, const GLUF::Color& defaultTextureColor)
 {
-	this->iTexture = iTexture;
-
-	if (prcTexture)
-		rcTexture = *prcTexture;
-	else
-		rcTexture = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	TextureColor.Init(defaultTextureColor);
+    mTextureIndex = textureIndex;
+    mUVRect = uvRect;
+    mTextureColor.Init(defaultTextureColor);
 }
 
 
 //--------------------------------------------------------------------------------------
-
-void GLUFElement::SetFont(unsigned int iFont, Color defaultFontColor, unsigned int dwTextFormat)
+void GLUFElement::SetFont(GLUFFontIndex font, const GLUF::Color& defaultFontColor, GLUFBitfield textFormat)
 {
-	this->iFont = iFont;
-	this->dwTextFormat = dwTextFormat;
-
-	FontColor.Init(defaultFontColor);
+    mFontIndex = font;
+    mFontColor.Init(defaultFontColor);
+    mTextFormatFlags = textFormat;
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFElement::Refresh()
 {
-	TextureColor.SetCurrent(GLUF_STATE_HIDDEN);
-	FontColor.SetCurrent(GLUF_STATE_HIDDEN);
+	mTextureColor.SetCurrent(GLUF_STATE_HIDDEN);
+	mFontColor.SetCurrent(GLUF_STATE_HIDDEN);
 }
 
 
