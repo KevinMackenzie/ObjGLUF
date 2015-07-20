@@ -363,17 +363,16 @@ GLUFBlendColor
 
     Data Members:
         'mStates': all of the different control states which can exist
-        'mState': the current state the control is in
+        'mCurrentColor': the current color of the blend state
 
 */
 using ColorStateMap = std::map < GLUFControlState, GLUF::Color > ;
-using ColorStateReference = ColorStateMap::iterator;
 
 struct GLUFBlendColor
 {
 public:
     ColorStateMap       mStates;
-    ColorStateReference mCurrentState;
+    GLUF::Color         mCurrentColor;
 
 
     /*

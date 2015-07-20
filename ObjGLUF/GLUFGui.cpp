@@ -842,7 +842,7 @@ GLUFFontSize GLUFFont::GetStringWidth(const std::wstring& str)
 }
 
 
-GLUFFontPtr GLUFLoadFont(GLUFFontPtr& font, const std::vector<char>& rawData, GLUFFontSize fontHeight)
+void GLUFLoadFont(GLUFFontPtr& font, const std::vector<char>& rawData, GLUFFontSize fontHeight)
 {
     font = std::make_shared<GLUFFont>();
 
@@ -867,21 +867,26 @@ Ended Here July 19 2015
 
 */
 
-//======================================================================================
-// GLUFBlendColor
-//======================================================================================
+
+
+/*
+======================================================================================================================================================================================================
+GLUFBlendColor Functions
+
+
+*/
 
 //--------------------------------------------------------------------------------------
 void GLUFBlendColor::Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor, const GLUF::Color& hiddenColor)
 {
-    for (auto it : mStates)
+    for (auto it = mStates.begin(); it != mStates.end(); ++i)
     {
-        it.second = defaultColor;
+        it->second = defaultColor;
     }
 
 	mStates[GLUF_STATE_DISABLED] = disabledColor;
 	mStates[GLUF_STATE_HIDDEN] = hiddenColor;
-	mCurrentState = mStates.find(GLUF_STATE_HIDDEN);//start hidden
+	mCurrentColor = mStates[GLUF_STATE_HIDDEN];//start hidden
 }
 
 
@@ -889,23 +894,29 @@ void GLUFBlendColor::Init(const GLUF::Color& defaultColor, const GLUF::Color& di
 void GLUFBlendColor::Blend(GLUFControlState state, float elapsedTime, float rate)
 {
 	//this is quite condensed, this basically interpolates from the current state to the destination state based on the time
-	mCurrentState->second = glm::mix(mCurrentState->second, mStates[state], 1.0f - powf(fRate, 30*fElapsedTime));//TODO: make this more asthetically working
+    //the speed of this transition is a recurisve version of e^kx - 1.0f
+    mCurrentColor = glm::mix(mCurrentColor, mStates[state], glm::clamp(powf(GLUF_E_F, rate * elapsedTime) - 1.0f, 0.0f, 1.0f));
 }
 
-void GLUFBlendColor::SetCurrent(Color current)
+//--------------------------------------------------------------------------------------
+void GLUFBlendColor::SetCurrent(const Color& current)
 {
-	Current = current;
+	mCurrentColor = current;
 }
 
-void GLUFBlendColor::SetCurrent(GLUF_CONTROL_STATE state)
+//--------------------------------------------------------------------------------------
+void GLUFBlendColor::SetCurrent(GLUFControlState state)
 {
-	Current = States[state];
+	mCurrentColor = mStates[state];
 }
 
-void GLUFBlendColor::SetAll(Color color)
+//--------------------------------------------------------------------------------------
+void GLUFBlendColor::SetAll(const Color& color)
 {
-	for (int i = 0; i < MAX_CONTROL_STATES; ++i)
-		States[i] = color;
+    for (auto it = mStates.begin(); it != mStates.end(); ++i)
+    {
+        it->second = color;
+    }
 
 	SetCurrent(color);
 }

@@ -291,6 +291,10 @@ Mathematical and Conversion Macros
 #define GLUF_PI_F  3.1415927f
 #define GLUF_PI_LD 3.141592653589793238L
 
+#define GLUF_E     2.718281828459045
+#define GLUF_E_F   2.7182818f
+#define GLUF_E_LD  2.718281828459045235L
+
 #define DEG_TO_RAD(value) ((value) *(GLUF_PI / 180))
 #define DEG_TO_RAD_F(value) ((value) *(GLUF_PI_F / 180))
 #define DEG_TO_RAD_LD(value) ((value) *(GLUF_PI_LD / 180))
