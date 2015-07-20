@@ -872,24 +872,24 @@ Ended Here July 19 2015
 //======================================================================================
 
 //--------------------------------------------------------------------------------------
-void GLUFBlendColor::Init(Color defaultColor, Color disabledColor, Color hiddenColor)
+void GLUFBlendColor::Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor, const GLUF::Color& hiddenColor)
 {
-	for (int i = 0; i < MAX_CONTROL_STATES; i++)
-	{
-		States[i] = defaultColor;
-	}
+    for (auto it : mStates)
+    {
+        it.second = defaultColor;
+    }
 
-	States[GLUF_STATE_DISABLED] = disabledColor;
-	States[GLUF_STATE_HIDDEN] = hiddenColor;
-	Current = hiddenColor;//start hidden
+	mStates[GLUF_STATE_DISABLED] = disabledColor;
+	mStates[GLUF_STATE_HIDDEN] = hiddenColor;
+	mCurrentState = mStates.find(GLUF_STATE_HIDDEN);//start hidden
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFBlendColor::Blend(GLUF_CONTROL_STATE iState, float fElapsedTime, float fRate)
+void GLUFBlendColor::Blend(GLUFControlState state, float elapsedTime, float rate)
 {
 	//this is quite condensed, this basically interpolates from the current state to the destination state based on the time
-	Current = glm::mix(Current, States[iState], 1.0f - powf(fRate, 30*fElapsedTime));//TODO: make this more asthetically working
+	mCurrentState->second = glm::mix(mCurrentState->second, mStates[state], 1.0f - powf(fRate, 30*fElapsedTime));//TODO: make this more asthetically working
 }
 
 void GLUFBlendColor::SetCurrent(Color current)
