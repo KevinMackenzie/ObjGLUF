@@ -194,20 +194,20 @@ using GLUFElementHolderPtr          = std::shared_ptr < GLUFElementHolder > ;
 using GLUFFontNodePtr               = std::shared_ptr < GLUFFontNode > ;
 using GLUFTextureNodePtr            = std::shared_ptr < GLUFTextureNode > ;
 
-using GLUFTextureIndex      = glm::uint32_t;
-using GLUFTextureIndexResMan= glm::uint32_t;
-using GLUFFontIndex         = glm::uint32_t;
-using GLUFFontIndexResMan   = glm::uint32_t;
-using GLUFElementIndex      = glm::uint32_t;
-using GLUFControlIndex      = glm::uint32_t;
-using GLUFRadioButtonGroup  = glm::uint32_t;
-using GLUFBitfield          = glm::uint32_t;
-using GLUFBitfieldL         = glm::uint64_t;
-using GLUFSize              = glm::uint32_t;
-using GLUFValue             = glm::int32_t;
-using GLUFUValue            = glm::uint32_t;
-using GLUFIndex             = glm::uint32_t;   
-using GLUFKeyId             = glm::uint32_t;
+using GLUFTextureIndex      = uint32_t;
+using GLUFTextureIndexResMan= uint32_t;
+using GLUFFontIndex         = uint32_t;
+using GLUFFontIndexResMan   = uint32_t;
+using GLUFElementIndex      = uint32_t;
+using GLUFControlIndex      = uint32_t;
+using GLUFRadioButtonGroup  = uint32_t;
+using GLUFBitfield          = uint32_t;
+using GLUFBitfieldL         = uint64_t;
+using GLUFSize              = uint32_t;
+using GLUFValue             = int32_t;
+using GLUFUValue            = uint32_t;
+using GLUFIndex             = uint32_t;   
+using GLUFKeyId             = uint32_t;
 
 /*
 ======================================================================================================================================================================================================
@@ -307,7 +307,7 @@ Everything Fonts
 */
 
 using GLUFFontPtr = std::shared_ptr<GLUFFont>;
-using GLUFFontSize = glm::uint32_t;//in 'points'
+using GLUFFontSize = uint32_t;//in 'points'
 
 //TODO: support dpi scaling
 #define GLUF_POINTS_PER_PIXEL 1.333333f
@@ -563,6 +563,7 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     static double sTimeRefresh;
     double mTimePrevRefresh = 0.0;
 
+    //TODO: these might not want to be static
     static GLUFControlPtr sControlFocus;
     static GLUFControlPtr sControlPressed;
     GLUFControlPtr mControlMouseOver = nullptr;
@@ -575,7 +576,7 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     std::wstring mCaptionText;
 
     //these are assumed to be based on the origin (bottom left)
-    GLUFRect mRegion = { 0, 0, 0, 0 };
+    GLUFRect mRegion = { { 0 }, 0, 0, { 0 } };
 
     long mCaptionHeight = 0;
 
@@ -588,7 +589,7 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     std::map <GLUFFontIndex, GLUFFontIndexResMan> mFonts;
 
     std::map<GLUFControlIndex, GLUFControlPtr> mControls;
-    std::vector <GLUFElementHolderPtr> mDefaultElements;
+    std::vector<GLUFElementHolderPtr> mDefaultElements;
 
     GLUFElement mCapElement;
     GLUFElement mDlgElement;
@@ -723,7 +724,7 @@ public:
 
         Throws:
             'std::bad_cast' if 'T' is not derived from 'GLUFControl'
-            'std::invalid_argument': if 'ID' is not found
+            'std::invalid_argument': if 'ID' is not found, but only in GLUF_DEBUG mode
     
     */
     template<typename T>
@@ -802,7 +803,7 @@ public:
             the element of the control at 'elementIndex'
 
         Throws:
-            'std::invalid_argument': if 'elementIndex' does not exist within the control in GLUF_DEBUG_MODE or if 'element' == nullptr
+            'std::invalid_argument': if 'elementIndex' is not found within 'controlType', but only in GLUF_DEBUG; or if 'element' == nullptr
     
     */
     void            SetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex, const GLUFElementPtr& element);
@@ -860,7 +861,7 @@ public:
 
     */
 	void DrawRect(const GLUF::GLUFRect& rect, const GLUF::Color& color);
-	//void DrawPolyLine(GLUF::GLUFPoint* apPoints, glm::uint32_t nNumPoints, GLUF::Color color);
+	//void DrawPolyLine(GLUF::GLUFPoint* apPoints, uint32_t nNumPoints, GLUF::Color color);
 	void DrawSprite(const GLUFElement& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
     void DrawText(const std::wstring& text, const GLUFElement& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
 
@@ -937,6 +938,9 @@ public:
 
         Returns:
             The Font/Texture node at 'index'
+
+        Throws:
+            'std::out_of_range': if index/resManFontIndex/resManTexIndex do not exist in their respective locations
 
     */
     void                SetFont(GLUFFontIndex fontIndex, GLUFFontIndexResMan resManFontIndex);
@@ -1038,10 +1042,10 @@ public:
             'elapsedTime': the time since the previous call to 'OnRender()'
 
         Throws:
-            TODO:
+            no-throw guarantee
     
     */
-	void OnRender(float elapsedTime);
+	void OnRender(float elapsedTime) noexcept; 
 
     /*
     ClearFocus
@@ -1087,10 +1091,13 @@ private:
 
         Parameters:
             'pt': the mouse position within the window
+
+        Throws:
+            no-throw guarantee
     
     */
-	void OnMouseMove(const GLUF::GLUFPoint& pt);
-	void OnMouseUp(const GLUF::GLUFPoint& pt);
+	void OnMouseMove(const GLUF::GLUFPoint& pt) noexcept;
+	void OnMouseUp(const GLUF::GLUFPoint& pt) noexcept;
 
     /*
     SetNextDialog
@@ -1099,10 +1106,13 @@ private:
             Sets the next dialog for cycling
 
         Parameters:
-            'nextDialog': the dialog to switch to when this dialog closes
+            'nextDialog': the dialog to switch to when this dialog closes            
+
+        Throws:
+            no-throw guarantee
     
     */
-	void SetNextDialog(const GLUFDialog& nextDialog);
+	void SetNextDialog(const GLUFDialog& nextDialog) noexcept;
 
     /*
     OnCycleFocus
@@ -1113,8 +1123,11 @@ private:
         Parameters:
             'forward': true: cycle forwards; false: cycle backwards
 
+        Throws:
+            no-throw guarantee
+
     */
-	bool OnCycleFocus(bool forward);
+	bool OnCycleFocus(bool forward) noexcept;
 
 };
 
@@ -1687,7 +1700,7 @@ struct GLUFElementHolder
 {
 	GLUFControlType mControlType;
 	GLUFElementIndex mElementIndex;
-	GLUFElement mElement;
+	GLUFElementPtr mElement;
 };
 
 

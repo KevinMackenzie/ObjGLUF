@@ -134,15 +134,16 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 #define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; GLUF_ERROR(ss.str().c_str()) } }
 
+
+//used for defining private constructors which can be accessed by 'std::make_shared'; NOTE: all parameters must be const references
+#define GLUF_FORCE_SMART_POINTERS(CLASSNAME, ...) CLASSNAME(__VA_ARGS__); friend std::shared_ptr<CLASSNAME> std::make_shared<CLASSNAME>(__VA_ARGS__); CLASSNAME() = delete;
+
 #ifdef GLUF_DEBUG
 
 #define GLUF_NULLPTR_CHECK(ptr) {if (ptr == nullptr){throw std::invalid_argument("Null Pointer");}}
 
 #define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
 #define GLUF_NON_CRITICAL_EXCEPTION(exception) throw exception;
-
-//used for defining private constructors which can be accessed by 'std::make_shared'; NOTE: all parameters must be const references
-#define GLUF_FORCE_SMART_POINTERS(CLASSNAME, ...) CLASSNAME(__VA_ARGS__); friend std::shared_ptr<CLASSNAME> std::make_shared<CLASSNAME>(__VA_ARGS__); CLASSNAME() = delete;
 
 #else
 
@@ -335,7 +336,7 @@ Context Controller Methods
 
 
 //NOTE: All methods below this must be called BEFORE window creation
-#define SetMSAASamples(numSamples) glfwWindowHint(GLFW_SAMPLES, 4)//make sure to call EnableMSAA()
+#define SetMSAASamples(numSamples) glfwWindowHint(GLFW_SAMPLES, numSamples)//make sure to call EnableMSAA()
 
 //NOTE: All methods below this must be called AFTER window creation
 #define EnableMSAA() glEnable(GL_MULTISAMPLE)//make sure to call SetMSAASamples() before calling this
@@ -393,7 +394,9 @@ Note: these only play a significant role in GLUFGui, but are presented here as b
 //Rect is supposed to be used where the origin is bottom left
 struct OBJGLUF_API GLUFRect
 {
-    long left, top, right, bottom;
+    union{ long left, x; };
+    long top, right;
+    union{ long bottom, y; };
 };
 
 struct OBJGLUF_API GLUFRectf

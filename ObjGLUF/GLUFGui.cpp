@@ -974,27 +974,23 @@ GLUFDialog::~GLUFDialog()
 
 
 //--------------------------------------------------------------------------------------
-
 void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog)
 {
-    mDialogManager = manager;
-    if (registerDialog)
-        mDialogManager->RegisterDialog(shared_from_this());
-
 	if (g_ControlTextureResourceManLocation == -1)
 	{
         g_ControlTextureResourceManLocation = mDialogManager->AddTexture(g_pControlTexturePtr);
 	}
 
-	SetTexture(0, g_ControlTextureResourceManLocation);
-	InitDefaultElements();
+    Init(manager, registerDialog, g_ControlTextureResourceManLocation);
 }
 
 
 //--------------------------------------------------------------------------------------
-
 void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, unsigned int textureIndex)
 {
+    if (manager == nullptr)
+        throw std::invalid_argument("Nullptr DRM");
+
     mDialogManager = manager;
     if (registerDialog)
         mDialogManager->RegisterDialog(shared_from_this());
@@ -1018,9 +1014,9 @@ void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog
 
 
 //--------------------------------------------------------------------------------------
-
 void GLUFDialog::SetCallback(GLUFEventCallbackFuncPtr callback, GLUFEventCallbackReceivablePtr userContext)
 {
+    NOEXCEPT_REGION_START
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
 	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
@@ -1029,34 +1025,44 @@ void GLUFDialog::SetCallback(GLUFEventCallbackFuncPtr callback, GLUFEventCallbac
 
     mCallbackEvent = callback;
 	mCallbackContext = userContext;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::RemoveControl(GLUFControlIndex ID)
 {
+    NOEXCEPT_REGION_START
+
     auto it = mControls.find(ID);
 
-	// Clean focus first
-	ClearFocus();
+    if (it != mControls.end())
+    {
+        // Clean focus first
+        ClearFocus();
 
-	// Clear references to this control
-	if (sControlFocus == it->second)
-		sControlFocus = nullptr;
-	if (sControlPressed == it->second)
-		sControlPressed = nullptr;
-	if (mControlMouseOver == it->second)
-		mControlMouseOver = nullptr;
+        // Clear references to this control
+        if (sControlFocus == it->second)
+            sControlFocus = nullptr;
+        if (sControlPressed == it->second)
+            sControlPressed = nullptr;
+        if (mControlMouseOver == it->second)
+            mControlMouseOver = nullptr;
 
-	mControls.erase(it);
+        mControls.erase(it);
 
-	return;
+    }
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::RemoveAllControls()
 {
+    NOEXCEPT_REGION_START
+
 	if (sControlFocus && &sControlFocus->mDialog == this)
 		sControlFocus = nullptr;
 	if (sControlPressed && &sControlPressed->mDialog == this)
@@ -1064,12 +1070,16 @@ void GLUFDialog::RemoveAllControls()
 	mControlMouseOver = nullptr;
 
 	mControls.clear();
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::Refresh()
 {
+    NOEXCEPT_REGION_START
+
 	if (sControlFocus)
 		sControlFocus->OnFocusOut();
 
@@ -1087,6 +1097,8 @@ void GLUFDialog::Refresh()
 
 	if (mKeyboardInput)
 		FocusDefaultControl();
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -1099,6 +1111,7 @@ void GLUFDialog::OnRender(float elapsedTime)
 	//	L"To fix hook up GLUFDialogResourceManager to device callbacks.  See comments for details");
 	//no need for "devices", this is all handled by GLFW
 
+    NOEXCEPT_REGION_START
 
 	// See if the dialog needs to be refreshed
 	if (mTimePrevRefresh < sTimeRefresh)
@@ -1190,13 +1203,16 @@ void GLUFDialog::OnRender(float elapsedTime)
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-
 void GLUFDialog::SendEvent(GLUFEvent ctrlEvent, bool triggeredByUser, GLUFControlPtr control)
 {
+    NOEXCEPT_REGION_START
+
 	// If no callback has been registered there's nowhere to send the event to
 	if (!mCallbackEvent)
 		return;
@@ -1207,11 +1223,12 @@ void GLUFDialog::SendEvent(GLUFEvent ctrlEvent, bool triggeredByUser, GLUFContro
 		return;
 
 	mCallbackEvent(ctrlEvent, control, mCallbackContext);
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-
 void GLUFDialog::SetFont(GLUFFontIndex index, GLUFFontIndex resManFontIndex)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
@@ -1221,6 +1238,9 @@ void GLUFDialog::SetFont(GLUFFontIndex index, GLUFFontIndex resManFontIndex)
 	GLUF_ASSERT(mDialogManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
 	//_Analysis_assume_(m_pManager);
 
+
+    //call this to trigger an exception if the font index does not exist
+    mDialogManager->GetFontNode(resManFontIndex);
 
 	mFonts[index] = resManFontIndex;
 }
@@ -1236,8 +1256,7 @@ GLUFFontNodePtr GLUFDialog::GetFont(GLUFFontIndex index) const
 
 
 //--------------------------------------------------------------------------------------
-
-void GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resManIndex)
+void GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resManTexIndex)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
 	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
@@ -1245,8 +1264,11 @@ void GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resManIndex
 	// of the application if it wishes to use GLUF's GUI.
 	GLUF_ASSERT(mDialogManager && L"To fix this, call GLUFDialog::Init() first.  See comments for details.");
 	//_Analysis_assume_(m_pManager);
+    
+    //call this to trigger an exception if the texture index does not exist
+    mDialogManager->GetTextureNode(resManTexIndex);
 
-	mTextures[index] = resManIndex;
+    mTextures[index] = resManTexIndex;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1257,85 +1279,43 @@ GLUFTextureNodePtr GLUFDialog::GetTexture(GLUFTextureIndex index) const
 	return mDialogManager->GetTextureNode(mTextures[index]);
 }
 
-/*
-
-Ended here July 20 2015
-
-
-
-*/
-
 //--------------------------------------------------------------------------------------
-
 bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
-	if (firstTime)
-		firstTime = false;
-	else
-		m_MousePositionOld = m_MousePosition;
+    NOEXCEPT_REGION_START
 
-	m_pManager->MsgProc(GLUF_PASS_CALLBACK_PARAM);
+	if (mFirstTime)
+        mFirstTime = false;
+	else
+		mMousePositionOld = mMousePosition;
+
+	mDialogManager->MsgProc(GLUF_PASS_CALLBACK_PARAM);
 
 
 	//first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
 	double x, y;
 	glfwGetCursorPos(g_pGLFWWindow, &x, &y);
-	m_MousePosition = GLUFPoint((long)x, g_WndHeight - (long)y);
-
-	//TODO: make this more efficient
-	/*GLUFPoint screenPt = m_pManager->GetWindowSize();
-	//mousePos.x += screenPt.x / 2;
-	m_MousePosition.y = (screenPt.y - m_MousePosition.y);// +screenPt.y / 2;
-
-	if (screenPt.x >= screenPt.y)
-	{
-		//mousePos.y /= screenPt.y / 2;
-		//mousePos.x /= screenPt.y / 2;
-		float diff = (screenPt.x - screenPt.y);
-		float diff2 = diff / 2.0f;
-		m_MousePosition.x -= diff2;
-		m_MousePosition.x /= screenPt.x - diff;
-		m_MousePosition.y /= screenPt.y;
-	}
-	else
-	{
-		//mousePos.y /= screenPt.x / 2;
-		//mousePos.x /= screenPt.x / 2;
-		float diff = (screenPt.y - screenPt.x);
-		float diff2 = diff / 2.0f;
-		m_MousePosition.y -= diff2;
-		m_MousePosition.y /= screenPt.y - diff;
-		m_MousePosition.x /= screenPt.x;
-	}*/
+	mMousePosition = GLUFPoint(static_cast<long>(x), g_WndHeight - static_cast<long>(y));
 
 
-	m_MousePositionDialogSpace.x = m_MousePosition.x - m_x;
-	m_MousePositionDialogSpace.y = m_MousePosition.y - m_y - m_nCaptionHeight;//TODO: fix
+    //this gets broken when window is too big
+	mMousePositionDialogSpace.x = mMousePosition.x - mRegion.x;
+	mMousePositionDialogSpace.y = mMousePosition.y - mRegion.y - mCaptionHeight;//TODO: fix
 
 	//if (m_bCaption)
 	//	m_MousePositionDialogSpace.y -= m_nCaptionHeight;
 
-	//mousePos = GLUFMultPoints(mousePos, m_pManager->GetOrthoPoint());
-
 	bool bHandled = false;
 
 	// For invisible dialog, do not handle anything.
-	if (!m_bVisible)
+	if (!mVisible)
 		return false;
 
-	// If automation command-line switch is on, enable this dialog's keyboard input
-	// upon any key press or mouse click. ????
-	/*if (GLUFGetAutomation() &&
-		(WM_LBUTTONDOWN == uMsg || WM_LBUTTONDBLCLK == uMsg || WM_KEYDOWN == uMsg))
-	{
-		m_pManager->EnableKeyboardInputForAllDialogs();
-	}*/
-
-	if (!m_bKeyboardInput && (msg == GM_KEY || msg == GM_UNICODE_CHAR))
+    if (!mKeyboardInput && (msg == GM_KEY || msg == GM_UNICODE_CHAR))
 		return false;
 
 	// If caption is enable, check for clicks in the caption area.
-	if (m_bCaption && !m_bLocked)
+	if (mCaptionEnabled && !mLocked)
 	{
 		static GLUFPoint totalDelta;
 
@@ -1344,46 +1324,46 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 			((param2 == GLFW_PRESS) == true) )
 		{
 
-			if (m_MousePositionDialogSpace.x >= 0 && m_MousePositionDialogSpace.x < m_width &&
-				m_MousePositionDialogSpace.y >= -m_nCaptionHeight && m_MousePositionDialogSpace.y < 0)
+			if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < GLUFRectWidth(mRegion) &&
+				mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
 			{
-				m_bDrag = true;
-				m_bDragged = false;
+				mDrag = true;
+				mDragged = false;
 				//SetCapture(GLUFGetHWND());
 				return true;
 			}
-			else if (!m_bMinimized && m_bGrabAnywhere && !GetControlAtPoint(m_MousePositionDialogSpace))
+			else if (!mMinimized && mGrabAnywhere && !GetControlAtPoint(mMousePositionDialogSpace))
 			{
 				//ONLY allow this if it is not on top of a control
-				m_bDrag = true;
+				mDrag = true;
 				return true;
 			}
 		}
 		else if ((msg == GM_MB) == true &&
 				(param1 == GLFW_MOUSE_BUTTON_LEFT) == true &&
 				(param2 == GLFW_RELEASE) == true && 
-				(m_bDrag))
+				(mDrag))
 		{
-			if (m_MousePositionDialogSpace.x >= 0 && m_MousePositionDialogSpace.x < m_width &&
-				m_MousePositionDialogSpace.y >= -m_nCaptionHeight && m_MousePositionDialogSpace.y < 0)
+			if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < GLUFRectWidth(mRegion) &&
+				mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
 			{
 				//ReleaseCapture();
 
-				m_bDrag = false;
+				mDrag = false;
 
 				//only minimize if the dialog WAS NOT moved
-				if (!m_bDragged)
+				if (!mDragged)
 				{
 					//reset this when it passes its threshhold, which is when m_bDragged is toggled
 					totalDelta = { 0L, 0L };
-					m_bMinimized = !m_bMinimized;
+					mMinimized = !mMinimized;
 				}
 
 				return true;
 			}
-			else if (!m_bMinimized && m_bGrabAnywhere)
+			else if (!mMinimized && mGrabAnywhere)
 			{
-				m_bDrag = false;
+				mDrag = false;
 				return true;
 			}
 		}
@@ -1392,7 +1372,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 			//is it over the caption?
 			if (glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 			{
-				if (m_bDrag)
+				if (mDrag)
 				{
 					//if (m_MousePosition.x < 0.0f || m_MousePosition.y < 0.0f)
 					//{
@@ -1400,24 +1380,17 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 					//}
 
 
-					GLUFPoint delta = m_MousePosition - m_MousePositionOld;
+					GLUFPoint delta = mMousePosition - mMousePositionOld;
 					totalDelta = { totalDelta.x + delta.x, totalDelta.y + delta.y };
-					GLUFPoint orthPt = m_pManager->GetOrthoPoint();
+                    
+					GLUFRepositionRect(mRegion, 
+                        std::clamp(delta.x + mRegion.x, 0L, static_cast<long>(g_WndWidth) - GLUFRectWidth(mRegion)),
+                        std::clamp(delta.y + mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight));
+                    
 
-					//this accounts for non-square windows
-					//m_y = std::clamp(delta.y + m_y, (1.0f - orthPt.y) / 2 - m_height + m_nCaptionHeight, orthPt.y - m_height + (1.0f - orthPt.y) / 2);
-					//m_x = std::clamp(delta.x + m_x, (1.0f - orthPt.x) / 2, orthPt.x - m_width + (1.0f - orthPt.x) / 2);
-
-					m_x = std::clamp(delta.x + m_x, 0L, (long)g_WndWidth - m_width);
-					m_y = std::clamp(delta.y + m_y, 0L, (long)g_WndHeight - m_nCaptionHeight);
-
-
-					//m_x += delta.x;
-					//m_y += delta.y;
-
-					//give a threshhold, because sometimes when a use clicks, they flick the mouse a bit
+					//give a threshhold, because sometimes when a use clicks, the user will move the mouse a bit
 					if (totalDelta.x > 3 || totalDelta.y > 3)
-						m_bDragged = true;
+						mDragged = true;
 
 					return true;
 				}
@@ -1426,23 +1399,23 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 	}
 
 	//this is important, if the window is resized, then make sure to reclamp the dialog position
-	if (m_bAutoClamp && msg == GM_RESIZE)
+	if (mAutoClamp && msg == GM_RESIZE)
 	{
 		ClampToScreen();
 	}
 
 	// If the dialog is minimized, don't send any messages to controls.
-	if (m_bMinimized)
+	if (mMinimized)
 		return false;
 
 	// If a control is in focus, it belongs to this dialog, and it's enabled, then give
 	// it the first chance at handling the message.
-	if (s_pControlFocus &&
-		s_pControlFocus->m_pDialog == this &&
-		s_pControlFocus->GetEnabled())
+	if (sControlFocus &&
+		&sControlFocus->mDialog == this &&
+		sControlFocus->GetEnabled())
 	{
 		// If the control MsgProc handles it, then we don't.
-		if (s_pControlFocus->MsgProc(msg, param1, param2, param3, param4))
+		if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
 			return true;
 	}
 
@@ -1466,14 +1439,14 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 		// Call OnFocusIn()/OnFocusOut() of the control that currently has the focus
 		// as the application is activated/deactivated.  This matches the Windows
 		// behavior.
-		if (s_pControlFocus &&
-			s_pControlFocus->m_pDialog == this &&
-			s_pControlFocus->GetEnabled())
+		if (sControlFocus &&
+			&sControlFocus->mDialog == this &&
+			sControlFocus->GetEnabled())
 		{
 			if (param1 == GL_TRUE)
-				s_pControlFocus->OnFocusIn();
+				sControlFocus->OnFocusIn();
 			else
-				s_pControlFocus->OnFocusOut();
+				sControlFocus->OnFocusOut();
 		}
 		break;
 
@@ -1485,27 +1458,27 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 	{
 		// If a control is in focus, it belongs to this dialog, and it's enabled, then give
 		// it the first chance at handling the message.
-		if (s_pControlFocus &&
-			s_pControlFocus->m_pDialog == this &&
-			s_pControlFocus->GetEnabled())
-			for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
-			{
-			if (s_pControlFocus->MsgProc(msg, param1, param2, param3, param4))
-				return true;
-			}
+		if (sControlFocus &&
+			&sControlFocus->mDialog == this &&
+			sControlFocus->GetEnabled())
+			//for (auto it : mControls)     --> Not Quite sure what this loop was here for
+			//{
+			    if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
+				    return true;
+			//}
 
 		// Not yet handled, see if this matches a control's hotkey
 		// Activate the hotkey if the focus doesn't belong to an
 		// edit box.
-		if (param3 == GLFW_PRESS && (!s_pControlFocus ||
-			(s_pControlFocus->GetType() != GLUF_CONTROL_EDITBOX
-			&& s_pControlFocus->GetType() != GLUF_CONTROL_IMEEDITBOX)))
+		if (param3 == GLFW_PRESS && (!sControlFocus ||
+			(sControlFocus->GetType() != GLUF_CONTROL_EDITBOX
+			&& sControlFocus->GetType() != GLUF_CONTROL_IMEEDITBOX)))
 		{
-			for (auto it = m_Controls.begin(); it != m_Controls.end(); ++it)
+			for (auto it : mControls)
 			{
-				if ((*it)->GetHotkey() == param1)
+				if (it.second->GetHotkey() == param1)
 				{
-					(*it)->OnHotkey();
+					it.second->OnHotkey();
 					return true;
 				}
 			}
@@ -1515,14 +1488,14 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 		if (param3 == GLFW_PRESS)
 		{
 			// If keyboard input is not enabled, this message should be ignored
-			if (!m_bKeyboardInput)
+			if (!mKeyboardInput)
 				return false;
 
 			switch (param1)
 			{
 			case GLFW_KEY_RIGHT:
 			case GLFW_KEY_DOWN:
-				if (s_pControlFocus)
+				if (sControlFocus)
 				{
 					return OnCycleFocus(true);
 				}
@@ -1530,7 +1503,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 
 			case GLFW_KEY_LEFT:
 			case GLFW_KEY_UP:
-				if (s_pControlFocus)
+				if (sControlFocus)
 				{
 					return OnCycleFocus(false);
 				}
@@ -1570,7 +1543,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 	{
 		// If not accepting mouse input, return false to indicate the message should still 
 		// be handled by the application (usually to move the camera).
-		if (!m_bMouseInput)
+		if (!mMouseInput)
 			return false;
 
 
@@ -1580,16 +1553,16 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 
 		// If a control is in focus, it belongs to this dialog, and it's enabled, then give
 		// it the first chance at handling the message.
-		if (s_pControlFocus &&
-			s_pControlFocus->m_pDialog == this &&
-			s_pControlFocus->GetEnabled())
+		if (sControlFocus &&
+			&sControlFocus->mDialog == this &&
+			sControlFocus->GetEnabled())
 		{
-			if (s_pControlFocus->MsgProc(msg, param1, param2, param3, param4))
+			if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
 				return true;
 		}
 
 		// Not yet handled, see if the mouse is over any controls
-		GLUFControl* pControl = GetControlAtPoint(m_MousePositionDialogSpace);
+		GLUFControlPtr pControl = GetControlAtPoint(mMousePositionDialogSpace);
 		if (pControl && pControl->GetEnabled())
 		{
 			bHandled = pControl->MsgProc(msg, param1, param2, param3, param4);
@@ -1602,11 +1575,11 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 			// which had focus it just lost it
 			if (param1 == GLFW_MOUSE_BUTTON_LEFT &&
 				param2 == GLFW_PRESS &&
-				s_pControlFocus &&
-				s_pControlFocus->m_pDialog == this)
+				sControlFocus &&
+				&sControlFocus->mDialog == this)
 			{
-				s_pControlFocus->OnFocusOut();
-				s_pControlFocus = nullptr;
+				sControlFocus->OnFocusOut();
+				sControlFocus = nullptr;
 			}
 		}
 
@@ -1615,7 +1588,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 		switch (msg)
 		{
 		case GM_CURSOR_POS:
-			OnMouseMove(m_MousePositionDialogSpace);
+			OnMouseMove(mMousePositionDialogSpace);
 			return false;
 		}
 
@@ -1630,9 +1603,11 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 		// m_bDrag so that the dialog does not mistakenly
 		// think the mouse button is still held down.
 		if (param1 == GL_FALSE)
-			m_bDrag = false;
+			mDrag = false;
 	}
 	}
+
+    NOEXCEPT_REGION_END
 
 	return false;
 }
@@ -1641,18 +1616,22 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 //--------------------------------------------------------------------------------------
 void GLUFDialog::ClampToScreen()
 {
-	m_x = std::clamp(m_x, 0L, (long)g_WndWidth - m_width);
-	m_y = std::clamp(m_y, 0L, (long)g_WndHeight - m_nCaptionHeight);
+    NOEXCEPT_REGION_START
+
+	mRegion.x = std::clamp(mRegion.x, 0L, static_cast<long>(g_WndWidth) - GLUFRectWidth(mRegion));
+	mRegion.y = std::clamp(mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight);
+
+    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
-GLUFControl* GLUFDialog::GetControlAtPoint(GLUFPoint pt) 
+GLUFControlPtr GLUFDialog::GetControlAtPoint(const GLUF::GLUFPoint& pt) const
 {
 	// Search through all child controls for the first one which
 	// contains the mouse point
-	for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
+	for (auto it : mControls)
 	{
-		if (!*it)
+		if (!it.second)
 		{
 			continue;
 		}
@@ -1660,20 +1639,22 @@ GLUFControl* GLUFDialog::GetControlAtPoint(GLUFPoint pt)
 		// We only return the current control if it is visible
 		// and enabled.  Because GetControlAtPoint() is used to do mouse
 		// hittest, it makes sense to perform this filtering.
-		if ((*it)->ContainsPoint(pt) && (*it)->GetEnabled() && (*it)->GetVisible())
+		if (it.second->ContainsPoint(pt) && it.second->GetEnabled() && it.second->GetVisible())
 		{
-			return *it;
+			return it.second;
 		}
 	}
 
-	return nullptr;
+    GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("No Control Found At Point"));
+
+    return nullptr;
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialog::GetControlEnabled(int ID)
+bool GLUFDialog::GetControlEnabled(GLUFControlIndex ID) const
 {
-	GLUFControl* pControl = GetControl(ID);
+	GLUFControlPtr pControl = GetControl<GLUFControl>(ID);
 	if (!pControl)
 		return false;
 
@@ -1683,9 +1664,9 @@ bool GLUFDialog::GetControlEnabled(int ID)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::SetControlEnabled(int ID, bool bEnabled)
+void GLUFDialog::SetControlEnabled(GLUFControlIndex ID, bool bEnabled)
 {
-	GLUFControl* pControl = GetControl(ID);
+	GLUFControlPtr pControl = GetControl<GLUFControl>(ID);
 	if (!pControl)
 		return;
 
@@ -1694,86 +1675,95 @@ void GLUFDialog::SetControlEnabled(int ID, bool bEnabled)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::OnMouseUp(GLUFPoint pt)
+void GLUFDialog::OnMouseUp(const GLUF::GLUFPoint& pt)
 {
+    //TODO: do something here?
 	GLUF_UNREFERENCED_PARAMETER(pt);
-	s_pControlPressed = nullptr;
-	m_pControlMouseOver = nullptr;
+	sControlPressed = nullptr;
+	mControlMouseOver = nullptr;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::OnMouseMove(GLUFPoint pt)
+void GLUFDialog::OnMouseMove(const GLUF::GLUFPoint& pt)
 {
+    NOEXCEPT_REGION_START
 
 	// Figure out which control the mouse is over now
-	GLUFControl* pControl = GetControlAtPoint(pt);
+	GLUFControlPtr pControl = GetControlAtPoint(pt);
 
 	// If the mouse is still over the same control, nothing needs to be done
-	if (pControl == m_pControlMouseOver)
+	if (pControl == mControlMouseOver)
 		return;
 
 	// Handle mouse leaving the old control
-	if (m_pControlMouseOver)
-		m_pControlMouseOver->OnMouseLeave();
+	if (mControlMouseOver)
+		mControlMouseOver->OnMouseLeave();
 
 	// Handle mouse entering the new control
-	m_pControlMouseOver = pControl;
+	mControlMouseOver = pControl;
 	if (pControl)
-		m_pControlMouseOver->OnMouseEnter();
+		mControlMouseOver->OnMouseEnter();
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::SetDefaultElement(GLUF_CONTROL_TYPE nControlType, unsigned int iElement, GLUFElement* pElement)
+void GLUFDialog::SetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex, const GLUFElementPtr& element)
 {
+    if (!element)
+        throw std::invalid_argument("Nullptr GLUFElement");
+
 	// If this Element type already exist in the list, simply update the stored Element
-	for (auto it = m_DefaultElements.begin(); it != m_DefaultElements.end(); ++it)
-	{
-		if ((*it)->nControlType == nControlType &&
-			(*it)->iElement == iElement)
-		{
-			(*it)->Element = *pElement;
-			return GR_SUCCESS;
-		}
-	}
+    for (auto it : mDefaultElements)
+    {
+        if (it->mControlType == controlType && it->mElementIndex == elementIndex)
+        {
+            it->mElement = element;
+            return;
+        }
+    }
 
 	// Otherwise, add a new entry
-	GLUFElementHolder* pNewHolder;
-	pNewHolder = new (std::nothrow) GLUFElementHolder;
-	if (!pNewHolder)
-		return GR_OUTOFMEMORY;
+    GLUFElementHolderPtr pNewHolder = std::make_shared<GLUFElementHolder>();
 
-	pNewHolder->nControlType = nControlType;
-	pNewHolder->iElement = iElement;
-	pNewHolder->Element = *pElement;
+	pNewHolder->mControlType = controlType;
+	pNewHolder->mElementIndex = elementIndex;
+	pNewHolder->mElement = element;
 
-	m_DefaultElements.push_back(pNewHolder);
-
-	return GR_SUCCESS;
+	mDefaultElements.push_back(pNewHolder);
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFElement* GLUFDialog::GetDefaultElement(GLUF_CONTROL_TYPE nControlType, unsigned int iElement)
+GLUFElementPtr GLUFDialog::GetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex) const
 {
-	for (auto it = m_DefaultElements.cbegin(); it != m_DefaultElements.cend(); ++it)
-	{
-		if ((*it)->nControlType == nControlType &&
-			(*it)->iElement == iElement)
-		{
-			return &(*it)->Element;
-		}
-	}
+    for (auto it : mDefaultElements)
+    {
+        if (it->mControlType == controlType && it->mElementIndex == elementIndex)
+        {
+            return it->mElement;
+        }
+    }
 
-	return nullptr;
+    GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("GetDefaultElement: elementIndex could not be found within controlType"));
+
+    return nullptr;
 }
 
 
-//--------------------------------------------------------------------------------------
 
+
+/*
+
+Ended here July 20 2015
+
+
+
+*/
+
+//--------------------------------------------------------------------------------------
 GLUFResult GLUFDialog::AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags, bool bIsDefault,
 GLUFStatic** ppCreated)
 {
