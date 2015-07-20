@@ -276,7 +276,7 @@ using GLUFEventCallbackFuncPtr = void(*)(GLUFEvent, GLUFControlPtr, const GLUFEv
 Shorthand Notation for Style
 
 */
-#define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4
+#define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4
 #define GLUF_PASS_CALLBACK_PARAM msg, param1, param2, param3, param4
 
 /*
@@ -517,7 +517,7 @@ GLUFDialog
         'mGrabAnywhere': whether or not to allow the dialog to be moved around the screen by being clicked anywhere instead of just the caption
         'mDragged': this keeps the dialog from minimizing/maximizing when dragging the dialog around
         'mDefaultControl': a pointer to the control which should receive focus when the dialog goes into focus the first time
-        'mTimeRefresh': the minimum time before refreshing the dialog, usually 0
+        'sTimeRefresh': the minimum time before refreshing the dialog, usually 0
         'mTimePrevRefresh': the time of the previous refresh
         'mControlFocus': the control which has the focus
         'mControlPressed': the control currently pressed
@@ -547,7 +547,7 @@ GLUFDialog
         'mMousePositionOld': the mouse position cached when the mouse is pressed down to detect whether it is a drag or a minimize/maximize event
 
 */
-class GLUFDialog
+class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
 {
 	friend class GLUFDialogResourceManager;
 
@@ -558,31 +558,31 @@ class GLUFDialog
     bool mGrabAnywhere = false;
     bool mDragged = false;
 
-    GLUFControlPtr mDefaultControl;
+    GLUFControlPtr mDefaultControl = nullptr;
 
-    static double mTimeRefresh;
-    double mTimePrevRefresh;
+    static double sTimeRefresh;
+    double mTimePrevRefresh = 0.0;
 
     static GLUFControlPtr sControlFocus;
     static GLUFControlPtr sControlPressed;
-    GLUFControlPtr mControlMouseOver;
+    GLUFControlPtr mControlMouseOver = nullptr;
 
-    bool mVisible;
-    bool mCaptionEnabled;
-    bool mMinimized;
-    bool mDrag;
+    bool mVisible = true;
+    bool mCaptionEnabled = false;
+    bool mMinimized = false;
+    bool mDrag = false;
 
     std::wstring mCaptionText;
 
     //these are assumed to be based on the origin (bottom left)
-    GLUFRect mRegion;
+    GLUFRect mRegion = { 0, 0, 0, 0 };
 
-    long mCaptionHeight;
+    long mCaptionHeight = 0;
 
-    GLUFDialogResourceManagerPtr mDialogManager;
+    GLUFDialogResourceManagerPtr mDialogManager = nullptr;
 
-    GLUFEventCallbackFuncPtr mCallbackEvent;
-    GLUFEventCallbackReceivablePtr mCallbackContext;
+    GLUFEventCallbackFuncPtr mCallbackEvent = nullptr;
+    GLUFEventCallbackReceivablePtr mCallbackContext = nullptr;
 
     std::map <GLUFTextureIndex, GLUFTextureIndexResMan> mTextures;
     std::map <GLUFFontIndex, GLUFFontIndexResMan> mFonts;
@@ -593,12 +593,12 @@ class GLUFDialog
     GLUFElement mCapElement;
     GLUFElement mDlgElement;
 
-    GLUFDialogPtr mNextDialog;
-    GLUFDialogPtr mPrevDialog;
+    GLUFDialogPtr mNextDialog = nullptr;
+    GLUFDialogPtr mPrevDialog = nullptr;
 
-    bool mNonUserEvents;
-    bool mKeyboardInput;
-    bool mMouseInput;
+    bool mNonUserEvents = true;
+    bool mKeyboardInput = true;
+    bool mMouseInput = true;
 
     GLUF::GLUFPoint mMousePosition;
     GLUF::GLUFPoint mMousePositionDialogSpace;
@@ -645,7 +645,7 @@ public:
             no-throw guarantee
     
     */
-	bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept;
+	bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
 
     /*
     Add*
@@ -861,8 +861,8 @@ public:
     */
 	void DrawRect(const GLUF::GLUFRect& rect, const GLUF::Color& color);
 	//void DrawPolyLine(GLUF::GLUFPoint* apPoints, glm::uint32_t nNumPoints, GLUF::Color color);
-	void DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
-    void DrawText(const std::wstring& text, const GLUFElementPtr& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
+	void DrawSprite(const GLUFElement& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
+    void DrawText(const std::wstring& text, const GLUFElement& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
 
     /*
     CalcTextRect -- WIP --
@@ -911,7 +911,7 @@ public:
     void        SetCaptionText(const std::wstring& text) noexcept       { mCaptionText = text;                      }
     void        SetLocation(long x, long y) noexcept                    { GLUFRepositionRect(mRegion, x, y);        }
     void        SetSize(long width, long height) noexcept               { GLUFResizeRect(mRegion, width, height);   }
-    void		SetRefreshTime(float time) noexcept                     { mTimeRefresh = time;                      }
+    static void	SetRefreshTime(float time) noexcept                     { sTimeRefresh = time;                      }
 
     void		Lock(bool lock = true) noexcept                         { mLocked = lock;                           }
     void		EnableGrabAnywhere(bool enable = true) noexcept         { mGrabAnywhere = enable;                   }
@@ -1278,7 +1278,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept;
+	bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
     
     /*
     ApplyRenderUI(Untex)
@@ -1519,6 +1519,8 @@ class GLUFControl : public std::enable_shared_from_this<GLUFControl>
     */
     GLUF_FORCE_SMART_POINTERS(GLUFControl, GLUFDialog& dialog);
 
+    friend GLUFDialog;
+
 protected:
     GLUFControlIndex mID;
     GLUFControlType mType;
@@ -1585,7 +1587,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept { return false; }
+	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept { return false; }
 
              
     /*
@@ -1765,7 +1767,7 @@ public:
     */
     virtual bool CanHaveFocus()	const override	{ return (mVisible && mEnabled); }
     virtual void Render(float elapsedTime) noexcept override;
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
 
 };
@@ -1814,7 +1816,7 @@ public:
     Overridden Unambiguous Member Functions
     
     */
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
     virtual void OnHotkey() noexcept override;
     virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const override;
@@ -1880,7 +1882,7 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 
 protected:
 
@@ -2005,7 +2007,7 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
 
@@ -2343,7 +2345,7 @@ public:
     
 
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void OnInit() override                      { mDialog.InitControl(&m_ScrollBar);	}
 	virtual bool CanHaveFocus() const noexcept override	{ return (mVisible && mEnabled);			    }
 	virtual void Render(float elapsedTime) noexcept override;
@@ -2584,7 +2586,7 @@ public:
     
     
     */
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void OnHotkey() noexcept override;
 	virtual bool CanHaveFocus() const override{ return (mVisible && mEnabled); }
 	virtual void OnFocusOut() override;
@@ -2662,7 +2664,7 @@ public:
     
     
     */
-    virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override;
     virtual bool CanHaveFocus()const noexcept override{ return (mVisible && mEnabled); }
     virtual void UpdateRects() noexcept override;
@@ -2808,7 +2810,7 @@ public:
 
     
     
-	virtual bool MsgProc(GLUFMessageType msg, int param1, int param2, int param3, int param4) noexcept override;
+	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void UpdateRects() noexcept override;
 	virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
 	virtual void Render(float elapsedTime) noexcept override;

@@ -852,24 +852,6 @@ void GLUFLoadFont(GLUFFontPtr& font, const std::vector<char>& rawData, GLUFFontS
 
 
 /*
-
-
-
-
-Ended Here July 19 2015
-
-
-
-
-
-
-
-
-*/
-
-
-
-/*
 ======================================================================================================================================================================================================
 GLUFBlendColor Functions
 
@@ -879,7 +861,7 @@ GLUFBlendColor Functions
 //--------------------------------------------------------------------------------------
 void GLUFBlendColor::Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor, const GLUF::Color& hiddenColor)
 {
-    for (auto it = mStates.begin(); it != mStates.end(); ++i)
+    for (auto it = mStates.begin(); it != mStates.end(); ++it)
     {
         it->second = defaultColor;
     }
@@ -913,7 +895,7 @@ void GLUFBlendColor::SetCurrent(GLUFControlState state)
 //--------------------------------------------------------------------------------------
 void GLUFBlendColor::SetAll(const Color& color)
 {
-    for (auto it = mStates.begin(); it != mStates.end(); ++i)
+    for (auto it = mStates.begin(); it != mStates.end(); ++it)
     {
         it->second = color;
     }
@@ -957,64 +939,51 @@ void GLUFElement::Refresh()
 
 
 
-//======================================================================================
-// GLUFDialog class
-//======================================================================================
+/*
+======================================================================================================================================================================================================
+GLUFDialog Functions
 
-GLUFDialog::GLUFDialog() :
-m_x(0),
-m_y(0),
-m_width(0),
-m_height(0),
-m_pManager(nullptr),
-m_bVisible(true),
-m_bCaption(false),
-m_bMinimized(false),
-m_bDrag(false),
-m_nCaptionHeight(18),
-m_pCallbackEvent(nullptr),
-m_pCallbackEventUserContext(nullptr),
-m_fTimeLastRefresh(0.0),
-m_pControlMouseOver(nullptr),
-m_nDefaultControlID(0xffff),
-m_bNonUserEvents(false),
-m_bKeyboardInput(false),
-m_bMouseInput(true)
+
+*/
+
+//--------------------------------------------------------------------------------------
+GLUFDialog::GLUFDialog()
 {
-
-	m_pNextDialog = this;
-	m_pPrevDialog = this;
+#ifdef GLUF_DEBUG
+    //TODO: get a more graceful way to test this
+    //This is to make sure all dialogs are being destroyed
+    printf("GLUFDialog Created");
+#endif
 }
 
+double GLUFDialog::sTimeRefresh = GLUF_60HZ;
+GLUFControlPtr GLUFDialog::sControlFocus = nullptr;
+GLUFControlPtr GLUFDialog::sControlPressed = nullptr;
 
 //--------------------------------------------------------------------------------------
 GLUFDialog::~GLUFDialog()
 {
+#ifdef GLUF_DEBUG
+    //TODO: get a more graceful way to test this
+    //This is to make sure all dialogs are being destroyed
+    printf("GLUFDialog Destroyed");
+#endif
+
 	RemoveAllControls();
-
-	m_Fonts.clear();
-	m_Textures.clear();
-
-	for (auto it = m_DefaultElements.begin(); it != m_DefaultElements.end(); ++it)
-	{
-		GLUF_SAFE_DELETE(*it);
-	}
-
-	m_DefaultElements.clear();
 }
 
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialog::Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog)
+void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog)
 {
-	m_pManager = pManager;
-	if (bRegisterDialog)
-		pManager->RegisterDialog(this);
+    mDialogManager = manager;
+    if (registerDialog)
+        mDialogManager->RegisterDialog(shared_from_this());
 
 	if (g_ControlTextureResourceManLocation == -1)
 	{
-		g_ControlTextureResourceManLocation = m_pManager->AddTexture(g_pControlTexturePtr);
+        g_ControlTextureResourceManLocation = mDialogManager->AddTexture(g_pControlTexturePtr);
 	}
 
 	SetTexture(0, g_ControlTextureResourceManLocation);
@@ -1024,13 +993,13 @@ void GLUFDialog::Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog)
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialog::Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog, unsigned int iTexture)
+void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, unsigned int textureIndex)
 {
-	m_pManager = pManager;
-	if (bRegisterDialog)
-		pManager->RegisterDialog(this);
+    mDialogManager = manager;
+    if (registerDialog)
+        mDialogManager->RegisterDialog(shared_from_this());
 
-	SetTexture(0, iTexture);//this will always be the first one in our buffer of indices
+    SetTexture(0, textureIndex);//this will always be the first one in our buffer of indices
 	InitDefaultElements();
 }
 
@@ -1050,89 +1019,79 @@ void GLUFDialog::Init(GLUFDialogResourceManager* pManager, bool bRegisterDialog,
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialog::SetCallback(PCALLBACKGLUFGUIEVENT pCallback, void* pUserContext)
+void GLUFDialog::SetCallback(GLUFEventCallbackFuncPtr callback, GLUFEventCallbackReceivablePtr userContext)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
 	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
 	// of the application if it wishes to use GLUF's GUI.
-	GLUF_ASSERT(m_pManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
+	GLUF_ASSERT(mDialogManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
 
-	m_pCallbackEvent = pCallback;
-	m_pCallbackEventUserContext = pUserContext;
+    mCallbackEvent = callback;
+	mCallbackContext = userContext;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::RemoveControl(int ID)
+void GLUFDialog::RemoveControl(GLUFControlIndex ID)
 {
-	for (auto it = m_Controls.begin(); it != m_Controls.end(); ++it)
-	{
-		if ((*it)->GetID() == ID)
-		{
-			// Clean focus first
-			ClearFocus();
+    auto it = mControls.find(ID);
 
-			// Clear references to this control
-			if (s_pControlFocus == (*it))
-				s_pControlFocus = nullptr;
-			if (s_pControlPressed == (*it))
-				s_pControlPressed = nullptr;
-			if (m_pControlMouseOver == (*it))
-				m_pControlMouseOver = nullptr;
+	// Clean focus first
+	ClearFocus();
 
-			GLUF_SAFE_DELETE((*it));
-			m_Controls.erase(it);
+	// Clear references to this control
+	if (sControlFocus == it->second)
+		sControlFocus = nullptr;
+	if (sControlPressed == it->second)
+		sControlPressed = nullptr;
+	if (mControlMouseOver == it->second)
+		mControlMouseOver = nullptr;
 
-			return;
-		}
-	}
+	mControls.erase(it);
+
+	return;
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::RemoveAllControls()
 {
-	if (s_pControlFocus && s_pControlFocus->m_pDialog == this)
-		s_pControlFocus = nullptr;
-	if (s_pControlPressed && s_pControlPressed->m_pDialog == this)
-		s_pControlPressed = nullptr;
-	m_pControlMouseOver = nullptr;
+	if (sControlFocus && &sControlFocus->mDialog == this)
+		sControlFocus = nullptr;
+	if (sControlPressed && &sControlPressed->mDialog == this)
+		sControlPressed = nullptr;
+	mControlMouseOver = nullptr;
 
-	for (auto it = m_Controls.begin(); it != m_Controls.end(); ++it)
-	{
-		GLUF_SAFE_DELETE(*it);
-	}
-
-	m_Controls.clear();
+	mControls.clear();
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::Refresh()
 {
-	if (s_pControlFocus)
-		s_pControlFocus->OnFocusOut();
+	if (sControlFocus)
+		sControlFocus->OnFocusOut();
 
-	if (m_pControlMouseOver)
-		m_pControlMouseOver->OnMouseLeave();
+	if (mControlMouseOver)
+		mControlMouseOver->OnMouseLeave();
 
-	s_pControlFocus = nullptr;
-	s_pControlPressed = nullptr;
-	m_pControlMouseOver = nullptr;
+	sControlFocus = nullptr;
+	sControlPressed = nullptr;
+	mControlMouseOver = nullptr;
 
-	for (auto it = m_Controls.begin(); it != m_Controls.end(); ++it)
+	for (auto it : mControls)
 	{
-		(*it)->Refresh();
+		it.second->Refresh();
 	}
 
-	if (m_bKeyboardInput)
+	if (mKeyboardInput)
 		FocusDefaultControl();
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFDialog::OnRender(float fElapsedTime)
+void GLUFDialog::OnRender(float elapsedTime)
 {
 	// If this assert triggers, you need to call GLUFDialogResourceManager::On*Device() from inside
 	// the application's device callbacks.  See the SDK samples for an example of how to do this.
@@ -1142,16 +1101,16 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 
 	// See if the dialog needs to be refreshed
-	if (m_fTimeLastRefresh < s_fTimeRefresh)
+	if (mTimePrevRefresh < sTimeRefresh)
 	{
-		m_fTimeLastRefresh = GLUFGetTime();
+        mTimePrevRefresh = GLUFGetTime();
 		Refresh();
 	}
 
 	// For invisible dialog, out now.
-	if (!m_bVisible ||
-		(m_bMinimized && !m_bCaption))
-		return GR_SUCCESS;
+	if (!mVisible ||
+		(mMinimized && !mCaptionEnabled))
+		return;
 
 	// Enable depth test
 	glDisable(GL_DEPTH_TEST);
@@ -1161,63 +1120,64 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	m_pManager->BeginSprites();
+	mDialogManager->BeginSprites();
 
-	if (!m_bMinimized)
+	if (!mMinimized)
 	{
 		// Convert the draw rectangle from screen coordinates to clip space coordinates.(where the origin is in the middle of the screen, and the edges are 1, or negative 1
-		GLUFRect windowCoords = { 0, m_height, m_width, 0 };
+		GLUFRect windowCoords = { 0, GetHeight(), GetWidth(), 0 };
 		//windowCoords = GLUFScreenToClipspace(windowCoords);
 
-		DrawSprite(&m_DlgElement, windowCoords, -0.99f, false);
+		DrawSprite(mDlgElement, windowCoords, -0.99f, false);
 	}
 
 	// Sort depth back to front
-	BeginText(m_pManager->GetOrthoMatrix());
+	BeginText(mDialogManager->GetOrthoMatrix());
 
 
 	//m_pManager->ApplyRenderUI();
 	// If the dialog is minimized, skip rendering
 	// its controls.
-	if (!m_bMinimized)
+	if (!mMinimized)
 	{
-		for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
+		for (auto it : mControls)
 		{
 			// Focused control is drawn last
-			if (*it == s_pControlFocus)
+			if (it.second == sControlFocus)
 				continue;
 
-			(*it)->Render(fElapsedTime);
+			it.second->Render(elapsedTime);
 		}
 
-		if (s_pControlFocus && s_pControlFocus->m_pDialog == this)
-			s_pControlFocus->Render(fElapsedTime);
+		if (sControlFocus && &sControlFocus->mDialog == this)
+			sControlFocus->Render(elapsedTime);
 	}
 
 	// Render the caption if it's enabled.
-	if (m_bCaption)
+	if (mCaptionEnabled)
 	{
 		// DrawSprite will offset the rect down by
 		// m_nCaptionHeight, so adjust the rect higher
 		// here to negate the effect.
 
-		m_CapElement.TextureColor.SetCurrent(GLUF_STATE_NORMAL);
-		m_CapElement.FontColor.SetCurrent(GLUF_STATE_NORMAL);
-		GLUFRect rc = { 0, 0, m_width, -m_nCaptionHeight };
+		mCapElement.mTextureColor.SetCurrent(GLUF_STATE_NORMAL);
+		mCapElement.mFontColor.SetCurrent(GLUF_STATE_NORMAL);
+		GLUFRect rc = { 0, 0, GetWidth(), -mCaptionHeight };
 
-		m_pManager->ApplyRenderUIUntex();
-		DrawSprite(&m_CapElement, rc, -0.99f, false);
+		mDialogManager->ApplyRenderUIUntex();
+		DrawSprite(mCapElement, rc, -0.99f, false);
 
 		rc.left += 5; // Make a left margin
 
-		if (m_bMinimized)
+		if (mMinimized)
 		{
-			std::wstring str = m_wszCaption.c_str();
-			str += L" (Minimized)";
-			DrawText(str, &m_CapElement, rc);
+            std::wstringstream wss;
+            wss << mCaptionText;
+            wss << L" (Minimized)";
+			DrawText(wss.str(), mCapElement, rc);
 		}
 		else
-			DrawText(m_wszCaption, &m_CapElement, rc);
+			DrawText(mCaptionText, mCapElement, rc);
 	}
 
 	// End sprites
@@ -1230,94 +1190,84 @@ GLUFResult GLUFDialog::OnRender(float fElapsedTime)
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
-
-	return GR_SUCCESS;
 }
 
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialog::SendEvent(GLUF_EVENT nEvent, bool bTriggeredByUser, GLUFControl* pControl)
+void GLUFDialog::SendEvent(GLUFEvent ctrlEvent, bool triggeredByUser, GLUFControlPtr control)
 {
 	// If no callback has been registered there's nowhere to send the event to
-	if (!m_pCallbackEvent)
+	if (!mCallbackEvent)
 		return;
 
 	// Discard events triggered programatically if these types of events haven't been
 	// enabled
-	if (!bTriggeredByUser && !m_bNonUserEvents)
+	if (!triggeredByUser && !mNonUserEvents)
 		return;
 
-	m_pCallbackEvent(nEvent, pControl->GetID(), pControl, m_pCallbackEventUserContext);
+	mCallbackEvent(ctrlEvent, control, mCallbackContext);
 }
 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::SetFont(GLUFFontIndex index, GLUFFontIndex resManFontIndex)
+void GLUFDialog::SetFont(GLUFFontIndex index, GLUFFontIndex resManFontIndex)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
 	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
 	// of the application if it wishes to use GLUF's GUI.
-	GLUF_ASSERT(m_pManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
+	GLUF_ASSERT(mDialogManager && L"To fix call GLUFDialog::Init() first.  See comments for details.");
 	//_Analysis_assume_(m_pManager);
 
 
-	for (size_t i = m_Fonts.size(); i <= index; i++)
-	{
-		m_Fonts.push_back(-1);
-	}
-
-	//int iFont = m_pManager->AddFont(font, height, weight);
-	m_Fonts[index] = resManFontIndex;
-
-	return GR_SUCCESS;
+	mFonts[index] = resManFontIndex;
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFFontNode* GLUFDialog::GetFont(unsigned int index) const
+GLUFFontNodePtr GLUFDialog::GetFont(GLUFFontIndex index) const
 {
-	if (!m_pManager)
+	if (!mDialogManager)
 		return nullptr;
-	return m_pManager->GetFontNode(m_Fonts[index]);
+	return mDialogManager->GetFontNode(mFonts[index]);
 }
 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resManIndex)
+void GLUFDialog::SetTexture(GLUFTextureIndex index, GLUFTextureIndex resManIndex)
 {
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
 	// was made so that the GLUF's GUI could become separate and optional from GLUF's core.  The 
 	// creation and interfacing with GLUFDialogResourceManager is now the responsibility 
 	// of the application if it wishes to use GLUF's GUI.
-	GLUF_ASSERT(m_pManager && L"To fix this, call GLUFDialog::Init() first.  See comments for details.");
+	GLUF_ASSERT(mDialogManager && L"To fix this, call GLUFDialog::Init() first.  See comments for details.");
 	//_Analysis_assume_(m_pManager);
 
-	// Make sure the list is at least as large as the index being set
-	for (size_t i = m_Textures.size(); i <= index; i++)
-	{
-		m_Textures.push_back(-1);
-	}
-
-	m_Textures[index] = resManIndex;
-	return GR_SUCCESS;
+	mTextures[index] = resManIndex;
 }
 
 //--------------------------------------------------------------------------------------
-GLUFTextureNode* GLUFDialog::GetTexture(unsigned int index) const
+GLUFTextureNodePtr GLUFDialog::GetTexture(GLUFTextureIndex index) const
 {
-	if (!m_pManager)
+	if (!mDialogManager)
 		return nullptr;
-	return m_pManager->GetTextureNode(m_Textures[index]);
+	return mDialogManager->GetTextureNode(mTextures[index]);
 }
 
+/*
+
+Ended here July 20 2015
+
+
+
+*/
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFDialog::MsgProc(GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 	if (firstTime)
 		firstTime = false;
