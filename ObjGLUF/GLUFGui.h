@@ -591,8 +591,8 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     std::map<GLUFControlIndex, GLUFControlPtr> mControls;
     std::vector<GLUFElementHolderPtr> mDefaultElements;
 
-    GLUFElement mCapElement;
-    GLUFElement mDlgElement;
+    GLUFElementPtr mCapElement;
+    GLUFElementPtr mDlgElement;
 
     GLUFDialogPtr mNextDialog = nullptr;
     GLUFDialogPtr mPrevDialog = nullptr;
@@ -862,8 +862,8 @@ public:
     */
 	void DrawRect(const GLUF::GLUFRect& rect, const GLUF::Color& color);
 	//void DrawPolyLine(GLUF::GLUFPoint* apPoints, uint32_t nNumPoints, GLUF::Color color);
-	void DrawSprite(const GLUFElement& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
-    void DrawText(const std::wstring& text, const GLUFElement& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
+	void DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
+    void DrawText(const std::wstring& text, const GLUFElementPtr& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
 
     /*
     CalcTextRect -- WIP --
@@ -882,7 +882,7 @@ public:
             'std::invalid_argument': if 'element' == nullptr, in GLUF_DEBUG
     
     */
-	void CalcTextRect(const std::wstring& text, const GLUFElementPtr& element, GLUF::GLUFRect& rect);
+	void CalcTextRect(const std::wstring& text, const GLUFElementPtr& element, GLUF::GLUFRect& rect) const;
 
 
     /*
@@ -1112,7 +1112,7 @@ private:
             no-throw guarantee
     
     */
-	void SetNextDialog(const GLUFDialog& nextDialog) noexcept;
+	void SetNextDialog(GLUFDialogPtr nextDialog) noexcept;
 
     /*
     OnCycleFocus
@@ -1176,79 +1176,98 @@ struct GLUFFontNode
 	GLUFFontPtr mFontType;
 };
 
+
+
+
+
+
+
+
 /*
-GLUFSpriteVertexArray
+======================================================================================================================================================================================================
+GLUFSpriteVertexStruct
 
-    Note:
-        
-        This is treated somewhat like a vector with a few similar methods, but this is intentionally basic
-
-    Data Members:
-        'mPos': a list of positions
-        'mColor': a list of colors
-        'mTexCoords': a list of uv coords
 
 */
-class GLUFSpriteVertexArray
+
+
+
+/*
+GLUFSpriteVertexStruct
+
+    Note:
+        This is derived from the vertex struct class for use on AoS data packing
+
+    Data Members:
+        'mPos': a position
+        'mColor': a color
+        'mTexCoords': a uv coord
+
+*/
+struct GLUFSpriteVertexStruct : public GLUFVertexStruct
 {
-private:
-	std::vector<glm::vec3> mPos;
-	std::vector<GLUF::Color4f> mColor;
-    std::vector<glm::vec2> mTexCoords;
-public:
-    /*
-    data_*
-    
-        Returns:
-            the data from the corresponding function call   
+	glm::vec3 mPos;
+	GLUF::Color4f mColor;
+    glm::vec2 mTexCoords;
 
-        Throws:
-            no-throw guarantee
-    */
-	glm::vec3*      data_pos()   noexcept { if (size() > 0) return &mPos[0];          else return nullptr; }
-	GLUF::Color4f*  data_color() noexcept { if (size() > 0) return &mColor[0];        else return nullptr; }
-	glm::vec2*      data_tex()   noexcept { if (size() > 0) return &mTexCoords[0];    else return nullptr; }
+    GLUFSpriteVertexStruct(const glm::vec3& pos, const GLUF::Color4f& color, const glm::vec2& texCoords) : 
+        mPos(pos), mColor(color), mTexCoords(texCoords)
+    {}
 
-    /*
-    push_back
-    
-        Parameters:
-            'pos': the new position to add
-            'color': the new color to add
-            'tex': the new texture coordinates to add
+    virtual void* operator&() const override
+    {
+        char* ret = new char[size()];
 
-        Throws
-            'std::bad_alloc': if out of memory
+        memcpy(ret, &mPos[0], 12);
+        memcpy(ret + 12, &mColor[0], 16);
+        memcpy(ret + 28, &mTexCoords[0], 8);
 
-    */
-	void push_back(const glm::vec3& pos, const GLUF::Color& color, const glm::vec2& tex)
-	{
-		mPos.push_back(pos);	mColor.push_back(GLUF::GLUFColorToFloat(color));	mTexCoords.push_back(tex);
-	}
+        return ret;
+    }
 
-    /*
-    clear
+    virtual size_t size() const override
+    {
+        return 36; // sizeof(mPos) + sizeof(mColor) + sizeof(mTexCoords);
+    }
 
-        Note:
-            Clears all of the vectors
+    virtual size_t n_elem_size(size_t element)
+    {
+        switch (element)
+        {
+        case 0:
+            return 12;
+        case 1:
+            return 16;
+        case 2:
+            return 8;
+        default:
+            return 0;//if it is too big, just return 0; not worth an exception
+        }
+    }
 
-        Throws:
-            no-throw guarantee
+    virtual void buffer_element(void* data, size_t element) override
+    {
 
-    */
-	void clear() noexcept{ mPos.clear(); mColor.clear(); mTexCoords.clear(); }
+        switch (element)
+        {
+        case 0:
+            mPos = static_cast<glm::vec3*>(data)[0];
+        case 1:
+            mColor = static_cast<Color4f*>(data)[0];
+        case 2:
+            mTexCoords = static_cast<glm::vec2*>(data)[0];
+        default:
+            break;
+        }
+    }
 
-    /*
-    size
+    static GLUFGLVector<GLUFSpriteVertexStruct> MakeMany(size_t howMany)
+    {
+        GLUFGLVector<GLUFSpriteVertexStruct> ret;
+        ret.resize(howMany);
 
-        Returns:
-            number of elements
-
-        Throws:
-            no-throw guarantee
-
-    */
-	GLUFSize size() noexcept { return static_cast<GLUFSize>(mPos.size()); }
+        return ret;
+    }
 };
 
 /*
@@ -1275,6 +1294,8 @@ class GLUFDialogResourceManager
     std::vector<GLUFDialogPtr> mDialogs;
     std::vector<GLUFTextureNodePtr> mTextureCache;
     std::vector<GLUFFontNodePtr>    mFontCache;
+
+    friend GLUFDialog;
 public:
 	GLUFDialogResourceManager();
 	~GLUFDialogResourceManager();
@@ -1331,7 +1352,7 @@ public:
         Throws:
             'std::out_of_range': if element texture index is out of range
     */
-	void EndSprites(const GLUFElementPtr& element, bool textured);
+	void EndSprites(GLUFElementPtr element, bool textured);
 
     /*
     GetFont/TextureNode
@@ -1342,7 +1363,7 @@ public:
         Throws:
             'std::out_of_range': if 'index' is larger than the size of the font/texture cache
     */
-	GLUFFontNodePtr    GetFontNode(GLUFFontIndex index) const		    { return mFontCache[index];		}
+	GLUFFontNodePtr    GetFontNode(GLUFFontIndex index) const		{ return mFontCache[index];		}
 	GLUFTextureNodePtr GetTextureNode(GLUFTextureIndex index) const	{ return mTextureCache[index];	}
 
 
@@ -1458,6 +1479,18 @@ public:
     */
 	glm::mat4 GetOrthoMatrix() noexcept;
 
+
+    /*
+    GetDialogPtrFromRef
+
+        Returns:
+            the std::shared_ptr version of the reference give, nullptr if not found
+
+        Parameters:
+            'ref': a reference to a dialog
+    
+    */
+    GLUFDialogPtr GetDialogPtrFromRef(const GLUFDialog& ref);
 protected:
     /*
     ApplyOrtho

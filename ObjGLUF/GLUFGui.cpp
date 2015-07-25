@@ -1173,8 +1173,8 @@ void GLUFDialog::OnRender(float elapsedTime)
 		// m_nCaptionHeight, so adjust the rect higher
 		// here to negate the effect.
 
-		mCapElement.mTextureColor.SetCurrent(GLUF_STATE_NORMAL);
-		mCapElement.mFontColor.SetCurrent(GLUF_STATE_NORMAL);
+		mCapElement->mTextureColor.SetCurrent(GLUF_STATE_NORMAL);
+		mCapElement->mFontColor.SetCurrent(GLUF_STATE_NORMAL);
 		GLUFRect rc = { 0, 0, GetWidth(), -mCaptionHeight };
 
 		mDialogManager->ApplyRenderUIUntex();
@@ -1251,7 +1251,7 @@ GLUFFontNodePtr GLUFDialog::GetFont(GLUFFontIndex index) const
 {
 	if (!mDialogManager)
 		return nullptr;
-	return mDialogManager->GetFontNode(mFonts[index]);
+	return mDialogManager->GetFontNode(mFonts.at(index));
 }
 
 
@@ -1276,7 +1276,7 @@ GLUFTextureNodePtr GLUFDialog::GetTexture(GLUFTextureIndex index) const
 {
 	if (!mDialogManager)
 		return nullptr;
-	return mDialogManager->GetTextureNode(mTextures[index]);
+	return mDialogManager->GetTextureNode(mTextures.at(index));
 }
 
 //--------------------------------------------------------------------------------------
@@ -2042,196 +2042,181 @@ GLUFControlPtr GLUFDialog::GetPrevControl(GLUFControlPtr control)
     return (*prevDialogIndexIt)->second;
 }
 
+/*
+
+
+Ended Here July 25 2015
+
+
+
+
+*/
+
+
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::ClearRadioButtonGroup(unsigned int nButtonGroup)
+void GLUFDialog::ClearRadioButtonGroup(GLUFRadioButtonGroup buttonGroup)
 {
 	// Find all radio buttons with the given group number
-	for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
+	for (auto it : mControls)
 	{
-		if ((*it)->GetType() == GLUF_CONTROL_RADIOBUTTON)
+		if (it.second->GetType() == GLUF_CONTROL_RADIOBUTTON)
 		{
-			GLUFRadioButton* pRadioButton = (GLUFRadioButton*)*it;
+			GLUFRadioButtonPtr radioButton = std::dynamic_pointer_cast<GLUFRadioButton>(it.second);
 
-			if (pRadioButton->GetButtonGroup() == nButtonGroup)
-				pRadioButton->SetChecked(false, false);
+            if (radioButton->GetButtonGroup() == buttonGroup)
+                radioButton->SetChecked(false, false);
 		}
 	}
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::ClearComboBox(int ID)
+void GLUFDialog::ClearComboBox(GLUFControlIndex ID)
 {
-	GLUFComboBox* pComboBox = GetComboBox(ID);
-	if (!pComboBox)
+	GLUFComboBoxPtr comboBox = GetControl<GLUFComboBox>(ID);
+	if (!comboBox)
 		return;
 
-	pComboBox->RemoveAllItems();
+	comboBox->RemoveAllItems();
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::RequestFocus(GLUFControl* pControl)
+void GLUFDialog::RequestFocus(GLUFControlPtr& control)
 {
-	if (s_pControlFocus == pControl)
+    if (sControlFocus == control)
 		return;
 
-	if (!pControl->CanHaveFocus())
+    if (!control->CanHaveFocus())
 		return;
 
-	if (s_pControlFocus)
-		s_pControlFocus->OnFocusOut();
+	if (sControlFocus)
+		sControlFocus->OnFocusOut();
 
-	pControl->OnFocusIn();
-	s_pControlFocus = pControl;
+	control->OnFocusIn();
+	sControlFocus = control;
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::DrawRect(GLUFRect pRect, Color color)
+void GLUFDialog::DrawRect(const GLUFRect& rect, const Color& color)
 {
-	GLUFRect rcScreen = pRect;
-	GLUFOffsetRect(rcScreen, m_x - long(g_WndWidth / 2), m_nCaptionHeight + m_y - long(g_WndHeight / 2));
+	GLUFRect rcScreen = rect;
+	GLUFOffsetRect(rcScreen, mRegion.x - long(g_WndWidth / 2), mCaptionHeight + mRegion.y - long(g_WndHeight / 2));
 
 	//if (m_bCaption)
 	//	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
 
 	//rcScreen = GLUFScreenToClipspace(rcScreen);
 
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.left, rcScreen.top, GLUF_NEAR_BUTTON_DEPTH),
-		color,
-		glm::vec2());
+    auto thisSprite = GLUFSpriteVertexStruct::MakeMany(4);
+    thisSprite[0] = 
+    {
+        glm::vec3(rcScreen.left, rcScreen.top, GLUF_NEAR_BUTTON_DEPTH),
+        GLUFColorToFloat(color),
+        glm::vec2() 
+    };
 
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.right, rcScreen.top, GLUF_NEAR_BUTTON_DEPTH),
-		color,
-		glm::vec2());
+    thisSprite[1] =
+    {
+        glm::vec3(rcScreen.right, rcScreen.top, GLUF_NEAR_BUTTON_DEPTH),
+        GLUFColorToFloat(color),
+        glm::vec2()
+    };
 
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.left, rcScreen.bottom, GLUF_NEAR_BUTTON_DEPTH),
-		color,
-		glm::vec2());
+    thisSprite[2] =
+    {
+        glm::vec3(rcScreen.left, rcScreen.bottom, GLUF_NEAR_BUTTON_DEPTH),
+        GLUFColorToFloat(color),
+        glm::vec2()
+    };
 
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.right, rcScreen.bottom, GLUF_NEAR_BUTTON_DEPTH),
-		color,
-		glm::vec2());
+    thisSprite[3] =
+    {
+        glm::vec3(rcScreen.right, rcScreen.bottom, GLUF_NEAR_BUTTON_DEPTH),
+        GLUFColorToFloat(color),
+        glm::vec2()
+    };
 
-
-	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
-	// draw a sprite every time to keep the order correct between sprites and text.
-	m_pManager->EndSprites(nullptr, false);//render in untextured mode
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::DrawSprite(GLUFElement* pElement, GLUFRect prcDest, float fDepth, bool textured)
-{
-	// No need to draw fully transparent layers
-	//if (pElement->TextureColor.Current.w == 0)
-	//	return GR_SUCCESS;
-	/*
-	if (pElement->TextureColor.Current == pElement->TextureColor.States[GLUF_STATE_HIDDEN])
-		return GR_SUCCESS;*/
-
-	//set the blend color
-	//Color4f colf = GLUFColorToFloat(pElement->TextureColor.Current);
-
-	//glBlendFunc(GL_SRC_COLOR, GL_SOURCE0_ALPHA);
-	//glBlendColor(colf.x, colf.y, colf.z, colf.a);
-	//glEnablei(GL_BLEND, 0);
-	//glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
-
-	GLUFRectf rcTexture = pElement->rcTexture;
-	//GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);
-
-	GLUFRect rcScreen = prcDest;
-
-	GLUFOffsetRect(rcScreen, m_x - long(g_WndWidth / 2), m_nCaptionHeight + m_y - long(g_WndHeight / 2));
-
-	// If caption is enabled, offset the Y position by its height.
-	//if (m_bCaption)
-	//	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
-
-	//rcScreen = GLUFScreenToClipspace(rcScreen);
-
-	GLUFTextureNode* pTextureNode = GetTexture(pElement->iTexture);
-	if (!pTextureNode)
-		return GR_FAILURE;
-
-
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.left, rcScreen.top, fDepth),
-		pElement->TextureColor.Current,
-		glm::vec2(rcTexture.left, rcTexture.top));
-
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.right, rcScreen.top, fDepth),
-		pElement->TextureColor.Current,
-		glm::vec2(rcTexture.right, rcTexture.top));
-
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.left, rcScreen.bottom, fDepth),
-		pElement->TextureColor.Current,
-		glm::vec2(rcTexture.left, rcTexture.bottom));
-
-	m_pManager->m_SpriteVertices.push_back(
-		glm::vec3(rcScreen.right, rcScreen.bottom, fDepth),
-		pElement->TextureColor.Current,
-		glm::vec2(rcTexture.right, rcTexture.bottom));
-
+    mDialogManager->mSpriteBuffer.BufferData(thisSprite);
 
 	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
 	// draw a sprite every time to keep the order correct between sprites and text.
-	m_pManager->EndSprites(pElement, textured);
-
-	return GR_SUCCESS;
+    mDialogManager->EndSprites(nullptr, false);//render in untextured mode
 }
 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFDialog::CalcTextRect(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, int nCount)
-{
-	GLUFFontNode* pFontNode = GetFont(pElement->iFont);
-	if (!pFontNode)
-		return GR_FAILURE;
-
-	GLUF_UNREFERENCED_PARAMETER(strText);
-	GLUF_UNREFERENCED_PARAMETER(prcDest);
-	GLUF_UNREFERENCED_PARAMETER(nCount);
-	// TODO -
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLUFRect prcDest, bool bShadow, bool bHardRect)
+void GLUFDialog::DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect& rect, float depth, bool textured)
 {
 	// No need to draw fully transparent layers
-	if (pElement->FontColor.Current.w == 0)
-		return GR_SUCCESS;
+    if (element->mTextureColor.mCurrentColor.a == 0)
+        return;
 
-	GLUFRect rcScreen = prcDest;
-	GLUFOffsetRect(rcScreen, m_x, m_y);
+    if (element->mTextureColor.mCurrentColor == element->mTextureColor.mStates[GLUF_STATE_HIDDEN])
+		return;
 
-	// If caption is enabled, offset the Y position by its height.
-	//if (m_bCaption)
-	GLUFOffsetRect(rcScreen, 0, m_nCaptionHeight);
 
-	//float fBBWidth = (float)m_pManager->m_nBackBufferWidth;
-	//float fBBHeight = (float)m_pManager->m_nBackBufferHeight;
+    GLUFRectf uvRect = element->mUVRect;
 
-	//auto pd3dDevice = m_pManager->GetD3D11Device();
-	//auto pd3d11DeviceContext = m_pManager->GetD3D11DeviceContext();
+	GLUFRect rcScreen = rect;
+
+	GLUFOffsetRect(rcScreen, mRegion.x - long(g_WndWidth / 2), mCaptionHeight + mRegion.y - long(g_WndHeight / 2));
+    
+	/*GLUFTextureNodePtr textureNode = GetTexture(pElement->iTexture);
+    if (!textureNode)
+		return;*/
+
+    auto thisSprite = GLUFSpriteVertexStruct::MakeMany(4);
+
+    thisSprite[0] =
+    {
+        glm::vec3(rcScreen.left, rcScreen.top, depth),
+        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        glm::vec2(uvRect.left, uvRect.top)
+    };
+
+    thisSprite[1] =
+    {
+        glm::vec3(rcScreen.right, rcScreen.top, depth),
+        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        glm::vec2(uvRect.right, uvRect.top)
+    };
+
+    thisSprite[2] =
+    {
+        glm::vec3(rcScreen.left, rcScreen.bottom, depth),
+        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        glm::vec2(uvRect.left, uvRect.bottom)
+    };
+
+    thisSprite[3] =
+    {
+        glm::vec3(rcScreen.right, rcScreen.bottom, depth),
+        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        glm::vec2(uvRect.right, uvRect.bottom)
+    };
+
+	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
+	// draw a sprite every time to keep the order correct between sprites and text.
+	mDialogManager->EndSprites(element, textured);
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFDialog::DrawText(const std::wstring& text, const GLUFElementPtr& element, const GLUF::GLUFRect& rect, bool shadow, bool hardRect)
+{
+	// No need to draw fully transparent layers
+    if (element->mFontColor.mCurrentColor.a == 0)
+		return;
+
+	GLUFRect screen = rect;
+    GLUFOffsetRect(screen, mRegion.x, mRegion.y);
+
+
+	GLUFOffsetRect(screen, 0, mCaptionHeight);
 
 	/*if (bShadow)
 	{
@@ -2243,38 +2228,46 @@ GLUFResult GLUFDialog::DrawText(std::wstring strText, GLUFElement* pElement, GLU
 
 	}*/
 
-	Color vFontColor = pElement->FontColor.Current;
-	DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcScreen, vFontColor, pElement->dwTextFormat, bHardRect);
+    Color vFontColor = element->mFontColor.mCurrentColor;
+    DrawTextGLUF(mDialogManager->GetFontNode(element->mFontIndex), text, screen, element->mFontColor.mCurrentColor, element->mTextFormatFlags, hardRect);
+}
 
-	//reenable the control texture
-	//GLUFTextureNode* pTextureNode = GetTexture(0);
-	//GLUFBUFFERMANAGER.UseTexture(pTextureNode->m_pTextureElement, m_pManager->m_pSamplerLocation, GL_TEXTURE0);
 
-	return GR_SUCCESS;
+//--------------------------------------------------------------------------------------
+void GLUFDialog::CalcTextRect(const std::wstring& text, const GLUFElementPtr& element, GLUF::GLUFRect& rect) const
+{
+	GLUFFontNodePtr pFontNode = GetFont(pElement->iFont);
+	if (!pFontNode)
+		return;
+
+    GLUF_UNREFERENCED_PARAMETER(text);
+    GLUF_UNREFERENCED_PARAMETER(element);
+    GLUF_UNREFERENCED_PARAMETER(rect);
+	// TODO -
+
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::SetNextDialog(GLUFDialog* pNextDialog)
+void GLUFDialog::SetNextDialog(GLUFDialogPtr nextDialog)
 {
-	if (!pNextDialog)
-		pNextDialog = this;
-
-	m_pNextDialog = pNextDialog;
-	if (pNextDialog)
-		m_pNextDialog->m_pPrevDialog = this;
+    if (!nextDialog)
+        mNextDialog = shared_from_this();
+    else
+    {
+        mNextDialog = nextDialog;
+        nextDialog->mPrevDialog = shared_from_this();
+    }
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::ClearFocus()
 {
-	if (s_pControlFocus)
+	if (sControlFocus)
 	{
-		s_pControlFocus->OnFocusOut();
-		s_pControlFocus = nullptr;
+		sControlFocus->OnFocusOut();
+		sControlFocus = nullptr;
 	}
-
-	//ReleaseCapture();
 }
 
 
@@ -2282,16 +2275,16 @@ void GLUFDialog::ClearFocus()
 void GLUFDialog::FocusDefaultControl()
 {
 	// Check for default control in this dialog
-	for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
+	for (auto it : mControls)
 	{
-		if ((*it)->m_bIsDefault)
+		if (it.second->mIsDefault)
 		{
 			// Remove focus from the current control
 			ClearFocus();
 
 			// Give focus to the default control
-			s_pControlFocus = *it;
-			s_pControlFocus->OnFocusIn();
+			sControlFocus = it.second;
+			sControlFocus->OnFocusIn();
 			return;
 		}
 	}
@@ -2299,28 +2292,28 @@ void GLUFDialog::FocusDefaultControl()
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialog::OnCycleFocus(bool bForward)
+bool GLUFDialog::OnCycleFocus(bool forward)
 {
-	GLUFControl* pControl = nullptr;
-	GLUFDialog* pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
-	GLUFDialog* pLastDialog;    // focus from first control to last or vice versa.
+	GLUFControlPtr pControl = nullptr;
+	GLUFDialogPtr pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
+	GLUFDialogPtr pLastDialog;    // focus from first control to last or vice versa.
 
-	if (!s_pControlFocus)
+	if (!sControlFocus)
 	{
-		// If s_pControlFocus is nullptr, we focus the first control of first dialog in
+		// If sControlFocus is nullptr, we focus the first control of first dialog in
 		// the case that bForward is true, and focus the last control of last dialog when
 		// bForward is false.
 		//
-		if (bForward)
+        if (forward)
 		{
 			// Search for the first control from the start of the dialog
 			// array.
-			for (auto it = m_pManager->m_Dialogs.cbegin(); it != m_pManager->m_Dialogs.cend(); ++it)
+			for (auto it : mDialogManager->mDialogs)
 			{
-				pDialog = pLastDialog = *it;
-				if (pDialog && !pDialog->m_Controls.empty())
+				pDialog = pLastDialog = it;
+				if (pDialog && !pDialog->mControls.empty())
 				{
-					pControl = pDialog->m_Controls[0];
+					pControl = pDialog->mControls[0];
 					break;
 				}
 			}
@@ -2336,12 +2329,12 @@ bool GLUFDialog::OnCycleFocus(bool bForward)
 		{
 			// Search for the first control from the end of the dialog
 			// array.
-			for (auto it = m_pManager->m_Dialogs.crbegin(); it != m_pManager->m_Dialogs.crend(); ++it)
+            for (auto it = mDialogManager->mDialogs.crbegin(); it != mDialogManager->mDialogs.crend(); ++it)
 			{
 				pDialog = pLastDialog = *it;
-				if (pDialog && !pDialog->m_Controls.empty())
+				if (pDialog && !pDialog->mControls.empty())
 				{
-					pControl = pDialog->m_Controls[pDialog->m_Controls.size() - 1];
+					pControl = pDialog->mControls[pDialog->mControls.size() - 1];
 					break;
 				}
 			}
@@ -2354,7 +2347,7 @@ bool GLUFDialog::OnCycleFocus(bool bForward)
 			}
 		}
 	}
-	else if (s_pControlFocus->m_pDialog != this)
+	else if (&sControlFocus->mDialog != this)
 	{
 		// If a control belonging to another dialog has focus, let that other
 		// dialog handle this event by returning false.
@@ -2366,70 +2359,78 @@ bool GLUFDialog::OnCycleFocus(bool bForward)
 		// Focused control belongs to this dialog. Cycle to the
 		// next/previous control.
 		GLUF_ASSERT(pControl != 0);
-		//_Analysis_assume_(pControl != 0);
-		pLastDialog = s_pControlFocus->m_pDialog;
-		pControl = (bForward) ? GetNextControl(s_pControlFocus) : GetPrevControl(s_pControlFocus);
-		pDialog = pControl->m_pDialog;
+
+        //this is safe to assume that the dialog is 'this' because of the line 'else if (&sControlFocus->mDialog != this)'
+        pLastDialog = shared_from_this();
+
+		pControl = (forward) ? GetNextControl(sControlFocus) : GetPrevControl(sControlFocus);
+
+        //this is kind of inefficient
+        if (!(pDialog = mDialogManager->GetDialogPtrFromRef(pControl->mDialog)))
+            pDialog = shared_from_this();//not sure if this is what to do if the dialog is not found, but its the best thing I could think of
 	}
 
 	GLUF_ASSERT(pControl != 0);
-	//_Analysis_assume_(pControl != 0);
 
-	for (int i = 0; i < 0xffff; i++)
+	// If we just wrapped from last control to first or vice versa,
+	// set the focused control to nullptr. This state, where no control
+	// has focus, allows the camera to work.
+	int nLastDialogIndex = -1;
+    for (int i = 0; i < mDialogManager->mDialogs.size(); ++i)
+    {
+        if (mDialogManager->mDialogs[i] == pLastDialog)
+        {
+            nLastDialogIndex = i;
+            break;
+        }
+    }
+
+    int nDialogIndex = -1;
+    for (int i = 0; i < mDialogManager->mDialogs.size(); ++i)
+    {
+        if (mDialogManager->mDialogs[i] == pDialog)
+        {
+            nDialogIndex = i;
+            break;
+        }
+    }
+
+	if ((!forward && nLastDialogIndex < nDialogIndex) ||
+		(forward && nDialogIndex < nLastDialogIndex))
 	{
-		// If we just wrapped from last control to first or vice versa,
-		// set the focused control to nullptr. This state, where no control
-		// has focus, allows the camera to work.
-		int nLastDialogIndex = -1;
-		auto fit = std::find(m_pManager->m_Dialogs.cbegin(), m_pManager->m_Dialogs.cend(), pLastDialog);
-		if (fit != m_pManager->m_Dialogs.cend())
-		{
-			nLastDialogIndex = int(fit - m_pManager->m_Dialogs.begin());
-		}
-
-		int nDialogIndex = -1;
-		fit = std::find(m_pManager->m_Dialogs.cbegin(), m_pManager->m_Dialogs.cend(), pDialog);
-		if (fit != m_pManager->m_Dialogs.cend())
-		{
-			nDialogIndex = int(fit - m_pManager->m_Dialogs.begin());
-		}
-
-		if ((!bForward && nLastDialogIndex < nDialogIndex) ||
-			(bForward && nDialogIndex < nLastDialogIndex))
-		{
-			if (s_pControlFocus)
-				s_pControlFocus->OnFocusOut();
-			s_pControlFocus = nullptr;
-			return true;
-		}
-
-		// If we've gone in a full circle then focus doesn't change
-		if (pControl == s_pControlFocus)
-			return true;
-
-		// If the dialog accepts keybord input and the control can have focus then
-		// move focus
-		if (pControl->m_pDialog->m_bKeyboardInput && pControl->CanHaveFocus())
-		{
-			if (s_pControlFocus)
-				s_pControlFocus->OnFocusOut();
-			s_pControlFocus = pControl;
-			if (s_pControlFocus)
-				s_pControlFocus->OnFocusIn();
-			return true;
-		}
-
-		pLastDialog = pDialog;
-		pControl = (bForward) ? GetNextControl(pControl) : GetPrevControl(pControl);
-		pDialog = pControl->m_pDialog;
+		if (sControlFocus)
+			sControlFocus->OnFocusOut();
+		sControlFocus = nullptr;
+		return true;
 	}
 
+	// If we've gone in a full circle then focus doesn't change
+	if (pControl == sControlFocus)
+		return true;
+
+	// If the dialog accepts keybord input and the control can have focus then
+	// move focus
+	if (pControl->mDialog.mKeyboardInput && pControl->CanHaveFocus())
+	{
+		if (sControlFocus)
+			sControlFocus->OnFocusOut();
+		sControlFocus = pControl;
+		if (sControlFocus)
+			sControlFocus->OnFocusIn();
+		return true;
+	}
+
+	pLastDialog = pDialog;
+	pControl = (forward) ? GetNextControl(pControl) : GetPrevControl(pControl);
+    if (!(pDialog = mDialogManager->GetDialogPtrFromRef(pControl->mDialog)))
+        pDialog = shared_from_this();
+
 	// If we reached this point, the chain of dialogs didn't form a complete loop
-	GLUFTRACE_ERR("GLUFDialog: Multiple dialogs are improperly chained together", GR_FAILURE);
+	GLUF_ERROR("GLUFDialog: Multiple dialogs are improperly chained together");
 	return false;
 }
 
-GLUFFontPtr g_ArielDefault = nullptr;
+GLUFFontPtr g_ArialDefault = nullptr;
 //--------------------------------------------------------------------------------------
 void GLUFDialog::InitDefaultElements()
 {
@@ -2437,21 +2438,19 @@ void GLUFDialog::InitDefaultElements()
 	int fontIndex = 0;
 	if (g_DefaultFont == nullptr)
 	{
-		if (g_ArielDefault == nullptr)
+		if (g_ArialDefault == nullptr)
 		{
-			char* rawData;
-			unsigned long rawSize = 0;
 
-			rawData = GLUFLoadFileIntoMemory(_T("Arial.ttf"), &rawSize);
-			g_ArielDefault = GLUFLoadFont(rawData, rawSize, 15L);
-			//free(rawData); DON'T FREE
+            std::vector<char> rawData;
+            GLUFLoadFileIntoMemory(L"Arial.ttf", rawData);
+			GLUFLoadFont(g_ArialDefault, rawData, 15L);
 		}
 
-		fontIndex = m_pManager->AddFont(g_ArielDefault, 1.15f, FONT_WEIGHT_NORMAL);
+		fontIndex = mDialogManager->AddFont(g_ArialDefault, 1.15f, FONT_WEIGHT_NORMAL);
 	}
 	else
 	{
-		fontIndex = m_pManager->AddFont(g_DefaultFont, 1.15f, FONT_WEIGHT_NORMAL);
+        fontIndex = mDialogManager->AddFont(g_DefaultFont, 1.15f, FONT_WEIGHT_NORMAL);
 	}
 
 	SetFont(0, fontIndex);
@@ -2462,44 +2461,44 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// Element for the caption
 	//-------------------------------------
-	m_CapElement.SetFont(0);
+	mCapElement->SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
-	m_CapElement.SetTexture(0, &rcTexture);
-	m_CapElement.TextureColor.Init(Color(255, 255, 255, 255));
-	m_CapElement.FontColor.Init(Color(0, 0, 0, 255));
-	m_CapElement.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
+    mCapElement->SetTexture(0, rcTexture);
+    mCapElement->mTextureColor.Init(Color(255, 255, 255, 255));
+    mCapElement->mFontColor.Init(Color(0, 0, 0, 255));
+    mCapElement->SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
-	m_CapElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
-	m_CapElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+    mCapElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+    mCapElement->mFontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
-	m_DlgElement.SetFont(0);
+	mDlgElement->SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
 	//GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
-	m_DlgElement.SetTexture(0, &rcTexture);
-	m_DlgElement.TextureColor.Init(Color(255, 0, 0, 128));
-	m_DlgElement.FontColor.Init(Color(0, 0, 0, 255));
-	m_DlgElement.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
+	mDlgElement->SetTexture(0, rcTexture);
+	mDlgElement->mTextureColor.Init(Color(255, 0, 0, 128));
+	mDlgElement->mFontColor.Init(Color(0, 0, 0, 255));
+	mDlgElement->SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
-	m_DlgElement.TextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
-	m_DlgElement.FontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+	mDlgElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
+	mDlgElement->mFontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
 
-	//Element.FontColor.States[GLUF_STATE_NORMAL]		= Color(0, 0, 0, 255);
-	//Element.FontColor.States[GLUF_STATE_DISABLED]	= Color(0, 0, 0, 255);
-	//Element.FontColor.States[GLUF_STATE_HIDDEN]		= Color(0, 0, 0, 255);
-	//Element.FontColor.States[GLUF_STATE_FOCUS]		= Color(0, 0, 0, 255);
-	//Element.FontColor.States[GLUF_STATE_MOUSEOVER]	= Color(0, 0, 0, 255);
-	//Element.FontColor.States[GLUF_STATE_PRESSED]	= Color(0, 0, 0, 255);
+	//Element.mFontColor.mStates[GLUF_STATE_NORMAL]		= Color(0, 0, 0, 255);
+	//Element.mFontColor.mStates[GLUF_STATE_DISABLED]	= Color(0, 0, 0, 255);
+	//Element.mFontColor.mStates[GLUF_STATE_HIDDEN]		= Color(0, 0, 0, 255);
+	//Element.mFontColor.mStates[GLUF_STATE_FOCUS]		= Color(0, 0, 0, 255);
+	//Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER]	= Color(0, 0, 0, 255);
+	//Element.mFontColor.mStates[GLUF_STATE_PRESSED]	= Color(0, 0, 0, 255);
 
 	//-------------------------------------
 	// GLUFStatic
 	//-------------------------------------
 	Element.SetFont(0);
-	Element.dwTextFormat = GT_LEFT | GT_VCENTER;
-	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
+	Element.mTextFormatFlags = GT_LEFT | GT_VCENTER;
+	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_STATIC, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_STATIC, 0, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
@@ -2507,157 +2506,157 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.0f, 1.0f, 0.53125f, 0.7890625f);
 	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 0);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 30);
-	Element.FontColor.States[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
-	Element.FontColor.States[GLUF_STATE_NORMAL] = Color(0, 0, 0, 255);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 0);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 30);
+	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
+	Element.mFontColor.mStates[GLUF_STATE_NORMAL] = Color(0, 0, 0, 255);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFButton - Fill layer
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
-	Element.SetTexture(0, &rcTexture, Color(255, 255, 255, 0));
-	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(200, 200, 200, 10);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(0, 0, 0, 8);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 10);
+	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
+	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(200, 200, 200, 10);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(0, 0, 0, 8);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 10);
 
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_BUTTON, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_BUTTON, 1, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFCheckBox - Box
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
-	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(80, 80, 80, 100);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 20);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 30);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
+	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(80, 80, 80, 100);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 20);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 30);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 0, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFCheckBox - Check
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.10546875f, 0.7890625f, 0.2109375f, 0.68359375f);
-	Element.SetTexture(0, &rcTexture, Color(255, 255, 255, 0));
+	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 1, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFRadioButton - Box
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
-	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(0, 0, 0, 255);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
+	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(0, 0, 0, 255);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 0, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFRadioButton - Check
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.31640625f, 0.7890625f, 0.421875f, 0.68359375f);
-	Element.SetTexture(0, &rcTexture, Color(255, 255, 255, 0));
-	//Element.TextureColor.States[GLUF_STATE_HIDDEN] = Color(255, 255, 255, 255);
+	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
+	//Element.mTextureColor.mStates[GLUF_STATE_HIDDEN] = Color(255, 255, 255, 255);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 1, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFComboBox - Main
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(200, 200, 200, 150);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(230, 230, 230, 170);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 70);
-	Element.FontColor.States[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
-	Element.FontColor.States[GLUF_STATE_PRESSED] = Color(0, 0, 0, 255);
-	Element.FontColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(200, 200, 200, 150);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 170);
+	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 70);
+	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
+	Element.mFontColor.mStates[GLUF_STATE_PRESSED] = Color(0, 0, 0, 255);
+	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
 
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 0, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFComboBox - Button
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
-	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 0);
-	Element.TextureColor.States[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 50);
-	Element.TextureColor.States[GLUF_STATE_PRESSED] = Color(100, 100, 100, 100);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 20);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 50);
+	Element.SetTexture(0, rcTexture);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 0);
+	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 50);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(100, 100, 100, 100);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 20);
+	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(255, 255, 255, 50);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 1, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFComboBox - Dropdown
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.37109375f);
-	Element.SetTexture(0, &rcTexture, Color(0, 0, 0, 0));
+	Element.SetTexture(0, rcTexture, Color(0, 0, 0, 0));
 	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 2, &Element);
+	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 2, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFComboBox - Selection
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.046875f, 0.36328125f, 0.93359375f, 0.28515625f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_TOP);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 3, &Element);
+	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 3, std::make_shared<GLUFElement>(Element));
 
 
 	//-------------------------------------
 	// GLUFSlider - Track
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.00390625f, 0.26953125f, 0.36328125f, 0.109375f);
-	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
-	Element.TextureColor.States[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(255, 255, 255, 35);
+	Element.SetTexture(0, rcTexture);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
+	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(255, 255, 255, 35);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SLIDER, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_SLIDER, 0, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFSlider - Button
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.58984375f, 0.24609375f, 0.75f, 0.0859375f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SLIDER, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_SLIDER, 1, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFScrollBar - Track
@@ -2665,42 +2664,42 @@ void GLUFDialog::InitDefaultElements()
 	float nScrollBarStartX = 0.76470588f;
 	float nScrollBarStartY = 0.046875f;
 	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
-	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
+	Element.SetTexture(0, rcTexture);
+	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 0, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFScrollBar - Down Arrow
 	//-------------------------------------
 	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
-	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(200, 200, 200, 100);
+	Element.SetTexture(0, rcTexture);
+	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 100);
 
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 2, &Element);
+	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 2, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFScrollBar - Up Arrow
 	//-------------------------------------
 	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
-	Element.SetTexture(0, &rcTexture);
-	Element.TextureColor.States[GLUF_STATE_DISABLED] = Color(180, 180, 180, 150);
+	Element.SetTexture(0, rcTexture);
+	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(180, 180, 180, 150);
 
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 1, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFScrollBar - Button
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.859375f, 0.25f, 0.9296875f, 0.0859375f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 3, &Element);
+	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 3, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFEditBox
@@ -2720,62 +2719,65 @@ void GLUFDialog::InitDefaultElements()
 	//TODO: this
 	// Assign the style
 	GLUFSetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 0, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 0, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.03125f, 0.6796875f, 0.0546875f, 0.6484375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 1, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 1, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.0546875f, 0.6796875f, 0.94140625f, 0.6484375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 2, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 2, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.94140625f, 0.6796875f, 0.9609375f, 0.6484375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 3, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 3, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.03125f, 0.6484375f, 0.0546875f, 0.55859375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 4, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 4, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.94140625f, 0.6484375f, 0.9609375f, 0.55859375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 5, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 5, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.03125f, 0.55859375f, 0.0546875f, 0.52734375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 6, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 6, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.0546875f, 0.55859375f, 0.94140625f, 0.52734375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 7, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 7, std::make_shared<GLUFElement>(Element));
 
 	GLUFSetRect(rcTexture, 0.94140625f, 0.55859375f, 0.9609375f, 0.52734375f);
-	Element.SetTexture(0, &rcTexture);
-	SetDefaultElement(GLUF_CONTROL_EDITBOX, 8, &Element);
+	Element.SetTexture(0, rcTexture);
+	SetDefaultElement(GLUF_CONTROL_EDITBOX, 8, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFListBox - Main
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.375f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_LISTBOX, 0, &Element);
+	SetDefaultElement(GLUF_CONTROL_LISTBOX, 0, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFListBox - Selection
 	//-------------------------------------
 
 	GLUFSetRect(rcTexture, 0.0625f, 0.3515625f, 0.9375f, 0.28515625f);
-	Element.SetTexture(0, &rcTexture);
+	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_TOP);
 
 	// Assign the Element
-	SetDefaultElement(GLUF_CONTROL_LISTBOX, 1, &Element);
+	SetDefaultElement(GLUF_CONTROL_LISTBOX, 1, std::make_shared<GLUFElement>(Element));
 }
+
+
+
 
 //======================================================================================
 // GLUFDialogResourceManager
@@ -3177,6 +3179,19 @@ glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix()
 	float x2 = (float)pt.x / 2.0f;
 	float y2 = (float)pt.y / 2.0f;
 	return glm::ortho((float)-x2, (float)x2, (float)-y2, (float)y2);
+}
+
+GLUFDialogPtr GLUFDialogResourceManager::GetDialogPtrFromRef(const GLUFDialog& ref)
+{
+    for (auto it = mDialogs.cbegin(); it != mDialogs.cend(); ++it)
+    {
+        if (it->get() == &ref)
+        {
+            return *it;
+        }
+    }
+
+    return nullptr;
 }
 
 void GLUFDialogResourceManager::ApplyOrtho()
