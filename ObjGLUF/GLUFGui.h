@@ -675,13 +675,13 @@ public:
 
     
     */
-    void AddStatic(GLUFControlIndex ID, const const std::wstring&& strText, const const GLUFRect&& region, GLUFBitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFStaticPtr> ctrlPtr = nullptr);
+    void AddStatic(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFBitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFStaticPtr> ctrlPtr = nullptr);
     void AddButton(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, int hotkey = 0, bool isDefault = false, std::shared_ptr<GLUFButtonPtr> ctrlPtr = nullptr);
     void AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<GLUFCheckBoxPtr> ctrlPtr = nullptr);
     void AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup buttonGroup, const std::wstring& strText, const GLUFRect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<GLUFRadioButtonPtr> ctrlPtr = nullptr);
     void AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int hotKey = 0, bool isDefault = false, std::shared_ptr<GLUFComboBoxPtr> ctrlPtr = nullptr);
     void AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min, long max, long value, bool isDefault = false, std::shared_ptr<GLUFSliderPtr> ctrlPtr = nullptr);
-    void AddEditBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFCharset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFEditBoxPtr> ctrlPtr = nullptr);
+    //void AddEditBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFCharset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFEditBoxPtr> ctrlPtr = nullptr);
     void AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBitfield style = 0, std::shared_ptr<GLUFListBoxPtr> ctrlPtr = nullptr);
 
     /*
@@ -1621,6 +1621,8 @@ public:
 
     virtual void	SetEnabled(bool enabled) noexcept		    { mEnabled = enabled;                       }
     virtual void	SetVisible(bool visible) noexcept		    { mVisible = visible;                       }
+    virtual void    SetRegion(const GLUF::GLUFRect& region) noexcept
+                                                                { mRegion = region;                         }
     void			SetLocation(long x, long y) noexcept	    { GLUFRepositionRect(mRegion, x, y);        }
     void			SetSize(long width, long height) noexcept   { GLUFResizeRect(mRegion, width, height);   }
     void			SetHotkey(GLUFKeyId hotkey) noexcept		{ mHotkey = hotkey;                         }

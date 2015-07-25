@@ -1752,263 +1752,158 @@ GLUFElementPtr GLUFDialog::GetDefaultElement(GLUFControlType controlType, GLUFEl
     return nullptr;
 }
 
-
-
-
-/*
-
-Ended here July 20 2015
-
-
-
-*/
-
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFDialog::AddStatic(int ID, std::wstring strText, long x, long y, long width, long height, unsigned int dwTextFlags, bool bIsDefault,
-GLUFStatic** ppCreated)
+void GLUFDialog::AddStatic(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFBitfield textFlags, bool isDefault, std::shared_ptr<GLUFStaticPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
+    auto pStatic = std::make_shared<GLUFStatic>(textFlags, this);
 
-	GLUFStatic* pStatic = new (std::nothrow)GLUFStatic(dwTextFlags, this);
+    if (ctrlPtr)
+        *ctrlPtr = pStatic;
 
-	if (ppCreated)
-		*ppCreated = pStatic;
-
-	if (!pStatic)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pStatic);
-	if (GLUF_FAILED(hr))
-		return hr;
+	AddControl(std::dynamic_pointer_cast<GLUFControl>(pStatic));
 
 	// Set the ID and list index
 	pStatic->SetID(ID);
 	pStatic->SetText(strText);
-	pStatic->SetLocation(x, y);
-	pStatic->SetSize(width, height);
-	pStatic->m_bIsDefault = bIsDefault;
-
-	return GR_SUCCESS;
+    pStatic->SetRegion(region);
+	pStatic->mIsDefault = isDefault;
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddButton(int ID, std::wstring strText, long x, long y, long width, long height, int nHotkey,
-bool bIsDefault, GLUFButton** ppCreated)
+void GLUFDialog::AddButton(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, int hotkey, bool isDefault, std::shared_ptr<GLUFButtonPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
+    auto pButton = std::make_shared<GLUFButton>(this);
 
-	GLUFButton* pButton = new (std::nothrow)GLUFButton(this);
+    if (ctrlPtr)
+        *ctrlPtr = pButton;
 
-	if (ppCreated)
-		*ppCreated = pButton;
-
-	if (!pButton)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pButton);
-	if (GLUF_FAILED(hr))
-		return hr;
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pButton));
 
 	// Set the ID and list index
 	pButton->SetID(ID);
 	pButton->SetText(strText);
-	pButton->SetLocation(x, y);
-	pButton->SetSize(width, height);
-	pButton->SetHotkey(nHotkey);
-	pButton->m_bIsDefault = bIsDefault;
-
-	return GR_SUCCESS;
+    pButton->SetRegion(region);
+	pButton->SetHotkey(hotkey);
+	pButton->mIsDefault = isDefault;
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddCheckBox(int ID, std::wstring strText, long x, long y, long width, long height, bool bChecked,
-int nHotkey, bool bIsDefault, GLUFCheckBox** ppCreated)
+void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, bool checked , int hotkey, bool isDefault, std::shared_ptr<GLUFCheckBoxPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
+    auto pCheckBox = std::make_shared<GLUFCheckBox>(this);
 
-	GLUFCheckBox* pCheckBox = new (std::nothrow)GLUFCheckBox(this);
+    if (ctrlPtr)
+        *ctrlPtr = pCheckBox;
 
-	if (ppCreated)
-		*ppCreated = pCheckBox;
-
-	if (!pCheckBox)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pCheckBox);
-	if (GLUF_FAILED(hr))
-		return hr;
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pCheckBox));
 
 	// Set the ID and list index
 	pCheckBox->SetID(ID);
 	pCheckBox->SetText(strText);
-	pCheckBox->SetLocation(x, y);
-	pCheckBox->SetSize(width, height);
-	pCheckBox->SetHotkey(nHotkey);
-	pCheckBox->m_bIsDefault = bIsDefault;
-	pCheckBox->SetChecked(bChecked);
-
-	return GR_SUCCESS;
+    pCheckBox->SetRegion(region);
+	pCheckBox->SetHotkey(hotkey);
+	pCheckBox->mIsDefault = isDefault;
+	pCheckBox->SetChecked(checked);
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddRadioButton(int ID, unsigned int nButtonGroup, std::wstring strText, long x, long y, long width, long height,
-bool bChecked, int nHotkey, bool bIsDefault, GLUFRadioButton** ppCreated)
+void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup buttonGroup, const std::wstring& strText, const GLUFRect& region, bool checked, int hotkey, bool isDefault, std::shared_ptr<GLUFRadioButtonPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
+    auto pRadioButton = std::make_shared<GLUFRadioButton>(this);
 
-	GLUFRadioButton* pRadioButton = new (std::nothrow)GLUFRadioButton(this);
+    if (ctrlPtr)
+        *ctrlPtr = pRadioButton;
 
-	if (ppCreated)
-		*ppCreated = pRadioButton;
-
-	if (!pRadioButton)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pRadioButton);
-	if (GLUF_FAILED(hr))
-		return hr;
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pRadioButton));
 
 	// Set the ID and list index
 	pRadioButton->SetID(ID);
 	pRadioButton->SetText(strText);
-	pRadioButton->SetButtonGroup(nButtonGroup);
-	pRadioButton->SetLocation(x, y);
-	pRadioButton->SetSize(width, height);
-	pRadioButton->SetHotkey(nHotkey);
-	pRadioButton->SetChecked(bChecked);
-	pRadioButton->m_bIsDefault = bIsDefault;
-	pRadioButton->SetChecked(bChecked);
-
-	return GR_SUCCESS;
+	pRadioButton->SetButtonGroup(buttonGroup);
+    pRadioButton->SetRegion(region);
+	pRadioButton->SetHotkey(hotkey);
+	pRadioButton->SetChecked(checked);
+	pRadioButton->mIsDefault = isDefault;
+	pRadioButton->SetChecked(checked);
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddComboBox(int ID, long x, long y, long width, long height, int nHotkey, bool bIsDefault,
-GLUFComboBox** ppCreated)
+void GLUFDialog::AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int hotKey, bool isDefault, std::shared_ptr<GLUFComboBoxPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
+    auto pComboBox = std::make_shared<GLUFComboBox>(this);
 
-	GLUFComboBox* pComboBox = new (std::nothrow) GLUFComboBox(this);
+    if (ctrlPtr)
+        *ctrlPtr = pComboBox;
 
-	if (ppCreated)
-		*ppCreated = pComboBox;
-
-	if (!pComboBox)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pComboBox);
-	if (GLUF_FAILED(hr))
-		return hr;
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pComboBox));
 
 	// Set the ID and list index
 	pComboBox->SetID(ID);
-	pComboBox->SetLocation(x, y);
-	pComboBox->SetSize(width, height);
-	pComboBox->SetHotkey(nHotkey);
-	pComboBox->m_bIsDefault = bIsDefault;
-
-	return GR_SUCCESS;
+    pComboBox->SetRegion(region);
+	pComboBox->SetHotkey(hotKey);
+	pComboBox->mIsDefault = isDefault;
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddSlider(int ID, long x, long y, long width, long height, long min, long max, long value,
-bool bIsDefault, GLUFSlider** ppCreated)
+void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min, long max, long value, bool isDefault, std::shared_ptr<GLUFSliderPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
+    auto pSlider = std::make_shared<GLUFSlider>(this);
 
-	GLUFSlider* pSlider = new (std::nothrow) GLUFSlider(this);
+    if (ctrlPtr)
+        *ctrlPtr = pSlider;
 
-	if (ppCreated)
-		*ppCreated = pSlider;
-
-	if (!pSlider)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pSlider);
-	if (GLUF_FAILED(hr))
-		return hr;
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pSlider));
 
 	// Set the ID and list index
 	pSlider->SetID(ID);
-	pSlider->SetLocation(x, y);
-	pSlider->SetSize(width, height);
-	pSlider->m_bIsDefault = bIsDefault;
+    pSlider->SetRegion(region);
+	pSlider->mIsDefault = isDefault;
 	pSlider->SetRange(min, max);
 	pSlider->SetValue(value);
 	pSlider->UpdateRects();
-
-	return GR_SUCCESS;
 }
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddEditBox(int ID, std::wstring strText, long x, long y, long width, long height, Charset charset, unsigned int dwTextFlags, bool bIsDefault,
-GLUFEditBox** ppCreated)
+/*void GLUFDialog::AddEditBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFCharset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFEditBoxPtr> ctrlPtr = nullptr)
 {
-	GLUFResult hr = GR_SUCCESS;
+	auto pEditBox = std::make_shared<GLUFEditBox>(charset, (textFlags & GT_MULTI_LINE) == GT_MULTI_LINE, this);
 
-	GLUFEditBox* pEditBox = new (std::nothrow) GLUFEditBox(charset, (dwTextFlags & GT_MULTI_LINE) == GT_MULTI_LINE, this);
+	if (ctrlPtr)
+		*ctrlPtr = pEditBox;
 
-	if (ppCreated)
-		*ppCreated = pEditBox;
+	AddControl(std::dynamic_pointer_cast<GLUFControl>(pEditBox));
 
-
-	if (!pEditBox)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pEditBox);
-	if (GLUF_FAILED(hr))
-		return hr;
-
-	pEditBox->GetElement(0)->dwTextFormat = dwTextFlags;
+	pEditBox->GetElement(0)->dwTextFormat = textFlags;
 
 	// Set the ID and position
 	pEditBox->SetID(ID);
-	pEditBox->SetLocation(x, y);
-	pEditBox->SetSize(width, height);
-	pEditBox->m_bIsDefault = bIsDefault;
+    pEditBox->SetRegion(region);
+	pEditBox->mIsDefault = isDefault;
 
 	pEditBox->SetText(strText);
-
-	return GR_SUCCESS;
-}
+}*/
 
 
 //--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialog::AddListBox(int ID, long x, long y, long width, long height, unsigned long dwStyle, GLUFListBox** ppCreated)
+void GLUFDialog::AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBitfield style, std::shared_ptr<GLUFListBoxPtr> ctrlPtr)
 {
-	GLUFResult hr = GR_SUCCESS;
-	GLUFListBox* pListBox = new (std::nothrow) GLUFListBox(this);
+	auto pListBox = std::make_shared<GLUFListBox>(this);
 
-	if (ppCreated)
-		*ppCreated = pListBox;
+	if (ctrlPtr)
+		*ctrlPtr = pListBox;
 
-	if (!pListBox)
-		return GR_OUTOFMEMORY;
-
-	hr = AddControl(pListBox);
-	if (GLUF_FAILED(hr))
-		return hr;
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pListBox));
 
 	// Set the ID and position
 	pListBox->SetID(ID);
-	pListBox->SetLocation(x, y);
-	pListBox->SetSize(width, height);
-	pListBox->SetStyle(dwStyle);
-
-	return GR_SUCCESS;
+    pListBox->SetRegion(region);
+	pListBox->SetStyle(style);
 }
 
 
