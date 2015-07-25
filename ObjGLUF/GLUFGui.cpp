@@ -1908,55 +1908,52 @@ void GLUFDialog::AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBit
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFDialog::InitControl(GLUFControl* pControl)
+void GLUFDialog::AddControl(GLUFControlPtr& pControl)
+{
+	InitControl(pControl);
+
+    if (!pControl)
+        return;
+
+	// Add to the list
+	mControls[pControl->mID] = pControl;
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFDialog::InitControl(GLUFControlPtr& pControl)
 {
 	//GLUFResult hr;
 
 	if (!pControl)
-		return GR_INVALIDARG;
+		return;
 
-	pControl->m_Index = static_cast<unsigned int>(m_Controls.size());
+	pControl->mIndex = static_cast<unsigned int>(mControls.size());
 
 	// Look for a default Element entry
-	for (auto it = m_DefaultElements.begin(); it != m_DefaultElements.end(); ++it)
+	for (auto it : mDefaultElements)
 	{
-		if ((*it)->nControlType == pControl->GetType())
-			pControl->SetElement((*it)->iElement, &(*it)->Element);
+		if (it->mControlType == pControl->GetType())
+            pControl->SetElement(it->mElementIndex, it->mElement);
 	}
 
-	GLUF_V_RETURN(pControl->OnInit());
-
-	return GR_SUCCESS;
+	pControl->OnInit();
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFDialog::AddControl(GLUFControl* pControl)
-{
-	GLUFResult hr = GR_SUCCESS;
-
-	hr = InitControl(pControl);
-	if (GLUF_FAILED(hr))
-		return GLUFTRACE_ERR("GLUFDialog::InitControl", hr);
-
-	// Add to the list
-	m_Controls.push_back(pControl);
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-GLUFControl* GLUFDialog::GetControl(int ID)
+GLUFControlPtr GLUFDialog::GetControl(GLUFControlIndex ID, GLUFControlType controlType) const
 {
 	// Try to find the control with the given ID
-	for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
+	for (auto it : mControls)
 	{
-		if ((*it)->GetID() == ID)
+		if (it.second->GetID() == ID && it.second->GetType() == controlType)
 		{
-			return *it;
+			return it.second;
 		}
-	}
+    }
+
+    GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("Control ID Not Found"));
 
 	// Not found
 	return nullptr;
@@ -1964,62 +1961,85 @@ GLUFControl* GLUFDialog::GetControl(int ID)
 
 
 //--------------------------------------------------------------------------------------
-GLUFControl* GLUFDialog::GetControl( int ID,  GLUF_CONTROL_TYPE nControlType)
+GLUFControlPtr GLUFDialog::GetNextControl(GLUFControlPtr control)
 {
-	// Try to find the control with the given ID
-	for (auto it = m_Controls.cbegin(); it != m_Controls.cend(); ++it)
-	{
-		if ((*it)->GetID() == ID && (*it)->GetType() == nControlType)
-		{
-			return *it;
-		}
-	}
+    GLUFDialog& dialog = control->mDialog;
 
-	// Not found
-	return nullptr;
+
+    auto indexIt = dialog.mControls.find(control->mID);
+
+    //get the 'next' one
+    ++indexIt;
+
+    //is this still a valid control?
+    if (indexIt != dialog.mControls.end())
+        return indexIt->second;//yes
+
+    //if not, get the next dialog
+    GLUFDialogPtr nextDlg = dialog.mNextDialog;
+
+    //in the event that there is only one control, or the dialogs were not hooked up correctly
+    if (!nextDlg)
+        return control;
+
+    auto* nextDialogIndexIt = &nextDlg->mControls.begin();
+
+    //keep going through dialogs until one with a control is found, but prevent looping back through
+    while (*nextDialogIndexIt == nextDlg->mControls.end())
+    {
+        nextDlg = nextDlg->mNextDialog;
+        nextDialogIndexIt = &nextDlg->mControls.begin();
+
+        //if the same dialog is looped back through, return the current control
+        if (nextDlg.get() == &dialog)
+        {
+            return control;
+        }
+    }
+
+    //a control was found before the dialog chain was looped through
+    return (*nextDialogIndexIt)->second;
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFControl* GLUFDialog::GetNextControl(GLUFControl* pControl)
+GLUFControlPtr GLUFDialog::GetPrevControl(GLUFControlPtr control)
 {
-	int index = pControl->m_Index + 1;
+    GLUFDialog& dialog = control->mDialog;
 
-	GLUFDialog* pDialog = pControl->m_pDialog;
+    auto indexIt = dialog.mControls.find(control->mID);
 
-	// Cycle through dialogs in the loop to find the next control. Note
-	// that if only one control exists in all looped dialogs it will
-	// be the returned 'next' control.
-	while (index >= (int)pDialog->m_Controls.size())
-	{
-		pDialog = pDialog->m_pNextDialog;
-		index = 0;
-	}
+    //get the 'previous' one
+    --indexIt;
 
-	return pDialog->m_Controls[index];
-}
+    //is this still a valid control?
+    if (indexIt != dialog.mControls.end())
+        return indexIt->second;
 
+    //if not get the previous dialog
+    GLUFDialogPtr prevDlg = dialog.mPrevDialog;
 
-//--------------------------------------------------------------------------------------
-GLUFControl* GLUFDialog::GetPrevControl(GLUFControl* pControl)
-{
-	int index = pControl->m_Index - 1;
+    //in the event that there is only one control, or the dialogs were not hooked up correctly
+    if (!prevDlg)
+        return control;
 
-	GLUFDialog* pDialog = pControl->m_pDialog;
+    auto* prevDialogIndexIt = &prevDlg->mControls.rbegin();
 
-	// Cycle through dialogs in the loop to find the next control. Note
-	// that if only one control exists in all looped dialogs it will
-	// be the returned 'previous' control.
-	while (index < 0)
-	{
-		pDialog = pDialog->m_pPrevDialog;
-		if (!pDialog)
-			pDialog = pControl->m_pDialog;
+    //keep going through the dialogs until one with a control is found, but prevent looping back through
+    while (*prevDialogIndexIt == prevDlg->mControls.rend())
+    {
+        prevDlg = prevDlg->mPrevDialog;
+        prevDialogIndexIt = &prevDlg->mControls.rbegin();
 
-		index = int(pDialog->m_Controls.size()) - 1;
-	}
+        //if the same dialog is looped back through, return the current control
+        if (prevDlg.get() == &dialog)
+        {
+            return control;
+        }
+    }
 
-	return pDialog->m_Controls[index];
+    //a control was found before the dialog chain was looped through
+    return (*prevDialogIndexIt)->second;
 }
 
 
@@ -2756,8 +2776,6 @@ void GLUFDialog::InitDefaultElements()
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_LISTBOX, 1, &Element);
 }
-
-
 
 //======================================================================================
 // GLUFDialogResourceManager

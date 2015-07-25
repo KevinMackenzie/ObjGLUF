@@ -729,7 +729,7 @@ public:
     */
     template<typename T>
     std::shared_ptr<T>  GetControl(GLUFControlIndex ID) const;
-    GLUFControlPtr      GetControl(GLUFControlIndex ID, GLUFControlType controlType);
+    GLUFControlPtr      GetControl(GLUFControlIndex ID, GLUFControlType controlType) const;
 
 
     /*
