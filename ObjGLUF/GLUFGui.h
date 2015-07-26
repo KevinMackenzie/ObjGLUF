@@ -903,6 +903,8 @@ public:
     long        GetWidth() const noexcept                               { return GLUFRectWidth(mRegion);            }
     long        GetHeight()	const noexcept                              { return GLUFRectHeight(mRegion);           } 
 
+    GLUFPoint   GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;        }
+
     GLUFDialogResourceManagerPtr GetManager() const noexcept            { return mDialogManager;                    }
 
     void        SetVisible(bool visible) noexcept                       { mVisible = visible;                       }
@@ -1551,7 +1553,7 @@ GLUFControl
 */
 class GLUFControl : public std::enable_shared_from_this<GLUFControl>
 {
-
+protected:
     /*
     Constructor
         
@@ -1567,7 +1569,6 @@ class GLUFControl : public std::enable_shared_from_this<GLUFControl>
 
     friend GLUFDialog;
 
-protected:
     GLUFControlIndex mID;
     GLUFControlType mType;
     GLUFKeyId  mHotkey;
@@ -1691,7 +1692,7 @@ public:
             'element': the element to add at that id
 
     */
-	void SetElement(GLUFElementIndex elementId, GLUFElementPtr element);
+	void SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element);
 
     /*
     SetTextColor
@@ -1757,7 +1758,7 @@ protected:
     std::wstring     mText;
     GLUFBitfield     mTextFlags;
 
-    GLUF_FORCE_SMART_POINTERS(GLUFStatic, GLUFDialog& dialog);
+    GLUF_FORCE_SMART_POINTERS(GLUFStatic, const GLUFBitfield& textFlags, GLUFDialog& dialog);
     
 public:
 
@@ -1802,9 +1803,10 @@ GLUFButton
 class GLUFButton : public GLUFStatic
 {
 
+protected:
+
     GLUF_FORCE_SMART_POINTERS(GLUFButton, GLUFDialog& dialog);
 
-protected:
     bool mPressed;
 
 public:
@@ -1835,9 +1837,11 @@ GLUFCheckBox
 */
 class GLUFCheckBox : public GLUFButton
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFCheckBox, GLUFDialog& dialog);
 
 protected:
+
+    GLUF_FORCE_SMART_POINTERS(GLUFCheckBox, const bool& checked, GLUFDialog& dialog);
+
     bool mChecked;
     GLUF::GLUFRect mButtonRegion;
     GLUF::GLUFRect mTextRegion;

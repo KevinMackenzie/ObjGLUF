@@ -1755,7 +1755,7 @@ GLUFElementPtr GLUFDialog::GetDefaultElement(GLUFControlType controlType, GLUFEl
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddStatic(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFBitfield textFlags, bool isDefault, std::shared_ptr<GLUFStaticPtr> ctrlPtr)
 {
-    auto pStatic = std::make_shared<GLUFStatic>(textFlags, this);
+    auto pStatic = std::make_shared<GLUFStatic>(textFlags, *this);
 
     if (ctrlPtr)
         *ctrlPtr = pStatic;
@@ -1773,7 +1773,7 @@ void GLUFDialog::AddStatic(GLUFControlIndex ID, const std::wstring& strText, con
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddButton(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, int hotkey, bool isDefault, std::shared_ptr<GLUFButtonPtr> ctrlPtr)
 {
-    auto pButton = std::make_shared<GLUFButton>(this);
+    auto pButton = std::make_shared<GLUFButton>(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pButton;
@@ -1792,7 +1792,7 @@ void GLUFDialog::AddButton(GLUFControlIndex ID, const std::wstring& strText, con
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, bool checked , int hotkey, bool isDefault, std::shared_ptr<GLUFCheckBoxPtr> ctrlPtr)
 {
-    auto pCheckBox = std::make_shared<GLUFCheckBox>(this);
+    auto pCheckBox = std::make_shared<GLUFCheckBox>(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pCheckBox;
@@ -1812,7 +1812,7 @@ void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, c
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup buttonGroup, const std::wstring& strText, const GLUFRect& region, bool checked, int hotkey, bool isDefault, std::shared_ptr<GLUFRadioButtonPtr> ctrlPtr)
 {
-    auto pRadioButton = std::make_shared<GLUFRadioButton>(this);
+    auto pRadioButton = std::make_shared<GLUFRadioButton>(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pRadioButton;
@@ -1834,7 +1834,7 @@ void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup button
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int hotKey, bool isDefault, std::shared_ptr<GLUFComboBoxPtr> ctrlPtr)
 {
-    auto pComboBox = std::make_shared<GLUFComboBox>(this);
+    auto pComboBox = std::make_shared<GLUFComboBox>(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pComboBox;
@@ -1852,7 +1852,7 @@ void GLUFDialog::AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int ho
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min, long max, long value, bool isDefault, std::shared_ptr<GLUFSliderPtr> ctrlPtr)
 {
-    auto pSlider = std::make_shared<GLUFSlider>(this);
+    auto pSlider = std::make_shared<GLUFSlider>(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pSlider;
@@ -1893,7 +1893,7 @@ void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBitfield style, std::shared_ptr<GLUFListBoxPtr> ctrlPtr)
 {
-	auto pListBox = std::make_shared<GLUFListBox>(this);
+	auto pListBox = std::make_shared<GLUFListBox>(*this);
 
 	if (ctrlPtr)
 		*ctrlPtr = pListBox;
@@ -2846,8 +2846,8 @@ GLUFDialogResourceManager::GLUFDialogResourceManager() :
 //--------------------------------------------------------------------------------------
 GLUFDialogResourceManager::~GLUFDialogResourceManager()
 {
-	mFontCache.clear();
-	mTextureCache.clear();
+	//mFontCache.clear();
+	//mTextureCache.clear();
 
 	//TODO: make this with a class in the buffer sections
 	/*glBindVertexArray(m_pVBScreenQuadVAO);
@@ -3101,227 +3101,149 @@ GLUFTextureIndex GLUFDialogResourceManager::AddTexture(GLuint texture)
 	return mTextureCache.size() - 1;
 }
 
+
 /*
-
-
-Ended Here July 25 2015
-
-
+======================================================================================================================================================================================================
+GLUFControl Functions
 
 
 */
 
-
-//======================================================================================
-// GLUFControl class
-//======================================================================================
-
-GLUFControl::GLUFControl(GLUFDialog* pDialog)
+GLUFControl::GLUFControl(GLUFDialog& dialog) : mDialog(dialog)
 {
-	m_Type = GLUF_CONTROL_BUTTON;
-	m_pDialog = pDialog;
-	m_ID = 0;
-	m_nHotkey = 0;
-	m_Index = 0;
-	m_pUserData = nullptr;
+	mType = GLUF_CONTROL_BUTTON;
+	mID = 0;
+	mHotkey = 0;
+	mIndex = 0;
 
-	m_bEnabled = true;
-	m_bVisible = true;
-	m_bMouseOver = false;
-	m_bHasFocus = false;
-	m_bIsDefault = false;
+	mEnabled = true;
+	mVisible = true;
+	mMouseOver = false;
+	mHasFocus = false;
+	mIsDefault = false;
 
-	m_pDialog = nullptr;
-
-	m_x = 0L;
-	m_y = 0L;
-	m_width = 0L;
-	m_height = 0L;
-
-	//ZeroMemory(&m_rcBoundingBox, sizeof(m_rcBoundingBox));
+    mRegion = { { 0 }, 0, 0, { 0 } };
 }
 
 
 //--------------------------------------------------------------------------------------
 GLUFControl::~GLUFControl()
 {
-	for (auto it = m_Elements.begin(); it != m_Elements.end(); ++it)
-	{
-		GLUFElement* pElement = *it;
-		delete pElement;
-	}
-	m_Elements.clear();
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFControl::SetTextColor(Color color)
+void GLUFControl::SetTextColor(const GLUF::Color& color)
 {
-	GLUFElement* pElement = m_Elements[0];
+	GLUFElementPtr element = mElements[0];
 
-	if (pElement)
-		pElement->FontColor.States[GLUF_STATE_NORMAL] = color;
+    if (element)
+        element->mFontColor.mStates[GLUF_STATE_NORMAL] = color;
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFControl::SetElement(unsigned int iElement, GLUFElement* pElement)
+void GLUFControl::SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element)
 {
-	if (!pElement)
-		return GR_INVALIDARG;
-
-	// Make certain the array is this large
-	for (size_t i = m_Elements.size(); i <= iElement; i++)
-	{
-		GLUFElement* pNewElement = new (std::nothrow) GLUFElement();
-		if (!pNewElement)
-			return GR_OUTOFMEMORY;
-
-		m_Elements.push_back(pNewElement);
-	}
-
-	// Update the data
-	GLUFElement* pCurElement = m_Elements[iElement];
-	*pCurElement = *pElement;
-
-	return GR_SUCCESS;
+    mElements[elementId] = element;
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFControl::Refresh()
 {
-	m_bMouseOver = false;
-	m_bHasFocus = false;
+	mMouseOver = false;
+	mHasFocus = false;
 
-	for (auto it = m_Elements.begin(); it != m_Elements.end(); ++it)
+	for (auto it : mElements)
 	{
-		(*it)->Refresh();
+		it.second->Refresh();
 	}
 }
 
 
-//--------------------------------------------------------------------------------------
-void GLUFControl::UpdateRects()
-{
-	GLUFSetRect(m_rcBoundingBox, m_x, m_y + m_height, m_x + m_width, m_y);
-}
+/*
+======================================================================================================================================================================================================
+GLUFStatic Functions
 
 
-//======================================================================================
-// GLUFStatic class
-//======================================================================================
+*/
 
 //--------------------------------------------------------------------------------------
-GLUFStatic::GLUFStatic(unsigned int dwTextFlags, GLUFDialog* pDialog)
+GLUFStatic::GLUFStatic(const GLUFBitfield& textFlags, GLUFDialog& dialog) : GLUFControl(dialog), mTextFlags(textFlags)
 {
-	m_Type = GLUF_CONTROL_STATIC;
-	m_pDialog = pDialog;
-	m_dwTextFlags = dwTextFlags;
-	//ZeroMemory(&m_strText, sizeof(m_strText));
-
-	for (auto it = m_Elements.begin(); it != m_Elements.end(); ++it)
-	{
-		GLUFElement* pElement = *it;
-		GLUF_SAFE_DELETE(pElement);
-	}
-
-	m_Elements.clear();
+	mType = GLUF_CONTROL_STATIC;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFStatic::Render(float fElapsedTime)
+void GLUFStatic::Render(float elapsedTime)
 {
-	if (m_bVisible == false)
+	if (!mVisible)
 		return;
 
-	GLUF_CONTROL_STATE iState = GLUF_STATE_NORMAL;
+	GLUFControlState state = GLUF_STATE_NORMAL;
 
-	if (m_bEnabled == false)
-		iState = GLUF_STATE_DISABLED;
+	if (mEnabled == false)
+        state = GLUF_STATE_DISABLED;
 
-	GLUFElement* pElement = m_Elements[0];
-	pElement->dwTextFormat = m_dwTextFlags;
+	GLUFElementPtr element = mElements[0];
+    element->mTextFormatFlags = mTextFlags;
 
-	pElement->FontColor.Blend(iState, fElapsedTime);
+    element->mFontColor.Blend(state, elapsedTime);
 
-	m_pDialog->DrawText(m_strText, pElement, m_rcBoundingBox, false, false);
+    mDialog.DrawText(mText, element, mRegion, false, false);
 }
 
 
-//---------------------------------------------------------------------------------------
-GLUFResult GLUFStatic::GetTextCopy(std::wstring& strDest, unsigned int bufferCount)
+/*
+======================================================================================================================================================================================================
+GLUFButton Functions
+
+
+*/
+
+GLUFButton::GLUFButton(GLUFDialog& dialog) : GLUFStatic(GT_CENTER | GT_VCENTER, dialog)
 {
-	// Validate incoming parameters
-	if (bufferCount == 0)
-	{
-		return GR_INVALIDARG;
-	}
+	mType = GLUF_CONTROL_BUTTON;
 
-	// Copy the window text
-	strDest = m_strText;
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-GLUFResult GLUFStatic::SetText(std::wstring strText)
-{
-	m_strText = strText;
-	return GR_SUCCESS;
-}
-
-
-//======================================================================================
-// GLUFButton class
-//======================================================================================
-
-GLUFButton::GLUFButton(GLUFDialog* pDialog) : GLUFStatic(GT_CENTER | GT_VCENTER)
-{
-	m_Type = GLUF_CONTROL_BUTTON;
-	m_pDialog = pDialog;
-
-	m_bPressed = false;
-	m_nHotkey = 0;
+	mPressed = false;
 }
 
 //--------------------------------------------------------------------------------------
 void GLUFButton::OnHotkey()
 {
-    GLUFDialogPtr dlg = mDialog.lock();
-    if (dlg->IsKeyboardInputEnabled())
+    if (mDialog.IsKeyboardInputEnabled())
     {
-        dlg->RequestFocus(shared_from_this());
-        dlg->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
+        mDialog.RequestFocus(shared_from_this());
+        mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
     }
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
-	if (!m_bEnabled || !m_bVisible)
+	if (!mEnabled || !mVisible)
 		return false;
 
-	GLUFPoint mousePos = m_pDialog->m_MousePositionDialogSpace;
+	GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
 
 	switch (msg)
 	{
 
 		case GM_CURSOR_POS:
 
-			if (m_bPressed)
+			if (mPressed)
 			{
 				//if the button is pressed and the mouse is moved off, then unpress it
 				if (!ContainsPoint(mousePos))
 				{
-					m_bPressed = false;
+					mPressed = false;
 
 					ContainsPoint(mousePos);
 
-					if (!m_pDialog->m_bKeyboardInput)
-						m_pDialog->ClearFocus();
+					if (!mDialog.IsKeyboardInputEnabled())
+						mDialog.ClearFocus();
 				}
 			}
 
@@ -3333,11 +3255,11 @@ bool GLUFButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int para
 				if (ContainsPoint(mousePos))
 				{
 					// Pressed while inside the control
-					m_bPressed = true;
+					mPressed = true;
 					//SetCapture(GLUFGetHWND());
 
-					if (!m_bHasFocus)
-						m_pDialog->RequestFocus(this);
+					if (!mHasFocus)
+						mDialog.RequestFocus(shared_from_this());
 
 					return true;
 
@@ -3345,17 +3267,16 @@ bool GLUFButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int para
 			}
 			else if (param2 == GLFW_RELEASE)
 			{
-				if (m_bPressed)
+				if (mPressed)
 				{
-					m_bPressed = false;
-					//ReleaseCapture();
+					mPressed = false;
 
-					if (!m_pDialog->m_bKeyboardInput)
-						m_pDialog->ClearFocus();
+					if (!mDialog.IsKeyboardInputEnabled())
+						mDialog.ClearFocus();
 
 					// Button click
 					if (ContainsPoint(mousePos))
-						m_pDialog->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, this);
+						mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
 
 					return true;
 				}
@@ -3371,22 +3292,19 @@ bool GLUFButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int para
 			{
 				if (param3 == GLFW_PRESS)
 				{
-					m_bPressed = true;
+					mPressed = true;
 				}
 				if (param3 == GLFW_RELEASE)
 				{
-					m_bPressed = false;
+					mPressed = false;
 
-					m_pDialog->SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, this);
+					mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
 				}
 
 				return true;
 			}
 
-
-				return true;
-
-			break;
+			return true;
 		}
 	};
 
@@ -3394,111 +3312,109 @@ bool GLUFButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int para
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFButton::Render(float fElapsedTime)
+void GLUFButton::Render(float elapsedTime)
 {
-	if (m_bVisible == false)
-		return;
-
 	int nOffsetX = 0;
 	int nOffsetY = 0;
 
-	GLUFPoint wndSize = m_pDialog->GetManager()->GetWindowSize();
+	GLUFPoint wndSize = mDialog.GetManager()->GetWindowSize();
 
-	GLUF_CONTROL_STATE iState = GLUF_STATE_NORMAL;
+	GLUFControlState iState = GLUF_STATE_NORMAL;
 
-	if (m_bVisible == false)
+	if (mVisible == false)
 	{
 		iState = GLUF_STATE_HIDDEN;
 	}
-	else if (m_bEnabled == false)
+	else if (mEnabled == false)
 	{
 		iState = GLUF_STATE_DISABLED;
 	}
-	else if (m_bPressed)
+	else if (mPressed)
 	{
 		iState = GLUF_STATE_PRESSED;
 
 		nOffsetX = 1;
 		nOffsetY = 2;
 	}
-	else if (m_bMouseOver)
+	else if (mMouseOver)
 	{
 		iState = GLUF_STATE_MOUSEOVER;
 
 		nOffsetX = -1;
 		nOffsetY = -2;
 	}
-	else if (m_bHasFocus)
+	else if (mHasFocus)
 	{
 		iState = GLUF_STATE_FOCUS;
 	}
 
 	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
 
-	GLUFRect rcWindow = m_rcBoundingBox;
+	GLUFRect rcWindow = mRegion;
 	GLUFOffsetRect(rcWindow, nOffsetX, nOffsetY);
 
 
 	// Background fill layer
-	GLUFElement* pElement = m_Elements[0];
+	GLUFElementPtr pElement = mElements[0];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-	m_pDialog->DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
+	mDialog.DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
 	//m_pDialog->DrawText(m_strText, pElement, rcWindow, false, true);
 
 	// Main button
-	pElement = m_Elements[1];
+	pElement = mElements[1];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
 	m_pDialog->DrawSprite(pElement, rcWindow, GLUF_NEAR_BUTTON_DEPTH);
-	m_pDialog->DrawText(m_strText, pElement, rcWindow, false, true);
+	m_pDialog->DrawText(mText, pElement, rcWindow, false, true);
 }
 
 
+/*
+======================================================================================================================================================================================================
+GLUFButton Functions
 
-//======================================================================================
-// GLUFCheckBox class
-//======================================================================================
 
-GLUFCheckBox::GLUFCheckBox(GLUFDialog* pDialog)
+*/
+
+GLUFCheckBox::GLUFCheckBox(const bool& checked, GLUFDialog& dialog) : GLUFButton(dialog)
 {
-	m_Type = GLUF_CONTROL_CHECKBOX;
-	m_pDialog = pDialog;
+	mType = GLUF_CONTROL_CHECKBOX;
 
-	m_bChecked = false;
+    mChecked = checked;
 }
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFCheckBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
-	if (!m_bEnabled || !m_bVisible)
+	if (!mEnabled || !mVisible)
 		return false;
 
-	GLUFPoint mousePos = m_pDialog->m_MousePositionDialogSpace;
+	GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
 
 	switch (msg)
 	{
 
 	case GM_CURSOR_POS:
 
-		if (m_bPressed)
+		if (mPressed)
 		{
 			//if the button is pressed and the mouse is moved off, then unpress it
 			if (!ContainsPoint(mousePos))
 			{
-				m_bPressed = false;
+				mPressed = false;
 
 				//ContainsPoint(mousePos);
 
-				if (!m_pDialog->m_bKeyboardInput)
-					m_pDialog->ClearFocus();
+				if (!mDialog.IsKeyboardInputEnabled())
+					mDialog.ClearFocus();
 			}
 		}
 
@@ -3510,11 +3426,11 @@ bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 			if (ContainsPoint(mousePos))
 			{
 				// Pressed while inside the control
-				m_bPressed = true;
+				mPressed = true;
 				//SetCapture(GLUFGetHWND());
 
-				if (!m_bHasFocus)
-					m_pDialog->RequestFocus(this);
+				if (!mHasFocus)
+					mDialog.RequestFocus(shared_from_this());
 
 				return true;
 
@@ -3522,17 +3438,17 @@ bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 		}
 		else if (param2 == GLFW_RELEASE)
 		{
-			if (m_bPressed && ContainsPoint(mousePos))
+			if (mPressed && ContainsPoint(mousePos))
 			{
-				m_bPressed = false;
+				mPressed = false;
 				//ReleaseCapture();
 
-				if (!m_pDialog->m_bKeyboardInput)
-					m_pDialog->ClearFocus();
+				if (!mDialog.IsKeyboardInputEnabled())
+					mDialog.ClearFocus();
 
 				// Button click
 				if (ContainsPoint(mousePos))
-					SetCheckedInternal(!m_bChecked, true);
+					SetCheckedInternal(!mChecked, true);
 
 				return true;
 			}
@@ -3548,13 +3464,13 @@ bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 		{
 			if (param3 == GLFW_PRESS)
 			{
-				m_bPressed = true;
+				mPressed = true;
 			}
 			if (param3 == GLFW_RELEASE)
 			{
-				m_bPressed = false;
+				mPressed = false;
 
-				SetCheckedInternal(!m_bChecked, true);
+				SetCheckedInternal(!mChecked, true);
 			}
 
 			return true;
@@ -3572,20 +3488,19 @@ bool GLUFCheckBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int pa
 
 
 //--------------------------------------------------------------------------------------
-
-void GLUFCheckBox::SetCheckedInternal(bool bChecked, bool bFromInput)
+void GLUFCheckBox::SetCheckedInternal(bool checked, bool fromInput)
 {
-	m_bChecked = bChecked;
+    mChecked = checked;
 
-	m_pDialog->SendEvent(GLUF_EVENT_CHECKBOXCHANGED, bFromInput, this);
+    mDialog.SendEvent(GLUF_EVENT_CHECKBOXCHANGED, fromInput, shared_from_this());
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFCheckBox::ContainsPoint(GLUFPoint pt)
+bool GLUFCheckBox::ContainsPoint(const GLUF::GLUFPoint& pt) const
 {
-	return (GLUFPtInRect(m_rcBoundingBox, pt) ||
-		GLUFPtInRect(m_rcButton, pt));
+	return (GLUFPtInRect(mRegion, pt) ||
+		GLUFPtInRect(mButtonRegion, pt));
 }
 
 
@@ -3594,51 +3509,59 @@ void GLUFCheckBox::UpdateRects()
 {
 	GLUFButton::UpdateRects();
 
-	m_rcButton = m_rcBoundingBox;
-	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
+    mButtonRegion = mRegion;
+    mButtonRegion.right = mButtonRegion.left + GLUFRectHeight(mButtonRegion);
 
-	m_rcText = m_rcBoundingBox;
-	GLUFOffsetRect(m_rcText, GLUFRectWidth(m_rcButton)/*1.25f*/, 0L);
+    mTextRegion = mRegion;
+    GLUFOffsetRect(mTextRegion, GLUFRectWidth(mButtonRegion)/*1.25f*/, 0L);
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFCheckBox::Render( float fElapsedTime)
+void GLUFCheckBox::Render(float elapsedTime)
 {
-	if (m_bVisible == false)
-		return;
-	GLUF_CONTROL_STATE iState = GLUF_STATE_NORMAL;
+	GLUFControlState iState = GLUF_STATE_NORMAL;
 
-	if (m_bVisible == false)
+	if (mVisible == false)
 		iState = GLUF_STATE_HIDDEN;
-	else if (m_bEnabled == false)
+	else if (mEnabled == false)
 		iState = GLUF_STATE_DISABLED;
-	else if (m_bPressed)
+	else if (mPressed)
 		iState = GLUF_STATE_PRESSED;
-	else if (m_bMouseOver)
+	else if (mMouseOver)
 		iState = GLUF_STATE_MOUSEOVER;
-	else if (m_bHasFocus)
+	else if (mHasFocus)
 		iState = GLUF_STATE_FOCUS;
 
-	GLUFElement* pElement = m_Elements[0];
+	GLUFElementPtr pElement = mElements[0];
 
 	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
 
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_FAR_BUTTON_DEPTH);
-	m_pDialog->DrawText(m_strText, pElement, m_rcText, false, false);
+	mDialog.DrawSprite(pElement, mButtonRegion, GLUF_FAR_BUTTON_DEPTH);
+	mDialog.DrawText(mText, pElement, mTextRegion, false, false);
 
-	if (m_bChecked)//TODO: how do i blend properly?
+	if (mChecked)
 	{
-		pElement = m_Elements[1];
+		pElement = mElements[1];
 
-		pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-		m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
+		pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+		mDialog.DrawSprite(pElement, mButtonRegion, GLUF_NEAR_BUTTON_DEPTH);
 	}
 }
 
+
+/*
+
+
+Ended Here July 26 2015
+
+
+
+
+*/
 
 //======================================================================================
 // GLUFRadioButton class
@@ -3651,7 +3574,7 @@ GLUFRadioButton::GLUFRadioButton( GLUFDialog* pDialog)
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFRadioButton::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFRadioButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 	if (!m_bEnabled || !m_bVisible)
 		return false;
@@ -3876,7 +3799,7 @@ void GLUFComboBox::OnFocusOut()
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFComboBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 	if (!m_bEnabled || !m_bVisible)
 		return false;
@@ -4166,7 +4089,7 @@ void GLUFComboBox::OnHotkey()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::Render( float fElapsedTime)
+void GLUFComboBox::Render( float elapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -4195,11 +4118,11 @@ void GLUFComboBox::Render( float fElapsedTime)
 	// Scroll bar --EDITED, only render any of this stuff if OPENED
 	if (m_bOpened)
 	{
-		m_ScrollBar.Render(fElapsedTime);
+		m_ScrollBar.Render(elapsedTime);
 
 		// Blend current color
-		pElement->TextureColor.Blend(iState, fElapsedTime);
-		pElement->FontColor.Blend(iState, fElapsedTime);
+		pElement->TextureColor.Blend(iState, elapsedTime);
+		pElement->FontColor.Blend(iState, elapsedTime);
 
 		m_pDialog->DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
 
@@ -4293,7 +4216,7 @@ void GLUFComboBox::Render( float fElapsedTime)
 	pElement = m_Elements[1];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
 
 	GLUFRect rcWindow = m_rcButton;
 	GLUFOffsetRect(rcWindow, OffsetX, OffsetY);
@@ -4307,8 +4230,8 @@ void GLUFComboBox::Render( float fElapsedTime)
 	pElement = m_Elements[0];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
-	pElement->FontColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
+	pElement->FontColor.Blend(iState, elapsedTime, fBlendRate);
 
 
 	m_pDialog->DrawSprite(pElement, m_rcText, GLUF_NEAR_BUTTON_DEPTH);
@@ -4717,7 +4640,7 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFSlider::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 	if (!m_bEnabled || !m_bVisible)
 		return false;
@@ -4863,7 +4786,7 @@ void GLUFSlider::SetValueInternal(int nValue, bool bFromInput)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::Render( float fElapsedTime)
+void GLUFSlider::Render( float elapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -4905,13 +4828,13 @@ void GLUFSlider::Render( float fElapsedTime)
 	GLUFElement* pElement = m_Elements[0];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
 	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
 
 	pElement = m_Elements[1];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
 	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
 }
 
@@ -5033,7 +4956,7 @@ void GLUFScrollBar::ShowItem( int nIndex)
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFScrollBar::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFScrollBar::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 	//UNREFERENCED_PARAMETER(wParam);
 
@@ -5165,7 +5088,7 @@ bool GLUFScrollBar::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int p
 
 
 //--------------------------------------------------------------------------------------
-void GLUFScrollBar::Render( float fElapsedTime)
+void GLUFScrollBar::Render( float elapsedTime)
 {
 	if (m_bVisible == false)
 		return;
@@ -5238,7 +5161,7 @@ void GLUFScrollBar::Render( float fElapsedTime)
 	GLUFElement* pElement = m_Elements[0];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
 	m_pDialog->DrawSprite(pElement, m_rcTrack, GLUF_FAR_BUTTON_DEPTH);
 
 	
@@ -5251,7 +5174,7 @@ void GLUFScrollBar::Render( float fElapsedTime)
 	pElement = m_Elements[1];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iArrowState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iArrowState, elapsedTime, fBlendRate);
 	m_pDialog->DrawSprite(pElement, m_rcUpButton, GLUF_NEAR_BUTTON_DEPTH);
 
 
@@ -5264,14 +5187,14 @@ void GLUFScrollBar::Render( float fElapsedTime)
 	pElement = m_Elements[2];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iArrowState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iArrowState, elapsedTime, fBlendRate);
 	m_pDialog->DrawSprite(pElement, m_rcDownButton, GLUF_NEAR_BUTTON_DEPTH);
 
 	// Thumb button
 	pElement = m_Elements[3];
 
 	// Blend current color
-	pElement->TextureColor.Blend(iState, fElapsedTime, fBlendRate);
+	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
 	m_pDialog->DrawSprite(pElement, m_rcThumb, GLUF_NEAR_BUTTON_DEPTH);
 
 }
@@ -5870,7 +5793,7 @@ bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 //--------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------
-bool GLUFListBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFListBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 
 	if (GM_FOCUS == msg && param1 == GL_FALSE)
@@ -6316,18 +6239,18 @@ void GLUFListBox::UpdateItemRects()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFListBox::Render( float fElapsedTime)
+void GLUFListBox::Render( float elapsedTime)
 {
 	if (m_bVisible == false)
 		return;
 
 	GLUFElement* pElement = m_Elements[0];
-	pElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
-	pElement->FontColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
+	pElement->TextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
+	pElement->FontColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
 
 	GLUFElement* pSelElement = m_Elements[1];
-	pSelElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
-	pSelElement->FontColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
+	pSelElement->TextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
+	pSelElement->FontColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
 
 	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
 
@@ -6397,7 +6320,7 @@ void GLUFListBox::Render( float fElapsedTime)
 
 	// Render the scroll bar
 
-	m_ScrollBar.Render(fElapsedTime);
+	m_ScrollBar.Render(elapsedTime);
 }
 
 
@@ -7154,7 +7077,7 @@ void GLUFEditBox::OnFocusIn()
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFEditBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 
 	// Let the scroll bar have a chance to handle it first
@@ -7623,7 +7546,7 @@ bool GLUFEditBox::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int par
 
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::Render( float fElapsedTime)
+void GLUFEditBox::Render( float elapsedTime)
 {
 	//UpdateRects();
 	if (m_bAnalyseRequired)
@@ -7652,14 +7575,14 @@ void GLUFEditBox::Render( float fElapsedTime)
 	for (int e = 0; e < 9; ++e)
 	{
 		pElement = m_Elements[e];
-		pElement->TextureColor.Blend(GLUF_STATE_NORMAL, fElapsedTime);
+		pElement->TextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
 
 		m_pDialog->DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
 	}
 
 	//render the scrollbar
 	if (m_bMultiline)
-		m_ScrollBar.Render(fElapsedTime);
+		m_ScrollBar.Render(elapsedTime);
 
 	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
 	if (pElement)
