@@ -34,34 +34,46 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void GLUFTextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args)
+    void GLUFTextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept
     {
+        NOEXCEPT_REGION_START
+
         std::wstring outString;
         RenderText(format, outString, args...);
 
         DrawTextLine(outString);
+
+        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void GLUFTextHelper::DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args)
+    void GLUFTextHelper::DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args) noexcept
     {
+        NOEXCEPT_REGION_START
+
         std::wstring outString;
         RenderText(format, outString, args...);
 
         DrawTextLine(rc, flags, outString);
+
+        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void GLUFTextHelper::RenderText(const std::wstring& format, std::wstring& outString, Types&... args)
+    void GLUFTextHelper::RenderText(const std::wstring& format, std::wstring& outString, Types&... args) noexcept
     {
+        NOEXCEPT_REGION_START
+
         std::wstringstream formatStream;
         formatStream << format;
 
         std::wstringstream outStringStream;
         RenderText(formatStream, outStringStream, args...);
         outString = outStringStream.str();
+
+        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------

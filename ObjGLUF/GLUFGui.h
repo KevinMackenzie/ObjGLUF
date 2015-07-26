@@ -1643,7 +1643,7 @@ public:
         Note:
             Some of these may be overwritten by child classes, but
         Throws:
-            no-throw guarantee
+            GetElement: 'std::out_of_range'
     */
     virtual bool	GetEnabled() const noexcept		    { return mEnabled;              }
     virtual bool	GetVisible() const noexcept		    { return mVisible;              }
@@ -1651,7 +1651,8 @@ public:
     int				GetHotkey()	const noexcept		    { return mHotkey;               }
     GLUFControlType GetType() const	noexcept		    { return mType;                 }
 	virtual bool	CanHaveFocus() const noexcept	    { return false;					}
-    GLUFElementPtr	GetElement(GLUFElementIndex element) const noexcept;
+    GLUFRect GetRegion() const noexcept                 { return mRegion;               }
+    GLUFElementPtr	GetElement(GLUFElementIndex element) const;
 
     virtual void	SetEnabled(bool enabled) noexcept		    { mEnabled = enabled;                       }
     virtual void	SetVisible(bool visible) noexcept		    { mVisible = visible;                       }
@@ -1899,19 +1900,14 @@ GLUFRadioButton
 */
 class GLUFRadioButton : public GLUFCheckBox
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFRadioButton, const GLUFDialog& dialog);
+public:
+    
+    GLUF_FORCE_SMART_POINTERS(GLUFRadioButton, GLUFDialog& dialog);
 
-protected:
     GLUFRadioButtonGroup mButtonGroup;
 
 public:
 
-	virtual void    OnHotkey() noexcept
-	{
-		if (m_pDialog->IsKeyboardInputEnabled()) 
-			m_pDialog->RequestFocus(this);
-		SetCheckedInternal(true, true, true);
-	}
 
     /*
     Setters and Getters
@@ -1929,6 +1925,7 @@ public:
 
     */
 	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual void OnHotkey() noexcept override;
 
 protected:
 
@@ -1990,11 +1987,10 @@ public:
         HELD_UP,
         HELD_DOWN
     };
-private:
+protected:
 
     GLUF_FORCE_SMART_POINTERS(GLUFScrollBar, GLUFDialog& dialog);
 
-protected:
 
     bool mShowThumb;
     bool mDrag;
@@ -2102,7 +2098,7 @@ GLUFListBoxItem
 */
 typedef struct GLUFListBoxItem_t
 {
-	std::wstring strText;
+	std::wstring mText;
     GLUFGenericData& mData;
 	bool mVisible;
 	GLUF::GLUFRect mActiveRegion;
@@ -2143,9 +2139,9 @@ GLUFListBox
 */
 class GLUFListBox : public GLUFControl
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFListBox, const GLUFDialog& dialog);
-
 protected:
+    GLUF_FORCE_SMART_POINTERS(GLUFListBox, GLUFDialog& dialog);
+
 
     GLUF::GLUFRect mTextRegion;
     GLUF::GLUFRect mSelectionRegion;
@@ -2187,7 +2183,7 @@ public:
 	GLUFGenericData&    GetItemData(const std::wstring& text) const;
     GLUFGenericData&    GetItemData(GLUFIndex index) const;
 	GLUFSize            GetNumItems() const	noexcept		{ return mItems.size();		}
-    GLUFListBoxPtr      GetItem(const std::wstring& text, GLUFIndex start = 0);
+    GLUFListBoxItemPtr  GetItem(const std::wstring& text, GLUFIndex start = 0) const;
     GLUFListBoxItemPtr  GetItem(GLUFIndex index) const		{ return mItems[index];     }
 	GLUFBitfield        GetStyle() const noexcept			{ return mStyle;			}
 	GLUFSize            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
@@ -2268,7 +2264,7 @@ public:
 
     */
 	GLUFIndex GetSelectedIndex(GLUFIndex previousSelected) const;//for multi-line
-    GLUFIndex GetSelectedIndex() const;//for single-line
+    GLUFIndex GetSelectedIndex() const;//for single-line (or finding the first selected item)
 
     /*
     GetSelectedItem
@@ -2284,7 +2280,7 @@ public:
     
     */
     GLUFListBoxItemPtr GetSelectedItem(GLUFIndex previousSelected) const{ return GetItem(GetSelectedIndex(previousSelected)); }
-    GLUFListBoxItemPtr GetSelectedItem() const;
+    GLUFListBoxItemPtr GetSelectedItem() const { return GetItem(GetSelectedIndex()); }
     
     /*
     GetSelectedData
@@ -2299,15 +2295,15 @@ public:
             'NoItemSelectedException': if no item is selected
     
     */
-    GLUFGenericData& GetSelectedData(GLUFIndex previousSelected) const;
-    GLUFGenericData& GetSelectedData() const;
+    GLUFGenericData& GetSelectedData(GLUFIndex previousSelected) const { return GetItemData(GetSelectedIndex(previousSelected)); }
+    GLUFGenericData& GetSelectedData() const { return GetItemData(GetSelectedIndex()); }
 
     /*
     SelectItem
 
         Note:
             for single-selection listbox, sets the currently selected
-            for multi-selection listbox, adds 'newIndex' to the list of selected items
+            for multi-selection listbox, adds 'newIndex' to the list of selected items, will only add the first item with 'text' found
     
         Parameters:
             'index': the index of the item to add to the selected list
@@ -2392,11 +2388,11 @@ public:
 
     */
 	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void OnInit() override                      { mDialog.InitControl(&m_ScrollBar);	}
+	virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<GLUFControl>(mScrollBar));	}
 	virtual bool CanHaveFocus() const noexcept override	{ return (mVisible && mEnabled);			    }
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
-	virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override{ return GLUFControl::ContainsPoint(pt) || m_ScrollBar.ContainsPoint(pt); }
+	virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override{ return GLUFControl::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt); }
 
 protected:
 
@@ -2514,7 +2510,7 @@ public:
             no-throw guarantee
     
     */
-    void InsertItem(GLUFIndex index, const std::wstring& text, GLUFGenericData& data) noexcept;
+    void InsertItem(GLUFIndex index, const std::wstring& text, GLUFGenericData& data) noexcept;//IMPLEMENT
 
     /*
     RemoveItem
@@ -3040,7 +3036,7 @@ public:
     
     */
     template<class... Types>
-    static void RenderText(const std::wstring& format, std::wstring& outString, Types&... args);
+    static void RenderText(const std::wstring& format, std::wstring& outString, Types&... args) noexcept;
 };
 
 

@@ -169,13 +169,6 @@ Various Structs Used For UI
 
 
 */
-
-/*
-
-Ended here July 10 2015
-
-
-*/
 struct GLUFScreenVertex
 {
 	glm::vec3 pos;
@@ -1014,7 +1007,7 @@ void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::SetCallback(GLUFEventCallbackFuncPtr callback, GLUFEventCallbackReceivablePtr userContext)
+void GLUFDialog::SetCallback(GLUFEventCallbackFuncPtr callback, GLUFEventCallbackReceivablePtr userContext) noexcept
 {
     NOEXCEPT_REGION_START
 	// If this assert triggers, you need to call GLUFDialog::Init() first.  This change
@@ -1059,7 +1052,7 @@ void GLUFDialog::RemoveControl(GLUFControlIndex ID)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::RemoveAllControls()
+void GLUFDialog::RemoveAllControls() noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -1076,7 +1069,7 @@ void GLUFDialog::RemoveAllControls()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::Refresh()
+void GLUFDialog::Refresh() noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -1103,7 +1096,7 @@ void GLUFDialog::Refresh()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::OnRender(float elapsedTime)
+void GLUFDialog::OnRender(float elapsedTime) noexcept
 {
 	// If this assert triggers, you need to call GLUFDialogResourceManager::On*Device() from inside
 	// the application's device callbacks.  See the SDK samples for an example of how to do this.
@@ -1209,7 +1202,7 @@ void GLUFDialog::OnRender(float elapsedTime)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::SendEvent(GLUFEvent ctrlEvent, bool triggeredByUser, GLUFControlPtr control)
+void GLUFDialog::SendEvent(GLUFEvent ctrlEvent, bool triggeredByUser, GLUFControlPtr control) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -1280,7 +1273,7 @@ GLUFTextureNodePtr GLUFDialog::GetTexture(GLUFTextureIndex index) const
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -1600,7 +1593,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 		// The application has lost mouse capture.
 		// The dialog object may not have received
 		// a WM_MOUSEUP when capture changed. Reset
-		// m_bDrag so that the dialog does not mistakenly
+		// mDrag so that the dialog does not mistakenly
 		// think the mouse button is still held down.
 		if (param1 == GL_FALSE)
 			mDrag = false;
@@ -1614,7 +1607,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::ClampToScreen()
+void GLUFDialog::ClampToScreen() noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -1675,17 +1668,21 @@ void GLUFDialog::SetControlEnabled(GLUFControlIndex ID, bool bEnabled)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::OnMouseUp(const GLUF::GLUFPoint& pt)
+void GLUFDialog::OnMouseUp(const GLUF::GLUFPoint& pt) noexcept
 {
+    NOEXCEPT_REGION_START
+
     //TODO: do something here?
-	GLUF_UNREFERENCED_PARAMETER(pt);
-	sControlPressed = nullptr;
-	mControlMouseOver = nullptr;
+    GLUF_UNREFERENCED_PARAMETER(pt);
+    sControlPressed = nullptr;
+    mControlMouseOver = nullptr;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::OnMouseMove(const GLUF::GLUFPoint& pt)
+void GLUFDialog::OnMouseMove(const GLUF::GLUFPoint& pt) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -2042,17 +2039,6 @@ GLUFControlPtr GLUFDialog::GetPrevControl(GLUFControlPtr control)
     return (*prevDialogIndexIt)->second;
 }
 
-/*
-
-
-Ended Here July 25 2015
-
-
-
-
-*/
-
-
 
 //--------------------------------------------------------------------------------------
 void GLUFDialog::ClearRadioButtonGroup(GLUFRadioButtonGroup buttonGroup)
@@ -2224,7 +2210,7 @@ void GLUFDialog::DrawText(const std::wstring& text, const GLUFElementPtr& elemen
 		GLUFOffsetRect(rcShadow, 1 / m_pManager->GetWindowSize().x, 1 / m_pManager->GetWindowSize().y);
 
 		Color vShadowColor(0, 0, 0, 255);
-		DrawTextGLUF(*m_pManager->GetFontNode(pElement->iFont), strText, rcShadow, vShadowColor, bCenter, bHardRect);
+		DrawTextGLUF(*m_pManager->GetFontNode(pElement->mFontIndex), strText, rcShadow, vShadowColor, bCenter, bHardRect);
 
 	}*/
 
@@ -2236,7 +2222,7 @@ void GLUFDialog::DrawText(const std::wstring& text, const GLUFElementPtr& elemen
 //--------------------------------------------------------------------------------------
 void GLUFDialog::CalcTextRect(const std::wstring& text, const GLUFElementPtr& element, GLUF::GLUFRect& rect) const
 {
-	GLUFFontNodePtr pFontNode = GetFont(pElement->iFont);
+	GLUFFontNodePtr pFontNode = GetFont(pElement->mFontIndex);
 	if (!pFontNode)
 		return;
 
@@ -2248,8 +2234,10 @@ void GLUFDialog::CalcTextRect(const std::wstring& text, const GLUFElementPtr& el
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::SetNextDialog(GLUFDialogPtr nextDialog)
+void GLUFDialog::SetNextDialog(GLUFDialogPtr nextDialog) noexcept
 {
+    NOEXCEPT_REGION_START
+
     if (!nextDialog)
         mNextDialog = shared_from_this();
     else
@@ -2257,125 +2245,137 @@ void GLUFDialog::SetNextDialog(GLUFDialogPtr nextDialog)
         mNextDialog = nextDialog;
         nextDialog->mPrevDialog = shared_from_this();
     }
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::ClearFocus()
+void GLUFDialog::ClearFocus() noexcept
 {
-	if (sControlFocus)
-	{
-		sControlFocus->OnFocusOut();
-		sControlFocus = nullptr;
-	}
+    NOEXCEPT_REGION_START
+
+    if (sControlFocus)
+    {
+        sControlFocus->OnFocusOut();
+        sControlFocus = nullptr;
+    }
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::FocusDefaultControl()
+void GLUFDialog::FocusDefaultControl() noexcept
 {
-	// Check for default control in this dialog
-	for (auto it : mControls)
-	{
-		if (it.second->mIsDefault)
-		{
-			// Remove focus from the current control
-			ClearFocus();
+    NOEXCEPT_REGION_START
 
-			// Give focus to the default control
-			sControlFocus = it.second;
-			sControlFocus->OnFocusIn();
-			return;
-		}
-	}
+    // Check for default control in this dialog
+    for (auto it : mControls)
+    {
+        if (it.second->mIsDefault)
+        {
+            // Remove focus from the current control
+            ClearFocus();
+
+            // Give focus to the default control
+            sControlFocus = it.second;
+            sControlFocus->OnFocusIn();
+            return;
+        }
+    }
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialog::OnCycleFocus(bool forward)
+bool GLUFDialog::OnCycleFocus(bool forward) noexcept
 {
-	GLUFControlPtr pControl = nullptr;
-	GLUFDialogPtr pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
-	GLUFDialogPtr pLastDialog;    // focus from first control to last or vice versa.
+    NOEXCEPT_REGION_START
 
-	if (!sControlFocus)
-	{
-		// If sControlFocus is nullptr, we focus the first control of first dialog in
-		// the case that bForward is true, and focus the last control of last dialog when
-		// bForward is false.
-		//
+    GLUFControlPtr pControl = nullptr;
+    GLUFDialogPtr pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
+    GLUFDialogPtr pLastDialog;    // focus from first control to last or vice versa.
+
+    if (!sControlFocus)
+    {
+        // If sControlFocus is nullptr, we focus the first control of first dialog in
+        // the case that bForward is true, and focus the last control of last dialog when
+        // bForward is false.
+        //
         if (forward)
-		{
-			// Search for the first control from the start of the dialog
-			// array.
-			for (auto it : mDialogManager->mDialogs)
-			{
-				pDialog = pLastDialog = it;
-				if (pDialog && !pDialog->mControls.empty())
-				{
-					pControl = pDialog->mControls[0];
-					break;
-				}
-			}
+        {
+            // Search for the first control from the start of the dialog
+            // array.
+            for (auto it : mDialogManager->mDialogs)
+            {
+                pDialog = pLastDialog = it;
+                if (pDialog && !pDialog->mControls.empty())
+                {
+                    pControl = pDialog->mControls[0];
+                    break;
+                }
+            }
 
-			if (!pDialog || !pControl)
-			{
-				// No dialog has been registered yet or no controls have been
-				// added to the dialogs. Cannot proceed.
-				return true;
-			}
-		}
-		else
-		{
-			// Search for the first control from the end of the dialog
-			// array.
+            if (!pDialog || !pControl)
+            {
+                // No dialog has been registered yet or no controls have been
+                // added to the dialogs. Cannot proceed.
+                return true;
+            }
+        }
+        else
+        {
+            // Search for the first control from the end of the dialog
+            // array.
             for (auto it = mDialogManager->mDialogs.crbegin(); it != mDialogManager->mDialogs.crend(); ++it)
-			{
-				pDialog = pLastDialog = *it;
-				if (pDialog && !pDialog->mControls.empty())
-				{
-					pControl = pDialog->mControls[pDialog->mControls.size() - 1];
-					break;
-				}
-			}
+            {
+                pDialog = pLastDialog = *it;
+                if (pDialog && !pDialog->mControls.empty())
+                {
+                    pControl = pDialog->mControls[pDialog->mControls.size() - 1];
+                    break;
+                }
+            }
 
-			if (!pDialog || !pControl)
-			{
-				// No dialog has been registered yet or no controls have been
-				// added to the dialogs. Cannot proceed.
-				return true;
-			}
-		}
-	}
-	else if (&sControlFocus->mDialog != this)
-	{
-		// If a control belonging to another dialog has focus, let that other
-		// dialog handle this event by returning false.
-		//
-		return false;
-	}
-	else
-	{
-		// Focused control belongs to this dialog. Cycle to the
-		// next/previous control.
-		GLUF_ASSERT(pControl != 0);
+            if (!pDialog || !pControl)
+            {
+                // No dialog has been registered yet or no controls have been
+                // added to the dialogs. Cannot proceed.
+                return true;
+            }
+        }
+    }
+    else if (&sControlFocus->mDialog != this)
+    {
+        // If a control belonging to another dialog has focus, let that other
+        // dialog handle this event by returning false.
+        //
+        return false;
+    }
+    else
+    {
+        // Focused control belongs to this dialog. Cycle to the
+        // next/previous control.
+        GLUF_ASSERT(pControl != 0);
 
         //this is safe to assume that the dialog is 'this' because of the line 'else if (&sControlFocus->mDialog != this)'
         pLastDialog = shared_from_this();
 
-		pControl = (forward) ? GetNextControl(sControlFocus) : GetPrevControl(sControlFocus);
+        pControl = (forward) ? GetNextControl(sControlFocus) : GetPrevControl(sControlFocus);
 
         //this is kind of inefficient
         if (!(pDialog = mDialogManager->GetDialogPtrFromRef(pControl->mDialog)))
             pDialog = shared_from_this();//not sure if this is what to do if the dialog is not found, but its the best thing I could think of
-	}
+    }
 
-	GLUF_ASSERT(pControl != 0);
+    GLUF_ASSERT(pControl != 0);
 
-	// If we just wrapped from last control to first or vice versa,
-	// set the focused control to nullptr. This state, where no control
-	// has focus, allows the camera to work.
-	int nLastDialogIndex = -1;
+    // If we just wrapped from last control to first or vice versa,
+    // set the focused control to nullptr. This state, where no control
+    // has focus, allows the camera to work.
+    int nLastDialogIndex = -1;
     for (int i = 0; i < mDialogManager->mDialogs.size(); ++i)
     {
         if (mDialogManager->mDialogs[i] == pLastDialog)
@@ -2395,39 +2395,43 @@ bool GLUFDialog::OnCycleFocus(bool forward)
         }
     }
 
-	if ((!forward && nLastDialogIndex < nDialogIndex) ||
-		(forward && nDialogIndex < nLastDialogIndex))
-	{
-		if (sControlFocus)
-			sControlFocus->OnFocusOut();
-		sControlFocus = nullptr;
-		return true;
-	}
+    if ((!forward && nLastDialogIndex < nDialogIndex) ||
+        (forward && nDialogIndex < nLastDialogIndex))
+    {
+        if (sControlFocus)
+            sControlFocus->OnFocusOut();
+        sControlFocus = nullptr;
+        return true;
+    }
 
-	// If we've gone in a full circle then focus doesn't change
-	if (pControl == sControlFocus)
-		return true;
+    // If we've gone in a full circle then focus doesn't change
+    if (pControl == sControlFocus)
+        return true;
 
-	// If the dialog accepts keybord input and the control can have focus then
-	// move focus
-	if (pControl->mDialog.mKeyboardInput && pControl->CanHaveFocus())
-	{
-		if (sControlFocus)
-			sControlFocus->OnFocusOut();
-		sControlFocus = pControl;
-		if (sControlFocus)
-			sControlFocus->OnFocusIn();
-		return true;
-	}
+    // If the dialog accepts keybord input and the control can have focus then
+    // move focus
+    if (pControl->mDialog.mKeyboardInput && pControl->CanHaveFocus())
+    {
+        if (sControlFocus)
+            sControlFocus->OnFocusOut();
+        sControlFocus = pControl;
+        if (sControlFocus)
+            sControlFocus->OnFocusIn();
+        return true;
+    }
 
-	pLastDialog = pDialog;
-	pControl = (forward) ? GetNextControl(pControl) : GetPrevControl(pControl);
+    pLastDialog = pDialog;
+    pControl = (forward) ? GetNextControl(pControl) : GetPrevControl(pControl);
     if (!(pDialog = mDialogManager->GetDialogPtrFromRef(pControl->mDialog)))
         pDialog = shared_from_this();
 
-	// If we reached this point, the chain of dialogs didn't form a complete loop
-	GLUF_ERROR("GLUFDialog: Multiple dialogs are improperly chained together");
-	return false;
+    // If we reached this point, the chain of dialogs didn't form a complete loop
+    GLUF_ERROR("GLUFDialog: Multiple dialogs are improperly chained together");
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 GLUFFontPtr g_ArialDefault = nullptr;
@@ -2866,54 +2870,68 @@ GLUFDialogResourceManager::~GLUFDialogResourceManager()
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialogResourceManager::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFDialogResourceManager::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	GLUF_UNREFERENCED_PARAMETER(msg);
-	//GLUF_UNREFERENCED_PARAMETER(param1);
-	//GLUF_UNREFERENCED_PARAMETER(param2);
-	GLUF_UNREFERENCED_PARAMETER(param3);
-	GLUF_UNREFERENCED_PARAMETER(param4);
+    NOEXCEPT_REGION_START
 
-	switch (msg)
-	{
-	case GM_RESIZE:
-		mWndSize.width = 0L;
-		mWndSize.height = 0L;
-		GetWindowSize();
+    GLUF_UNREFERENCED_PARAMETER(msg);
+    //GLUF_UNREFERENCED_PARAMETER(param1);
+    //GLUF_UNREFERENCED_PARAMETER(param2);
+    GLUF_UNREFERENCED_PARAMETER(param3);
+    GLUF_UNREFERENCED_PARAMETER(param4);
 
-		//refresh the fonts to the new window size
-		/*for (auto it : m_FontCache)
-			if (it != nullptr)
-				it->m_pFontType->Refresh();*/
-	}
+    switch (msg)
+    {
+    case GM_RESIZE:
+        mWndSize.width = 0L;
+        mWndSize.height = 0L;
+        GetWindowSize();
 
-	return false;
+        //refresh the fonts to the new window size
+        /*for (auto it : m_FontCache)
+            if (it != nullptr)
+            it->mFontType->Refresh();*/
+    }
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::ApplyRenderUI()
+void GLUFDialogResourceManager::ApplyRenderUI() noexcept
 {
-	// Shaders
-	/*glEnableVertexAttribArray(g_UIShaderLocations.position);
-	glEnableVertexAttribArray(g_UIShaderLocations.color);
-	glEnableVertexAttribArray(g_UIShaderLocations.uv);*/
-	GLUFSHADERMANAGER.UseProgram(g_UIProgram);
+    NOEXCEPT_REGION_START
 
-	ApplyOrtho();
+        // Shaders
+        /*glEnableVertexAttribArray(g_UIShaderLocations.position);
+        glEnableVertexAttribArray(g_UIShaderLocations.color);
+        glEnableVertexAttribArray(g_UIShaderLocations.uv);*/
+        GLUFSHADERMANAGER.UseProgram(g_UIProgram);
+
+    ApplyOrtho();
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::ApplyRenderUIUntex()
+void GLUFDialogResourceManager::ApplyRenderUIUntex() noexcept
 {
-	/*glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
-	glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);*/
-	GLUFSHADERMANAGER.UseProgram(g_UIProgramUntex);
-	
-	ApplyOrtho();
+    NOEXCEPT_REGION_START
+
+    /*glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
+    glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);*/
+    GLUFSHADERMANAGER.UseProgram(g_UIProgramUntex);
+
+    ApplyOrtho();
+
+    NOEXCEPT_REGION_END
 }
 
-glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix()
+glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix() noexcept
 {
 	GLUFPoint pt = GetWindowSize();
 	float x2 = (float)pt.x / 2.0f;
@@ -2921,7 +2939,7 @@ glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix()
 	return glm::ortho((float)-x2, (float)x2, (float)-y2, (float)y2);
 }
 
-GLUFDialogPtr GLUFDialogResourceManager::GetDialogPtrFromRef(const GLUFDialog& ref)
+GLUFDialogPtr GLUFDialogResourceManager::GetDialogPtrFromRef(const GLUFDialog& ref) noexcept
 {
     for (auto it = mDialogs.cbegin(); it != mDialogs.cend(); ++it)
     {
@@ -2934,14 +2952,14 @@ GLUFDialogPtr GLUFDialogResourceManager::GetDialogPtrFromRef(const GLUFDialog& r
     return nullptr;
 }
 
-void GLUFDialogResourceManager::ApplyOrtho()
+void GLUFDialogResourceManager::ApplyOrtho() noexcept
 {
 	glm::mat4 mat = GetOrthoMatrix();
 	glUniformMatrix4fv(g_UIShaderLocations.ortho, 1, GL_FALSE, &mat[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::BeginSprites()
+void GLUFDialogResourceManager::BeginSprites() noexcept
 {
 }
 
@@ -2980,25 +2998,29 @@ void GLUFDialogResourceManager::EndSprites(GLUFElementPtr element, bool textured
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::RegisterDialog(const GLUFDialogPtr& dialog)
+void GLUFDialogResourceManager::RegisterDialog(const GLUFDialogPtr& dialog) noexcept
 {
+    NOEXCEPT_REGION_START
+
     if (!dialog)
         return;
 
-	// Check that the dialog isn't already registered.
+    // Check that the dialog isn't already registered.
     for (auto it : mDialogs)
     {
         if (it == dialog)
             return;
     }
 
-	// Add to the list.
-	mDialogs.push_back(dialog);
+    // Add to the list.
+    mDialogs.push_back(dialog);
 
-	// Set up next and prev pointers.
-	if (mDialogs.size() > 1)
-		mDialogs[mDialogs.size() - 2]->SetNextDialog(dialog);
-	mDialogs[mDialogs.size() - 1]->SetNextDialog(mDialogs[0]);
+    // Set up next and prev pointers.
+    if (mDialogs.size() > 1)
+        mDialogs[mDialogs.size() - 2]->SetNextDialog(dialog);
+    mDialogs[mDialogs.size() - 1]->SetNextDialog(mDialogs[0]);
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -3034,11 +3056,15 @@ void GLUFDialogResourceManager::UnregisterDialog(const GLUFDialogPtr& pDialog)
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::EnableKeyboardInputForAllDialogs()
+void GLUFDialogResourceManager::EnableKeyboardInputForAllDialogs() noexcept
 {
-	// Enable keyboard input for all registered dialogs
-	for (auto it : mDialogs)
-		it->EnableKeyboardInput(true);
+    NOEXCEPT_REGION_START
+
+    // Enable keyboard input for all registered dialogs
+    for (auto it : mDialogs)
+        it->EnableKeyboardInput(true);
+
+    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -3057,48 +3083,56 @@ GLUFPoint GLUFDialogResourceManager::GetWindowSize()
 }
 
 //--------------------------------------------------------------------------------------
-GLUFFontIndex GLUFDialogResourceManager::AddFont(const GLUFFontPtr& font, GLUFFontSize leading, GLUFFontWeight weight)
+GLUFFontIndex GLUFDialogResourceManager::AddFont(const GLUFFontPtr& font, GLUFFontSize leading, GLUFFontWeight weight) noexcept
 {
-	// See if this font already exists (this is simple)
-	for (size_t i = 0; i < mFontCache.size(); ++i)
-	{
-		GLUFFontNodePtr node = mFontCache[i];
-		if (node->mFontType == font && node->mWeight == weight && node->mLeading == leading)
-			return i;
-	}
+    NOEXCEPT_REGION_START
 
-	// Add a new font and try to create it
+    // See if this font already exists (this is simple)
+    for (size_t i = 0; i < mFontCache.size(); ++i)
+    {
+        GLUFFontNodePtr node = mFontCache[i];
+        if (node->mFontType == font && node->mWeight == weight && node->mLeading == leading)
+            return i;
+    }
+
+    // Add a new font and try to create it
     auto newFontNode = std::make_shared<GLUFFontNode>();
 
-	//wcscpy_s(pNewFontNode->strFace, MAX_PATH, strFaceName);
+    //wcscpy_s(pNewFontNode->strFace, MAX_PATH, strFaceName);
     newFontNode->mFontType = font;
     newFontNode->mLeading = leading;
-	//pNewFontNode->mSize = height;
+    //pNewFontNode->mSize = height;
     newFontNode->mWeight = weight;
     mFontCache.push_back(newFontNode);
 
     return mFontCache.size() - 1;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFTextureIndex GLUFDialogResourceManager::AddTexture(GLuint texture)
+GLUFTextureIndex GLUFDialogResourceManager::AddTexture(GLuint texture) noexcept
 {
-	// See if this texture already exists
-	for (size_t i = 0; i < mTextureCache.size(); ++i)
-	{
-		GLUFTextureNodePtr pTextureNode = mTextureCache[i];
-		if (texture == pTextureNode->mTextureElement)
-			return i;
-	}
+    NOEXCEPT_REGION_START
 
-	// Add a new texture and try to create it
+    // See if this texture already exists
+    for (size_t i = 0; i < mTextureCache.size(); ++i)
+    {
+        GLUFTextureNodePtr pTextureNode = mTextureCache[i];
+        if (texture == pTextureNode->mTextureElement)
+            return i;
+    }
+
+    // Add a new texture and try to create it
     auto newTextureNode = std::make_shared<GLUFTextureNode>();
 
     newTextureNode->mTextureElement = texture;
     mTextureCache.push_back(newTextureNode);
 
-	return mTextureCache.size() - 1;
+    return mTextureCache.size() - 1;
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -3131,6 +3165,23 @@ GLUFControl::~GLUFControl()
 {
 }
 
+
+//--------------------------------------------------------------------------------------
+GLUFElementPtr GLUFControl::GetElement(GLUFElementIndex element) const
+{
+    return mElements.at(element);
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFControl::SetRegion(const GLUF::GLUFRect& region) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mRegion = region;
+
+    NOEXCEPT_REGION_END
+}
 
 //--------------------------------------------------------------------------------------
 void GLUFControl::SetTextColor(const GLUF::Color& color)
@@ -3177,22 +3228,26 @@ GLUFStatic::GLUFStatic(const GLUFBitfield& textFlags, GLUFDialog& dialog) : GLUF
 
 
 //--------------------------------------------------------------------------------------
-void GLUFStatic::Render(float elapsedTime)
+void GLUFStatic::Render(float elapsedTime) noexcept
 {
-	if (!mVisible)
-		return;
+    NOEXCEPT_REGION_START
 
-	GLUFControlState state = GLUF_STATE_NORMAL;
+    if (!mVisible)
+        return;
 
-	if (mEnabled == false)
+    GLUFControlState state = GLUF_STATE_NORMAL;
+
+    if (mEnabled == false)
         state = GLUF_STATE_DISABLED;
 
-	GLUFElementPtr element = mElements[0];
+    GLUFElementPtr element = mElements[0];
     element->mTextFormatFlags = mTextFlags;
 
     element->mFontColor.Blend(state, elapsedTime);
 
     mDialog.DrawText(mText, element, mRegion, false, false);
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -3211,109 +3266,121 @@ GLUFButton::GLUFButton(GLUFDialog& dialog) : GLUFStatic(GT_CENTER | GT_VCENTER, 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFButton::OnHotkey()
+void GLUFButton::OnHotkey() noexcept
 {
+    NOEXCEPT_REGION_START
+
     if (mDialog.IsKeyboardInputEnabled())
     {
         mDialog.RequestFocus(shared_from_this());
         mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
     }
+
+    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	if (!mEnabled || !mVisible)
-		return false;
+    NOEXCEPT_REGION_START
 
-	GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
+    if (!mEnabled || !mVisible)
+        return false;
 
-	switch (msg)
-	{
+    GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
 
-		case GM_CURSOR_POS:
+    switch (msg)
+    {
 
-			if (mPressed)
-			{
-				//if the button is pressed and the mouse is moved off, then unpress it
-				if (!ContainsPoint(mousePos))
-				{
-					mPressed = false;
+    case GM_CURSOR_POS:
 
-					ContainsPoint(mousePos);
+        if (mPressed)
+        {
+            //if the button is pressed and the mouse is moved off, then unpress it
+            if (!ContainsPoint(mousePos))
+            {
+                mPressed = false;
 
-					if (!mDialog.IsKeyboardInputEnabled())
-						mDialog.ClearFocus();
-				}
-			}
+                ContainsPoint(mousePos);
 
-			break;
-		case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-		{
-			if (param2 == GLFW_PRESS)
-			{
-				if (ContainsPoint(mousePos))
-				{
-					// Pressed while inside the control
-					mPressed = true;
-					//SetCapture(GLUFGetHWND());
+                if (!mDialog.IsKeyboardInputEnabled())
+                    mDialog.ClearFocus();
+            }
+        }
 
-					if (!mHasFocus)
-						mDialog.RequestFocus(shared_from_this());
+        break;
+    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+    {
+        if (param2 == GLFW_PRESS)
+        {
+            if (ContainsPoint(mousePos))
+            {
+                // Pressed while inside the control
+                mPressed = true;
+                //SetCapture(GLUFGetHWND());
 
-					return true;
+                if (!mHasFocus)
+                    mDialog.RequestFocus(shared_from_this());
 
-				}
-			}
-			else if (param2 == GLFW_RELEASE)
-			{
-				if (mPressed)
-				{
-					mPressed = false;
+                return true;
 
-					if (!mDialog.IsKeyboardInputEnabled())
-						mDialog.ClearFocus();
+            }
+        }
+        else if (param2 == GLFW_RELEASE)
+        {
+            if (mPressed)
+            {
+                mPressed = false;
 
-					// Button click
-					if (ContainsPoint(mousePos))
-						mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
+                if (!mDialog.IsKeyboardInputEnabled())
+                    mDialog.ClearFocus();
 
-					return true;
-				}
+                // Button click
+                if (ContainsPoint(mousePos))
+                    mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
 
-			}
-		}
-		break;
+                return true;
+            }
 
-		case GM_KEY:
-		{
+        }
+    }
+    break;
 
-			if (param1 = GLFW_KEY_SPACE)
-			{
-				if (param3 == GLFW_PRESS)
-				{
-					mPressed = true;
-				}
-				if (param3 == GLFW_RELEASE)
-				{
-					mPressed = false;
+    case GM_KEY:
+    {
 
-					mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
-				}
+        if (param1 = GLFW_KEY_SPACE)
+        {
+            if (param3 == GLFW_PRESS)
+            {
+                mPressed = true;
+            }
+            if (param3 == GLFW_RELEASE)
+            {
+                mPressed = false;
 
-				return true;
-			}
+                mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
+            }
 
-			return true;
-		}
-	};
+            return true;
+        }
 
-	return false;
+        return true;
+    }
+    };
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFButton::Render(float elapsedTime)
+void GLUFButton::Render(float elapsedTime) noexcept
 {
+    NOEXCEPT_REGION_START
+
 	int nOffsetX = 0;
 	int nOffsetY = 0;
 
@@ -3362,7 +3429,7 @@ void GLUFButton::Render(float elapsedTime)
 	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
 	mDialog.DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
-	//m_pDialog->DrawText(m_strText, pElement, rcWindow, false, true);
+	//mDialog.DrawText(m_strText, pElement, rcWindow, false, true);
 
 	// Main button
 	pElement = mElements[1];
@@ -3371,14 +3438,16 @@ void GLUFButton::Render(float elapsedTime)
 	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
 	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-	m_pDialog->DrawSprite(pElement, rcWindow, GLUF_NEAR_BUTTON_DEPTH);
-	m_pDialog->DrawText(mText, pElement, rcWindow, false, true);
+	mDialog.DrawSprite(pElement, rcWindow, GLUF_NEAR_BUTTON_DEPTH);
+	mDialog.DrawText(mText, pElement, rcWindow, false, true);
+
+    NOEXCEPT_REGION_END
 }
 
 
 /*
 ======================================================================================================================================================================================================
-GLUFButton Functions
+GLUFCheckBox Functions
 
 
 */
@@ -3392,98 +3461,104 @@ GLUFCheckBox::GLUFCheckBox(const bool& checked, GLUFDialog& dialog) : GLUFButton
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFCheckBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFCheckBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	if (!mEnabled || !mVisible)
-		return false;
+    NOEXCEPT_REGION_START
 
-	GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
+    if (!mEnabled || !mVisible)
+        return false;
 
-	switch (msg)
-	{
+    GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
 
-	case GM_CURSOR_POS:
+    switch (msg)
+    {
 
-		if (mPressed)
-		{
-			//if the button is pressed and the mouse is moved off, then unpress it
-			if (!ContainsPoint(mousePos))
-			{
-				mPressed = false;
+    case GM_CURSOR_POS:
 
-				//ContainsPoint(mousePos);
+        if (mPressed)
+        {
+            //if the button is pressed and the mouse is moved off, then unpress it
+            if (!ContainsPoint(mousePos))
+            {
+                mPressed = false;
 
-				if (!mDialog.IsKeyboardInputEnabled())
-					mDialog.ClearFocus();
-			}
-		}
+                //ContainsPoint(mousePos);
 
-		break;
-	case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-	{
-		if (param2 == GLFW_PRESS)
-		{
-			if (ContainsPoint(mousePos))
-			{
-				// Pressed while inside the control
-				mPressed = true;
-				//SetCapture(GLUFGetHWND());
+                if (!mDialog.IsKeyboardInputEnabled())
+                    mDialog.ClearFocus();
+            }
+        }
 
-				if (!mHasFocus)
-					mDialog.RequestFocus(shared_from_this());
+        break;
+    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+    {
+        if (param2 == GLFW_PRESS)
+        {
+            if (ContainsPoint(mousePos))
+            {
+                // Pressed while inside the control
+                mPressed = true;
+                //SetCapture(GLUFGetHWND());
 
-				return true;
+                if (!mHasFocus)
+                    mDialog.RequestFocus(shared_from_this());
 
-			}
-		}
-		else if (param2 == GLFW_RELEASE)
-		{
-			if (mPressed && ContainsPoint(mousePos))
-			{
-				mPressed = false;
-				//ReleaseCapture();
+                return true;
 
-				if (!mDialog.IsKeyboardInputEnabled())
-					mDialog.ClearFocus();
+            }
+        }
+        else if (param2 == GLFW_RELEASE)
+        {
+            if (mPressed && ContainsPoint(mousePos))
+            {
+                mPressed = false;
+                //ReleaseCapture();
 
-				// Button click
-				if (ContainsPoint(mousePos))
-					SetCheckedInternal(!mChecked, true);
+                if (!mDialog.IsKeyboardInputEnabled())
+                    mDialog.ClearFocus();
 
-				return true;
-			}
+                // Button click
+                if (ContainsPoint(mousePos))
+                    SetCheckedInternal(!mChecked, true);
 
-		}
-		break;
-	}
+                return true;
+            }
 
-	case GM_KEY:
-	{
+        }
+        break;
+    }
 
-		if (param1 = GLFW_KEY_SPACE)
-		{
-			if (param3 == GLFW_PRESS)
-			{
-				mPressed = true;
-			}
-			if (param3 == GLFW_RELEASE)
-			{
-				mPressed = false;
+    case GM_KEY:
+    {
 
-				SetCheckedInternal(!mChecked, true);
-			}
+        if (param1 = GLFW_KEY_SPACE)
+        {
+            if (param3 == GLFW_PRESS)
+            {
+                mPressed = true;
+            }
+            if (param3 == GLFW_RELEASE)
+            {
+                mPressed = false;
 
-			return true;
-		}
+                SetCheckedInternal(!mChecked, true);
+            }
+
+            return true;
+        }
 
 
-		return true;
+        return true;
 
-		break;
-	}
-	};
+        break;
+    }
+    };
 
-	return false;
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 
@@ -3497,29 +3572,38 @@ void GLUFCheckBox::SetCheckedInternal(bool checked, bool fromInput)
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFCheckBox::ContainsPoint(const GLUF::GLUFPoint& pt) const
+bool GLUFCheckBox::ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept
 {
-	return (GLUFPtInRect(mRegion, pt) ||
-		GLUFPtInRect(mButtonRegion, pt));
+    NOEXCEPT_REGION_START
+
+    return (GLUFPtInRect(mRegion, pt) ||
+    GLUFPtInRect(mButtonRegion, pt));
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFCheckBox::UpdateRects()
+void GLUFCheckBox::UpdateRects() noexcept
 {
-	GLUFButton::UpdateRects();
+    NOEXCEPT_REGION_START
+
+    GLUFButton::UpdateRects();
 
     mButtonRegion = mRegion;
     mButtonRegion.right = mButtonRegion.left + GLUFRectHeight(mButtonRegion);
 
     mTextRegion = mRegion;
     GLUFOffsetRect(mTextRegion, GLUFRectWidth(mButtonRegion)/*1.25f*/, 0L);
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFCheckBox::Render(float elapsedTime)
+void GLUFCheckBox::Render(float elapsedTime) noexcept
 {
+    NOEXCEPT_REGION_START
 	GLUFControlState iState = GLUF_STATE_NORMAL;
 
 	if (mVisible == false)
@@ -3550,15 +3634,21 @@ void GLUFCheckBox::Render(float elapsedTime)
 		pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
 		mDialog.DrawSprite(pElement, mButtonRegion, GLUF_NEAR_BUTTON_DEPTH);
 	}
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFCheckBox::OnHotkey()
+void GLUFCheckBox::OnHotkey() noexcept
 {
+    NOEXCEPT_REGION_START
+
     if (mDialog.IsKeyboardInputEnabled())
         mDialog.RequestFocus(shared_from_this());
     SetCheckedInternal(!mChecked, true);
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -3572,133 +3662,1380 @@ Ended Here July 26 2015
 
 */
 
-//======================================================================================
-// GLUFRadioButton class
-//======================================================================================
 
-GLUFRadioButton::GLUFRadioButton( GLUFDialog* pDialog)
+/*
+======================================================================================================================================================================================================
+GLUFRadioButton Functions
+
+
+*/
+
+GLUFRadioButton::GLUFRadioButton(GLUFDialog& dialog) : GLUFCheckBox(false, dialog)
 {
-	m_Type = GLUF_CONTROL_RADIOBUTTON;
-	m_pDialog = pDialog;
+	mType = GLUF_CONTROL_RADIOBUTTON;
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFRadioButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFRadioButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	if (!m_bEnabled || !m_bVisible)
-		return false;
+    NOEXCEPT_REGION_START
 
-	GLUFPoint mousePos = m_pDialog->m_MousePositionDialogSpace;
+    if (!mEnabled || !mVisible)
+        return false;
 
-	switch (msg)
-	{
+    GLUFPoint mousePos = mDialog.GetMousePositionDialogSpace();
 
-	case GM_CURSOR_POS:
+    switch (msg)
+    {
 
-		if (m_bPressed)
-		{
-			//if the button is pressed and the mouse is moved off, then unpress it
-			if (!ContainsPoint(mousePos))
-			{
-				m_bPressed = false;
+    case GM_CURSOR_POS:
 
-				//ContainsPoint(mousePos);
+        if (mPressed)
+        {
+            //if the button is pressed and the mouse is moved off, then unpress it
+            if (!ContainsPoint(mousePos))
+            {
+                mPressed = false;
 
-				if (!m_pDialog->m_bKeyboardInput)
-					m_pDialog->ClearFocus();
-			}
-		}
+                if (!mDialog.IsKeyboardInputEnabled())
+                    mDialog.ClearFocus();
+            }
+        }
 
-		break;
-	case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-	{
-		if (param2 == GLFW_PRESS)
-		{
-			if (ContainsPoint(mousePos))
-			{
-				// Pressed while inside the control
-				m_bPressed = true;
-				//SetCapture(GLUFGetHWND());
+        break;
+    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+    {
+        if (param2 == GLFW_PRESS)
+        {
+            if (ContainsPoint(mousePos))
+            {
+                // Pressed while inside the control
+                mPressed = true;
+                //SetCapture(GLUFGetHWND());
 
-				if (!m_bHasFocus)
-					m_pDialog->RequestFocus(this);
+                if (!mHasFocus)
+                    mDialog.RequestFocus(shared_from_this());
 
-				return true;
+                return true;
 
-			}
-		}
-		else if (param2 == GLFW_RELEASE)
-		{
-			if (m_bPressed || !m_bChecked)
-			{
-				if (ContainsPoint(mousePos))
-				{
-					m_bPressed = false;
-					//ReleaseCapture();
+            }
+        }
+        else if (param2 == GLFW_RELEASE)
+        {
+            if (mPressed || !mChecked)
+            {
+                if (ContainsPoint(mousePos))
+                {
+                    mPressed = false;
 
-					SetCheckedInternal(true, true, true);
-					return true;
-				}
-			}
+                    SetCheckedInternal(true, true, true);
+                    return true;
+                }
+            }
 
-		}
-	}
-		break;
+        }
+    }
+    break;
 
-	case GM_KEY:
-	{
+    case GM_KEY:
+    {
 
-		if (param1 = GLFW_KEY_SPACE)
-		{
-			if (param3 == GLFW_PRESS)
-			{
-				m_bPressed = true;
-			}
-			else if (param3 == GLFW_RELEASE)
-			{
-				if (m_bChecked)
-					return false;
+        if (param1 = GLFW_KEY_SPACE)
+        {
+            if (param3 == GLFW_PRESS)
+            {
+                mPressed = true;
+            }
+            else if (param3 == GLFW_RELEASE)
+            {
+                if (mChecked)
+                    return false;
 
-				m_bPressed = false;
+                mPressed = false;
 
-				SetCheckedInternal(true, true, true);
-			}
-		}
+                SetCheckedInternal(true, true, true);
+            }
+        }
 
 
-		return true;
+        return true;
 
-		break;
-	}
-	};
+        break;
+    }
+    };
 
-	return false;
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFRadioButton::SetCheckedInternal(bool checked, bool clearGroup, bool fromInput)
+{
+    if (checked && clearGroup)
+		mDialog.ClearRadioButtonGroup(mButtonGroup);
+
+	mChecked = checked;
+	mDialog.SendEvent(GLUF_EVENT_RADIOBUTTON_CHANGED, fromInput, shared_from_this());
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFRadioButton::OnHotkey() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    if (mDialog.IsKeyboardInputEnabled())
+        mDialog.RequestFocus(shared_from_this());
+
+    SetCheckedInternal(true, true, true);
+
+    NOEXCEPT_REGION_END
+}
+
+
+/*
+======================================================================================================================================================================================================
+GLUFScrollBar Functions
+
+
+*/
+
+GLUFScrollBar::GLUFScrollBar(GLUFDialog& dialog) : GLUFControl(dialog)
+{
+    mType = GLUF_CONTROL_SCROLLBAR;
+
+    mShowThumb = true;
+    mDrag = false;
+
+    GLUFSetRect(mUpButtonRegion, 0, 0, 0, 0);
+    GLUFSetRect(mDownButtonRegion, 0, 0, 0, 0);
+    GLUFSetRect(mTrackRegion, 0, 0, 0, 0);
+    GLUFSetRect(mThumbRegion, 0, 0, 0, 0);
+    mPosition = 0;
+    mPageSize = 1;
+    mStart = 0;
+    mEnd = 1;
+    mArrow = CLEAR;
+    mArrowTS = 0.0;
+}
+
+
+//--------------------------------------------------------------------------------------
+GLUFScrollBar::~GLUFScrollBar()
+{
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFScrollBar::UpdateRects() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    GLUFControl::UpdateRects();
+
+    // Make the buttons square
+
+    GLUFSetRect(mUpButtonRegion, mRegion.left, mRegion.top,
+        mRegion.right, mRegion.top - GLUFRectWidth(mRegion));
+    //GLUFOffsetRect(mDownButtonRegion, 0.0f, GLUFRectHeight(mDownButtonRegion));
+
+    GLUFSetRect(mDownButtonRegion, mRegion.left, mRegion.bottom + GLUFRectWidth(mRegion),
+        mRegion.right, mRegion.bottom);
+    //GLUFOffsetRect(mDownButtonRegion, 0.0f, GLUFRectHeight(mDownButtonRegion));
+
+    GLUFSetRect(mTrackRegion, mUpButtonRegion.left, mUpButtonRegion.bottom,
+        mDownButtonRegion.right, mDownButtonRegion.top);
+    //GLUFOffsetRect(mDownButtonRegion, 0.0f, GLUFRectHeight(mDownButtonRegion));
+
+    mThumbRegion.left = mUpButtonRegion.left;
+    mThumbRegion.right = mUpButtonRegion.right;
+
+    UpdateThumbRect();
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+// Compute the dimension of the scroll thumb
+void GLUFScrollBar::UpdateThumbRect()
+{
+    //TODO: fix bug where the icon can go just below the max it should
+    if (mEnd - mStart > mPageSize)
+    {
+        int nThumbHeight = std::clamp((int)GLUFRectHeight(mTrackRegion) * mPageSize / (mEnd - mStart),
+            SCROLLBAR_MINTHUMBSIZE, (int)GLUFRectHeight(mTrackRegion));
+        int nMaxPosition = mEnd - mStart - mPageSize + 1;
+        mThumbRegion.top = mTrackRegion.top - (mPosition - mStart) * (GLUFRectHeight(mTrackRegion) - nThumbHeight)
+            / nMaxPosition;
+        mThumbRegion.bottom = mThumbRegion.top - nThumbHeight;
+        mShowThumb = true;
+
+    }
+    else
+    {
+        // No content to scroll
+        mThumbRegion.bottom = mThumbRegion.top;
+        mShowThumb = false;
+    }
+}
+
+
+//--------------------------------------------------------------------------------------
+// Scroll() scrolls by nDelta items.  A positive value scrolls down, while a negative
+// value scrolls up.
+void GLUFScrollBar::Scroll(int nDelta)
+{
+    // Perform scroll
+    mPosition += nDelta;
+
+    // Cap position
+    Cap();
+
+    // Update thumb position
+    UpdateThumbRect();
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFScrollBar::ShowItem(int nIndex)
+{
+    // Cap the index
+
+    nIndex = std::clamp(nIndex, 0, mEnd - 1);
+
+    // Adjust position
+
+    if (mPosition > nIndex)
+        mPosition = nIndex;
+    else if (mPosition + mPageSize <= nIndex)
+        mPosition = nIndex - mPageSize + 1;
+
+    UpdateThumbRect();
 }
 
 //--------------------------------------------------------------------------------------
 
-void GLUFRadioButton::SetCheckedInternal(bool bChecked, bool bClearGroup, bool bFromInput)
+bool GLUFScrollBar::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	if (bChecked && bClearGroup)
-		m_pDialog->ClearRadioButtonGroup(m_nButtonGroup);
+    //UNREFERENCED_PARAMETER(wParam);
 
-	m_bChecked = bChecked;
-	m_pDialog->SendEvent(GLUF_EVENT_RADIOBUTTON_CHANGED, bFromInput, this);
+    NOEXCEPT_REGION_START
+
+    if (GM_FOCUS == msg && param1 == GL_FALSE)
+    {
+        // The application just lost mouse capture. We may not have gotten
+        // the WM_MOUSEUP message, so reset mDrag here.
+        //if ((HWND)lParam != GLUFGetHWND())
+        mDrag = false;
+    }
+    static int nThumbYOffset;
+
+    GLUFPoint pt = mDialog.GetMousePositionDialogSpace();
+    mPreviousMousePos = pt;
+
+
+    //if the mousebutton is NOT PRESSED, the stop scrolling(since this does not get the mouse release button if it is not over the control)
+    //int mbPressed = glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT);
+    //if (mbPressed == GLFW_RELEASE)
+    //	mDrag = false;
+
+    switch (msg)
+    {
+    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+        if (param2 == GLFW_PRESS)
+        {
+            // Check for click on up button
+
+            if (GLUFPtInRect(mUpButtonRegion, pt))
+            {
+                //SetCapture(GLUFGetHWND());
+                if (mPosition > mStart)
+                    --mPosition;
+
+                UpdateThumbRect();
+                mArrow = CLICKED_UP;
+                mArrowTS = GLUFGetTime();
+                return true;
+            }
+
+            // Check for click on down button
+
+            if (GLUFPtInRect(mDownButtonRegion, pt))
+            {
+                //SetCapture(GLUFGetHWND());
+                if (mPosition + mPageSize <= mEnd)
+                    ++mPosition;
+
+                UpdateThumbRect();
+                mArrow = CLICKED_DOWN;
+                mArrowTS = GLUFGetTime();
+                return true;
+            }
+
+            // Check for click on thumb
+
+            if (GLUFPtInRect(mThumbRegion, pt))
+            {
+                //SetCapture(GLUFGetHWND());
+                mDrag = true;
+                nThumbYOffset = mThumbRegion.top - pt.y;
+                return true;
+            }
+
+            // Check for click on track
+
+            if (mThumbRegion.left <= pt.x &&
+                mThumbRegion.right > pt.x)
+            {
+                //SetCapture(GLUFGetHWND());
+                if (mThumbRegion.top > pt.y &&
+                    mTrackRegion.top <= pt.y)
+                {
+                    Scroll(-(mPageSize - 1));
+                    return true;
+                }
+                else if (mThumbRegion.bottom <= pt.y &&
+                    mTrackRegion.bottom > pt.y)
+                {
+                    Scroll(mPageSize - 1);
+                    return true;
+                }
+            }
+
+            break;
+        }
+        else if (param2 == GLFW_RELEASE)
+        {
+            mDrag = false;
+            //ReleaseCapture();
+            UpdateThumbRect();
+            mArrow = CLEAR;
+            break;
+        }
+
+    case GM_CURSOR_POS:
+    {
+        if (mDrag)
+        {
+            static int nThumbHeight;
+            nThumbHeight = GLUFRectHeight(mThumbRegion);
+
+            mThumbRegion.top = pt.y + nThumbYOffset;
+            mThumbRegion.bottom = mThumbRegion.top - nThumbHeight;
+            if (mThumbRegion.top > mTrackRegion.top)
+                GLUFOffsetRect(mThumbRegion, 0, -(mThumbRegion.top - mTrackRegion.top));
+            else if (mThumbRegion.bottom < mTrackRegion.bottom)
+                GLUFOffsetRect(mThumbRegion, 0, -(mThumbRegion.bottom - mTrackRegion.bottom));
+
+            // Compute first item index based on thumb position
+
+            int nMaxFirstItem = mEnd - mStart - mPageSize + 1;  // Largest possible index for first item
+            int nMaxThumb = GLUFRectHeight(mTrackRegion) - GLUFRectHeight(mThumbRegion);  // Largest possible thumb position from the top
+
+            mPosition = mStart + int(((mTrackRegion.top - mThumbRegion.top) * (float)nMaxFirstItem) / nMaxThumb);
+            /*(mTrackRegion.top - mThumbRegion.top +
+            nMaxThumb / (nMaxFirstItem * 2)) * // Shift by half a row to avoid last row covered by only one pixel
+            nMaxFirstItem / nMaxThumb;*/
+
+            return true;
+        }
+
+        break;
+    }
+    }
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 
-//======================================================================================
-// GLUFComboBox class
-//======================================================================================
-
-GLUFComboBox::GLUFComboBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
+//--------------------------------------------------------------------------------------
+void GLUFScrollBar::Render(float elapsedTime) noexcept
 {
-	m_Type = GLUF_CONTROL_COMBOBOX;
-	m_pDialog = pDialog;
+    NOEXCEPT_REGION_START
+
+    if (mVisible == false)
+        return;
+
+    // Check if the arrow button has been held for a while.
+    // If so, update the thumb position to simulate repeated
+    // scroll.
+    if (mArrow != CLEAR)
+    {
+        double dCurrTime = GLUFGetTime();
+        if (GLUFPtInRect(mUpButtonRegion, mPreviousMousePos))
+        {
+            switch (mArrow)
+            {
+            case CLICKED_UP:
+                if (SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - mArrowTS)
+                {
+                    Scroll(-1);
+                    mArrow = HELD_UP;
+                    mArrowTS = dCurrTime;
+                }
+                break;
+            case HELD_UP:
+                if (SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - mArrowTS)
+                {
+                    Scroll(-1);
+                    mArrowTS = dCurrTime;
+                }
+                break;
+            }
+        }
+        else if (GLUFPtInRect(mDownButtonRegion, mPreviousMousePos))
+        {
+            switch (mArrow)
+            {
+            case CLICKED_DOWN:
+                if (SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - mArrowTS)
+                {
+                    Scroll(1);
+                    mArrow = HELD_DOWN;
+                    mArrowTS = dCurrTime;
+                }
+                break;
+            case HELD_DOWN:
+                if (SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - mArrowTS)
+                {
+                    Scroll(1);
+                    mArrowTS = dCurrTime;
+                }
+                break;
+            }
+        }
+    }
+
+    GLUFControlState iState = GLUF_STATE_NORMAL;
+
+    if (mVisible == false)
+        iState = GLUF_STATE_HIDDEN;
+    else if (mEnabled == false || mShowThumb == false)
+        iState = GLUF_STATE_DISABLED;
+    else if (mMouseOver)
+        iState = GLUF_STATE_MOUSEOVER;
+    else if (mHasFocus)
+        iState = GLUF_STATE_FOCUS;
+
+
+    float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+
+    // Background track layer
+    GLUFElementPtr pElement = mElements[0];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    mDialog.DrawSprite(pElement, mTrackRegion, GLUF_FAR_BUTTON_DEPTH);
+
+
+    GLUFControlState iArrowState = iState;
+    //if it is all the way at the top, then disable
+    if (mPosition == 0 && iState != GLUF_STATE_HIDDEN)
+        iArrowState = GLUF_STATE_DISABLED;
+
+    // Up Arrow
+    pElement = mElements[1];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iArrowState, elapsedTime, fBlendRate);
+    mDialog.DrawSprite(pElement, mUpButtonRegion, GLUF_NEAR_BUTTON_DEPTH);
+
+
+    //similar with the bottom
+    iArrowState = iState;
+    if ((mPosition + mPageSize - 1 == mEnd && iState != GLUF_STATE_HIDDEN) || mEnd == 1/*when no scrolling is necesary*/)
+        iArrowState = GLUF_STATE_DISABLED;
+
+    // Down Arrow
+    pElement = mElements[2];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iArrowState, elapsedTime, fBlendRate);
+    mDialog.DrawSprite(pElement, mDownButtonRegion, GLUF_NEAR_BUTTON_DEPTH);
+
+    // Thumb button
+    pElement = mElements[3];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    mDialog.DrawSprite(pElement, mThumbRegion, GLUF_NEAR_BUTTON_DEPTH);
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFScrollBar::SetTrackRange(int nStart, int nEnd) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mStart = nStart; mEnd = nEnd;
+    Cap();
+    UpdateThumbRect();
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFScrollBar::Cap()  // Clips position at boundaries. Ensures it stays within legal range.
+{
+    if (mPosition < mStart ||
+        mEnd - mStart <= mPageSize)
+    {
+        mPosition = mStart;
+    }
+    else if (mPosition + mPageSize > mEnd)
+        mPosition = mEnd - mPageSize + 1;
+}
+
+
+/*
+======================================================================================================================================================================================================
+GLUFListBox Functions
+
+
+*/
+
+GLUFListBox::GLUFListBox(GLUFDialog& dialog) : mScrollBar(std::make_shared<GLUFScrollBar>(dialog)), GLUFControl(dialog)
+{
+    mType = GLUF_CONTROL_LISTBOX;
+
+    GLUFPoint pt = mDialog.GetManager()->GetWindowSize();
+
+    mStyle = 0;
+    mSBWidth = 16;
+    mSelected.push_back(-1);
+    mDrag = false;
+    mVerticalMargin = 6;
+    mHorizontalMargin = 5;
+    mTextHeight = 20;
+}
+
+
+//--------------------------------------------------------------------------------------
+GLUFListBox::~GLUFListBox()
+{
+    RemoveAllItems();
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::UpdateRects() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    GLUFControl::UpdateRects();
+
+    GLUFFontNodePtr pFont = mDialog.GetFont(GetElement(0)->mFontIndex);
+    mTextHeight = pFont->mLeading;
+
+    mSelectionRegion = mRegion;
+    mSelectionRegion.right -= mSBWidth;
+    GLUFInflateRect(mSelectionRegion, -mHorizontalMargin, -mVerticalMargin);
+    mTextRegion = mSelectionRegion;
+    GLUFInflateRect(mTextRegion, -mHorizontalMargin, mVerticalMargin);
+
+    // Update the scrollbar's rects
+    //mScrollBar->SetLocation(mRegion.right - mSBWidth, mRegion.top);
+    //mScrollBar->SetSize(mSBWidth, m_height);
+
+    mScrollBar->SetLocation(mRegion.right, mRegion.bottom);
+    mScrollBar->SetSize(mSBWidth, GLUFRectHeight(mRegion));
+    GLUFRect tmpRegion = mScrollBar->GetRegion();
+    tmpRegion.y = mTextRegion.top;
+    mScrollBar->SetRegion(tmpRegion);
+    GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
+    if (pFontNode && pFontNode->mFontType->mHeight)
+    {
+        mScrollBar->SetPageSize(int(GLUFRectHeight(mTextRegion) / pFontNode->mLeading));
+
+        // The selected item may have been scrolled off the page.
+        // Ensure that it is in page again.
+        mScrollBar->ShowItem(mSelected[mSelected.size() - 1]);
+    }
+
+    UpdateItemRects();
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+
+void GLUFListBox::AddItem(const std::wstring& text, GLUFGenericData& data) noexcept
+{
+    InsertItem(mItems.size(), text, data);
+}
+
+
+//--------------------------------------------------------------------------------------
+
+void GLUFListBox::InsertItem(GLUFIndex index, const std::wstring& text, GLUFGenericData& data) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    auto newItem = std::make_shared<GLUFListBoxItem>();
+
+    //clear the selection vector
+    mSelected.clear();//this makes it so we do not have to offset the selection
+    mSelected.push_back(-1);
+
+    //wcscpy_s(pNewItem->mText, 256, wszText);
+    newItem->mText = text;
+    newItem->mData = data;
+    GLUFSetRect(newItem->mActiveRegion, 0, 0, 0, 0);
+    //pNewItem->bSelected = false;
+
+    if (index >= mItems.size())
+    {
+        mItems.push_back(nullptr);
+        index = mItems.size() - 1;
+    }
+
+    mItems[index] = newItem;
+    mScrollBar->SetTrackRange(0, (int)mItems.size());
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::RemoveItem(GLUFIndex index) noexcept
+{
+    if (index >= (int)mItems.size())
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Attempt To Remove List Box Item Out Of Range"));
+        return;
+    }
+
+    auto it = mItems.begin() + index;
+    mItems.erase(it);
+    mScrollBar->SetTrackRange(0, (int)mItems.size());
+    if (mSelected[0] >= (int)mItems.size())
+        mSelected[0] = int(mItems.size()) - 1;
+
+    mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::RemoveAllItems() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mItems.clear();
+    mScrollBar->SetTrackRange(0, 1);
+    mSelected.clear();
+    //mSelected.push_back(-1);  
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+GLUFListBoxItemPtr GLUFListBox::GetItem(const std::wstring& text, GLUFIndex start) const
+{
+    for (auto it : mItems)
+    {
+        if (it->mText == text)
+            return it;
+    }
+
+    return nullptr;
+}
+
+//--------------------------------------------------------------------------------------
+GLUFIndex GLUFListBox::GetSelectedIndex(GLUFIndex previousSelected) const
+{
+    if (mStyle & MULTISELECTION)
+    {
+        // Multiple selection enabled. Search for the next item with the selected flag.
+        /*for (int i = nPreviousSelected + 1; i < (int)mItems.size(); ++i)
+        {
+        GLUFListBoxItemPtr pItem = mItems[i];
+
+        if (pItem->bSelected)
+        return i;
+        }*/
+
+        auto in = std::find(mSelected.begin(), mSelected.end(), previousSelected) + 1;
+        if (in == mSelected.end())
+            throw NoItemSelectedException();
+
+        return *in;
+    }
+    else
+    {
+        // Single selection
+        return GetSelectedIndex();
+    }
+}
+
+//--------------------------------------------------------------------------------------
+GLUFIndex GLUFListBox::GetSelectedIndex() const
+{
+    if (mSelected.size() == 0)
+        throw NoItemSelectedException();
+
+    return mSelected[0];
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::SelectItem(GLUFIndex index)
+{
+    // If no item exists, do nothing.
+    if (index >= mItems.size())
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Item To Select Does Not Exist"));
+        return;
+    }
+
+    int nOldSelected = mSelected[0];
+
+    // Adjust m_nSelected
+    mSelected[0] = index;
+
+    // Perform capping
+    if (mSelected[0] < 0)
+        mSelected[0] = 0;
+    if (mSelected[0] >= (int)mItems.size())
+        mSelected[0] = int(mItems.size()) - 1;
+
+    if (nOldSelected != mSelected[0])
+    {
+        index = mSelected[0];
+        mSelected.clear();
+        mSelected.push_back(index);
+
+        // Adjust scroll bar
+        mScrollBar->ShowItem(mSelected[mSelected.size() - 1]);
+    }
+
+    mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::SelectItem(const std::wstring& text, GLUFIndex start)
+{
+    for (unsigned int i = start; i < mItems.size(); ++i)
+    {
+        if (mItems[i]->mText == text)
+        {
+            SelectItem(i);
+            return;
+        }
+    }
+
+    //get to this point, then text is not found
+    GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"text\" not found in mSelected in GLUFListBox"));
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::ClearSelected() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mSelected.clear();
+
+    NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+bool GLUFListBox::ContainsItem(const std::wstring& text, GLUFIndex start) const noexcept
+{
+    NOEXCEPT_REGION_START
+
+    for (auto it : mItems)
+    {
+        if (it->mText == text)
+            return true;
+    }
+
+    return false;
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+bool GLUFListBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
+{
+    NOEXCEPT_REGION_START
+
+
+    if (GM_FOCUS == msg && param1 == GL_FALSE)
+    {
+        // The application just lost mouse capture. We may not have gotten
+        // the WM_MOUSEUP message, so reset mDrag here.
+        mDrag = false;
+    }
+
+    GLUFPoint pt = mDialog.GetMousePositionDialogSpace();
+
+    if (!mEnabled || !mVisible)
+        return false;
+
+    // First acquire focus
+    if (GM_MB == msg && param1 == GLFW_MOUSE_BUTTON_LEFT && param2 == GLFW_PRESS)
+        if (!mHasFocus)
+            mDialog.RequestFocus(shared_from_this());
+
+    // Let the scroll bar have a chance to handle it first
+    if (mScrollBar->MsgProc(GLUF_PASS_CALLBACK_PARAM))
+        return true;
+
+    switch (msg)
+    {
+    case GM_KEY:
+        if (param3 == GLFW_RELEASE)
+        {
+            switch (param1)
+            {
+            case GLFW_KEY_UP:
+            case GLFW_KEY_DOWN:
+            case GLFW_KEY_PAGE_DOWN:
+            case GLFW_KEY_PAGE_UP:
+            case GLFW_KEY_HOME:
+            case GLFW_KEY_END:
+            {
+                // If no item exists, do nothing.
+                if (mItems.size() == 0)
+                    return true;
+
+                int nOldSelected = mSelected[0];
+                mSelected.clear();
+                mSelected.push_back(nOldSelected);
+
+                // Adjust m_nSelected
+                switch (param1)
+                {
+                case GLFW_KEY_UP:
+                    --mSelected[0]; break;
+                case GLFW_KEY_DOWN:
+                    ++mSelected[0]; break;
+                case GLFW_KEY_PAGE_DOWN:
+                    mSelected[0] += mScrollBar->GetPageSize() - 1; break;
+                case GLFW_KEY_PAGE_UP:
+                    mSelected[0] -= mScrollBar->GetPageSize() - 1; break;
+                case GLFW_KEY_HOME:
+                    mSelected[0] = 0; break;
+                case GLFW_KEY_END:
+                    mSelected[0] = int(mItems.size()) - 1; break;
+                }
+
+                // Perform capping
+                if (mSelected[0] < 0)
+                    mSelected[0] = 0;
+                if (mSelected[0] >= (int)mItems.size())
+                    mSelected[0] = int(mItems.size()) - 1;
+
+                if (nOldSelected != mSelected[0])
+                {
+                    if (mStyle & MULTISELECTION)
+                    {
+                        // Multiple selection
+
+                        // Clear all selection
+                        /*for (int i = 0; i < (int)mItems.size(); ++i)
+                        {
+                        GLUFListBoxItemPtr pItem = mItems[i];
+                        pItem->bSelected = false;
+                        }
+
+                        mSelected.clear();
+
+                        if (param4 & GLFW_MOD_SHIFT)
+                        {
+                        // Select all items from m_nSelStart to
+                        // m_nSelected
+                        int nEnd = mSelected[mSelected.size() - 1];//std::max(m_nSelStart, m_nSelected);
+
+                        for (int n = mSelected[0]; n <= nEnd; ++n)
+                        mItems[n]->bSelected = true;
+                        }
+                        else
+                        {
+                        mItems[mSelected[0]]->bSelected = true;
+
+                        // Update selection start
+                        //m_nSelStart = m_nSelected;
+                        }*/
+
+                        //TODO: key callback
+                    }
+                    else;
+                    //m_nSelStart = m_nSelected;
+
+                    // Adjust scroll bar
+
+                    mScrollBar->ShowItem(mSelected[0]);
+
+                    // Send notification
+
+                    mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+                }
+                return true;
+            }
+
+            // Space is the hotkey for double-clicking an item.
+            //
+            case GLFW_KEY_SPACE:
+                mDialog.SendEvent(GLUF_EVENT_LISTBOX_ITEM_DBLCLK, true, shared_from_this());
+                return true;
+            }
+        }
+        break;
+        //case WM_LBUTTONDOWN:
+        //case WM_LBUTTONDBLCLK:
+    case GM_MB:
+        if (param2 == GLFW_PRESS)
+        {
+            // Check for clicks in the text area
+            if (!mItems.empty() && GLUFPtInRect(mSelectionRegion, pt))
+            {
+                // Compute the index of the clicked item
+
+                //int nClicked;
+                //mDialog.GetManager()->GetFontNode(p
+                //nClicked = int(mScrollBar->GetTrackPos() + (pt.y - mTextRegion.top) / m_fTextHeight);
+
+                // Only proceed if the click falls on top of an item.
+
+                /*if (nClicked >= mScrollBar->GetTrackPos() &&
+                nClicked < (int)mItems.size() &&
+                nClicked < mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+                {
+                //SetCapture(GLUFGetHWND());
+                mDrag = true;
+
+                // If this is a double click, fire off an event and exit
+                // since the first click would have taken care of the selection
+                // updating.
+                //TODO: handle doubleclicking
+                if (uMsg == WM_LBUTTONDBLCLK)
+                {
+                mDialog.SendEvent(GLUF_EVENT_LISTBOX_ITEM_DBLCLK, true, this);
+                return true;
+                }
+
+                m_nSelected = nClicked;
+                if (!(param3 & GLFW_MOD_SHIFT))
+                m_nSelStart = m_nSelected;*/
+
+                // If this is a multi-selection listbox, update per-item
+                // selection data.
+
+                GLUFIndex currSelectedIndex = 0;
+
+                //the easy way
+                for (unsigned int it = 0; it < mItems.size(); ++it)
+                {
+                    if (GLUFPtInRect(mItems[it]->mActiveRegion, pt))
+                    {
+                        currSelectedIndex = it;
+                        break;
+                    }
+                }
+
+                if (mStyle & MULTISELECTION)
+                {
+                    // Determine behavior based on the state of Shift and Ctrl
+
+                    //GLUFListBoxItemPtr pSelItem = mItems[currSelectedIndex];
+                    if (param3 & GLFW_MOD_CONTROL)
+                    {
+                        // Control click. Reverse the selection of this item.
+
+                        //pSelItem->bSelected = !pSelItem->bSelected;
+                        auto it = std::find(mSelected.begin(), mSelected.end(), currSelectedIndex);
+                        if (it == mSelected.end())
+                        {
+                            mSelected.push_back(currSelectedIndex);
+                        }
+                        else
+                        {
+                            mSelected.erase(it);//this should never fail
+
+                            //make sure that if it is the last one, then add the -1
+                            /*if (mSelected.size() == 0)
+                            {
+                            mSelected.push_back(-1);
+                            }*/
+                        }
+                    }
+                    else if (param3 & GLFW_MOD_SHIFT)
+                    {
+                        // Shift click. Set the selection for all items
+                        // from last selected item to the current item.
+                        // Clear everything else.
+
+                        //if (mSelected[0] == -1)
+                        //    mSelected[0] = 0;//this just fixes any issues with accidently keeping -1 in here
+
+                        GLUFIndex nBegin = mSelected[0];
+                        GLUFIndex nEnd = currSelectedIndex;
+
+                        mSelected.clear();
+
+                        /*for (int i = 0; i < nBegin; ++i)
+                        {
+                        GLUFListBoxItemPtr pItem = mItems[i];
+                        pItem->bSelected = false;
+                        }
+
+                        for (int i = nEnd + 1; i < (int)mItems.size(); ++i)
+                        {
+                        GLUFListBoxItemPtr pItem = mItems[i];
+                        pItem->bSelected = false;
+                        }*/
+
+                        if (nBegin < nEnd)
+                        {
+                            for (int i = nBegin; i <= nEnd; ++i)
+                            {
+                                /*GLUFListBoxItemPtr pItem = mItems[i];
+                                pItem->bSelected = true;
+                                */
+                                mSelected.push_back(i);
+                            }
+                        }
+                        else if (nBegin > nEnd)
+                        {
+                            for (int i = nBegin; i >= nEnd; --i)
+                            {
+                                /*GLUFListBoxItemPtr pItem = mItems[i];
+                                pItem->bSelected = true;
+                                */
+                                mSelected.push_back(i);
+                            }
+                        }
+                        /*else
+                        {
+                        mSelected.push_back(-1);
+                        */
+                    }
+                    else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL))
+                    {
+                        //No one uses shift control anyway (i see no use in it
+
+                        // Control-Shift-click.
+
+                        // The behavior is:
+                        //   Set all items from m_nSelStart to m_nSelected to
+                        //     the same state as m_nSelStart, not including m_nSelected.
+                        //   Set m_nSelected to selected.
+
+                        /*int nBegin = mSelected[0];
+                        int nEnd = currSelectedIndex;
+                        mSelected.clear();
+
+                        // The two ends do not need to be set here.
+
+                        bool bLastSelected = mItems[nBegin]->bSelected;
+                        for (int i = nBegin + 1; i < nEnd; ++i)
+                        {
+                        GLUFListBoxItemPtr pItem = mItems[i];
+                        pItem->bSelected = bLastSelected;
+
+                        mSelected.push_back(i);
+                        }
+
+                        pSelItem->bSelected = true;*/
+
+                        // Restore m_nSelected to the previous value
+                        // This matches the Windows behavior
+
+                        //m_nSelected = m_nSelStart;
+                    }
+                    else
+                    {
+                        // Simple click.  Clear all items and select the clicked
+                        // item.
+
+
+                        /*for (int i = 0; i < (int)mItems.size(); ++i)
+                        {
+                        GLUFListBoxItemPtr pItem = mItems[i];
+                        pItem->bSelected = false;
+                        }
+
+                        pSelItem->bSelected = true;
+                        */
+
+                        mSelected.clear();
+                        mSelected.push_back(currSelectedIndex);
+
+                        //NOTE: clicking not on an item WILL lead to a clearing of the selection
+                    }
+                }  // End of multi-selection case
+                else
+                {
+                    mSelected[0] = currSelectedIndex;
+                }
+
+                //always make sure we have one
+                //if (mSelected.size() == 0)
+                //    mSelected.push_back(-1);
+
+                //sort it for proper functionality when using shift-clicking (NOT HELPFUL)
+                //std::sort(mSelected.begin(), mSelected.end());
+
+                mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+
+
+                return true;
+            }
+            break;
+        }
+        else
+        {
+            //TODO: drag click
+            //ReleaseCapture();
+            /*mDrag = false;
+
+            if (mSelected[0] != -1)
+            {
+            // Set all items between m_nSelStart and m_nSelected to
+            // the same state as m_nSelStart
+            int nEnd = mSelected[mSelected.size() - 1];
+
+            for (int n = mSelected[0] + 1; n < nEnd; ++n)
+            mItems[n]->bSelected = mItems[mSelected[0]]->bSelected;
+            mItems[mSelected[0]]->bSelected = mItems[mSelected[0]]->bSelected;
+
+            // If m_nSelStart and m_nSelected are not the same,
+            // the user has dragged the mouse to make a selection.
+            // Notify the application of this.
+            if (mSelected[0] != mSelected[mSelected.size() - 1])
+            mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
+
+            mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION_END, true, this);
+            }*/
+            return false;
+        }
+
+    case GM_CURSOR_POS:
+        /*if (mDrag)
+        {
+        // Compute the index of the item below cursor
+
+        int nItem = -1;
+        for (unsigned int it = 0; it < mItems.size(); ++it)
+        {
+        if (GLUFPtInRect(mItems[it]->mActiveRegion, pt))
+        {
+        nItem = it;
+        break;
+        }
+        }
+
+        // Only proceed if the cursor is on top of an item.
+
+        if (nItem >= (int)mScrollBar->GetTrackPos() &&
+        nItem < (int)mItems.size() &&
+        nItem < mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+        {
+        mSelected[0] = nItem;
+        mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
+        }
+        else if (nItem < (int)mScrollBar->GetTrackPos())
+        {
+        // User drags the mouse above window top
+        mScrollBar->Scroll(-1);
+        mSelected[0] = mScrollBar->GetTrackPos();
+        mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
+        }
+        else if (nItem >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+        {
+        // User drags the mouse below window bottom
+        mScrollBar->Scroll(1);
+        mSelected[0] = std::min((int)mItems.size(), mScrollBar->GetTrackPos() +
+        mScrollBar->GetPageSize()) - 1;
+        mDialog.SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
+        }
+        }*/
+        break;
+
+    case GM_SCROLL:
+        //UINT uLines = 0;
+        //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
+        //	uLines = 0;
+        //int nScrollAmount = int((short)HIWORD(wParam)) / WHEEL_DELTA * uLines;
+        mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        return true;
+    }
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::UpdateItemRects() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    GLUFFontNodePtr pFont = mDialog.GetFont(GetElement(0)->mFontIndex);
+    if (pFont)
+    {
+        int curY = mTextRegion.top - pFont->mLeading / 2;// +((mScrollBar->GetTrackPos() - 1) * pFont->mSize);
+        int nRemainingHeight = GLUFRectHeight(mRegion) - pFont->mLeading;
+
+
+        //int nRemainingHeight = GLUFRectHeight(mRegion) - pFont->mLeading;
+
+        //for all of the ones before the displayed, just set them to something impossible
+        for (size_t i = 0; i < (size_t)mScrollBar->GetTrackPos(); ++i)
+        {
+            GLUFSetRect(mItems[i]->mActiveRegion, 0, 0, 0, 0);
+        }
+        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
+        {
+            GLUFListBoxItemPtr pItem = mItems[i];
+
+            // Make sure there's room left in the box
+            nRemainingHeight -= pFont->mLeading;
+            if (nRemainingHeight - mVerticalMargin <= 0)
+            {
+                pItem->mVisible = false;
+                continue;
+            }
+
+            pItem->mVisible = true;
+
+            GLUFSetRect(pItem->mActiveRegion, mRegion.left + mHorizontalMargin, curY + mVerticalMargin, mRegion.right - mHorizontalMargin, curY - pFont->mFontType->mHeight - mVerticalMargin);
+            curY -= pFont->mLeading;
+        }
+    }
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFListBox::Render(float elapsedTime) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    if (mVisible == false)
+        return;
+
+    GLUFElementPtr pElement = mElements[0];
+    pElement->mTextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
+    pElement->mFontColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
+
+    GLUFElementPtr pSelElement = mElements[1];
+    pSelElement->mTextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
+    pSelElement->mFontColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
+
+    mDialog.DrawSprite(pElement, mRegion, GLUF_FAR_BUTTON_DEPTH);
+
+    GLUFFontNodePtr pFont = mDialog.GetManager()->GetFontNode(pElement->mFontIndex);
+    // Render the text
+    if (!mItems.empty() && pFont)
+    {
+
+        UpdateItemRects();
+
+        static bool bSBInit;
+        if (!bSBInit)
+        {
+            // Update the page size of the scroll bar
+            if (mTextHeight > 0)
+                mScrollBar->SetPageSize(int((GLUFRectHeight(mRegion) - (2 * mVerticalMargin)) / mTextHeight) + 1);
+            else
+                mScrollBar->SetPageSize(0);
+            bSBInit = true;
+        }
+
+        for (int i = mScrollBar->GetTrackPos(); i < (int)mItems.size(); ++i)
+        {
+
+            GLUFListBoxItemPtr pItem = mItems[i];
+
+            if (!pItem->mVisible)
+                continue;
+
+            // Determine if we need to render this item with the
+            // selected element.
+            bool bSelectedStyle = false;
+
+            //mItems[i]->bSelected = false;
+
+            if (!(mStyle & MULTISELECTION) && i == mSelected[0])
+                bSelectedStyle = true;
+            else if (mStyle & MULTISELECTION)
+            {
+                for (auto it : mSelected)
+                    if (i == it)
+                        bSelectedStyle = true;
+
+
+                /*if (mDrag &&
+                ((i >= mSelected[0] && i < mSelected[0]) ||
+                (i <= mSelected[0] && i > mSelected[0])))
+                bSelectedStyle = mItems[mSelected[0]]->bSelected;
+                else if (pItem->bSelected)
+                bSelectedStyle = true;*/
+            }
+
+            //bSelectedStyle = mItems[i]->bSelected;
+            if (bSelectedStyle)
+            {
+                //rcSel.top = rc.top; rcSel.bottom = rc.bottom;
+                mDialog.DrawSprite(pSelElement, pItem->mActiveRegion, GLUF_NEAR_BUTTON_DEPTH);
+                mDialog.DrawText(pItem->mText, pSelElement, pItem->mActiveRegion);
+            }
+            else
+                mDialog.DrawText(pItem->mText, pElement, pItem->mActiveRegion);
+
+            //GLUFOffsetRect(rc, 0, m_fTextHeight);
+        }
+
+    }
+
+    // Render the scroll bar
+
+    mScrollBar->Render(elapsedTime);
+
+    NOEXCEPT_REGION_END
+}
+
+
+
+/*
+
+
+Ended Here July 25 2015
+
+
+
+
+*/
+
+/*
+======================================================================================================================================================================================================
+GLUFComboBox Functions
+
+
+*/
+
+GLUFComboBox::GLUFComboBox( GLUFDialog* pDialog) : mScrollBar(pDialog)
+{
+	mType = GLUF_CONTROL_COMBOBOX;
+	mDialog = pDialog;
 
 	m_fDropHeight = 100L;
 
-	m_fSBWidth = 16L;
+	mSBWidth = 16L;
 	m_bOpened = false;
 	m_iSelected = -1;
 	m_iFocused = -1;
@@ -3715,86 +5052,94 @@ GLUFComboBox::~GLUFComboBox()
 //--------------------------------------------------------------------------------------
 void GLUFComboBox::SetTextColor(Color Color)
 {
-	GLUFElement* pElement = m_Elements[0];
+	GLUFElementPtr pElement = mElements[0];
 
 	if (pElement)
-		pElement->FontColor.States[GLUF_STATE_NORMAL] = Color;
+		pElement->mFontColor.States[GLUF_STATE_NORMAL] = Color;
 
-	pElement = m_Elements[2];
+	pElement = mElements[2];
 
 	if (pElement)
-		pElement->FontColor.States[GLUF_STATE_NORMAL] = Color;
+		pElement->mFontColor.States[GLUF_STATE_NORMAL] = Color;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::UpdateRects()
+void GLUFComboBox::UpdateRects() noexcept
 {
+    NOEXCEPT_REGION_START
 
-	GLUFButton::UpdateRects();
 
-	m_rcButton = m_rcBoundingBox;
-	m_rcButton.left = m_rcButton.right - GLUFRectHeight(m_rcButton);
+    GLUFButton::UpdateRects();
 
-	m_rcText = m_rcBoundingBox;
-	m_rcText.right = m_rcButton.left;
+    m_rcButton = mRegion;
+    m_rcButton.left = m_rcButton.right - GLUFRectHeight(m_rcButton);
 
-	m_rcDropdown.left = long(m_rcText.left * 1.019f);
-	m_rcDropdown.top = long(1.02f * m_rcText.bottom);
-	m_rcDropdown.right = m_rcText.right;
-	m_rcDropdown.bottom = m_rcDropdown.top - m_fDropHeight;
-	//GLUFOffsetRect(m_rcDropdown, 0, -GLUFRectHeight(m_rcText));
+    mTextRegion = mRegion;
+    mTextRegion.right = m_rcButton.left;
 
-	m_rcDropdownText = m_rcDropdown;
-	m_rcDropdownText.left += long(0.1f * GLUFRectWidth(m_rcDropdown));
-	m_rcDropdownText.right -= long(0.1f * GLUFRectWidth(m_rcDropdown));
-	m_rcDropdownText.top += long(0.05f * GLUFRectHeight(m_rcDropdown));
-	m_rcDropdownText.bottom -= long(0.1f * GLUFRectHeight(m_rcDropdown));
+    m_rcDropdown.left = long(mTextRegion.left * 1.019f);
+    m_rcDropdown.top = long(1.02f * mTextRegion.bottom);
+    m_rcDropdown.right = mTextRegion.right;
+    m_rcDropdown.bottom = m_rcDropdown.top - m_fDropHeight;
+    //GLUFOffsetRect(m_rcDropdown, 0, -GLUFRectHeight(mTextRegion));
 
-	// Update the scrollbar's rects
-	m_ScrollBar.SetLocation(m_rcDropdown.right, m_rcDropdown.bottom);
-	m_ScrollBar.SetSize(m_fSBWidth, abs(m_rcButton.bottom - m_rcDropdown.bottom));
-	m_ScrollBar.m_y = m_rcText.top;
-	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[2]->iFont);
-	if (pFontNode/* && pFontNode->mSize*/)
-	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcDropdownText) / pFontNode->m_pFontType->mHeight));
+    m_rcDropdownText = m_rcDropdown;
+    m_rcDropdownText.left += long(0.1f * GLUFRectWidth(m_rcDropdown));
+    m_rcDropdownText.right -= long(0.1f * GLUFRectWidth(m_rcDropdown));
+    m_rcDropdownText.top += long(0.05f * GLUFRectHeight(m_rcDropdown));
+    m_rcDropdownText.bottom -= long(0.1f * GLUFRectHeight(m_rcDropdown));
 
-		// The selected item may have been scrolled off the page.
-		// Ensure that it is in page again.
-		m_ScrollBar.ShowItem(m_iSelected);
-	}
+    // Update the scrollbar's rects
+    mScrollBar->SetLocation(m_rcDropdown.right, m_rcDropdown.bottom);
+    mScrollBar->SetSize(mSBWidth, abs(m_rcButton.bottom - m_rcDropdown.bottom));
+    mScrollBar->m_y = mTextRegion.top;
+    GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[2]->mFontIndex);
+    if (pFontNode/* && pFontNode->mSize*/)
+    {
+        mScrollBar->SetPageSize(int(GLUFRectHeight(m_rcDropdownText) / pFontNode->mFontType->mHeight));
+
+        // The selected item may have been scrolled off the page.
+        // Ensure that it is in page again.
+        mScrollBar->ShowItem(m_iSelected);
+    }
+
+    NOEXCEPT_REGION_END
 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::UpdateItemRects()
+void GLUFComboBox::UpdateItemRects() noexcept
 {
-	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(2)->iFont);
-	if (pFont)
-	{
-		int curY = m_rcText.bottom - 4;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
-		int fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->m_Leading;//subtract the font size initially too, because we do not want it hanging off the edge
+    NOEXCEPT_REGION_START
+
+    GLUFFontNodePtr pFont = mDialog.GetFont(GetElement(2)->mFontIndex);
+    if (pFont)
+    {
+        int curY = mTextRegion.bottom - 4;// +((mScrollBar->GetTrackPos() - 1) * pFont->mSize);
+        int fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mLeading;//subtract the font size initially too, because we do not want it hanging off the edge
 
 
-		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
-		{
-			GLUFComboBoxItem* pItem = m_Items[i];
+        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
+        {
+            GLUFComboBoxItem* pItem = mItems[i];
 
-			// Make sure there's room left in the dropdown
-			fRemainingHeight -= pFont->m_Leading;
-			if (fRemainingHeight <= 0.0f)
-			{
-				pItem->bVisible = false;
-				continue;
-			}
+            // Make sure there's room left in the dropdown
+            fRemainingHeight -= pFont->mLeading;
+            if (fRemainingHeight <= 0.0f)
+            {
+                pItem->mVisible = false;
+                continue;
+            }
 
-			pItem->bVisible = true;
+            pItem->mVisible = true;
 
-			GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->m_pFontType->mHeight);
-			curY -= pFont->m_Leading;
-		}
-	}
+            GLUFSetRect(pItem->mActiveRegion, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mFontType->mHeight);
+            curY -= pFont->mLeading;
+        }
+    }
+
+    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -3808,271 +5153,277 @@ void GLUFComboBox::OnFocusOut()
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	if (!m_bEnabled || !m_bVisible)
-		return false;
+    NOEXCEPT_REGION_START
 
-	// Let the scroll bar handle it first.
-	if (m_ScrollBar.MsgProc(msg, param1, param2, param3, param4))
-		return true;
+    if (!mEnabled || !mVisible)
+        return false;
 
-	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
+    // Let the scroll bar handle it first.
+    if (mScrollBar->MsgProc(msg, param1, param2, param3, param4))
+        return true;
 
-	switch (msg)
-	{
-		case GM_CURSOR_POS:
-		{
-			/*if (m_bPressed)
-			{
-				//if the button is pressed and the mouse is moved off, then unpress it
-				if (!ContainsPoint(pt))
-				{
-					m_bPressed = false;
+    GLUFPoint pt = mDialog.GetMousePositionDialogSpace();
 
-					ContainsPoint(pt);
+    switch (msg)
+    {
+    case GM_CURSOR_POS:
+    {
+        /*if (m_bPressed)
+        {
+        //if the button is pressed and the mouse is moved off, then unpress it
+        if (!ContainsPoint(pt))
+        {
+        m_bPressed = false;
 
-					if (!m_pDialog->m_bKeyboardInput)
-						m_pDialog->ClearFocus();
-				}
-			}*/
+        ContainsPoint(pt);
 
-			if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
-			{
-				// Determine which item has been selected
-				for (size_t i = 0; i < m_Items.size(); i++)
-				{
-					GLUFComboBoxItem* pItem = m_Items[i];
-					if (pItem->bVisible &&
-						GLUFPtInRect(pItem->rcActive, pt))
-					{
-						m_iFocused = static_cast<int>(i);
-					}
-				}
-				return true;
-			}
-			break;
-		}
+        if (!mDialog.m_bKeyboardInput)
+        mDialog.ClearFocus();
+        }
+        }*/
 
-		case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-			if (param2 == GLFW_PRESS)
-			{
-				if (ContainsPoint(pt))
-				{
-					// Pressed while inside the control
-					m_bPressed = true;
-					//SetCapture(GLUFGetHWND());
+        if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
+        {
+            // Determine which item has been selected
+            for (size_t i = 0; i < mItems.size(); i++)
+            {
+                GLUFComboBoxItem* pItem = mItems[i];
+                if (pItem->mVisible &&
+                    GLUFPtInRect(pItem->mActiveRegion, pt))
+                {
+                    m_iFocused = static_cast<int>(i);
+                }
+            }
+            return true;
+        }
+        break;
+    }
 
-					if (!m_bHasFocus)
-						m_pDialog->RequestFocus(this);
+    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+        if (param2 == GLFW_PRESS)
+        {
+            if (ContainsPoint(pt))
+            {
+                // Pressed while inside the control
+                m_bPressed = true;
+                //SetCapture(GLUFGetHWND());
 
-					return true;
-				}
-				
-				// Perhaps this click is within the dropdown
-				if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
-				{
-					// Determine which item has been selected
-					for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
-					{
-						GLUFComboBoxItem* pItem = m_Items[i];
-						if (pItem->bVisible &&
-							GLUFPtInRect(pItem->rcActive, pt))
-						{
-							m_iFocused = m_iSelected = static_cast<int>(i);
-							m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-							m_bOpened = false;
+                if (!mHasFocus)
+                    mDialog.RequestFocus(shared_from_this());
 
-							if (!m_pDialog->m_bKeyboardInput)
-								m_pDialog->ClearFocus();
+                return true;
+            }
 
-							break;
-						}
-					}
+            // Perhaps this click is within the dropdown
+            if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
+            {
+                // Determine which item has been selected
+                for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
+                {
+                    GLUFComboBoxItem* pItem = mItems[i];
+                    if (pItem->mVisible &&
+                        GLUFPtInRect(pItem->mActiveRegion, pt))
+                    {
+                        m_iFocused = m_iSelected = static_cast<int>(i);
+                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                        m_bOpened = false;
 
-					return true;
-				}
+                        if (!mDialog.m_bKeyboardInput)
+                            mDialog.ClearFocus();
 
-				// Mouse click not on main control or in dropdown, fire an event if needed
-				if (m_bOpened)
-				{
-					m_iFocused = m_iSelected;
+                        break;
+                    }
+                }
 
-					m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-					m_bOpened = false;
-				}
-					
+                return true;
+            }
 
-				break;
-			}
-			else if (param2 == GLFW_RELEASE)
-			{
-				if (m_bPressed && ContainsPoint(pt))
-				{
-					// Button click
-					m_bPressed = false;
+            // Mouse click not on main control or in dropdown, fire an event if needed
+            if (m_bOpened)
+            {
+                m_iFocused = m_iSelected;
 
-					// Toggle dropdown
-					if (m_bHasFocus)
-					{
-						m_bOpened = !m_bOpened;
+                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                m_bOpened = false;
+            }
 
-						if (!m_bOpened)
-						{
-							if (!m_pDialog->m_bKeyboardInput)
-								m_pDialog->ClearFocus();
 
-							m_iFocused = m_iSelected;
-						}
-						
-						//setup the scroll bar to the correct position (if it is still within the range, it looks better to keep its old position)
-						int pageMin, pageMax;
-						pageMin = m_ScrollBar.GetTrackPos();
-						pageMax = m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 2;
-						if (m_iFocused > pageMax || m_iFocused < pageMin)
-							m_ScrollBar.SetTrackPos(m_iFocused);
-					}
+            break;
+        }
+        else if (param2 == GLFW_RELEASE)
+        {
+            if (m_bPressed && ContainsPoint(pt))
+            {
+                // Button click
+                m_bPressed = false;
 
-					//ReleaseCapture();
-					return true;
-				}
+                // Toggle dropdown
+                if (mHasFocus)
+                {
+                    m_bOpened = !m_bOpened;
 
-				break;
-			}
+                    if (!m_bOpened)
+                    {
+                        if (!mDialog.m_bKeyboardInput)
+                            mDialog.ClearFocus();
 
-		case GM_SCROLL:
-		{
-			int zDelta = (param2) / WHEEL_DELTA;
-			if (m_bOpened)
-			{
-				//UINT uLines = 0;
-				//if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
-				//	uLines = 0;
-				m_ScrollBar.Scroll(-zDelta/* * uLines*/);
-				
-				//if it is scroll, then make sure to also send a mouse move event to select the newly hovered item
-				UpdateItemRects();
-				this->MsgProc(GM_CURSOR_POS, 0, 0, 0, 0);//all blank params may be sent because it retrieves the mouse position from the old message
-				//TODO: make this work, but for now:
-				
-				/*if (GLUFPtInRect(m_rcDropdown, pt))
-				{
-					// Determine which item has been selected
-					for (size_t i = 0; i < m_Items.size(); i++)
-					{
-						GLUFComboBoxItem* pItem = m_Items[i];
-						GLUFRect oldRect = pItem->rcActive;
+                        m_iFocused = m_iSelected;
+                    }
 
-						GLUFOffsetRect(oldRect, 0, float(m_ScrollBar.GetTrackPos() - oldValue) * GLUFRectHeight(pItem->rcActive));
-						if (pItem->bVisible &&
-							GLUFPtInRect(oldRect, pt))
-						{
-							m_iFocused = static_cast<int>(i);
-						}
-					}
-				}*/
+                    //setup the scroll bar to the correct position (if it is still within the range, it looks better to keep its old position)
+                    int pageMin, pageMax;
+                    pageMin = mScrollBar->GetTrackPos();
+                    pageMax = mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 2;
+                    if (m_iFocused > pageMax || m_iFocused < pageMin)
+                        mScrollBar->SetTrackPos(m_iFocused);
+                }
 
-			}
-			else
-			{
-				if (zDelta > 0)
-				{
-					if (m_iFocused > 0)
-					{
-						m_iFocused--;
-						m_iSelected = m_iFocused;
+                //ReleaseCapture();
+                return true;
+            }
 
-						if (!m_bOpened)
-							m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-					}
-				}
-				else
-				{
-					if (m_iFocused + 1 < (int)GetNumItems())
-					{
-						m_iFocused++;
-						m_iSelected = m_iFocused;
+            break;
+        }
 
-						if (!m_bOpened)
-							m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-					}
-				}
+    case GM_SCROLL:
+    {
+        int zDelta = (param2) / WHEEL_DELTA;
+        if (m_bOpened)
+        {
+            //UINT uLines = 0;
+            //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
+            //	uLines = 0;
+            mScrollBar->Scroll(-zDelta/* * uLines*/);
 
-			}
-			return true;
-		}
-		case GM_KEY:
-		{
-			if (param3 != GLFW_RELEASE)
-				return true;
+            //if it is scroll, then make sure to also send a mouse move event to select the newly hovered item
+            UpdateItemRects();
+            this->MsgProc(GM_CURSOR_POS, 0, 0, 0, 0);//all blank params may be sent because it retrieves the mouse position from the old message
+            //TODO: make this work, but for now:
 
-			switch (param1)
-			{
-			case GLFW_KEY_ENTER:
-				if (m_bOpened)
-				{
-					if (m_iSelected != m_iFocused)
-					{
-						m_iSelected = m_iFocused;
-						m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-					}
-					m_bOpened = false;
+            /*if (GLUFPtInRect(m_rcDropdown, pt))
+            {
+            // Determine which item has been selected
+            for (size_t i = 0; i < mItems.size(); i++)
+            {
+            GLUFComboBoxItem* pItem = mItems[i];
+            GLUFRect oldRect = pItem->mActiveRegion;
 
-					if (!m_pDialog->m_bKeyboardInput)
-						m_pDialog->ClearFocus();
+            GLUFOffsetRect(oldRect, 0, float(mScrollBar->GetTrackPos() - oldValue) * GLUFRectHeight(pItem->mActiveRegion));
+            if (pItem->mVisible &&
+            GLUFPtInRect(oldRect, pt))
+            {
+            m_iFocused = static_cast<int>(i);
+            }
+            }
+            }*/
 
-					return true;
-				}
-				break;
+        }
+        else
+        {
+            if (zDelta > 0)
+            {
+                if (m_iFocused > 0)
+                {
+                    m_iFocused--;
+                    m_iSelected = m_iFocused;
 
-			case GLFW_KEY_F4:
-				// Filter out auto-repeats
-				/*if (param3 == GLFW_REPEAT)
-					return true;*/
+                    if (!m_bOpened)
+                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                }
+            }
+            else
+            {
+                if (m_iFocused + 1 < (int)GetNumItems())
+                {
+                    m_iFocused++;
+                    m_iSelected = m_iFocused;
 
-				m_bOpened = !m_bOpened;
+                    if (!m_bOpened)
+                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                }
+            }
 
-				if (!m_bOpened)
-				{
-					m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+        }
+        return true;
+    }
+    case GM_KEY:
+    {
+        if (param3 != GLFW_RELEASE)
+            return true;
 
-					if (!m_pDialog->m_bKeyboardInput)
-						m_pDialog->ClearFocus();
-				}
+        switch (param1)
+        {
+        case GLFW_KEY_ENTER:
+            if (m_bOpened)
+            {
+                if (m_iSelected != m_iFocused)
+                {
+                    m_iSelected = m_iFocused;
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                }
+                m_bOpened = false;
 
-				return true;
+                if (!mDialog.m_bKeyboardInput)
+                    mDialog.ClearFocus();
 
-			case GLFW_KEY_UP:
-			case GLFW_KEY_LEFT:
-				if (m_iFocused > 0)
-				{
-					m_iFocused--;
-					m_iSelected = m_iFocused;
+                return true;
+            }
+            break;
 
-					if (!m_bOpened)
-						m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-				}
+        case GLFW_KEY_F4:
+            // Filter out auto-repeats
+            /*if (param3 == GLFW_REPEAT)
+                return true;*/
 
-				return true;
+            m_bOpened = !m_bOpened;
 
-			case GLFW_KEY_RIGHT:
-			case GLFW_KEY_DOWN:
-				if (m_iFocused + 1 < (int)GetNumItems())
-				{
-					m_iFocused++;
-					m_iSelected = m_iFocused;
+            if (!m_bOpened)
+            {
+                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
 
-					if (!m_bOpened)
-						m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-				}
+                if (!mDialog.m_bKeyboardInput)
+                    mDialog.ClearFocus();
+            }
 
-				return true;
-			}
-			break;
-		}
-	};
+            return true;
 
-	return false;
+        case GLFW_KEY_UP:
+        case GLFW_KEY_LEFT:
+            if (m_iFocused > 0)
+            {
+                m_iFocused--;
+                m_iSelected = m_iFocused;
+
+                if (!m_bOpened)
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+            }
+
+            return true;
+
+        case GLFW_KEY_RIGHT:
+        case GLFW_KEY_DOWN:
+            if (m_iFocused + 1 < (int)GetNumItems())
+            {
+                m_iFocused++;
+                m_iSelected = m_iFocused;
+
+                if (!m_bOpened)
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+            }
+
+            return true;
+        }
+        break;
+    }
+    };
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------
@@ -4084,251 +5435,268 @@ void GLUFComboBox::OnHotkey()
 	if (m_iSelected == -1)
 		return;
 
-	if (m_pDialog->IsKeyboardInputEnabled())
-		m_pDialog->RequestFocus(this);
+	if (mDialog.IsKeyboardInputEnabled())
+		mDialog.RequestFocus(shared_from_this());
 
 	m_iSelected++;
 
-	if (m_iSelected >= (int)m_Items.size())
+	if (m_iSelected >= (int)mItems.size())
 		m_iSelected = 0;
 
 	m_iFocused = m_iSelected;
-	m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::Render( float elapsedTime)
+void GLUFComboBox::Render( float elapsedTime) noexcept
 {
-	if (m_bVisible == false)
-		return;
-	GLUF_CONTROL_STATE iState = GLUF_STATE_NORMAL;
+    NOEXCEPT_REGION_START
 
-	if (!m_bOpened)
-		iState = GLUF_STATE_HIDDEN;
+    if (mVisible == false)
+        return;
+    GLUFControlState iState = GLUF_STATE_NORMAL;
 
-	// Dropdown box
-	GLUFElement* pElement = m_Elements[2];
+    if (!m_bOpened)
+        iState = GLUF_STATE_HIDDEN;
 
-	// If we have not initialized the scroll bar page size,
-	// do that now.
-	static bool bSBInit;
-	if (!bSBInit)
-	{
-		// Update the page size of the scroll bar
-		if (m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_pFontType->mHeight)
-			m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcDropdownText) /
-			(m_pDialog->GetManager()->GetFontNode(pElement->iFont)->m_Leading)));
-		else
-			m_ScrollBar.SetPageSize(0);
-		bSBInit = true;
-	}
+    // Dropdown box
+    GLUFElementPtr pElement = mElements[2];
 
-	// Scroll bar --EDITED, only render any of this stuff if OPENED
-	if (m_bOpened)
-	{
-		m_ScrollBar.Render(elapsedTime);
+    // If we have not initialized the scroll bar page size,
+    // do that now.
+    static bool bSBInit;
+    if (!bSBInit)
+    {
+        // Update the page size of the scroll bar
+        if (mDialog.GetManager()->GetFontNode(pElement->mFontIndex)->mFontType->mHeight)
+            mScrollBar->SetPageSize(int(GLUFRectHeight(m_rcDropdownText) /
+            (mDialog.GetManager()->GetFontNode(pElement->mFontIndex)->mLeading)));
+        else
+            mScrollBar->SetPageSize(0);
+        bSBInit = true;
+    }
 
-		// Blend current color
-		pElement->TextureColor.Blend(iState, elapsedTime);
-		pElement->FontColor.Blend(iState, elapsedTime);
+    // Scroll bar --EDITED, only render any of this stuff if OPENED
+    if (m_bOpened)
+    {
+        mScrollBar->Render(elapsedTime);
 
-		m_pDialog->DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
+        // Blend current color
+        pElement->mTextureColor.Blend(iState, elapsedTime);
+        pElement->mFontColor.Blend(iState, elapsedTime);
 
-
-		// Selection outline
-		GLUFElement* pSelectionElement = m_Elements[3];
-		pSelectionElement->TextureColor.Current = pElement->TextureColor.Current;
-		pSelectionElement->FontColor.SetCurrent(/*pSelectionElement->FontColor.States[GLUF_STATE_NORMAL]*/Color(0,0,0,255));
-
-		GLUFFontNode* pFont = m_pDialog->GetFont(pElement->iFont);
-		if (pFont)
-		{
-			//float curY = m_rcDropdownText.top - 0.02f;
-			//float fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
-			//WCHAR strDropdown[4096] = {0};
-
-			UpdateItemRects();
-
-			for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
-			{
-				GLUFComboBoxItem* pItem = m_Items[i];
-				GLUFRect active = pItem->rcActive;
-
-				active.top = active.bottom + pFont->m_Leading;
-
-				// Make sure there's room left in the dropdown
-				
-				if (!pItem->bVisible)
-					continue;
-				//GLUFSetRect(pItem->rcActive, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mSize);
-				//curY -= pFont->mSize;
-
-				//debug
-				//int blue = 50 * i;
-				//m_pDialog->DrawRect( &pItem->rcActive, 0xFFFF0000 | blue );
-
-				//pItem->bVisible = true;
-
-				//GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top - (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
-				//	pItem->rcActive.bottom + (2 / m_pDialog->GetManager()->GetWindowSize().y));
-				//GLUFSetRect(rc, m_rcDropdown.left + GLUFRectWidth(m_rcDropdown) / 12.0f, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
-				//	m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));
-
-				if ((int)i == m_iFocused)
-				{
-					//GLUFSetRect(rc, m_rcDropdown.left, pItem->rcActive.top - (2 / m_pDialog->GetManager()->GetWindowSize().y), m_rcDropdown.right,
-					//	pItem->rcActive.bottom + (2 / m_pDialog->GetManager()->GetWindowSize().y));
-					/*GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * i), m_rcDropdown.right,
-						m_rcDropdown.top - (GLUFRectHeight(pItem->rcActive) * (i + 1)));*/
-					//m_pDialog->DrawText(pItem->strText, pSelectionElement, rc);
-					m_pDialog->DrawSprite(pSelectionElement, active, GLUF_NEAR_BUTTON_DEPTH);
-					m_pDialog->DrawText(pItem->strText, pSelectionElement, pItem->rcActive);
-				}
-				else
-				{
-					m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
-				}
-			}
-		}
-	}
-
-	int OffsetX = 0;
-	int OffsetY = 0;
-
-	iState = GLUF_STATE_NORMAL;
-
-	if (m_bVisible == false)
-		iState = GLUF_STATE_HIDDEN;
-	else if (m_bEnabled == false)
-		iState = GLUF_STATE_DISABLED;
-	else if (m_bPressed)
-	{
-		iState = GLUF_STATE_PRESSED;
-
-		OffsetX = 1;
-		OffsetY = 2;
-	}
-	else if (m_bMouseOver)
-	{
-		iState = GLUF_STATE_MOUSEOVER;
-
-		OffsetX = -1;
-		OffsetY = -2;
-	}
-	else if (m_bHasFocus)
-		iState = GLUF_STATE_FOCUS;
-
-	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
-
-	// Button
-	pElement = m_Elements[1];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
-
-	GLUFRect rcWindow = m_rcButton;
-	GLUFOffsetRect(rcWindow, OffsetX, OffsetY);
-	m_pDialog->DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
-
-	if (m_bOpened)
-		iState = GLUF_STATE_PRESSED;
+        mDialog.DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
 
 
-	// Main text box
-	pElement = m_Elements[0];
+        // Selection outline
+        GLUFElementPtr pSelectionElement = mElements[3];
+        pSelectionElement->mTextureColor.Current = pElement->mTextureColor.Current;
+        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.States[GLUF_STATE_NORMAL]*/Color(0, 0, 0, 255));
 
-	// Blend current color
-	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
-	pElement->FontColor.Blend(iState, elapsedTime, fBlendRate);
+        GLUFFontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
+        if (pFont)
+        {
+            //float curY = m_rcDropdownText.top - 0.02f;
+            //float fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
+            //WCHAR strDropdown[4096] = {0};
+
+            UpdateItemRects();
+
+            for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
+            {
+                GLUFComboBoxItem* pItem = mItems[i];
+                GLUFRect active = pItem->mActiveRegion;
+
+                active.top = active.bottom + pFont->mLeading;
+
+                // Make sure there's room left in the dropdown
+
+                if (!pItem->mVisible)
+                    continue;
+                //GLUFSetRect(pItem->mActiveRegion, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mSize);
+                //curY -= pFont->mSize;
+
+                //debug
+                //int blue = 50 * i;
+                //mDialog.DrawRect( &pItem->mActiveRegion, 0xFFFF0000 | blue );
+
+                //pItem->mVisible = true;
+
+                //GLUFSetRect(rc, m_rcDropdown.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), m_rcDropdown.right,
+                //	pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
+                //GLUFSetRect(rc, m_rcDropdown.left + GLUFRectWidth(m_rcDropdown) / 12.0f, m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * i), m_rcDropdown.right,
+                //	m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * (i + 1)));
+
+                if ((int)i == m_iFocused)
+                {
+                    //GLUFSetRect(rc, m_rcDropdown.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), m_rcDropdown.right,
+                    //	pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
+                    /*GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * i), m_rcDropdown.right,
+                        m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * (i + 1)));*/
+                    //mDialog.DrawText(pItem->mText, pSelectionElement, rc);
+                    mDialog.DrawSprite(pSelectionElement, active, GLUF_NEAR_BUTTON_DEPTH);
+                    mDialog.DrawText(pItem->mText, pSelectionElement, pItem->mActiveRegion);
+                }
+                else
+                {
+                    mDialog.DrawText(pItem->mText, pElement, pItem->mActiveRegion);
+                }
+            }
+        }
+    }
+
+    int OffsetX = 0;
+    int OffsetY = 0;
+
+    iState = GLUF_STATE_NORMAL;
+
+    if (mVisible == false)
+        iState = GLUF_STATE_HIDDEN;
+    else if (mEnabled == false)
+        iState = GLUF_STATE_DISABLED;
+    else if (m_bPressed)
+    {
+        iState = GLUF_STATE_PRESSED;
+
+        OffsetX = 1;
+        OffsetY = 2;
+    }
+    else if (mMouseOver)
+    {
+        iState = GLUF_STATE_MOUSEOVER;
+
+        OffsetX = -1;
+        OffsetY = -2;
+    }
+    else if (mHasFocus)
+        iState = GLUF_STATE_FOCUS;
+
+    float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+
+    // Button
+    pElement = mElements[1];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+
+    GLUFRect rcWindow = m_rcButton;
+    GLUFOffsetRect(rcWindow, OffsetX, OffsetY);
+    mDialog.DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
+
+    if (m_bOpened)
+        iState = GLUF_STATE_PRESSED;
 
 
-	m_pDialog->DrawSprite(pElement, m_rcText, GLUF_NEAR_BUTTON_DEPTH);
+    // Main text box
+    pElement = mElements[0];
 
-	if (m_iSelected >= 0 && m_iSelected < (int)m_Items.size())
-	{
-		GLUFComboBoxItem* pItem = m_Items[m_iSelected];
-		if (pItem)
-		{
-			m_pDialog->DrawText(pItem->strText, pElement, m_rcText, false, true);
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-		}
-	}
 
+    mDialog.DrawSprite(pElement, mTextRegion, GLUF_NEAR_BUTTON_DEPTH);
+
+    if (m_iSelected >= 0 && m_iSelected < (int)mItems.size())
+    {
+        GLUFComboBoxItem* pItem = mItems[m_iSelected];
+        if (pItem)
+        {
+            mDialog.DrawText(pItem->mText, pElement, mTextRegion, false, true);
+
+        }
+    }
+
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFComboBox::AddItem(std::wstring strText, void* pData)
+GLUFResult GLUFComboBox::AddItem(std::wstring strText, void* pData) noexcept
 {
-	// Validate parameters
-	/*if (!strText)
-	{
-		return E_INVALIDARG;
-	}*/
+    NOEXCEPT_REGION_START
 
-	// Create a new item and set the data
-	GLUFComboBoxItem* pItem = new (std::nothrow) GLUFComboBoxItem;
-	if (!pItem)
-	{
-		return GLUFTRACE_ERR("new", GR_OUTOFMEMORY);
-	}
+    // Validate parameters
+    /*if (!strText)
+    {
+    return E_INVALIDARG;
+    }*/
 
-	//ZeroMemory(pItem, sizeof(GLUFComboBoxItem));
-	//wcscpy_s(pItem->strText, 256, strText);
-	pItem->strText = strText;
-	pItem->pData = pData;
+    // Create a new item and set the data
+    GLUFComboBoxItem* pItem = new (std::nothrow) GLUFComboBoxItem;
+    if (!pItem)
+    {
+        return GLUFTRACE_ERR("new", GR_OUTOFMEMORY);
+    }
 
-	m_Items.push_back(pItem);
+    //ZeroMemory(pItem, sizeof(GLUFComboBoxItem));
+    //wcscpy_s(pItem->mText, 256, strText);
+    pItem->mText = strText;
+    pItem->pData = pData;
 
-	// Update the scroll bar with new range
-	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
+    mItems.push_back(pItem);
 
-	// If this is the only item in the list, it's selected
-	if (GetNumItems() == 1)
-	{
-		m_iSelected = 0;
-		m_iFocused = 0;
-		m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
-	}
+    // Update the scroll bar with new range
+    mScrollBar->SetTrackRange(0, (int)mItems.size());
 
-	return GR_SUCCESS;
+    // If this is the only item in the list, it's selected
+    if (GetNumItems() == 1)
+    {
+        m_iSelected = 0;
+        m_iFocused = 0;
+        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+    }
+
+    return GR_SUCCESS;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFComboBox::RemoveItem( unsigned int index)
 {
-	auto it = m_Items.begin() + index;
+	auto it = mItems.begin() + index;
 	GLUFComboBoxItem* pItem = *it;
 	GLUF_SAFE_DELETE(pItem);
-	m_Items.erase(it);
-	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
-	if (m_iSelected >= (int)m_Items.size())
-		m_iSelected = (int)m_Items.size() - 1;
+	mItems.erase(it);
+	mScrollBar->SetTrackRange(0, (int)mItems.size());
+	if (m_iSelected >= (int)mItems.size())
+		m_iSelected = (int)mItems.size() - 1;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::RemoveAllItems()
+void GLUFComboBox::RemoveAllItems() noexcept
 {
-	for (auto it = m_Items.begin(); it != m_Items.end(); ++it)
-	{
-		GLUFComboBoxItem* pItem = *it;
-		GLUF_SAFE_DELETE(pItem);
-	}
+    NOEXCEPT_REGION_START
 
-	m_Items.clear();
-	m_ScrollBar.SetTrackRange(0, 1);
-	m_iFocused = m_iSelected = -1;
+    for (auto it = mItems.begin(); it != mItems.end(); ++it)
+    {
+        GLUFComboBoxItem* pItem = *it;
+        GLUF_SAFE_DELETE(pItem);
+    }
+
+    mItems.clear();
+    mScrollBar->SetTrackRange(0, 1);
+    m_iFocused = m_iSelected = -1;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFComboBox::ContainsItem(std::wstring strText, unsigned int iStart)
-{
-	return (-1 != FindItem(strText, iStart));
+bool GLUFComboBox::ContainsItem(std::wstring strText, unsigned int iStart) noexcept
+{ 
+    NOEXCEPT_REGION_START
+
+
+    return (-1 != FindItem(strText, iStart));
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -4338,11 +5706,11 @@ int GLUFComboBox::FindItem(std::wstring strText, unsigned int iStart)
 	/*if (!strText)
 		return -1;*/
 
-	for (size_t i = iStart; i < m_Items.size(); i++)
+	for (size_t i = iStart; i < mItems.size(); i++)
 	{
-		GLUFComboBoxItem* pItem = m_Items[i];
+		GLUFComboBoxItem* pItem = mItems[i];
 
-		if (0 != pItem->strText.compare(strText))//REMEMBER if this returns 0, they are the same
+		if (0 != pItem->mText.compare(strText))//REMEMBER if this returns 0, they are the same
 		{
 			return static_cast<int>(i);
 		}
@@ -4358,7 +5726,7 @@ void* GLUFComboBox::GetSelectedData()
 	if (m_iSelected < 0)
 		return nullptr;
 
-	GLUFComboBoxItem* pItem = m_Items[m_iSelected];
+	GLUFComboBoxItem* pItem = mItems[m_iSelected];
 	return pItem->pData;
 }
 
@@ -4369,7 +5737,7 @@ GLUFComboBoxItem* GLUFComboBox::GetSelectedItem()
 	if (m_iSelected < 0)
 		return nullptr;
 
-	return m_Items[m_iSelected];
+	return mItems[m_iSelected];
 }
 
 
@@ -4382,7 +5750,7 @@ void* GLUFComboBox::GetItemData(std::wstring strText)
 		return nullptr;
 	}
 
-	GLUFComboBoxItem* pItem = m_Items[index];
+	GLUFComboBoxItem* pItem = mItems[index];
 	if (!pItem)
 	{
 		GLUFTRACE_ERR("GLUFComboBox::GetItemData", GR_FAILURE);
@@ -4396,10 +5764,10 @@ void* GLUFComboBox::GetItemData(std::wstring strText)
 //--------------------------------------------------------------------------------------
 void* GLUFComboBox::GetItemData( int nIndex)
 {
-	if (nIndex < 0 || nIndex >= (int)m_Items.size())
+	if (nIndex < 0 || nIndex >= (int)mItems.size())
 		return nullptr;
 
-	return m_Items[nIndex]->pData;
+	return mItems[nIndex]->pData;
 }
 
 
@@ -4410,7 +5778,7 @@ GLUFResult GLUFComboBox::SetSelectedByIndex( unsigned int index)
 		return GR_INVALIDARG;
 
 	m_iFocused = m_iSelected = index;
-	m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 
 	return GR_SUCCESS;
 }
@@ -4428,7 +5796,7 @@ GLUFResult GLUFComboBox::SetSelectedByText(std::wstring strText)
 		return GR_FAILURE;
 
 	m_iFocused = m_iSelected = index;
-	m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 
 	return GR_SUCCESS;
 }
@@ -4438,14 +5806,14 @@ GLUFResult GLUFComboBox::SetSelectedByText(std::wstring strText)
 //--------------------------------------------------------------------------------------
 GLUFResult GLUFComboBox::SetSelectedByData( void* pData)
 {
-	for (size_t i = 0; i < m_Items.size(); i++)
+	for (size_t i = 0; i < mItems.size(); i++)
 	{
-		GLUFComboBoxItem* pItem = m_Items[i];
+		GLUFComboBoxItem* pItem = mItems[i];
 
 		if (pItem->pData == pData)
 		{
 			m_iFocused = m_iSelected = static_cast<int>(i);
-			m_pDialog->SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+			mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
 			return GR_SUCCESS;
 		}
 	}
@@ -4460,8 +5828,8 @@ GLUFResult GLUFComboBox::SetSelectedByData( void* pData)
 
 GLUFSlider::GLUFSlider( GLUFDialog* pDialog)
 {
-	m_Type = GLUF_CONTROL_SLIDER;
-	m_pDialog = pDialog;
+	mType = GLUF_CONTROL_SLIDER;
+	mDialog = pDialog;
 
 	m_nMin = 0;
 	m_nMax = 100;
@@ -4471,33 +5839,45 @@ GLUFSlider::GLUFSlider( GLUFDialog* pDialog)
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFSlider::ContainsPoint(GLUFPoint pt)
+bool GLUFSlider::ContainsPoint(GLUFPoint pt) noexcept
 {
-	return (GLUFPtInRect(m_rcBoundingBox, pt) ||
-		GLUFPtInRect(m_rcButton, pt));
+    NOEXCEPT_REGION_START
+
+    return (GLUFPtInRect(mRegion, pt) ||
+    GLUFPtInRect(m_rcButton, pt));
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::UpdateRects()
+void GLUFSlider::UpdateRects() noexcept
 {
-	GLUFControl::UpdateRects();
+    NOEXCEPT_REGION_START
 
-	m_rcButton = m_rcBoundingBox;
-	m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
-	GLUFOffsetRect(m_rcButton, -GLUFRectWidth(m_rcButton) / 2, 0);
+    GLUFControl::UpdateRects();
 
-	m_nButtonX = (int)((float(m_nValue - m_nMin) / float(m_nMax - m_nMin)) * GLUFRectWidth(m_rcBoundingBox));
-	GLUFOffsetRect(m_rcButton, m_nButtonX, 0);
+    m_rcButton = mRegion;
+    m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
+    GLUFOffsetRect(m_rcButton, -GLUFRectWidth(m_rcButton) / 2, 0);
+
+    m_nButtonX = (int)((float(m_nValue - m_nMin) / float(m_nMax - m_nMin)) * GLUFRectWidth(mRegion));
+    GLUFOffsetRect(m_rcButton, m_nButtonX, 0);
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFSlider::ValueFromPos(long x)
+int GLUFSlider::ValueFromPos(long x) noexcept
 {
-	float fValuePerPixel = (float)(m_nMax - m_nMin) / GLUFRectWidth(m_rcBoundingBox);
-	float fPixelPerValue2 = 1.0f / (2.0f * fValuePerPixel);//use this to get it to change locations at the half way mark instead of using truncate int methods
-	return int(((x - m_x + fPixelPerValue2) * fValuePerPixel) + m_nMin);
+    NOEXCEPT_REGION_START
+
+    float fValuePerPixel = (float)(m_nMax - m_nMin) / GLUFRectWidth(mRegion);
+    float fPixelPerValue2 = 1.0f / (2.0f * fValuePerPixel);//use this to get it to change locations at the half way mark instead of using truncate int methods
+    return int(((x - m_x + fPixelPerValue2) * fValuePerPixel) + m_nMin);
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -4507,7 +5887,7 @@ bool GLUFSlider::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
 
-	if (!m_bEnabled || !m_bVisible)
+	if (!mEnabled || !mVisible)
 		return false;
 
 	switch (uMsg)
@@ -4559,7 +5939,7 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 {
 	UNREFERENCED_PARAMETER(lParam);
 
-	if (!m_bEnabled || !m_bVisible)
+	if (!mEnabled || !mVisible)
 		return false;
 
 	switch (uMsg)
@@ -4579,20 +5959,20 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 			//m_nDragValue = m_nValue;
 
-			if (!m_bHasFocus)
-				m_pDialog->RequestFocus(this);
+			if (!mHasFocus)
+				mDialog.RequestFocus(shared_from_this());
 
 			return true;
 		}
 
-		if (PtInRect(&m_rcBoundingBox, pt))
+		if (PtInRect(&mRegion, pt))
 		{
 			m_nDragX = pt.x;
 			m_nDragOffset = 0;
 			m_bPressed = true;
 
-			if (!m_bHasFocus)
-				m_pDialog->RequestFocus(this);
+			if (!mHasFocus)
+				mDialog.RequestFocus(shared_from_this());
 
 			if (pt.x > m_nButtonX + m_x)
 			{
@@ -4616,7 +5996,7 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 		{
 			m_bPressed = false;
 			ReleaseCapture();
-			m_pDialog->SendEvent(GLUF_EVENTSLIDER_VALUE_CHANGED_UP, true, this);
+			mDialog.SendEvent(GLUF_EVENTSLIDER_VALUE_CHANGED_UP, true, this);
 
 			return true;
 		}
@@ -4649,1688 +6029,223 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	if (!m_bEnabled || !m_bVisible)
-		return false;
+    NOEXCEPT_REGION_START
 
-	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
+    if (!mEnabled || !mVisible)
+        return false;
 
-	switch (msg)
-	{
-		case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-			if (param2 == GLFW_PRESS)
-			{
-				if (GLUFPtInRect(m_rcButton, pt))
-				{
-					// Pressed while inside the control
-					m_bPressed = true;
-					//SetCapture(GLUFGetHWND());
+    GLUFPoint pt = mDialog.GetMousePositionDialogSpace();
 
-					m_nDragX = pt.x;
-					//m_nDragY = pt.y;
-					m_nDragOffset = m_nButtonX - m_nDragX;
+    switch (msg)
+    {
+    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+        if (param2 == GLFW_PRESS)
+        {
+            if (GLUFPtInRect(m_rcButton, pt))
+            {
+                // Pressed while inside the control
+                m_bPressed = true;
+                //SetCapture(GLUFGetHWND());
 
-					//m_nDragValue = m_nValue;
+                m_nDragX = pt.x;
+                //m_nDragY = pt.y;
+                m_nDragOffset = m_nButtonX - m_nDragX;
 
-					if (!m_bHasFocus)
-						m_pDialog->RequestFocus(this);
+                //m_nDragValue = m_nValue;
 
-					return true;
-				}
+                if (!mHasFocus)
+                    mDialog.RequestFocus(shared_from_this());
 
-				if (GLUFPtInRect(m_rcBoundingBox, pt))
-				{
+                return true;
+            }
 
-					if (!m_bHasFocus)
-						m_pDialog->RequestFocus(this);
+            if (GLUFPtInRect(mRegion, pt))
+            {
 
-					SetValueInternal(ValueFromPos(pt.x), true);
+                if (!mHasFocus)
+                    mDialog.RequestFocus(shared_from_this());
 
-					return true;
-				}
-			}
-			else if (param2 == GLFW_RELEASE)
-			{
-				if (m_bPressed)
-				{
-					m_bPressed = false;
-					//ReleaseCapture();
-					m_pDialog->SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, this);
+                SetValueInternal(ValueFromPos(pt.x), true);
 
-					return true;
-				}
+                return true;
+            }
+        }
+        else if (param2 == GLFW_RELEASE)
+        {
+            if (m_bPressed)
+            {
+                m_bPressed = false;
+                //ReleaseCapture();
+                mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, this);
 
-				break;
+                return true;
+            }
 
-			}
-			break;
-	
-		case GM_CURSOR_POS:
-		{
+            break;
 
-			if (m_bPressed)
-			{
-				SetValueInternal(ValueFromPos(m_x + pt.x + m_nDragOffset), true);
-				return true;
-			}
+        }
+        break;
 
-			break;
-		}
+    case GM_CURSOR_POS:
+    {
 
-		case GM_SCROLL:
-		{
-			int nScrollAmount = param2 / WHEEL_DELTA;
-			SetValueInternal(m_nValue - nScrollAmount, true);
-			return true;
-		}
-		case GM_KEY:
-		{
-			if (param3 == GLFW_RELEASE)
-				break;
+        if (m_bPressed)
+        {
+            SetValueInternal(ValueFromPos(m_x + pt.x + m_nDragOffset), true);
+            return true;
+        }
 
-			switch (param1)
-			{
-			case GLFW_KEY_HOME:
-				SetValueInternal(m_nMin, true);
-				return true;
+        break;
+    }
 
-			case GLFW_KEY_END:
-				SetValueInternal(m_nMax, true);
-				return true;
+    case GM_SCROLL:
+    {
+        int nScrollAmount = param2 / WHEEL_DELTA;
+        SetValueInternal(m_nValue - nScrollAmount, true);
+        return true;
+    }
+    case GM_KEY:
+    {
+        if (param3 == GLFW_RELEASE)
+            break;
 
-			case GLFW_KEY_LEFT:
-			case GLFW_KEY_DOWN:
-				SetValueInternal(m_nValue - 3, true);
-				return true;
+        switch (param1)
+        {
+        case GLFW_KEY_HOME:
+            SetValueInternal(m_nMin, true);
+            return true;
 
-			case GLFW_KEY_RIGHT:
-			case GLFW_KEY_UP:
-				SetValueInternal(m_nValue + 3, true);
-				return true;
+        case GLFW_KEY_END:
+            SetValueInternal(m_nMax, true);
+            return true;
 
-			case GLFW_KEY_PAGE_DOWN:
-				SetValueInternal(m_nValue - (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
-					true);
-				return true;
+        case GLFW_KEY_LEFT:
+        case GLFW_KEY_DOWN:
+            SetValueInternal(m_nValue - 3, true);
+            return true;
 
-			case GLFW_KEY_PAGE_UP:
-				SetValueInternal(m_nValue + (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
-					true);
-				return true;
-			}
-			break;
-		}
-	};
+        case GLFW_KEY_RIGHT:
+        case GLFW_KEY_UP:
+            SetValueInternal(m_nValue + 3, true);
+            return true;
 
-	return false;
+        case GLFW_KEY_PAGE_DOWN:
+            SetValueInternal(m_nValue - (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
+                true);
+            return true;
+
+        case GLFW_KEY_PAGE_UP:
+            SetValueInternal(m_nValue + (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
+                true);
+            return true;
+        }
+        break;
+    }
+    };
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::SetRange(int nMin, int nMax)
+void GLUFSlider::SetRange(int nMin, int nMax) noexcept
 {
-	m_nMin = nMin;
-	m_nMax = nMax;
+    NOEXCEPT_REGION_START
 
-	SetValueInternal(m_nValue, false);
-}
+    m_nMin = nMin;
+    m_nMax = nMax;
 
+    SetValueInternal(m_nValue, false);
 
-//--------------------------------------------------------------------------------------
-void GLUFSlider::SetValueInternal(int nValue, bool bFromInput)
-{
-	// Clamp to range
-	nValue = std::clamp(nValue, m_nMin, m_nMax);
-
-
-	if (nValue == m_nValue)
-		return;
-
-	m_nValue = nValue;
-
-	UpdateRects();
-
-	m_pDialog->SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED, bFromInput, this);
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFSlider::Render( float elapsedTime)
+void GLUFSlider::SetValueInternal(int nValue, bool bFromInput) noexcept
 {
-	if (m_bVisible == false)
-		return;
+    NOEXCEPT_REGION_START
 
-	int OffsetX = 0;
-	int OffsetY = 0;
-
-	GLUF_CONTROL_STATE iState = GLUF_STATE_NORMAL;
-
-	if (m_bVisible == false)
-	{
-		iState = GLUF_STATE_HIDDEN;
-	}
-	else if (m_bEnabled == false)
-	{
-		iState = GLUF_STATE_DISABLED;
-	}
-	else if (m_bPressed)
-	{
-		iState = GLUF_STATE_PRESSED;
-
-		OffsetX = 1;
-		OffsetY = 2;
-	}
-	else if (m_bMouseOver)
-	{
-		iState = GLUF_STATE_MOUSEOVER;
-
-		OffsetX = -1;
-		OffsetY = -2;
-	}
-	else if (m_bHasFocus)
-	{
-		iState = GLUF_STATE_FOCUS;
-	}
-
-	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
-
-	GLUFElement* pElement = m_Elements[0];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
-
-	pElement = m_Elements[1];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
-}
+    // Clamp to range
+    nValue = std::clamp(nValue, m_nMin, m_nMax);
 
 
-//======================================================================================
-// GLUFScrollBar class
-//======================================================================================
+    if (nValue == m_nValue)
+        return;
 
-GLUFScrollBar::GLUFScrollBar( GLUFDialog* pDialog)
-{
-	m_Type = GLUF_CONTROL_SCROLLBAR;
-	m_pDialog = pDialog;
+    m_nValue = nValue;
 
-	m_bShowThumb = true;
-	m_bDrag = false;
+    UpdateRects();
 
-	GLUFSetRect(m_rcUpButton, 0, 0, 0, 0);
-	GLUFSetRect(m_rcDownButton, 0, 0, 0, 0);
-	GLUFSetRect(m_rcTrack, 0, 0, 0, 0);
-	GLUFSetRect(m_rcThumb, 0, 0, 0, 0);
-	m_nPosition = 0;
-	m_nPageSize = 1;
-	m_nStart = 0;
-	m_nEnd = 1;
-	m_Arrow = CLEAR;
-	m_dArrowTS = 0.0;
+    mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED, bFromInput, this);
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFScrollBar::~GLUFScrollBar()
+void GLUFSlider::Render( float elapsedTime) noexcept
 {
+    NOEXCEPT_REGION_START
+
+    if (mVisible == false)
+        return;
+
+    int OffsetX = 0;
+    int OffsetY = 0;
+
+    GLUFControlState iState = GLUF_STATE_NORMAL;
+
+    if (mVisible == false)
+    {
+        iState = GLUF_STATE_HIDDEN;
+    }
+    else if (mEnabled == false)
+    {
+        iState = GLUF_STATE_DISABLED;
+    }
+    else if (m_bPressed)
+    {
+        iState = GLUF_STATE_PRESSED;
+
+        OffsetX = 1;
+        OffsetY = 2;
+    }
+    else if (mMouseOver)
+    {
+        iState = GLUF_STATE_MOUSEOVER;
+
+        OffsetX = -1;
+        OffsetY = -2;
+    }
+    else if (mHasFocus)
+    {
+        iState = GLUF_STATE_FOCUS;
+    }
+
+    float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+
+    GLUFElementPtr pElement = mElements[0];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    mDialog.DrawSprite(pElement, mRegion, GLUF_FAR_BUTTON_DEPTH);
+
+    pElement = mElements[1];
+
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    mDialog.DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
+
+    NOEXCEPT_REGION_END
 }
 
 
-//--------------------------------------------------------------------------------------
-void GLUFScrollBar::UpdateRects()
-{
-	GLUFControl::UpdateRects();
-
-	// Make the buttons square
-
-	GLUFSetRect(m_rcUpButton, m_rcBoundingBox.left, m_rcBoundingBox.top,
-		m_rcBoundingBox.right, m_rcBoundingBox.top - GLUFRectWidth(m_rcBoundingBox));
-	//GLUFOffsetRect(m_rcDownButton, 0.0f, GLUFRectHeight(m_rcDownButton));
-
-	GLUFSetRect(m_rcDownButton, m_rcBoundingBox.left, m_rcBoundingBox.bottom + GLUFRectWidth(m_rcBoundingBox),
-		m_rcBoundingBox.right, m_rcBoundingBox.bottom);
-	//GLUFOffsetRect(m_rcDownButton, 0.0f, GLUFRectHeight(m_rcDownButton));
-
-	GLUFSetRect(m_rcTrack, m_rcUpButton.left, m_rcUpButton.bottom,
-		m_rcDownButton.right, m_rcDownButton.top);
-	//GLUFOffsetRect(m_rcDownButton, 0.0f, GLUFRectHeight(m_rcDownButton));
-
-	m_rcThumb.left = m_rcUpButton.left;
-	m_rcThumb.right = m_rcUpButton.right;
-
-	UpdateThumbRect();
-}
-
-
-//--------------------------------------------------------------------------------------
-// Compute the dimension of the scroll thumb
-void GLUFScrollBar::UpdateThumbRect()
-{
-	//TODO: fix bug where the icon can go just below the max it should
-	if (m_nEnd - m_nStart > m_nPageSize)
-	{
-		int nThumbHeight = std::clamp((int)GLUFRectHeight(m_rcTrack) * m_nPageSize / (m_nEnd - m_nStart),
-			SCROLLBAR_MINTHUMBSIZE, (int)GLUFRectHeight(m_rcTrack));
-		int nMaxPosition = m_nEnd - m_nStart - m_nPageSize + 1;
-		m_rcThumb.top = m_rcTrack.top - (m_nPosition - m_nStart) * (GLUFRectHeight(m_rcTrack) - nThumbHeight)
-			/ nMaxPosition;
-		m_rcThumb.bottom = m_rcThumb.top - nThumbHeight;
-		m_bShowThumb = true;
-
-	}
-	else
-	{
-		// No content to scroll
-		m_rcThumb.bottom = m_rcThumb.top;
-		m_bShowThumb = false;
-	}
-}
-
-
-//--------------------------------------------------------------------------------------
-// Scroll() scrolls by nDelta items.  A positive value scrolls down, while a negative
-// value scrolls up.
-void GLUFScrollBar::Scroll( int nDelta)
-{
-	// Perform scroll
-	m_nPosition += nDelta;
-
-	// Cap position
-	Cap();
-
-	// Update thumb position
-	UpdateThumbRect();
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFScrollBar::ShowItem( int nIndex)
-{
-	// Cap the index
-
-	nIndex = std::clamp(nIndex, 0, m_nEnd - 1);
-
-	// Adjust position
-
-	if (m_nPosition > nIndex)
-		m_nPosition = nIndex;
-	else if (m_nPosition + m_nPageSize <= nIndex)
-		m_nPosition = nIndex - m_nPageSize + 1;
-
-	UpdateThumbRect();
-}
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFScrollBar::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
-{
-	//UNREFERENCED_PARAMETER(wParam);
-
-	if (GM_FOCUS == msg && param1 == GL_FALSE)
-	{
-		// The application just lost mouse capture. We may not have gotten
-		// the WM_MOUSEUP message, so reset m_bDrag here.
-		//if ((HWND)lParam != GLUFGetHWND())
-		m_bDrag = false;
-	}
-	static int nThumbYOffset;
-
-	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
-	m_LastMouse = pt;
-
-
-	//if the mousebutton is NOT PRESSED, the stop scrolling(since this does not get the mouse release button if it is not over the control)
-	//int mbPressed = glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT);
-	//if (mbPressed == GLFW_RELEASE)
-	//	m_bDrag = false;
-
-	switch (msg)
-	{
-	case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-		if (param2 == GLFW_PRESS)
-		{
-			// Check for click on up button
-
-			if (GLUFPtInRect(m_rcUpButton, pt))
-			{
-				//SetCapture(GLUFGetHWND());
-				if (m_nPosition > m_nStart)
-					--m_nPosition;
-
-				UpdateThumbRect();
-				m_Arrow = CLICKED_UP;
-				m_dArrowTS = GLUFGetTime();
-				return true;
-			}
-
-			// Check for click on down button
-
-			if (GLUFPtInRect(m_rcDownButton, pt))
-			{
-				//SetCapture(GLUFGetHWND());
-				if (m_nPosition + m_nPageSize <= m_nEnd)
-					++m_nPosition;
-
-				UpdateThumbRect();
-				m_Arrow = CLICKED_DOWN;
-				m_dArrowTS = GLUFGetTime();
-				return true;
-			}
-
-			// Check for click on thumb
-
-			if (GLUFPtInRect(m_rcThumb, pt))
-			{
-				//SetCapture(GLUFGetHWND());
-				m_bDrag = true;
-				nThumbYOffset = m_rcThumb.top - pt.y;
-				return true;
-			}
-
-			// Check for click on track
-
-			if (m_rcThumb.left <= pt.x &&
-				m_rcThumb.right > pt.x)
-			{
-				//SetCapture(GLUFGetHWND());
-				if (m_rcThumb.top > pt.y &&
-					m_rcTrack.top <= pt.y)
-				{
-					Scroll(-(m_nPageSize - 1));
-					return true;
-				}
-				else if (m_rcThumb.bottom <= pt.y &&
-					m_rcTrack.bottom > pt.y)
-				{
-					Scroll(m_nPageSize - 1);
-					return true;
-				}
-			}
-
-			break;
-		}
-		else if (param2 == GLFW_RELEASE)
-		{
-			m_bDrag = false;
-			//ReleaseCapture();
-			UpdateThumbRect();
-			m_Arrow = CLEAR;
-			break;
-		}
-
-		case GM_CURSOR_POS:
-		{
-			if (m_bDrag)
-			{
-				static int nThumbHeight;
-				nThumbHeight = GLUFRectHeight(m_rcThumb);
-
-				m_rcThumb.top = pt.y + nThumbYOffset;
-				m_rcThumb.bottom = m_rcThumb.top - nThumbHeight;
-				if (m_rcThumb.top > m_rcTrack.top)
-					GLUFOffsetRect(m_rcThumb, 0, -(m_rcThumb.top - m_rcTrack.top));
-				else if (m_rcThumb.bottom < m_rcTrack.bottom)
-					GLUFOffsetRect(m_rcThumb, 0, -(m_rcThumb.bottom - m_rcTrack.bottom));
-				
-				// Compute first item index based on thumb position
-
-				int nMaxFirstItem = m_nEnd - m_nStart - m_nPageSize + 1;  // Largest possible index for first item
-				int nMaxThumb = GLUFRectHeight(m_rcTrack) - GLUFRectHeight(m_rcThumb);  // Largest possible thumb position from the top
-
-				m_nPosition = m_nStart + int(((m_rcTrack.top - m_rcThumb.top) * (float)nMaxFirstItem) / nMaxThumb);
-					/*(m_rcTrack.top - m_rcThumb.top +
-					nMaxThumb / (nMaxFirstItem * 2)) * // Shift by half a row to avoid last row covered by only one pixel
-					nMaxFirstItem / nMaxThumb;*/
-
-				return true;
-			}
-
-			break;
-		}
-	}
-
-	return false;
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFScrollBar::Render( float elapsedTime)
-{
-	if (m_bVisible == false)
-		return;
-
-	// Check if the arrow button has been held for a while.
-	// If so, update the thumb position to simulate repeated
-	// scroll.
-	if (m_Arrow != CLEAR)
-	{
-		double dCurrTime = GLUFGetTime();
-		if (GLUFPtInRect(m_rcUpButton, m_LastMouse))
-		{
-			switch (m_Arrow)
-			{
-			case CLICKED_UP:
-				if (SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - m_dArrowTS)
-				{
-					Scroll(-1);
-					m_Arrow = HELD_UP;
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			case HELD_UP:
-				if (SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - m_dArrowTS)
-				{
-					Scroll(-1);
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			}
-		}
-		else if (GLUFPtInRect(m_rcDownButton, m_LastMouse))
-		{
-			switch (m_Arrow)
-			{
-			case CLICKED_DOWN:
-				if (SCROLLBAR_ARROWCLICK_DELAY < dCurrTime - m_dArrowTS)
-				{
-					Scroll(1);
-					m_Arrow = HELD_DOWN;
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			case HELD_DOWN:
-				if (SCROLLBAR_ARROWCLICK_REPEAT < dCurrTime - m_dArrowTS)
-				{
-					Scroll(1);
-					m_dArrowTS = dCurrTime;
-				}
-				break;
-			}
-		}
-	}
-
-	GLUF_CONTROL_STATE iState = GLUF_STATE_NORMAL;
-
-	if (m_bVisible == false)
-		iState = GLUF_STATE_HIDDEN;
-	else if (m_bEnabled == false || m_bShowThumb == false)
-		iState = GLUF_STATE_DISABLED;
-	else if (m_bMouseOver)
-		iState = GLUF_STATE_MOUSEOVER;
-	else if (m_bHasFocus)
-		iState = GLUF_STATE_FOCUS;
-
-
-	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
-
-	// Background track layer
-	GLUFElement* pElement = m_Elements[0];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcTrack, GLUF_FAR_BUTTON_DEPTH);
-
-	
-	GLUF_CONTROL_STATE iArrowState = iState;
-	//if it is all the way at the top, then disable
-	if (m_nPosition == 0 && iState != GLUF_STATE_HIDDEN)
-		iArrowState = GLUF_STATE_DISABLED;
-	
-	// Up Arrow
-	pElement = m_Elements[1];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iArrowState, elapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcUpButton, GLUF_NEAR_BUTTON_DEPTH);
-
-
-	//similar with the bottom
-	iArrowState = iState;
-	if ((m_nPosition + m_nPageSize - 1 == m_nEnd && iState != GLUF_STATE_HIDDEN) || m_nEnd == 1/*when no scrolling is necesary*/)
-		iArrowState = GLUF_STATE_DISABLED;
-
-	// Down Arrow
-	pElement = m_Elements[2];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iArrowState, elapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcDownButton, GLUF_NEAR_BUTTON_DEPTH);
-
-	// Thumb button
-	pElement = m_Elements[3];
-
-	// Blend current color
-	pElement->TextureColor.Blend(iState, elapsedTime, fBlendRate);
-	m_pDialog->DrawSprite(pElement, m_rcThumb, GLUF_NEAR_BUTTON_DEPTH);
-
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFScrollBar::SetTrackRange( int nStart,  int nEnd)
-{
-	m_nStart = nStart; m_nEnd = nEnd;
-	Cap();
-	UpdateThumbRect();
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFScrollBar::Cap()  // Clips position at boundaries. Ensures it stays within legal range.
-{
-	if (m_nPosition < m_nStart ||
-		m_nEnd - m_nStart <= m_nPageSize)
-	{
-		m_nPosition = m_nStart;
-	}
-	else if (m_nPosition + m_nPageSize > m_nEnd)
-		m_nPosition = m_nEnd - m_nPageSize + 1;
-}
-
-
-//======================================================================================
-// GLUFListBox class
-//======================================================================================
-
-GLUFListBox::GLUFListBox( GLUFDialog* pDialog) : m_ScrollBar(pDialog)
-{
-	m_Type = GLUF_CONTROL_LISTBOX;
-	m_pDialog = pDialog;
-
-
-
-	GLUFPoint pt = m_pDialog->GetManager()->GetWindowSize();
-
-	m_dwStyle = 0;
-	m_fSBWidth = 16;
-	m_Selected.push_back(-1);
-	m_bDrag = false;
-	m_fBorder = 6;
-	m_fMargin = 5;
-	m_fTextHeight = 20;
-}
-
-
-//--------------------------------------------------------------------------------------
-GLUFListBox::~GLUFListBox()
-{
-	RemoveAllItems();
-}
-
-//--------------------------------------------------------------------------------------
-void GLUFListBox::UpdateRects()
-{
-	GLUFControl::UpdateRects();
-
-	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
-	m_fTextHeight = pFont->m_Leading;
-
-	m_rcSelection = m_rcBoundingBox;
-	m_rcSelection.right -= m_fSBWidth;
-	GLUFInflateRect(m_rcSelection, -m_fBorder, -m_fBorder);
-	m_rcText = m_rcSelection;
-	GLUFInflateRect(m_rcText, -m_fMargin, 0);
-	//m_fBorder += -(GLUFRectHeight(m_rcText) % (long)pFont->m_Leading) / 2;
-
-	// Update the scrollbar's rects
-	//m_ScrollBar.SetLocation(m_rcBoundingBox.right - m_fSBWidth, m_rcBoundingBox.top);
-	//m_ScrollBar.SetSize(m_fSBWidth, m_height);
-
-	m_ScrollBar.SetLocation(m_rcBoundingBox.right, m_rcBoundingBox.bottom);
-	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
-	m_ScrollBar.m_y = m_rcText.top;
-	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-	if (pFontNode && pFontNode->m_pFontType->mHeight)
-	{
-		m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_Leading));
-
-		// The selected item may have been scrolled off the page.
-		// Ensure that it is in page again.
-		m_ScrollBar.ShowItem(m_Selected[m_Selected.size()-1]);
-	}
-
-	UpdateItemRects();
-}
-
-
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFListBox::AddItem(std::wstring wszText, void* pData)
-{
-	GLUFListBoxItem* pNewItem = new (std::nothrow) GLUFListBoxItem;
-	if (!pNewItem)
-		return GR_OUTOFMEMORY;
-
-	//clear the selection vector
-	m_Selected.clear();//this makes it so we do not have to offset the selection
-	m_Selected.push_back(-1);
-
-	//wcscpy_s(pNewItem->strText, 256, wszText);
-	pNewItem->strText = wszText;
-	pNewItem->pData = pData;
-	GLUFSetRect(pNewItem->rcActive, 0, 0, 0, 0);
-	//pNewItem->bSelected = false;
-
-	m_Items.push_back(pNewItem);
-	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFListBox::InsertItem(int nIndex, std::wstring wszText, void* pData)
-{
-	GLUFListBoxItem* pNewItem = new (std::nothrow) GLUFListBoxItem;
-	if (!pNewItem)
-		return GR_OUTOFMEMORY;
-
-	//clear the selection vector
-	m_Selected.clear();//this makes it so we do not have to offset the selection
-	m_Selected.push_back(-1);
-
-	//wcscpy_s(pNewItem->strText, 256, wszText);
-	pNewItem->strText = wszText;
-	pNewItem->pData = pData;
-	GLUFSetRect(pNewItem->rcActive, 0, 0, 0, 0);
-	//pNewItem->bSelected = false;
-
-
-	m_Items[nIndex] = pNewItem;
-	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFListBox::RemoveItem( int nIndex)
-{
-	if (nIndex < 0 || nIndex >= (int)m_Items.size())
-		return;
-
-	auto it = m_Items.begin() + nIndex;
-	GLUFListBoxItem* pItem = *it;
-	delete pItem;
-	m_Items.erase(it);
-	m_ScrollBar.SetTrackRange(0, (int)m_Items.size());
-	if (m_Selected[0] >= (int)m_Items.size())
-		m_Selected[0] = int(m_Items.size()) - 1;
-
-	m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFListBox::RemoveAllItems()
-{
-	for (auto it = m_Items.begin(); it != m_Items.end(); ++it)
-	{
-		GLUFListBoxItem* pItem = *it;
-		delete pItem;
-	}
-
-	m_Items.clear();
-	m_ScrollBar.SetTrackRange(0, 1);
-	m_Selected.clear();
-	m_Selected.push_back(-1);
-}
-
-
-//--------------------------------------------------------------------------------------
-GLUFListBoxItem* GLUFListBox::GetItem( int nIndex)
-{
-	if (nIndex < 0 || nIndex >= (int)m_Items.size())
-		return nullptr;
-
-	return m_Items[nIndex];
-}
-
-
-//--------------------------------------------------------------------------------------
-// For single-selection listbox, returns the index of the selected item.
-// For multi-selection, returns the first selected item after the nPreviousSelected position.
-// To search for the first selected item, the app passes -1 for nPreviousSelected.  For
-// subsequent searches, the app passes the returned index back to GetSelectedIndex as.
-// nPreviousSelected.
-// Returns -1 on error or if no item is selected.
-int GLUFListBox::GetSelectedIndex( int nPreviousSelected)
-{
-	if (nPreviousSelected < -1)
-		return -1;
-
-	if (m_dwStyle & MULTISELECTION)
-	{
-		// Multiple selection enabled. Search for the next item with the selected flag.
-		/*for (int i = nPreviousSelected + 1; i < (int)m_Items.size(); ++i)
-		{
-			GLUFListBoxItem* pItem = m_Items[i];
-
-			if (pItem->bSelected)
-				return i;
-		}*/
-
-		//TODO: does this work?
-		int in = *(std::find(m_Selected.begin(), m_Selected.end(), nPreviousSelected) + 1);
-
-		return -1;
-	}
-	else
-	{
-		// Single selection
-		return m_Selected[0];
-	}
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFListBox::SelectItem( int nNewIndex)
-{
-	// If no item exists, do nothing.
-	if (m_Items.size() == 0)
-		return;
-
-	int nOldSelected = m_Selected[0];
-
-	// Adjust m_nSelected
-	m_Selected[0] = nNewIndex;
-
-	// Perform capping
-	if (m_Selected[0] < 0)
-		m_Selected[0] = 0;
-	if (m_Selected[0] >= (int)m_Items.size())
-		m_Selected[0] = int(m_Items.size()) - 1;
-
-	if (nOldSelected != m_Selected[0])
-	{
-		/*if (m_dwStyle & MULTISELECTION)
-		{
-			//m_Items[m_Selected[0]]->bSelected = true;
-		}*/
-
-		nNewIndex = m_Selected[0];
-		m_Selected.clear();
-		m_Selected.push_back(nNewIndex);
-		// Update selection start
-		//m_nSelStart = m_nSelected;
-
-		// Adjust scroll bar
-		m_ScrollBar.ShowItem(m_Selected[m_Selected.size() - 1]);
-	}
-
-	m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-}
-
-
-//--------------------------------------------------------------------------------------
-/*
-bool GLUFListBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	// Let the scroll bar have a chance to handle it first
-	if (m_ScrollBar.HandleKeyboard(uMsg, wParam, lParam))
-		return true;
-
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-		switch (wParam)
-		{
-		case VK_UP:
-		case VK_DOWN:
-		case VK_NEXT:
-		case VK_PRIOR:
-		case VK_HOME:
-		case VK_END:
-		{
-			// If no item exists, do nothing.
-			if (m_Items.size() == 0)
-				return true;
-
-			int nOldSelected = m_nSelected;
-
-			// Adjust m_nSelected
-			switch (wParam)
-			{
-			case VK_UP:
-				--m_nSelected; break;
-			case VK_DOWN:
-				++m_nSelected; break;
-			case VK_NEXT:
-				m_nSelected += m_ScrollBar.GetPageSize() - 1; break;
-			case VK_PRIOR:
-				m_nSelected -= m_ScrollBar.GetPageSize() - 1; break;
-			case VK_HOME:
-				m_nSelected = 0; break;
-			case VK_END:
-				m_nSelected = int(m_Items.size()) - 1; break;
-			}
-
-			// Perform capping
-			if (m_nSelected < 0)
-				m_nSelected = 0;
-			if (m_nSelected >= (int)m_Items.size())
-				m_nSelected = int(m_Items.size()) - 1;
-
-			if (nOldSelected != m_nSelected)
-			{
-				if (m_dwStyle & MULTISELECTION)
-				{
-					// Multiple selection
-
-					// Clear all selection
-					for (int i = 0; i < (int)m_Items.size(); ++i)
-					{
-						GLUFListBoxItem* pItem = m_Items[i];
-						pItem->bSelected = false;
-					}
-
-					if (GetKeyState(VK_SHIFT) < 0)
-					{
-						// Select all items from m_nSelStart to
-						// m_nSelected
-						int nEnd = std::max(m_nSelStart, m_nSelected);
-
-						for (int n = std::min(m_nSelStart, m_nSelected); n <= nEnd; ++n)
-							m_Items[n]->bSelected = true;
-					}
-					else
-					{
-						m_Items[m_nSelected]->bSelected = true;
-
-						// Update selection start
-						m_nSelStart = m_nSelected;
-					}
-				}
-				else
-					m_nSelStart = m_nSelected;
-
-				// Adjust scroll bar
-
-				m_ScrollBar.ShowItem(m_nSelected);
-
-				// Send notification
-
-				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
-			}
-			return true;
-		}
-
-			// Space is the hotkey for double-clicking an item.
-			//
-		case VK_SPACE:
-			m_pDialog->SendEvent(GLUF_EVENTLISTBOX_ITEM_DBLCLK, true, this);
-			return true;
-		}
-		break;
-	}
-
-	return false;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFListBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
-{
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	// First acquire focus
-	if (WM_LBUTTONDOWN == uMsg)
-		if (!m_bHasFocus)
-			m_pDialog->RequestFocus(this);
-
-	// Let the scroll bar handle it first.
-	if (m_ScrollBar.HandleMouse(uMsg, pt, wParam, lParam))
-		return true;
-
-	switch (uMsg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-		// Check for clicks in the text area
-		if (!m_Items.empty() && PtInRect(&m_rcSelection, pt))
-		{
-			// Compute the index of the clicked item
-
-			int nClicked;
-			if (m_nTextHeight)
-				nClicked = m_ScrollBar.GetTrackPos() + (pt.y - m_rcText.top) / m_nTextHeight;
-			else
-				nClicked = -1;
-
-			// Only proceed if the click falls on top of an item.
-
-			if (nClicked >= m_ScrollBar.GetTrackPos() &&
-				nClicked < (int)m_Items.size() &&
-				nClicked < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			{
-				SetCapture(GLUFGetHWND());
-				m_bDrag = true;
-
-				// If this is a double click, fire off an event and exit
-				// since the first click would have taken care of the selection
-				// updating.
-				if (uMsg == WM_LBUTTONDBLCLK)
-				{
-					m_pDialog->SendEvent(GLUF_EVENTLISTBOX_ITEM_DBLCLK, true, this);
-					return true;
-				}
-
-				m_nSelected = nClicked;
-				if (!(wParam & MK_SHIFT))
-					m_nSelStart = m_nSelected;
-
-				// If this is a multi-selection listbox, update per-item
-				// selection data.
-
-				if (m_dwStyle & MULTISELECTION)
-				{
-					// Determine behavior based on the state of Shift and Ctrl
-
-					GLUFListBoxItem* pSelItem = m_Items[m_nSelected];
-					if ((wParam & (MK_SHIFT | MK_CONTROL)) == MK_CONTROL)
-					{
-						// Control click. Reverse the selection of this item.
-
-						pSelItem->bSelected = !pSelItem->bSelected;
-					}
-					else if ((wParam & (MK_SHIFT | MK_CONTROL)) == MK_SHIFT)
-					{
-						// Shift click. Set the selection for all items
-						// from last selected item to the current item.
-						// Clear everything else.
-
-						int nBegin = std::min(m_nSelStart, m_nSelected);
-						int nEnd = std::max(m_nSelStart, m_nSelected);
-
-						for (int i = 0; i < nBegin; ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						for (int i = nEnd + 1; i < (int)m_Items.size(); ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						for (int i = nBegin; i <= nEnd; ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = true;
-						}
-					}
-					else if ((wParam & (MK_SHIFT | MK_CONTROL)) == (MK_SHIFT | MK_CONTROL))
-					{
-						// Control-Shift-click.
-
-						// The behavior is:
-						//   Set all items from m_nSelStart to m_nSelected to
-						//     the same state as m_nSelStart, not including m_nSelected.
-						//   Set m_nSelected to selected.
-
-						int nBegin = std::min(m_nSelStart, m_nSelected);
-						int nEnd = std::max(m_nSelStart, m_nSelected);
-
-						// The two ends do not need to be set here.
-
-						bool bLastSelected = m_Items[m_nSelStart]->bSelected;
-						for (int i = nBegin + 1; i < nEnd; ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = bLastSelected;
-						}
-
-						pSelItem->bSelected = true;
-
-						// Restore m_nSelected to the previous value
-						// This matches the Windows behavior
-
-						m_nSelected = m_nSelStart;
-					}
-					else
-					{
-						// Simple click.  Clear all items and select the clicked
-						// item.
-
-
-						for (int i = 0; i < (int)m_Items.size(); ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						pSelItem->bSelected = true;
-					}
-				}  // End of multi-selection case
-
-				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
-			}
-
-			return true;
-		}
-		break;
-
-	case WM_LBUTTONUP:
-	{
-		ReleaseCapture();
-		m_bDrag = false;
-
-		if (m_nSelected != -1)
-		{
-			// Set all items between m_nSelStart and m_nSelected to
-			// the same state as m_nSelStart
-			int nEnd = std::max(m_nSelStart, m_nSelected);
-
-			for (int n = std::min(m_nSelStart, m_nSelected) + 1; n < nEnd; ++n)
-				m_Items[n]->bSelected = m_Items[m_nSelStart]->bSelected;
-			m_Items[m_nSelected]->bSelected = m_Items[m_nSelStart]->bSelected;
-
-			// If m_nSelStart and m_nSelected are not the same,
-			// the user has dragged the mouse to make a selection.
-			// Notify the application of this.
-			if (m_nSelStart != m_nSelected)
-				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
-
-			m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION_END, true, this);
-		}
-		return false;
-	}
-
-	case WM_MOUSEMOVE:
-		if (m_bDrag)
-		{
-			// Compute the index of the item below cursor
-
-			int nItem;
-			if (m_nTextHeight)
-				nItem = m_ScrollBar.GetTrackPos() + (pt.y - m_rcText.top) / m_nTextHeight;
-			else
-				nItem = -1;
-
-			// Only proceed if the cursor is on top of an item.
-
-			if (nItem >= (int)m_ScrollBar.GetTrackPos() &&
-				nItem < (int)m_Items.size() &&
-				nItem < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			{
-				m_nSelected = nItem;
-				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
-			}
-			else if (nItem < (int)m_ScrollBar.GetTrackPos())
-			{
-				// User drags the mouse above window top
-				m_ScrollBar.Scroll(-1);
-				m_nSelected = m_ScrollBar.GetTrackPos();
-				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
-			}
-			else if (nItem >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			{
-				// User drags the mouse below window bottom
-				m_ScrollBar.Scroll(1);
-				m_nSelected = std::min((int)m_Items.size(), m_ScrollBar.GetTrackPos() +
-					m_ScrollBar.GetPageSize()) - 1;
-				m_pDialog->SendEvent(GLUF_EVENTLISTBOX_SELECTION, true, this);
-			}
-		}
-		break;
-
-	case WM_MOUSEWHEEL:
-	{
-		UINT uLines = 0;
-		if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
-			uLines = 0;
-		int nScrollAmount = int((short)HIWORD(wParam)) / WHEEL_DELTA * uLines;
-		m_ScrollBar.Scroll(-nScrollAmount);
-		return true;
-	}
-	}
-
-	return false;
-}
-*/
-
-//--------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------
-bool GLUFListBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
-{
-
-	if (GM_FOCUS == msg && param1 == GL_FALSE)
-	{
-		// The application just lost mouse capture. We may not have gotten
-		// the WM_MOUSEUP message, so reset m_bDrag here.
-		m_bDrag = false;
-	}
-
-	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
-
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	// First acquire focus
-	if (GM_MB == msg && param1 == GLFW_MOUSE_BUTTON_LEFT && param2 == GLFW_PRESS)
-		if (!m_bHasFocus)
-			m_pDialog->RequestFocus(this);
-
-	// Let the scroll bar have a chance to handle it first
-	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM))
-		return true;
-
-	switch (msg)
-	{
-	case GM_KEY:
-		if (param3 == GLFW_RELEASE)
-		{
-			switch (param1)
-			{
-			case GLFW_KEY_UP:
-			case GLFW_KEY_DOWN:
-			case GLFW_KEY_PAGE_DOWN:
-			case GLFW_KEY_PAGE_UP:
-			case GLFW_KEY_HOME:
-			case GLFW_KEY_END:
-			{
-				// If no item exists, do nothing.
-				if (m_Items.size() == 0)
-					return true;
-
-				int nOldSelected = m_Selected[0];
-				m_Selected.clear();
-				m_Selected.push_back(nOldSelected);
-
-				// Adjust m_nSelected
-				switch (param1)
-				{
-				case GLFW_KEY_UP:
-					--m_Selected[0]; break;
-				case GLFW_KEY_DOWN:
-					++m_Selected[0]; break;
-				case GLFW_KEY_PAGE_DOWN:
-					m_Selected[0] += m_ScrollBar.GetPageSize() - 1; break;
-				case GLFW_KEY_PAGE_UP:
-					m_Selected[0] -= m_ScrollBar.GetPageSize() - 1; break;
-				case GLFW_KEY_HOME:
-					m_Selected[0] = 0; break;
-				case GLFW_KEY_END:
-					m_Selected[0] = int(m_Items.size()) - 1; break;
-				}
-
-				// Perform capping
-				if (m_Selected[0] < 0)
-					m_Selected[0] = 0;
-				if (m_Selected[0] >= (int)m_Items.size())
-					m_Selected[0] = int(m_Items.size()) - 1;
-
-				if (nOldSelected != m_Selected[0])
-				{
-					if (m_dwStyle & MULTISELECTION)
-					{
-						// Multiple selection
-
-						// Clear all selection
-						/*for (int i = 0; i < (int)m_Items.size(); ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						m_Selected.clear();
-
-						if (param4 & GLFW_MOD_SHIFT)
-						{
-							// Select all items from m_nSelStart to
-							// m_nSelected
-							int nEnd = m_Selected[m_Selected.size() - 1];//std::max(m_nSelStart, m_nSelected);
-
-							for (int n = m_Selected[0]; n <= nEnd; ++n)
-								m_Items[n]->bSelected = true;
-						}
-						else
-						{
-							m_Items[m_Selected[0]]->bSelected = true;
-
-							// Update selection start
-							//m_nSelStart = m_nSelected;
-						}*/
-
-						//TODO: key callback
-					}
-					else;
-						//m_nSelStart = m_nSelected;
-
-					// Adjust scroll bar
-
-					m_ScrollBar.ShowItem(m_Selected[0]);
-
-					// Send notification
-
-					m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-				}
-				return true;
-			}
-
-				// Space is the hotkey for double-clicking an item.
-				//
-			case GLFW_KEY_SPACE:
-				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_ITEM_DBLCLK, true, this);
-				return true;
-			}
-		}
-		break;
-	//case WM_LBUTTONDOWN:
-	//case WM_LBUTTONDBLCLK:
-	case GM_MB:
-		if (param2 == GLFW_PRESS)
-		{
-			// Check for clicks in the text area
-			if (!m_Items.empty() && GLUFPtInRect(m_rcSelection, pt))
-			{
-				// Compute the index of the clicked item
-
-				//int nClicked;
-				//m_pDialog->GetManager()->GetFontNode(p
-				//nClicked = int(m_ScrollBar.GetTrackPos() + (pt.y - m_rcText.top) / m_fTextHeight);
-
-				// Only proceed if the click falls on top of an item.
-
-				/*if (nClicked >= m_ScrollBar.GetTrackPos() &&
-					nClicked < (int)m_Items.size() &&
-					nClicked < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-				{
-					//SetCapture(GLUFGetHWND());
-					m_bDrag = true;
-
-					// If this is a double click, fire off an event and exit
-					// since the first click would have taken care of the selection
-					// updating.
-					//TODO: handle doubleclicking
-					if (uMsg == WM_LBUTTONDBLCLK)
-					{
-						m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_ITEM_DBLCLK, true, this);
-						return true;
-					}
-
-					m_nSelected = nClicked;
-					if (!(param3 & GLFW_MOD_SHIFT))
-						m_nSelStart = m_nSelected;*/
-
-					// If this is a multi-selection listbox, update per-item
-					// selection data.
-
-				int currSelectedIndex = -1;
-
-				//the easy way
-				for (unsigned int it = 0; it < m_Items.size(); ++it)
-				{
-					if (GLUFPtInRect(m_Items[it]->rcActive, pt))
-					{
-						currSelectedIndex = it;
-						break;
-					}
-				}
-
-				if (m_dwStyle & MULTISELECTION)
-				{
-					// Determine behavior based on the state of Shift and Ctrl
-
-					//GLUFListBoxItem* pSelItem = m_Items[currSelectedIndex];
-					if (param3 & GLFW_MOD_CONTROL)
-					{
-						// Control click. Reverse the selection of this item.
-
-						//pSelItem->bSelected = !pSelItem->bSelected;
-						std::vector<int>::iterator it = std::find(m_Selected.begin(), m_Selected.end(), currSelectedIndex);
-						if (it == m_Selected.end())
-						{
-							m_Selected.push_back(currSelectedIndex);
-						}							
-						else
-						{
-							m_Selected.erase(it);//this should never fail
-
-							//make sure that if it is the last one, then add the -1
-							if (m_Selected.size() == 0)
-							{
-								m_Selected.push_back(-1);
-							}
-						}
-					}
-					else if (param3 & GLFW_MOD_SHIFT)
-					{
-						// Shift click. Set the selection for all items
-						// from last selected item to the current item.
-						// Clear everything else.
-
-						if (m_Selected[0] == -1)
-							m_Selected[0] = 0;//this just fixes any issues with accidently keeping -1 in here
-
-						int nBegin = m_Selected[0];
-						int nEnd = currSelectedIndex;
-
-						m_Selected.clear();
-
-						/*for (int i = 0; i < nBegin; ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						for (int i = nEnd + 1; i < (int)m_Items.size(); ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}*/
-
-						if (nBegin < nEnd)
-						{
-							for (int i = nBegin; i <= nEnd; ++i)
-							{
-								/*GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = true;
-								*/
-								m_Selected.push_back(i);
-							}
-						}
-						else if (nBegin > nEnd)
-						{
-							for (int i = nBegin; i >= nEnd; --i)
-							{
-								/*GLUFListBoxItem* pItem = m_Items[i];
-								pItem->bSelected = true;
-								*/
-								m_Selected.push_back(i);
-							}
-						}
-						else
-						{
-							m_Selected.push_back(-1);
-						}
-					}
-					else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL))
-					{
-						//No one uses shift control anyway (i see no use in it
-
-						// Control-Shift-click.
-
-						// The behavior is:
-						//   Set all items from m_nSelStart to m_nSelected to
-						//     the same state as m_nSelStart, not including m_nSelected.
-						//   Set m_nSelected to selected.
-
-						/*int nBegin = m_Selected[0];
-						int nEnd = currSelectedIndex;
-						m_Selected.clear();
-
-						// The two ends do not need to be set here.
-
-						bool bLastSelected = m_Items[nBegin]->bSelected;
-						for (int i = nBegin + 1; i < nEnd; ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = bLastSelected;
-
-							m_Selected.push_back(i);
-						}
-
-						pSelItem->bSelected = true;*/
-
-						// Restore m_nSelected to the previous value
-						// This matches the Windows behavior
-
-						//m_nSelected = m_nSelStart;
-					}
-					else
-					{
-						// Simple click.  Clear all items and select the clicked
-						// item.
-
-
-						/*for (int i = 0; i < (int)m_Items.size(); ++i)
-						{
-							GLUFListBoxItem* pItem = m_Items[i];
-							pItem->bSelected = false;
-						}
-
-						pSelItem->bSelected = true;
-						*/
-
-						m_Selected.clear();
-						m_Selected.push_back(currSelectedIndex);
-
-						//NOTE: clicking not on an item WILL lead to a clearing of the selection
-					}
-				}  // End of multi-selection case
-				else
-				{
-					m_Selected[0] = currSelectedIndex;
-				}
-
-				//always make sure we have one
-				if (m_Selected.size() == 0)
-					m_Selected.push_back(-1);
-
-				//sort it for proper functionality when using shift-clicking (NOT HELPFUL)
-				//std::sort(m_Selected.begin(), m_Selected.end());
-
-				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-				
-
-				return true;
-			}
-			break;
-		}
-		else
-		{
-			//TODO: drag click
-			//ReleaseCapture();
-			/*m_bDrag = false;
-
-			if (m_Selected[0] != -1)
-			{
-				// Set all items between m_nSelStart and m_nSelected to
-				// the same state as m_nSelStart
-				int nEnd = m_Selected[m_Selected.size() - 1];
-
-				for (int n = m_Selected[0] + 1; n < nEnd; ++n)
-					m_Items[n]->bSelected = m_Items[m_Selected[0]]->bSelected;
-				m_Items[m_Selected[0]]->bSelected = m_Items[m_Selected[0]]->bSelected;
-
-				// If m_nSelStart and m_nSelected are not the same,
-				// the user has dragged the mouse to make a selection.
-				// Notify the application of this.
-				if (m_Selected[0] != m_Selected[m_Selected.size() - 1])
-					m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-
-				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION_END, true, this);
-			}*/
-			return false;
-		}
-
-	case GM_CURSOR_POS:
-		/*if (m_bDrag)
-		{
-			// Compute the index of the item below cursor
-
-			int nItem = -1;
-			for (unsigned int it = 0; it < m_Items.size(); ++it)
-			{
-				if (GLUFPtInRect(m_Items[it]->rcActive, pt))
-				{
-					nItem = it;
-					break;
-				}
-			}
-
-			// Only proceed if the cursor is on top of an item.
-
-			if (nItem >= (int)m_ScrollBar.GetTrackPos() &&
-				nItem < (int)m_Items.size() &&
-				nItem < m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			{
-				m_Selected[0] = nItem;
-				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-			}
-			else if (nItem < (int)m_ScrollBar.GetTrackPos())
-			{
-				// User drags the mouse above window top
-				m_ScrollBar.Scroll(-1);
-				m_Selected[0] = m_ScrollBar.GetTrackPos();
-				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-			}
-			else if (nItem >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			{
-				// User drags the mouse below window bottom
-				m_ScrollBar.Scroll(1);
-				m_Selected[0] = std::min((int)m_Items.size(), m_ScrollBar.GetTrackPos() +
-					m_ScrollBar.GetPageSize()) - 1;
-				m_pDialog->SendEvent(GLUF_EVENT_LISTBOX_SELECTION, true, this);
-			}
-		}*/
-		break;
-
-	case GM_SCROLL:
-		//UINT uLines = 0;
-		//if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
-		//	uLines = 0;
-		//int nScrollAmount = int((short)HIWORD(wParam)) / WHEEL_DELTA * uLines;
-		m_ScrollBar.Scroll(-(param2 / WHEEL_DELTA));
-		return true;
-	}
-
-	return false;
-}
-
-//--------------------------------------------------------------------------------------
-void GLUFListBox::UpdateItemRects()
-{
-	GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
-	if (pFont)
-	{
-		int curY = m_rcText.top - pFont->m_Leading / 2;// +((m_ScrollBar.GetTrackPos() - 1) * pFont->mSize);
-		int nRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - pFont->m_Leading;
-
-
-		//int nRemainingHeight = GLUFRectHeight(m_rcBoundingBox) - pFont->m_Leading;
-
-		//for all of the ones before the displayed, just set them to something impossible
-		for (size_t i = 0; i < (size_t)m_ScrollBar.GetTrackPos(); ++i)
-		{
-			GLUFSetRect(m_Items[i]->rcActive, 0, 0, 0, 0);
-		}
-		for (size_t i = m_ScrollBar.GetTrackPos(); i < m_Items.size(); i++)
-		{
-			GLUFListBoxItem* pItem = m_Items[i];
-
-			// Make sure there's room left in the box
-			nRemainingHeight -= pFont->m_Leading;
-			if (nRemainingHeight - m_fBorder <= 0)
-			{
-				pItem->bVisible = false;
-				continue;
-			}
-
-			pItem->bVisible = true;
-
-			GLUFSetRect(pItem->rcActive, m_rcBoundingBox.left + m_fMargin, curY, m_rcBoundingBox.right - m_fMargin, curY - pFont->m_pFontType->mHeight);
-			curY -= pFont->m_Leading;
-		}
-	}
-}
-
-//--------------------------------------------------------------------------------------
-void GLUFListBox::Render( float elapsedTime)
-{
-	if (m_bVisible == false)
-		return;
-
-	GLUFElement* pElement = m_Elements[0];
-	pElement->TextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
-	pElement->FontColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
-
-	GLUFElement* pSelElement = m_Elements[1];
-	pSelElement->TextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
-	pSelElement->FontColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
-
-	m_pDialog->DrawSprite(pElement, m_rcBoundingBox, GLUF_FAR_BUTTON_DEPTH);
-
-		GLUFFontNode* pFont = m_pDialog->GetManager()->GetFontNode(pElement->iFont);
-	// Render the text
-	if (!m_Items.empty() && pFont)
-	{
-
-		UpdateItemRects();
-
-		static bool bSBInit;
-		if (!bSBInit)
-		{
-			// Update the page size of the scroll bar
-			if (m_fTextHeight > 0)
-				m_ScrollBar.SetPageSize(int((GLUFRectHeight(m_rcBoundingBox) - (2 * m_fBorder)) / m_fTextHeight) + 1);
-			else
-				m_ScrollBar.SetPageSize(0);
-			bSBInit = true;
-		}
-
-		for (int i = m_ScrollBar.GetTrackPos(); i < (int)m_Items.size(); ++i)
-		{
-
-			GLUFListBoxItem* pItem = m_Items[i];
-
-			if (!pItem->bVisible)
-				continue;
-
-			// Determine if we need to render this item with the
-			// selected element.
-			bool bSelectedStyle = false;
-
-			//m_Items[i]->bSelected = false;
-
-			if (!(m_dwStyle & MULTISELECTION) && i == m_Selected[0])
-				bSelectedStyle = true;
-			else if (m_dwStyle & MULTISELECTION)
-			{
-				for (auto it : m_Selected)
-					if (i == it)
-						bSelectedStyle = true;
-
-					
-				/*if (m_bDrag &&
-					((i >= m_Selected[0] && i < m_Selected[0]) ||
-					(i <= m_Selected[0] && i > m_Selected[0])))
-					bSelectedStyle = m_Items[m_Selected[0]]->bSelected;
-				else if (pItem->bSelected)
-					bSelectedStyle = true;*/
-			}
-
-			//bSelectedStyle = m_Items[i]->bSelected;
-			if (bSelectedStyle)
-			{
-				//rcSel.top = rc.top; rcSel.bottom = rc.bottom;
-				m_pDialog->DrawSprite(pSelElement, pItem->rcActive, GLUF_NEAR_BUTTON_DEPTH);
-				m_pDialog->DrawText(pItem->strText, pSelElement, pItem->rcActive);
-			}
-			else
-				m_pDialog->DrawText(pItem->strText, pElement, pItem->rcActive);
-
-			//GLUFOffsetRect(rc, 0, m_fTextHeight);
-		}
-
-	}
-
-	// Render the scroll bar
-
-	m_ScrollBar.Render(elapsedTime);
-}
 
 
 const wchar_t *g_Charsets[] = { 
@@ -6371,10 +6286,10 @@ bool GLUFEditBox::s_bHideCaret;   // If true, we don't render the caret.
 #define EDITBOX_SCROLLEXTENT 4
 
 //--------------------------------------------------------------------------------------
-GLUFEditBox::GLUFEditBox(Charset charset, bool isMultiline, GLUFDialog* pDialog) : GLUFControl(pDialog), m_ScrollBar(pDialog), m_bMultiline(isMultiline), m_Charset(charset)
+GLUFEditBox::GLUFEditBox(Charset charset, bool isMultiline, GLUFDialog* pDialog) : GLUFControl(pDialog), mScrollBar(pDialog), m_bMultiline(isMultiline), m_Charset(charset)
 {
-	m_Type = GLUF_CONTROL_EDITBOX;
-	m_pDialog = pDialog;
+	mType = GLUF_CONTROL_EDITBOX;
+	mDialog = pDialog;
 
 	m_fBorder  = 5;  // Default border width
 	m_fSpacing = 4;  // Default spacing
@@ -6391,7 +6306,7 @@ GLUFEditBox::GLUFEditBox(Charset charset, bool isMultiline, GLUFDialog* pDialog)
 	m_nCaret = m_nSelStart = 0;
 	m_bInsertMode = true;
 
-	m_fSBWidth = 16;
+	mSBWidth = 16;
 	m_bMouseDrag = false;
 
 	m_bAnalyseRequired = true;
@@ -6414,7 +6329,7 @@ void GLUFEditBox::PlaceCaret( int nCP)
 	{
 		if (nCP == -1)
 		{
-			m_ScrollBar.SetTrackPos(0);//top
+			mScrollBar->SetTrackPos(0);//top
 			m_nCaret = nCP;
 		}
 		else if (nCP >= GetTextLength())
@@ -6444,7 +6359,7 @@ void GLUFEditBox::PlaceCaret( int nCP)
 
 			while (rendCaret == -1)
 			{
-				m_ScrollBar.Scroll(m_ScrollBar.GetPageSize() - 1);
+				mScrollBar->Scroll(mScrollBar->GetPageSize() - 1);
 				Analyse();
 
 				rendCaret = GetStrRenderIndexFromStrIndex(nCP);
@@ -6452,12 +6367,12 @@ void GLUFEditBox::PlaceCaret( int nCP)
 
 			int line = GetLineNumberFromCharPos(rendCaret);
 
-			if (line < 0 || line >= m_ScrollBar.GetPageSize())
+			if (line < 0 || line >= mScrollBar->GetPageSize())
 			{
-				m_ScrollBar.SetTrackPos(line);
+				mScrollBar->SetTrackPos(line);
 			}
-			/*if (line < m_ScrollBar.GetTrackPos() || line > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
-				m_ScrollBar.SetTrackPos(line);*/
+			/*if (line < mScrollBar->GetTrackPos() || line > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 1)
+				mScrollBar->SetTrackPos(line);*/
 		}
 	}
 	else if (!m_bMultiline)
@@ -6469,20 +6384,20 @@ void GLUFEditBox::PlaceCaret( int nCP)
 		}
 		else
 		{
-			/*m_ScrollBar.SetTrackRange(0, GetTextLength());
-			if (nCP >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			m_ScrollBar.Scroll(delta);
-			else if (nCP < m_ScrollBar.GetTrackPos())
-			m_ScrollBar.SetTrackPos(nCP);*/
+			/*mScrollBar->SetTrackRange(0, GetTextLength());
+			if (nCP >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+			mScrollBar->Scroll(delta);
+			else if (nCP < mScrollBar->GetTrackPos())
+			mScrollBar->SetTrackPos(nCP);*/
 
 			m_nCaret = nCP;
 
 			//Analyse();
 			/*
-			if (m_nCaret >= m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize())
-			m_ScrollBar.Scroll(-((m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize()) - m_nCaret));
-			else if (m_nCaret < m_ScrollBar.GetTrackPos())
-			m_ScrollBar.SetTrackPos(m_nCaret);*/
+			if (m_nCaret >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+			mScrollBar->Scroll(-((mScrollBar->GetTrackPos() + mScrollBar->GetPageSize()) - m_nCaret));
+			else if (m_nCaret < mScrollBar->GetTrackPos())
+			mScrollBar->SetTrackPos(m_nCaret);*/
 		}
 
 		//int rendCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
@@ -6569,40 +6484,44 @@ void GLUFEditBox::DeleteSelectionText()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::UpdateRects()
+void GLUFEditBox::UpdateRects() noexcept
 {
-	GLUFControl::UpdateRects();
+    NOEXCEPT_REGION_START
 
-	// Update the text rectangle
-	m_rcText = m_rcBoundingBox;
-	// First inflate by m_nBorder to compute render rects
-	GLUFInflateRect(m_rcText, -m_fBorder, -m_fBorder);
-	
-	m_rcText.right -= m_fSBWidth;
+    GLUFControl::UpdateRects();
 
-	// Update the render rectangles
-	m_rcRender[0] = m_rcText;
-	GLUFSetRect(m_rcRender[1], m_rcBoundingBox.left, m_rcBoundingBox.top, m_rcText.left, m_rcText.top);
-	GLUFSetRect(m_rcRender[2], m_rcText.left, m_rcBoundingBox.top, m_rcText.right, m_rcText.top);
-	GLUFSetRect(m_rcRender[3], m_rcText.right, m_rcBoundingBox.top, m_rcBoundingBox.right, m_rcText.top);
-	GLUFSetRect(m_rcRender[4], m_rcBoundingBox.left, m_rcText.top, m_rcText.left, m_rcText.bottom);
-	GLUFSetRect(m_rcRender[5], m_rcText.right, m_rcText.top, m_rcBoundingBox.right, m_rcText.bottom);
-	GLUFSetRect(m_rcRender[6], m_rcBoundingBox.left, m_rcText.bottom, m_rcText.left, m_rcBoundingBox.bottom);
-	GLUFSetRect(m_rcRender[7], m_rcText.left, m_rcText.bottom, m_rcText.right, m_rcBoundingBox.bottom);
-	GLUFSetRect(m_rcRender[8], m_rcText.right, m_rcText.bottom, m_rcBoundingBox.right, m_rcBoundingBox.bottom);
+    // Update the text rectangle
+    mTextRegion = mRegion;
+    // First inflate by m_nBorder to compute render rects
+    GLUFInflateRect(mTextRegion, -m_fBorder, -m_fBorder);
 
-	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+    mTextRegion.right -= mSBWidth;
 
-	// Inflate further by m_nSpacing
-	GLUFInflateRect(m_rcText, -m_fSpacing, -m_fSpacing);	
+    // Update the render rectangles
+    m_rcRender[0] = mTextRegion;
+    GLUFSetRect(m_rcRender[1], mRegion.left, mRegion.top, mTextRegion.left, mTextRegion.top);
+    GLUFSetRect(m_rcRender[2], mTextRegion.left, mRegion.top, mTextRegion.right, mTextRegion.top);
+    GLUFSetRect(m_rcRender[3], mTextRegion.right, mRegion.top, mRegion.right, mTextRegion.top);
+    GLUFSetRect(m_rcRender[4], mRegion.left, mTextRegion.top, mTextRegion.left, mTextRegion.bottom);
+    GLUFSetRect(m_rcRender[5], mTextRegion.right, mTextRegion.top, mRegion.right, mTextRegion.bottom);
+    GLUFSetRect(m_rcRender[6], mRegion.left, mTextRegion.bottom, mTextRegion.left, mRegion.bottom);
+    GLUFSetRect(m_rcRender[7], mTextRegion.left, mTextRegion.bottom, mTextRegion.right, mRegion.bottom);
+    GLUFSetRect(m_rcRender[8], mTextRegion.right, mTextRegion.bottom, mRegion.right, mRegion.bottom);
 
-	m_ScrollBar.SetLocation(m_rcText.right, m_rcBoundingBox.bottom);
-	m_ScrollBar.SetSize(m_fSBWidth, GLUFRectHeight(m_rcBoundingBox));
-	m_ScrollBar.m_y = m_rcText.top;
+    GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
+
+    // Inflate further by m_nSpacing
+    GLUFInflateRect(mTextRegion, -m_fSpacing, -m_fSpacing);
+
+    mScrollBar->SetLocation(mTextRegion.right, mRegion.bottom);
+    mScrollBar->SetSize(mSBWidth, GLUFRectHeight(mRegion));
+    mScrollBar->m_y = mTextRegion.top;
 
 
-	//Analyse();
-	m_bAnalyseRequired = true;
+    //Analyse();
+    m_bAnalyseRequired = true;
+
+    NOEXCEPT_REGION_END
 }
 
 #pragma warning(disable : 4018)
@@ -6884,7 +6803,7 @@ bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
 
-	if (!m_bEnabled || !m_bVisible)
+	if (!mEnabled || !mVisible)
 		return false;
 
 	bool bHandled = false;
@@ -6943,13 +6862,13 @@ bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (m_nCaret != m_nSelStart)
 			{
 				DeleteSelectionText();
-				m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
+				mDialog.SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 			else
 			{
 				// Deleting one character
 				if (m_Buffer.RemoveChar(m_nCaret))
-					m_pDialog->SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
+					mDialog.SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
 			}
 			ResetCaretBlink();
 			bHandled = true;
@@ -7014,7 +6933,7 @@ bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 	UNREFERENCED_PARAMETER(wParam);
 	UNREFERENCED_PARAMETER(lParam);
 
-	if (!m_bEnabled || !m_bVisible)
+	if (!mEnabled || !mVisible)
 		return false;
 
 	switch (uMsg)
@@ -7022,8 +6941,8 @@ bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 	{
-		if (!m_bHasFocus)
-			m_pDialog->RequestFocus(this);
+		if (!mHasFocus)
+			mDialog.RequestFocus(shared_from_this());
 
 		if (!ContainsPoint(pt))
 			return false;
@@ -7033,7 +6952,7 @@ bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 		// Determine the character corresponding to the coordinates.
 		int nCP, nTrail, nX1st;
 		m_Buffer.CPtoX(m_nFirstVisible, FALSE, &nX1st);  // X offset of the 1st visible char
-		if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &nTrail))
+		if (m_Buffer.XtoCP(pt.x - mTextRegion.left + nX1st, &nCP, &nTrail))
 		{
 			// Cap at the nul character.
 			if (nTrail && nCP < m_Buffer.GetTextSize())
@@ -7057,7 +6976,7 @@ bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 			// Determine the character corresponding to the coordinates.
 			int nCP, nTrail, nX1st;
 			m_Buffer.CPtoX(m_nFirstVisible, FALSE, &nX1st);  // X offset of the 1st visible char
-			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &nTrail))
+			if (m_Buffer.XtoCP(pt.x - mTextRegion.left + nX1st, &nCP, &nTrail))
 			{
 				// Cap at the nul character.
 				if (nTrail && nCP < m_Buffer.GetTextSize())
@@ -7074,607 +6993,621 @@ bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM 
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::OnFocusIn()
+void GLUFEditBox::OnFocusIn() noexcept
 {
-	GLUFControl::OnFocusIn();
+    NOEXCEPT_REGION_START
 
-	ResetCaretBlink();
+    GLUFControl::OnFocusIn();
 
-	m_bAnalyseRequired = true;
+    ResetCaretBlink();
+
+    m_bAnalyseRequired = true;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 
-bool GLUFEditBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
+bool GLUFEditBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-
-	// Let the scroll bar have a chance to handle it first
-	if (m_ScrollBar.MsgProc(GLUF_PASS_CALLBACK_PARAM) && m_bMultiline)//if we are single line, the scroll bar is only here to give us auto scroll
-	{
-		m_bAnalyseRequired = true;
-		return true;
-	}
-	
-	//UNREFERENCED_PARAMETER(lParam);
-
-	if (!m_bEnabled || !m_bVisible)
-		return false;
-
-	GLUFPoint pt = m_pDialog->m_MousePositionDialogSpace;
-
-	bool bHandled = false;
-
-	switch (msg)
-	{
-	case GM_MB:
-		//case WM_LBUTTONDBLCLK:
-
-		if (!m_bHasFocus)
-			m_pDialog->RequestFocus(this);
-
-		if (param2 == GLFW_PRESS && m_strRenderBuffer.length())
-		{
-
-			if (!ContainsPoint(pt))
-				return false;
-			m_bAnalyseRequired = true;
-
-			m_bMouseDrag = true;
-			//SetCapture(GLUFGetHWND());
-			// Determine the character corresponding to the coordinates.
-			int nCP;
-			bool bTrail;
-			//m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
-			if (PttoCP(GLUFPoint(pt.x - m_rcText.left, pt.y - m_rcText.bottom), &nCP, &bTrail))
-			{
-				nCP = GetStrIndexFromStrRenderIndex(nCP);
-				// Cap at the nul character.
-				if (bTrail && nCP < GetTextLength())
-					PlaceCaret(nCP);
-				else
-					PlaceCaret(nCP - 1);
-				//m_nSelStart = m_nCaret;
-				ResetCaretBlink();
-			}
-			else if (   pt.y - m_rcText.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom || (
-						pt.x - m_rcText.left   > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].right && 
-						pt.y - m_rcText.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].top && 
-						pt.y - m_rcText.bottom > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom))
-			{
-				//this is hit if the mouse pos is below the bottom char, OR on the same line of the bottom row, but past the last char
-				PlaceCaret((int)m_strBuffer.length());
-				ResetCaretBlink();
-			}
-			bHandled = true;
-			break;
-		}
-		else
-		{
-			//ReleaseCapture();
-			m_bMouseDrag = false;
-			bHandled = true;
-			break;
-		}
-	case GM_CURSOR_POS:
-		if (m_bMouseDrag)
-		{
-			// Determine the character corresponding to the coordinates.
-			//int nCP, nX1st;
-			//bool bTrail;
-			/*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
-			if (m_Buffer.XtoCP(pt.x - m_rcText.left + nX1st, &nCP, &bTrail))
-			{
-				// Cap at the nul character.
-				if (bTrail && nCP < m_Buffer.GetTextSize())
-					PlaceCaret(nCP + 1);
-				else
-					PlaceCaret(nCP);
-			}*/
-
-			//m_bAnalyseRequired = true;
-		}
-		break;
-	case GM_SCROLL:
-		if (!m_bMultiline)
-			break;
-
-		if (!m_bHasFocus)
-			m_pDialog->RequestFocus(this);
-
-		m_ScrollBar.Scroll(-(param2 / WHEEL_DELTA) / 2);
-		m_bAnalyseRequired = true;
-
-		bHandled = true;
-		break;
-	case GM_UNICODE_CHAR:
-
-		//is it within the charset?
-		if (!CharsetContains(param1, m_Charset))
-		{
-			bHandled = true;
-			break;
-		}
-
-		m_bAnalyseRequired = true;
-		//printible chars
-
-		// If there's a selection and the user
-		// starts to type, the selection should
-		// be deleted.
-		if (m_nCaret != m_nSelStart)
-			DeleteSelectionText();
-
-		// If we are in overwrite mode and there is already
-		// a char at the caret's position, simply replace it.
-		// Otherwise, we insert the char as normal.
-		if (!m_bInsertMode && m_nCaret < GetTextLength())
-		{
-			RemoveChar(m_nCaret + 1);
-			InsertChar(m_nCaret + 1, param1);
-			PlaceCaret(m_nCaret + 1);
-			m_nSelStart = m_nCaret;
-		}
-		else
-		{
-			// Insert the char
-			InsertChar(m_nCaret + 1, param1);
-			PlaceCaret(m_nCaret + 1);
-			m_nSelStart = m_nCaret;
-
-		}
-		ResetCaretBlink();
-		m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-
-		bHandled = true;
-		break;
-	case GM_KEY:
-	{
-		m_bAnalyseRequired = true;
-
-		if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
-		{
-			switch (param1)
-			{
-			case GLFW_KEY_TAB:
-				// We don't process Tab in case keyboard input is enabled and the user
-				// wishes to Tab to other controls.
-				break;
-
-			case GLFW_KEY_HOME:
-				PlaceCaret(-1);
-				if (!param4 & GLFW_MOD_SHIFT)
-					// Shift is not down. Update selection
-					// start along with the caret.
-					m_nSelStart = m_nCaret;
-				ResetCaretBlink();
-				bHandled = true;
-				break;
-
-			case GLFW_KEY_END:
-				PlaceCaret(GetTextLength() - 1);
-				if (!param4 & GLFW_MOD_SHIFT)
-					// Shift is not down. Update selection
-					// start along with the caret.
-					m_nSelStart = m_nCaret;
-				ResetCaretBlink();
-				bHandled = true;
-				break;
-
-			case GLFW_KEY_INSERT:
-				if (param4 & GLFW_MOD_CONTROL)
-				{
-					// Control Insert. Copy to clipboard
-					CopyToClipboard();
-				}
-				else if (param4 & GLFW_MOD_SHIFT)
-				{
-					// Shift Insert. Paste from clipboard
-					PasteFromClipboard();
-				}
-				else
-				{
-					// Toggle caret insert mode
-					m_bInsertMode = !m_bInsertMode;
-				}
-				break;
-
-			case GLFW_KEY_DELETE:
-				// Check if there is a text selection.
-				if (m_nCaret != m_nSelStart)
-				{
-					DeleteSelectionText();
-					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-				}
-				else
-				{
-					// Deleting one character
-					if (m_nCaret != m_strBuffer.length() - 1)
-					{
-						RemoveChar(m_nCaret + 1);
-						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-					}
-				}
-				ResetCaretBlink();
-				bHandled = true;
-				break;
-
-			case GLFW_KEY_LEFT:
-				if (param4 & GLFW_MOD_CONTROL)
-				{
-					// Control is down. Move the caret to a new item
-					// instead of a character.
-					GetPriorItemPos(m_nCaret, m_nCaret);
-					PlaceCaret(m_nCaret);
-				}
-				else if (m_nCaret >= 0)
-					PlaceCaret(m_nCaret - 1);
-				if (!param4 & GLFW_MOD_SHIFT)
-					// Shift is not down. Update selection
-					// start along with the caret.
-					m_nSelStart = m_nCaret;
-				ResetCaretBlink();
-				bHandled = true;
-				break;
-
-			case GLFW_KEY_RIGHT:
-				if (param4 & GLFW_MOD_CONTROL)
-				{
-					// Control is down. Move the caret to a new item
-					// instead of a character.
-					GetNextItemPos(m_nCaret, m_nCaret);
-					PlaceCaret(m_nCaret);
-				}
-				else if (m_nCaret < GetTextLength())
-					PlaceCaret(m_nCaret + 1);
-				if (!param4 & GLFW_MOD_SHIFT)
-					// Shift is not down. Update selection
-					// start along with the caret.
-					m_nSelStart = m_nCaret;
-				ResetCaretBlink();
-				bHandled = true;
-				break;
-
-			case GLFW_KEY_DOWN:
-			case GLFW_KEY_UP:
-			{
-				bool bIsKeyUp;
-				if (param1 == GLFW_KEY_DOWN)
-					bIsKeyUp = false;
-				else
-					bIsKeyUp = true;
-
-				//case GLFW_KEY_DOWN:
-				// Trap up and down arrows so that the dialog
-				// does not switch focus to another control.
-
-				//determine the character that is closest above this
-
-				//if it is the top line, the scroll up one
-				GLUFRect rc = { 0L, 0L, 0L, 0L };
+    NOEXCEPT_REGION_START
 
 
-				GLUFFontNode* pFont = m_pDialog->GetFont(GetElement(0)->iFont);
+    // Let the scroll bar have a chance to handle it first
+    if (mScrollBar->MsgProc(GLUF_PASS_CALLBACK_PARAM) && m_bMultiline)//if we are single line, the scroll bar is only here to give us auto scroll
+    {
+        m_bAnalyseRequired = true;
+        return true;
+    }
 
-				do
-				{
-					int rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
+    //UNREFERENCED_PARAMETER(lParam);
 
-					if (m_strRenderBuffer.size() > 1 && rndCP == -1)//first character
-						rndCP = 0;
+    if (!mEnabled || !mVisible)
+        return false;
 
-					if (rndCP < (int)m_strRenderBuffer.size() - 1)
-					{
-						if (m_strRenderBuffer[rndCP] == '\n' && std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCP) != m_strInsertedNewlineLocations.end())
-							rndCP++;
+    GLUFPoint pt = mDialog.GetMousePositionDialogSpace();
 
-						//if we have a situation like this:
-						/*
+    bool bHandled = false;
 
-						textextextextext
-						textextex
-						textextextextextext
+    switch (msg)
+    {
+    case GM_MB:
+        //case WM_LBUTTONDBLCLK:
 
-						*/
+        if (!mHasFocus)
+            mDialog.RequestFocus(shared_from_this());
 
-						//THERE IS NOT CURRENTLY SUPPORT FOR THIS FEATURE
+        if (param2 == GLFW_PRESS && m_strRenderBuffer.length())
+        {
 
-						/*std::vector<std::wstring> lines = GLUFSplitStr(m_strRenderBuffer, '\n', true);
-						if (m_strRenderBuffer[rndCP + 1] == '\n')//if the newline is coming up, check to see if there is a 'clif' above or below
-						{
-							long width = 0;
-							unsigned int it = 0;
-							if (bIsKeyUp)
-							{
-								//if it is the up key, we need get to the beginning of the previous row
-								bool foundfirst = false;
-								bool foundsecond = false;
-								for (unsigned int i = rndCP; i > 0; --i)
-								{
-									if (m_strRenderBuffer[i] == '\n')
-									{
-										if (!foundfirst)
-											foundfirst = true;
-										else
-										{
-											it = i + 1;
-											break;
-										}
-									}
-								}
-							}
-							else
-							{
-								it = rndCP + 2;
-							}
-							for (; (bIsKeyUp ? it >=  0 : it < m_strRenderBuffer.length()); (bIsKeyUp ? (--it) : (++it)))
-							{
-								width += pFont->m_pFontType->GetCharAdvance(m_strRenderBuffer[it]);
-								if (m_strRenderBuffer[it] == '\n')
-								{
-									--it;
-									break;
-								}
-							}
+            if (!ContainsPoint(pt))
+                return false;
+            m_bAnalyseRequired = true;
 
-							if (width < m_CharBoundingBoxes[rndCP].right)//there is a cliff, so just put it at the end
-							{
-								PlaceCaretRndBuffer(it);
-							}
-							
-						}*/
+            m_bMouseDrag = true;
+            //SetCapture(GLUFGetHWND());
+            // Determine the character corresponding to the coordinates.
+            int nCP;
+            bool bTrail;
+            //m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+            if (PttoCP(GLUFPoint(pt.x - mTextRegion.left, pt.y - mTextRegion.bottom), &nCP, &bTrail))
+            {
+                nCP = GetStrIndexFromStrRenderIndex(nCP);
+                // Cap at the nul character.
+                if (bTrail && nCP < GetTextLength())
+                    PlaceCaret(nCP);
+                else
+                    PlaceCaret(nCP - 1);
+                //m_nSelStart = m_nCaret;
+                ResetCaretBlink();
+            }
+            else if (pt.y - mTextRegion.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom || (
+                pt.x - mTextRegion.left   > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].right &&
+                pt.y - mTextRegion.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].top &&
+                pt.y - mTextRegion.bottom > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom))
+            {
+                //this is hit if the mouse pos is below the bottom char, OR on the same line of the bottom row, but past the last char
+                PlaceCaret((int)m_strBuffer.length());
+                ResetCaretBlink();
+            }
+            bHandled = true;
+            break;
+        }
+        else
+        {
+            //ReleaseCapture();
+            m_bMouseDrag = false;
+            bHandled = true;
+            break;
+        }
+    case GM_CURSOR_POS:
+        if (m_bMouseDrag)
+        {
+            // Determine the character corresponding to the coordinates.
+            //int nCP, nX1st;
+            //bool bTrail;
+            /*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
+            if (m_Buffer.XtoCP(pt.x - mTextRegion.left + nX1st, &nCP, &bTrail))
+            {
+            // Cap at the nul character.
+            if (bTrail && nCP < m_Buffer.GetTextSize())
+            PlaceCaret(nCP + 1);
+            else
+            PlaceCaret(nCP);
+            }*/
 
-					}
+            //m_bAnalyseRequired = true;
+        }
+        break;
+    case GM_SCROLL:
+        if (!m_bMultiline)
+            break;
 
-					if (CPtoRC(rndCP, &rc))
-					{
-						//is this the top line?
-						if ((bIsKeyUp ? rc.top == GLUFRectHeight(m_rcText) : rc.bottom < (long)pFont->m_Leading))
-						{
-							m_ScrollBar.Scroll(bIsKeyUp ? -1 : 1);
-							Analyse();
-							rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
-							if (!CPtoRC(rndCP, &rc))
-								break;
-						}
+        if (!mHasFocus)
+            mDialog.RequestFocus(shared_from_this());
 
-						//we have scrolled up if necisary, now to determine what is the character above this one
-						int newCP = 0;
-						bool trail = false;
-						if (!PttoCP(GLUFPoint(rc.right, rc.bottom + long((bIsKeyUp ? 1.5 : -0.5) * (long)pFont->m_Leading)), &newCP, &trail))
-							break;
-												
+        mScrollBar->Scroll(-(param2 / WHEEL_DELTA) / 2);
+        m_bAnalyseRequired = true;
 
-						if (trail == false)
-							--newCP;
-						//we have found something
-						PlaceCaretRndBuffer(newCP);
-					}
-				} while (false);//this is nice, because it allows me to use break instead of using 'goto'
-				//if it fails, then either it is less than 0.
+        bHandled = true;
+        break;
+    case GM_UNICODE_CHAR:
+
+        //is it within the charset?
+        if (!CharsetContains(param1, m_Charset))
+        {
+            bHandled = true;
+            break;
+        }
+
+        m_bAnalyseRequired = true;
+        //printible chars
+
+        // If there's a selection and the user
+        // starts to type, the selection should
+        // be deleted.
+        if (m_nCaret != m_nSelStart)
+            DeleteSelectionText();
+
+        // If we are in overwrite mode and there is already
+        // a char at the caret's position, simply replace it.
+        // Otherwise, we insert the char as normal.
+        if (!m_bInsertMode && m_nCaret < GetTextLength())
+        {
+            RemoveChar(m_nCaret + 1);
+            InsertChar(m_nCaret + 1, param1);
+            PlaceCaret(m_nCaret + 1);
+            m_nSelStart = m_nCaret;
+        }
+        else
+        {
+            // Insert the char
+            InsertChar(m_nCaret + 1, param1);
+            PlaceCaret(m_nCaret + 1);
+            m_nSelStart = m_nCaret;
+
+        }
+        ResetCaretBlink();
+        mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+
+        bHandled = true;
+        break;
+    case GM_KEY:
+    {
+        m_bAnalyseRequired = true;
+
+        if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
+        {
+            switch (param1)
+            {
+            case GLFW_KEY_TAB:
+                // We don't process Tab in case keyboard input is enabled and the user
+                // wishes to Tab to other controls.
+                break;
+
+            case GLFW_KEY_HOME:
+                PlaceCaret(-1);
+                if (!param4 & GLFW_MOD_SHIFT)
+                    // Shift is not down. Update selection
+                    // start along with the caret.
+                    m_nSelStart = m_nCaret;
+                ResetCaretBlink();
+                bHandled = true;
+                break;
+
+            case GLFW_KEY_END:
+                PlaceCaret(GetTextLength() - 1);
+                if (!param4 & GLFW_MOD_SHIFT)
+                    // Shift is not down. Update selection
+                    // start along with the caret.
+                    m_nSelStart = m_nCaret;
+                ResetCaretBlink();
+                bHandled = true;
+                break;
+
+            case GLFW_KEY_INSERT:
+                if (param4 & GLFW_MOD_CONTROL)
+                {
+                    // Control Insert. Copy to clipboard
+                    CopyToClipboard();
+                }
+                else if (param4 & GLFW_MOD_SHIFT)
+                {
+                    // Shift Insert. Paste from clipboard
+                    PasteFromClipboard();
+                }
+                else
+                {
+                    // Toggle caret insert mode
+                    m_bInsertMode = !m_bInsertMode;
+                }
+                break;
+
+            case GLFW_KEY_DELETE:
+                // Check if there is a text selection.
+                if (m_nCaret != m_nSelStart)
+                {
+                    DeleteSelectionText();
+                    mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+                }
+                else
+                {
+                    // Deleting one character
+                    if (m_nCaret != m_strBuffer.length() - 1)
+                    {
+                        RemoveChar(m_nCaret + 1);
+                        mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+                    }
+                }
+                ResetCaretBlink();
+                bHandled = true;
+                break;
+
+            case GLFW_KEY_LEFT:
+                if (param4 & GLFW_MOD_CONTROL)
+                {
+                    // Control is down. Move the caret to a new item
+                    // instead of a character.
+                    GetPriorItemPos(m_nCaret, m_nCaret);
+                    PlaceCaret(m_nCaret);
+                }
+                else if (m_nCaret >= 0)
+                    PlaceCaret(m_nCaret - 1);
+                if (!param4 & GLFW_MOD_SHIFT)
+                    // Shift is not down. Update selection
+                    // start along with the caret.
+                    m_nSelStart = m_nCaret;
+                ResetCaretBlink();
+                bHandled = true;
+                break;
+
+            case GLFW_KEY_RIGHT:
+                if (param4 & GLFW_MOD_CONTROL)
+                {
+                    // Control is down. Move the caret to a new item
+                    // instead of a character.
+                    GetNextItemPos(m_nCaret, m_nCaret);
+                    PlaceCaret(m_nCaret);
+                }
+                else if (m_nCaret < GetTextLength())
+                    PlaceCaret(m_nCaret + 1);
+                if (!param4 & GLFW_MOD_SHIFT)
+                    // Shift is not down. Update selection
+                    // start along with the caret.
+                    m_nSelStart = m_nCaret;
+                ResetCaretBlink();
+                bHandled = true;
+                break;
+
+            case GLFW_KEY_DOWN:
+            case GLFW_KEY_UP:
+            {
+                bool bIsKeyUp;
+                if (param1 == GLFW_KEY_DOWN)
+                    bIsKeyUp = false;
+                else
+                    bIsKeyUp = true;
+
+                //case GLFW_KEY_DOWN:
+                // Trap up and down arrows so that the dialog
+                // does not switch focus to another control.
+
+                //determine the character that is closest above this
+
+                //if it is the top line, the scroll up one
+                GLUFRect rc = { 0L, 0L, 0L, 0L };
 
 
-				bHandled = true;
-				break;
+                GLUFFontNodePtr pFont = mDialog.GetFont(GetElement(0)->mFontIndex);
 
-			}
-			case GLFW_KEY_BACKSPACE:
-			{
-				// If there's a selection, treat this
-				// like a delete key.
-				if (m_nCaret != m_nSelStart)
-				{
-					DeleteSelectionText();
-					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-				}
-				else if (m_nCaret >= 0)
-				{
-					// Move the caret, then delete the char.
-					RemoveChar(m_nCaret);
-					PlaceCaret(m_nCaret - 1);
-					m_nSelStart = m_nCaret;
-					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
-				}
-				ResetCaretBlink();
-				bHandled = true;
-				
-				break;
-			}
+                do
+                {
+                    int rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
 
-			case GLFW_KEY_X:        // Ctrl-X Cut
-			case GLFW_KEY_C:		// Ctrl-C Copy
-			{
-				if (param4 & GLFW_MOD_CONTROL)
-				{
-					CopyToClipboard();
+                    if (m_strRenderBuffer.size() > 1 && rndCP == -1)//first character
+                        rndCP = 0;
 
-					// If the key is Ctrl-X, delete the selection too.
-					if (param1 == GLFW_KEY_X)
-					{
-						DeleteSelectionText();
-						m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+                    if (rndCP < (int)m_strRenderBuffer.size() - 1)
+                    {
+                        if (m_strRenderBuffer[rndCP] == '\n' && std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCP) != m_strInsertedNewlineLocations.end())
+                            rndCP++;
 
-					}
+                        //if we have a situation like this:
+                        /*
 
-					bHandled = true;
-				}
-				break;
-			}
+                        textextextextext
+                        textextex
+                        textextextextextext
 
-				// Ctrl-V Paste
-			case GLFW_KEY_V:
-			{
-				if (param4 & GLFW_MOD_CONTROL)
-				{
-					PasteFromClipboard();
-					m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+                        */
 
-					bHandled = true;
-				}
-				break;
-			}
+                        //THERE IS NOT CURRENTLY SUPPORT FOR THIS FEATURE
 
-				// Ctrl-A Select All
-			case GLFW_KEY_A:
-				if (param4 & GLFW_MOD_CONTROL)
-				{
-					if (m_nSelStart == m_nCaret)
-					{
-						m_nSelStart = 0;
-						PlaceCaret(GetTextLength());
+                        /*std::vector<std::wstring> lines = GLUFSplitStr(m_strRenderBuffer, '\n', true);
+                        if (m_strRenderBuffer[rndCP + 1] == '\n')//if the newline is coming up, check to see if there is a 'clif' above or below
+                        {
+                        long width = 0;
+                        unsigned int it = 0;
+                        if (bIsKeyUp)
+                        {
+                        //if it is the up key, we need get to the beginning of the previous row
+                        bool foundfirst = false;
+                        bool foundsecond = false;
+                        for (unsigned int i = rndCP; i > 0; --i)
+                        {
+                        if (m_strRenderBuffer[i] == '\n')
+                        {
+                        if (!foundfirst)
+                        foundfirst = true;
+                        else
+                        {
+                        it = i + 1;
+                        break;
+                        }
+                        }
+                        }
+                        }
+                        else
+                        {
+                        it = rndCP + 2;
+                        }
+                        for (; (bIsKeyUp ? it >=  0 : it < m_strRenderBuffer.length()); (bIsKeyUp ? (--it) : (++it)))
+                        {
+                        width += pFont->mFontType->GetCharAdvance(m_strRenderBuffer[it]);
+                        if (m_strRenderBuffer[it] == '\n')
+                        {
+                        --it;
+                        break;
+                        }
+                        }
 
-						bHandled = true;
-					}
-				}
-				break;
+                        if (width < m_CharBoundingBoxes[rndCP].right)//there is a cliff, so just put it at the end
+                        {
+                        PlaceCaretRndBuffer(it);
+                        }
 
-			case GLFW_KEY_ENTER:
+                        }*/
 
-				if (!m_bMultiline)
-					break;
-				// Invoke the callback when the user presses Enter.
-				//m_pDialog->SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
-				InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
-				PlaceCaret(m_nCaret + 1);
-				bHandled = true;
+                    }
 
-				break;
+                    if (CPtoRC(rndCP, &rc))
+                    {
+                        //is this the top line?
+                        if ((bIsKeyUp ? rc.top == GLUFRectHeight(mTextRegion) : rc.bottom < (long)pFont->mLeading))
+                        {
+                            mScrollBar->Scroll(bIsKeyUp ? -1 : 1);
+                            Analyse();
+                            rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
+                            if (!CPtoRC(rndCP, &rc))
+                                break;
+                        }
 
-			default:
-				bHandled = param1 != GLFW_KEY_ESCAPE;  // Let the application handle Esc.
-			}
-		}
-	}
-	}
-	
-	if (bHandled)
-		return true;
+                        //we have scrolled up if necisary, now to determine what is the character above this one
+                        int newCP = 0;
+                        bool trail = false;
+                        if (!PttoCP(GLUFPoint(rc.right, rc.bottom + long((bIsKeyUp ? 1.5 : -0.5) * (long)pFont->mLeading)), &newCP, &trail))
+                            break;
 
-	return false;
+
+                        if (trail == false)
+                            --newCP;
+                        //we have found something
+                        PlaceCaretRndBuffer(newCP);
+                    }
+                } while (false);//this is nice, because it allows me to use break instead of using 'goto'
+                //if it fails, then either it is less than 0.
+
+
+                bHandled = true;
+                break;
+
+            }
+            case GLFW_KEY_BACKSPACE:
+            {
+                // If there's a selection, treat this
+                // like a delete key.
+                if (m_nCaret != m_nSelStart)
+                {
+                    DeleteSelectionText();
+                    mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+                }
+                else if (m_nCaret >= 0)
+                {
+                    // Move the caret, then delete the char.
+                    RemoveChar(m_nCaret);
+                    PlaceCaret(m_nCaret - 1);
+                    m_nSelStart = m_nCaret;
+                    mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+                }
+                ResetCaretBlink();
+                bHandled = true;
+
+                break;
+            }
+
+            case GLFW_KEY_X:        // Ctrl-X Cut
+            case GLFW_KEY_C:		// Ctrl-C Copy
+            {
+                if (param4 & GLFW_MOD_CONTROL)
+                {
+                    CopyToClipboard();
+
+                    // If the key is Ctrl-X, delete the selection too.
+                    if (param1 == GLFW_KEY_X)
+                    {
+                        DeleteSelectionText();
+                        mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+
+                    }
+
+                    bHandled = true;
+                }
+                break;
+            }
+
+            // Ctrl-V Paste
+            case GLFW_KEY_V:
+            {
+                if (param4 & GLFW_MOD_CONTROL)
+                {
+                    PasteFromClipboard();
+                    mDialog.SendEvent(GLUF_EVENT_EDITBOX_CHANGE, true, this);
+
+                    bHandled = true;
+                }
+                break;
+            }
+
+            // Ctrl-A Select All
+            case GLFW_KEY_A:
+                if (param4 & GLFW_MOD_CONTROL)
+                {
+                    if (m_nSelStart == m_nCaret)
+                    {
+                        m_nSelStart = 0;
+                        PlaceCaret(GetTextLength());
+
+                        bHandled = true;
+                    }
+                }
+                break;
+
+            case GLFW_KEY_ENTER:
+
+                if (!m_bMultiline)
+                    break;
+                // Invoke the callback when the user presses Enter.
+                //mDialog.SendEvent(GLUF_EVENT_EDITBOX_STRING, true, this);
+                InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
+                PlaceCaret(m_nCaret + 1);
+                bHandled = true;
+
+                break;
+
+            default:
+                bHandled = param1 != GLFW_KEY_ESCAPE;  // Let the application handle Esc.
+            }
+        }
+    }
+    }
+
+    if (bHandled)
+        return true;
+
+    return false;
+
+    NOEXCEPT_REGION_END
+
+    return false;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFEditBox::Render( float elapsedTime)
+void GLUFEditBox::Render( float elapsedTime) noexcept
 {
-	//UpdateRects();
-	if (m_bAnalyseRequired)
-		Analyse();
+    NOEXCEPT_REGION_START
 
-	//TODO: don't render scrollbar UNLESS there is necessity to scroll, change this on ALL controls
+    //UpdateRects();
+    if (m_bAnalyseRequired)
+        Analyse();
 
-
-
-	if (m_bVisible == false)
-		return;
+    //TODO: don't render scrollbar UNLESS there is necessity to scroll, change this on ALL controls
 
 
-	//
-	// Blink the caret
-	//
-	if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
-	{
-		m_bCaretOn = !m_bCaretOn;
-		m_dfLastBlink = glfwGetTime();
-	}
 
-	GLUFElement* pElement = GetElement(0);
+    if (mVisible == false)
+        return;
 
-	// Render the control graphics
-	for (int e = 0; e < 9; ++e)
-	{
-		pElement = m_Elements[e];
-		pElement->TextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
 
-		m_pDialog->DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
-	}
+    //
+    // Blink the caret
+    //
+    if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
+    {
+        m_bCaretOn = !m_bCaretOn;
+        m_dfLastBlink = glfwGetTime();
+    }
 
-	//render the scrollbar
-	if (m_bMultiline)
-		m_ScrollBar.Render(elapsedTime);
+    GLUFElementPtr pElement = GetElement(0);
 
-	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
-	if (pElement)
-	{
-		if (m_bHasFocus && m_bCaretOn && !s_bHideCaret)
-		{
-			// Start the rectangle with insert mode caret
-			GLUFRect rcCaret;
-			if (m_nCaret == -1)//if it is -1, then the leading edge of the first character
-			{
+    // Render the control graphics
+    for (int e = 0; e < 9; ++e)
+    {
+        pElement = mElements[e];
+        pElement->mTextureColor.Blend(GLUF_STATE_NORMAL, elapsedTime);
 
-				// If we are in overwrite mode, adjust the caret rectangle
-				// to fill the entire character.
-				if (!m_bInsertMode)
-				{
-					if (m_CharBoundingBoxes.size())
-						rcCaret = m_CharBoundingBoxes[0];
-				}
-				else
-					GLUFSetRect(rcCaret, 0, GLUFRectHeight(m_rcText), 2, GLUFRectHeight(m_rcText) - pFontNode->m_Leading);
+        mDialog.DrawSprite(pElement, m_rcRender[e], GLUF_FAR_BUTTON_DEPTH);
+    }
 
-				GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
-				m_pDialog->DrawRect(rcCaret, m_CaretColor);
-			}
-			else
-			{
+    //render the scrollbar
+    if (m_bMultiline)
+        mScrollBar->Render(elapsedTime);
+
+    GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
+    if (pElement)
+    {
+        if (mHasFocus && m_bCaretOn && !s_bHideCaret)
+        {
+            // Start the rectangle with insert mode caret
+            GLUFRect rcCaret;
+            if (m_nCaret == -1)//if it is -1, then the leading edge of the first character
+            {
+
+                // If we are in overwrite mode, adjust the caret rectangle
+                // to fill the entire character.
+                if (!m_bInsertMode)
+                {
+                    if (m_CharBoundingBoxes.size())
+                        rcCaret = m_CharBoundingBoxes[0];
+                }
+                else
+                    GLUFSetRect(rcCaret, 0, GLUFRectHeight(mTextRegion), 2, GLUFRectHeight(mTextRegion) - pFontNode->mLeading);
+
+                GLUFOffsetRect(rcCaret, mTextRegion.left, mTextRegion.bottom);
+                mDialog.DrawRect(rcCaret, m_CaretColor);
+            }
+            else
+            {
 #pragma warning(disable : 4018)
-				int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
-				if (rndCaret != -1 && rndCaret != -2 && !(rndCaret > m_strRenderBuffer.size()))//don't render off-screen
-				{
-					if (m_strRenderBuffer[rndCaret] == '\n' && (std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCaret) == m_strInsertedNewlineLocations.end() || rndCaret == m_strRenderBuffer.back()))
-					{
-						//if it is a newline character, then give the leading edge of the first char of the line
+                int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
+                if (rndCaret != -1 && rndCaret != -2 && !(rndCaret > m_strRenderBuffer.size()))//don't render off-screen
+                {
+                    if (m_strRenderBuffer[rndCaret] == '\n' && (std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCaret) == m_strInsertedNewlineLocations.end() || rndCaret == m_strRenderBuffer.back()))
+                    {
+                        //if it is a newline character, then give the leading edge of the first char of the line
 
-						GLUFSetRect(rcCaret, m_CharBoundingBoxes[0].left - 2, m_CharBoundingBoxes[rndCaret].top, 2, m_CharBoundingBoxes[rndCaret].bottom);
-					}
-					else if (m_strRenderBuffer[rndCaret] == '\n')
-						rndCaret++;
-					
-					if (rndCaret == m_CharBoundingBoxes.size())
-						rndCaret--;
-					GLUFSetRect(rcCaret,
-						m_CharBoundingBoxes[rndCaret].right, m_CharBoundingBoxes[rndCaret].top,
-						m_CharBoundingBoxes[rndCaret].right + 2, m_CharBoundingBoxes[rndCaret].bottom);
-					
-					// If we are in overwrite mode, adjust the caret rectangle
-					// to fill the entire character.
-					if (!m_bInsertMode)
-					{
-						if (rndCaret >= m_CharBoundingBoxes.size() - 1);
-						else
-						{
-							rcCaret.right = m_CharBoundingBoxes[rndCaret + 1].right;
-						}
-					}
+                        GLUFSetRect(rcCaret, m_CharBoundingBoxes[0].left - 2, m_CharBoundingBoxes[rndCaret].top, 2, m_CharBoundingBoxes[rndCaret].bottom);
+                    }
+                    else if (m_strRenderBuffer[rndCaret] == '\n')
+                        rndCaret++;
 
-					GLUFOffsetRect(rcCaret, m_rcText.left, m_rcText.bottom);
+                    if (rndCaret == m_CharBoundingBoxes.size())
+                        rndCaret--;
+                    GLUFSetRect(rcCaret,
+                        m_CharBoundingBoxes[rndCaret].right, m_CharBoundingBoxes[rndCaret].top,
+                        m_CharBoundingBoxes[rndCaret].right + 2, m_CharBoundingBoxes[rndCaret].bottom);
 
-					m_pDialog->DrawRect(rcCaret, m_CaretColor/*GLUF::Color(0, 0, 0, 255)*/);
-				}
+                    // If we are in overwrite mode, adjust the caret rectangle
+                    // to fill the entire character.
+                    if (!m_bInsertMode)
+                    {
+                        if (rndCaret >= m_CharBoundingBoxes.size() - 1);
+                        else
+                        {
+                            rcCaret.right = m_CharBoundingBoxes[rndCaret + 1].right;
+                        }
+                    }
+
+                    GLUFOffsetRect(rcCaret, mTextRegion.left, mTextRegion.bottom);
+
+                    mDialog.DrawRect(rcCaret, m_CaretColor/*GLUF::Color(0, 0, 0, 255)*/);
+                }
 #pragma warning(default : 4018)
-			}
-		}
-	}
+            }
+        }
+    }
 
-	//debugging
-	/*Color color = Color(255, 0, 255, 128);
-	for (auto it : m_CharBoundingBoxes)
-	{
-		GLUFRect copy = it;
-		GLUFOffsetRect(copy, m_rcText.left, m_rcText.bottom);
-		m_pDialog->DrawRect(copy, color);
+    //debugging
+    /*Color color = Color(255, 0, 255, 128);
+    for (auto it : m_CharBoundingBoxes)
+    {
+    GLUFRect copy = it;
+    GLUFOffsetRect(copy, mTextRegion.left, mTextRegion.bottom);
+    mDialog.DrawRect(copy, color);
 
-		if (color.r == 5)
-			color.g += 10;
-		else
-			color.r -= 10;
-	}*/
+    if (color.r == 5)
+    color.g += 10;
+    else
+    color.r -= 10;
+    }*/
 
-	m_Elements[0]->FontColor.SetCurrent(m_TextColor);
-	m_pDialog->DrawText(m_strRenderBuffer.c_str(), m_Elements[0], m_rcText);
+    mElements[0]->mFontColor.SetCurrent(m_TextColor);
+    mDialog.DrawText(m_strRenderBuffer.c_str(), mElements[0], mTextRegion);
 
 
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -7754,7 +7687,7 @@ bool GLUFEditBox::PttoCP(GLUFPoint pt, int* pCP, bool* bTrail)
 
 void GLUFEditBox::Analyse()
 {
-	GLUFFontNode* pFontNode = m_pDialog->GetManager()->GetFontNode(m_Elements[0]->iFont);
+	GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
 	//split the string into words to make line breaks in between words
 
 	//first set the render buffer to the string
@@ -7819,7 +7752,7 @@ void GLUFEditBox::Analyse()
 
 	if (m_bMultiline)
 	{//new block just to remove these variables
-		long TextWidth = GLUFRectWidth(m_rcText);
+		long TextWidth = GLUFRectWidth(mTextRegion);
 		long currXValue = 0;
 		int charIndex = 0;
 		int addedCharactersCount = 0;
@@ -7830,7 +7763,7 @@ void GLUFEditBox::Analyse()
 		{
 
 
-			long WordWidth = pFontNode->m_pFontType->GetStringWidth(it);
+			long WordWidth = pFontNode->mFontType->GetStringWidth(it);
 
 			//these are natural newlines
 			if (it == L"\n ")
@@ -7850,7 +7783,7 @@ void GLUFEditBox::Analyse()
 				{
 #pragma warning(disable : 4244)
 					GLUFFontSize nCharWidth;
-					nCharWidth = pFontNode->m_pFontType->GetCharAdvance(itch);
+					nCharWidth = pFontNode->mFontType->GetCharAdvance(itch);
 #pragma warning(default : 4244)
 					currXValue += (int)nCharWidth;
 
@@ -7899,39 +7832,39 @@ void GLUFEditBox::Analyse()
 	}
 
 	//recalculate scroll bar (this has to be done in between analyzing steps)
-	if (pFontNode && pFontNode->m_pFontType->mHeight)
+	if (pFontNode && pFontNode->mFontType->mHeight)
 	{
 		if (m_bMultiline)
 		{
-			m_ScrollBar.SetPageSize(int(GLUFRectHeight(m_rcText) / pFontNode->m_pFontType->mHeight));
-			m_ScrollBar.SetTrackRange(0, GetNumNewlines() + 1);
+			mScrollBar->SetPageSize(int(GLUFRectHeight(mTextRegion) / pFontNode->mFontType->mHeight));
+			mScrollBar->SetTrackRange(0, GetNumNewlines() + 1);
 		}
 		else
 		{
-			m_ScrollBar.SetTrackRange(0, (int)m_strBuffer.length()-1);
+			mScrollBar->SetTrackRange(0, (int)m_strBuffer.length()-1);
 
 			GLUFFontSize strWidth = 0;
 			unsigned int count = 0;
-			unsigned long textWidth = GLUFRectWidth(m_rcText);
-			for (unsigned int i = m_ScrollBar.GetTrackPos(); i < m_strBuffer.length(); ++i)
+			unsigned long textWidth = GLUFRectWidth(mTextRegion);
+			for (unsigned int i = mScrollBar->GetTrackPos(); i < m_strBuffer.length(); ++i)
 				if (strWidth < textWidth)
 				{
-					strWidth += pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
+					strWidth += pFontNode->mFontType->GetCharAdvance(m_strBuffer[i]);
 					++count;
 				}
 				else
 				{
-					//strWidth -= pFontNode->m_pFontType->GetCharAdvance(m_strBuffer[i]);
+					//strWidth -= pFontNode->mFontType->GetCharAdvance(m_strBuffer[i]);
 					--count;
 					break;
 				}
 
-			m_ScrollBar.SetPageSize(count);
-			m_ScrollBar.SetTrackPos(m_nCaret);
+			mScrollBar->SetPageSize(count);
+			mScrollBar->SetTrackPos(m_nCaret);
 		}
 		// The selected item may have been scrolled off the page.
 		// Ensure that it is in page again.
-		//m_ScrollBar.ShowItem(GetLineNumberFromCharPos(m_nCaret));
+		//mScrollBar->ShowItem(GetLineNumberFromCharPos(m_nCaret));
 	}
 
 
@@ -7945,12 +7878,12 @@ void GLUFEditBox::Analyse()
 	if (m_bMultiline)
 	{
 		int currXValue = 0;
-		int distanceFromBottom = GLUFRectHeight(m_rcText);
+		int distanceFromBottom = GLUFRectHeight(mTextRegion);
 		int   lineNum = 0;
 
 		int thisCharWidth = 0;
-		int fontHeight = pFontNode->m_Leading;
-		int scrollbarOffset = m_ScrollBar.GetTrackPos() * pFontNode->m_Leading;
+		int fontHeight = pFontNode->mLeading;
+		int scrollbarOffset = mScrollBar->GetTrackPos() * pFontNode->mLeading;
 		GLUFRect rc;
 
 		bool topCulled = false;
@@ -7963,7 +7896,7 @@ void GLUFEditBox::Analyse()
 
 
 			//cull the characters that will not fit on the page
-			if (lineNum > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() || lineNum < m_ScrollBar.GetTrackPos())
+			if (lineNum > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() || lineNum < mScrollBar->GetTrackPos())
 			{
 				if (topCulled)//this is called once the top has been culled, then the body has been added
 					break;
@@ -7985,10 +7918,10 @@ void GLUFEditBox::Analyse()
 				topCulled = true;
 
 #pragma warning(disable : 4244)
-				thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+				thisCharWidth = pFontNode->mFontType->GetCharAdvance(it);
 #pragma warning(default : 4244)
 
-				rc = pFontNode->m_pFontType->GetCharRect(it);
+				rc = pFontNode->mFontType->GetCharRect(it);
 				if (it == '\n')
 				{
 					rc.top = distanceFromBottom - fontHeight;
@@ -8000,9 +7933,9 @@ void GLUFEditBox::Analyse()
 				{
 					rc.top = distanceFromBottom;
 					rc.bottom = distanceFromBottom - fontHeight;
-					rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+					rc.right = rc.left + pFontNode->mFontType->GetCharWidth(it);//use the char width for nice carrot position
 					GLUFOffsetRect(rc, currXValue, 0);
-					//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->m_pFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
+					//GLUFSetRect(rc, currXValue, distanceFromBottom - pFontNode->mFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
 				}
 
 
@@ -8034,11 +7967,11 @@ void GLUFEditBox::Analyse()
 	{
 		//for single line, we do HORIZONTAL culling
 		int currXValue = 0;
-		long top = GLUFRectHeight(m_rcText), bottom = top - pFontNode->m_Leading;
+		long top = GLUFRectHeight(mTextRegion), bottom = top - pFontNode->mLeading;
 
 		bool leftCulled = false;
 		int thisCharWidth = 0;
-		int scrollbarOffset = m_ScrollBar.GetTrackPos();
+		int scrollbarOffset = mScrollBar->GetTrackPos();
 		GLUFRect rc;
 
 		std::wstring strRenderBufferTmp = L"";
@@ -8047,7 +7980,7 @@ void GLUFEditBox::Analyse()
 		{
 
 			//cull the characters that will not fit on the page
-			if (i < m_ScrollBar.GetTrackPos() || i > m_ScrollBar.GetTrackPos() + m_ScrollBar.GetPageSize() - 1)
+			if (i < mScrollBar->GetTrackPos() || i > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 1)
 			{
 				if (!leftCulled)
 					++m_strRenderBufferOffset;
@@ -8059,13 +7992,13 @@ void GLUFEditBox::Analyse()
 				leftCulled = true;
 
 #pragma warning(disable : 4244)
-				thisCharWidth = pFontNode->m_pFontType->GetCharAdvance(it);
+				thisCharWidth = pFontNode->mFontType->GetCharAdvance(it);
 #pragma warning(default : 4244)
 
-				rc = pFontNode->m_pFontType->GetCharRect(it);
+				rc = pFontNode->mFontType->GetCharRect(it);
 				rc.top = top;
 				rc.bottom = bottom;
-				rc.right = rc.left + pFontNode->m_pFontType->GetCharWidth(it);//use the char width for nice carrot position
+				rc.right = rc.left + pFontNode->mFontType->GetCharWidth(it);//use the char width for nice carrot position
 				GLUFOffsetRect(rc, currXValue, 0);
 
 				//does fit on page
@@ -8087,7 +8020,7 @@ void GLUFEditBox::Analyse()
 	}
 
 	m_bAnalyseRequired = false;  // Analysis is up-to-date
-	m_ScrollBar.ShowItem(m_nCaret);
+	mScrollBar->ShowItem(m_nCaret);
 
 }
 
@@ -8111,12 +8044,12 @@ void BeginText(glm::mat4 orthoMatrix)
 void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Color vFontColor, unsigned int dwTextFlags, bool bHardRect)
 {
 
-	if ((long)font.m_pFontType->mHeight > GLUFRectHeight(rcScreen) && bHardRect)
+	if ((long)font.mFontType->mHeight > GLUFRectHeight(rcScreen) && bHardRect)
 		return;//no sense rendering if it is too big
 
 	//rcScreen = GLUFScreenToClipspace(rcScreen);
 
-	GLUFFontSize tmpSize = font.m_pFontType->mHeight; // GLUF_FONT_HEIGHT_NDC(font.m_pFontType->mHeight);
+	GLUFFontSize tmpSize = font.mFontType->mHeight; // GLUF_FONT_HEIGHT_NDC(font.mFontType->mHeight);
 
 	GLUFRectf UV;
 
@@ -8126,7 +8059,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 	long CurY = rcScreen.top;
 
 	//calc widths
-	long strWidth = font.m_pFontType->GetStringWidth(strText);
+	long strWidth = font.mFontType->GetStringWidth(strText);
 	unsigned int centerOffset = (GLUFRectWidth(rcScreen) - strWidth) / 2;
 	if (dwTextFlags & GT_CENTER)
 	{		
@@ -8147,20 +8080,20 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 	if (dwTextFlags & GT_VCENTER)
 	{
 		long value = GLUFRectHeight(rcScreen);
-		value = value - numLines * font.m_pFontType->mHeight;
+		value = value - numLines * font.mFontType->mHeight;
 		value /= 2;
-		CurY -= (GLUFRectHeight(rcScreen) - (long)numLines * (long)font.m_pFontType->mHeight) / 2;
+		CurY -= (GLUFRectHeight(rcScreen) - (long)numLines * (long)font.mFontType->mHeight) / 2;
 	}
 	else if (dwTextFlags & GT_BOTTOM)
 	{
-		CurY -= GLUFRectHeight(rcScreen) - numLines * font.m_pFontType->mHeight;
+		CurY -= GLUFRectHeight(rcScreen) - numLines * font.mFontType->mHeight;
 	}
 
 	//glBegin(GL_QUADS);
 	float z = GLUF_NEAR_BUTTON_DEPTH;
 	for (auto ch : strText)
 	{
-		int widthConverted = font.m_pFontType->GetCharAdvance(ch);//(font.m_pFontType->CellX * tmpSize) / font.m_pFontType->mAtlasWidth;
+		int widthConverted = font.mFontType->GetCharAdvance(ch);//(font.mFontType->CellX * tmpSize) / font.mFontType->mAtlasWidth;
 
 		//lets support newlines :) (or if the next char will go outside the rect)
 		if (ch == '\n' || (CurX + widthConverted > rcScreen.right && bHardRect))
@@ -8172,10 +8105,10 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 			else if (dwTextFlags & GT_RIGHT)
 				CurX = rcScreen.left + centerOffset * 2;
 
-			CurY -= font.m_Leading;// *1.1f;//assume a reasonible leding
+			CurY -= font.mLeading;// *1.1f;//assume a reasonible leding
 
 			//if the next line will go off of the page, then don't draw it
-			if ((CurY - (long)font.m_Leading < rcScreen.bottom) && bHardRect)
+			if ((CurY - (long)font.mLeading < rcScreen.bottom) && bHardRect)
 				break;
 
 			if (ch == '\n')
@@ -8184,26 +8117,26 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 			}
 		}
 
-		//Row = (ch - font.m_pFontType->Base) / font.m_pFontType->RowPitch;
-		//Col = (ch - font.m_pFontType->Base) - Row*font.m_pFontType->RowPitch;
+		//Row = (ch - font.mFontType->Base) / font.mFontType->RowPitch;
+		//Col = (ch - font.mFontType->Base) - Row*font.mFontType->RowPitch;
 
-		//U = Col*font.m_pFontType->ColFactor;
-		//V = Row*font.m_pFontType->RowFactor;
-		//U1 = U + font.m_pFontType->ColFactor;
-		//V1 = V + font.m_pFontType->RowFactor;
+		//U = Col*font.mFontType->ColFactor;
+		//V = Row*font.mFontType->RowFactor;
+		//U1 = U + font.mFontType->ColFactor;
+		//V1 = V + font.mFontType->RowFactor;
 
-		//U = font.m_pFontType->GetTextureXOffset(ch);
+		//U = font.mFontType->GetTextureXOffset(ch);
 		//V = 0.0f;
-		//U1 = U + font.m_pFontType->GetCharWidth(ch);
+		//U1 = U + font.mFontType->GetCharWidth(ch);
 		//V1 = 1.0f;
-		UV = font.m_pFontType->GetCharTexRect(ch);
+		UV = font.mFontType->GetCharTexRect(ch);
 
 		//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
-		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.m_pFontType->CellX, CurY);
-		//glTexCoord2f(U1, V); glVertex2i(CurX + font.m_pFontType->CellX, CurY + font.m_pFontType->CellY);
-		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.m_pFontType->CellY);
+		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.mFontType->CellX, CurY);
+		//glTexCoord2f(U1, V); glVertex2i(CurX + font.mFontType->CellX, CurY + font.mFontType->CellY);
+		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.mFontType->CellY);
 
-		GLUFRect glyph = font.m_pFontType->GetCharRect(ch);
+		GLUFRect glyph = font.mFontType->GetCharRect(ch);
 
 		//remember to expand for this
 		//glyph.right = GLUF_FONT_HEIGHT_NDC(glyph.right);
@@ -8264,7 +8197,7 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 
 	//g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
 	
-	EndText(font.m_pFontType);
+	EndText(font.mFontType);
 
 }
 
@@ -8358,7 +8291,7 @@ GLUFResult GLUFTextHelper::DrawFormattedTextLine(const wchar_t* strMsg, size_t s
 
 GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg)
 {
-	m_pManager->GetFontNode(m_nFont)->m_Leading = m_fLineHeight;
+	m_pManager->GetFontNode(m_nFont)->mLeading = m_fLineHeight;
 	std::wstring sMsg = strMsg;
 
 	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), sMsg, { m_pt.x, m_pt.y, m_pt.x + 50L, m_pt.y - 50L }, m_clr, GT_LEFT | GT_TOP);
@@ -8388,7 +8321,7 @@ GLUFResult GLUFTextHelper::DrawFormattedTextLine(const GLUFRect& rc, unsigned in
 
 GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg)
 {
-	m_pManager->GetFontNode(m_nFont)->m_Leading = m_fLineHeight;
+	m_pManager->GetFontNode(m_nFont)->mLeading = m_fLineHeight;
 	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), strMsg, rc, m_clr, dwFlags, true);
 
 	return GR_SUCCESS;
@@ -8396,7 +8329,7 @@ GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags
 
 void GLUFTextHelper::End()
 {
-	EndText(m_pManager->GetFontNode(m_nFont)->m_pFontType);
+	EndText(m_pManager->GetFontNode(m_nFont)->mFontType);
 }
 
 }
