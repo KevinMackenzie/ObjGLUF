@@ -3546,6 +3546,31 @@ void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices
     BufferIndicesBase(indices.size() * 4, &indices[0]);
 }
 
+//--------------------------------------------------------------------------------------
+void GLUFVertexArrayBase::EnableVertexAttribute(GLUFAttribLoc loc)
+{
+    auto it = mDisabledAttribInfos.find(loc);
+    if (it == mDisabledAttribInfos.end())
+        return;
+
+    mAttribInfos[loc] = it->second;
+
+    mDisabledAttribInfos.erase(it);
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFVertexArrayBase::DisableVertexAttribute(GLUFAttribLoc loc)
+{
+    auto it = mAttribInfos.find(loc);
+    if (it == mAttribInfos.end())
+        return;
+
+    mDisabledAttribInfos[loc] = it->second;
+
+    mAttribInfos.erase(it);
+}
+
+
 
 /*
 RoundNearestMultiple
@@ -3671,6 +3696,27 @@ GLuint GLUFVertexArrayAoS::GetVertexSize() const noexcept
 }
 
 //--------------------------------------------------------------------------------------
+void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info)
+{
+    //don't do null checks, because BindVertexArray already does them for us
+    BindVertexArray();
+
+    //make sure the attribute contains valid data
+    if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
+        GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
+    
+    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
+
+    //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
+    RefreshDataBufferAttribute();
+
+    //enable the new attribute
+    glEnableVertexAttribArray(info.mVertexAttribLocation);//not harmful in opengl less than 3.0
+
+    UnBindVertexArray();
+}
+
+//--------------------------------------------------------------------------------------
 void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuint offset)
 {
     //don't do null checks, because BindVertexArray already does them for us
@@ -3680,11 +3726,11 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuin
     if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
 
-    //integrate the offset into the data
+    //insert the offset into the data
     GLUFVertexAttribInfo tmpCopy = info;
     tmpCopy.mOffset = offset;
 
-    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(tmpCopy.mVertexAttribLocation, tmpCopy));
+    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, tmpCopy));
 
     //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
     RefreshDataBufferAttribute();

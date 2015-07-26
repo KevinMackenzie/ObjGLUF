@@ -1358,7 +1358,7 @@ struct OBJGLUF_API GLUFVertexAttribInfo
 	unsigned short mElementsPerValue;//vec4 would be 4
 	GLUFAttribLoc  mVertexAttribLocation;
 	GLenum         mType;//float would be GL_FLOAT
-    GLuint         mOffset;//this is always 0; it is used internally in 'GLUFVertexArrayAoS'
+    GLuint         mOffset;//will be 0 in SoA
 };
 
 /*
@@ -1438,6 +1438,7 @@ protected:
 	GLenum mUsageType;
 	GLenum mPrimitiveType;
 	std::map<GLUFAttribLoc, GLUFVertexAttribInfo> mAttribInfos;
+    std::map<GLUFAttribLoc, GLUFVertexAttribInfo> mDisabledAttribInfos;
 
 	GLuint mIndexBuffer = 0;
 	GLuint mRangedIndexBuffer = 0;
@@ -1460,7 +1461,7 @@ protected:
             -similer code for each of the 'BufferIndices' functions
     
     */
-	virtual void RefreshDataBufferAttribute() = 0 noexcept;
+	virtual void RefreshDataBufferAttribute() noexcept = 0;
 	const GLUFVertexAttribInfo& GetAttribInfoFromLoc(GLUFAttribLoc loc) const;
     void BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept;
 
@@ -1621,6 +1622,24 @@ public:
 
     virtual void EnableVertexAttributes() const noexcept = 0;
     virtual void DisableVertexAttributes() const noexcept = 0;
+
+
+    /*
+    Disable/EnableVertexAttribute
+
+        NOTE:
+            THIS IS NOT THE SAME AS 'Disable/EnableVertexAttribute'
+            This is designed to be able to disable specific attributes of a vertex
+    
+        Parameters:
+            'loc': the attribute location to disable
+
+        Throws:
+            no-throw guarantee
+    
+    */
+    void EnableVertexAttribute(GLUFAttribLoc loc) noexcept;
+    void DisableVertexAttribute(GLUFAttribLoc loc) noexcept;
 };
 
 
@@ -1741,15 +1760,12 @@ class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 
 
     /*
-    Add/RemoveVertexAttrib
+    RemoveVertexAttrib
         
-        "AddVertexAttrib" is deleted on GLUFVertexArrayAoS, because this needs an offset parameter for adding attributes
-
         "RemoveVertexAttrib" is disabled, because removing an attribute will mess up the offset and strides of the buffer
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info) sealed {}
     virtual void RemoveVertexAttrib(GLUFAttribLoc loc) sealed {}
 
 protected:
@@ -1812,13 +1828,14 @@ public:
 
         Parameters:
             'info': data structure containing the attribute information
-            'offset': offset within data buffer of each element within the vertex
+            'offset': used as offset parameter when 'info' is a const
 
         Throws:
             'std::invalid_argument': if 'mBytesPerElement == 0' or if 'mElementsPerValue == 0'
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+    virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info);
     virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuint offset);
 
 

@@ -907,7 +907,7 @@ public:
 
     void        SetVisible(bool visible) noexcept                       { mVisible = visible;                       }
     void        SetMinimized(bool minimized) noexcept                   { mMinimized = minimized;                   }
-    void        SetBackgroundColor(const GLUF::Color& color) noexcept   { mDlgElement.mTextureColor.SetAll(color);  }
+    void        SetBackgroundColor(const GLUF::Color& color) noexcept   { mDlgElement->mTextureColor.SetAll(color); }
     void        SetCaptionHeight(long height) noexcept                  { mCaptionHeight = height;                  }
     void        SetCaptionText(const std::wstring& text) noexcept       { mCaptionText = text;                      }
     void        SetLocation(long x, long y) noexcept                    { GLUFRepositionRect(mRegion, x, y);        }
@@ -1395,7 +1395,7 @@ public:
             no-throw guarantee
         
     */
-	GLUFFontIndex AddFont(GLUFFontPtr font, GLUFFontSize leading, GLUFFontWeight weight) noexcept;
+	GLUFFontIndex AddFont(const GLUFFontPtr& font, GLUFFontSize leading, GLUFFontWeight weight) noexcept;
 
     /*
     AddTexture
@@ -1428,7 +1428,7 @@ public:
             no-throw guarantee
     
     */
-	void RegisterDialog(GLUFDialogPtr pDialog) noexcept;
+	void RegisterDialog(const GLUFDialogPtr& pDialog) noexcept;
 
     /*
     UnregisterDialog
@@ -1440,7 +1440,7 @@ public:
             'std::invalid_argument': if 'dialog' == nullptr or if 'dialog' is not a registered dialog in GLUF_DEBUG mode
     
     */
-	void UnregisterDialog(GLUFDialogPtr dialog);
+	void UnregisterDialog(const GLUFDialogPtr& dialog);
 
     /*
     EnableKeyboardInputForAllDialogs

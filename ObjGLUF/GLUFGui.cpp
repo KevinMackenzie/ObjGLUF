@@ -2779,15 +2779,18 @@ void GLUFDialog::InitDefaultElements()
 
 
 
-//======================================================================================
-// GLUFDialogResourceManager
-//======================================================================================
+/*
+======================================================================================================================================================================================================
+GLUFDialogResourceManager Functions
+
+
+*/
 
 //--------------------------------------------------------------------------------------
 GLUFDialogResourceManager::GLUFDialogResourceManager() :
-mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be changed every frame
+    mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be changed every frame
 {
-	glGenVertexArrayBindVertexArray(&m_pVBScreenQuadVAO);
+	//glGenVertexArrayBindVertexArray(&m_pVBScreenQuadVAO);
 	//glGenBuffers(1, &m_pVBScreenQuadIndicies);
 	//glGenBuffers(1, &m_pVBScreenQuadPositions);
 	//glGenBuffers(1, &m_pVBScreenQuadColor);
@@ -2803,14 +2806,14 @@ mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be 
 	glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);*/
 
 	//this is static
-	glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
+	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
 
-	GLubyte indices[6] = {	2, 1, 0, 
-							2, 3, 1};
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
+	//GLubyte indices[6] = {	2, 1, 0, 
+	//						2, 3, 1};
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
 
 
-	glGenVertexArrayBindVertexArray(&m_SpriteBufferVao);
+	//glGenVertexArrayBindVertexArray(&m_SpriteBufferVao);
 	//glBindVertexArray(m_SpriteBufferVao);
 
 	//glGenBuffers(1, &m_SpriteBufferPos);
@@ -2818,21 +2821,22 @@ mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be 
 	//glGenBuffers(1, &m_SpriteBufferTexCoords);
 	//glGenBuffers(1, &m_SpriteBufferIndices);
 
-	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_SpriteBufferPos);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_SpriteBufferColors);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_SpriteBufferTexCoords);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    mSpriteBuffer.AddVertexAttrib({ 4, 3, 0, GL_FLOAT, 0 });
+    mSpriteBuffer.AddVertexAttrib({ 4, 4, 1, GL_FLOAT, 0 });
+    mSpriteBuffer.AddVertexAttrib({ 4, 2, 2, GL_FLOAT, 0 });
 
 	//this is static
-	glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
+	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
 
-	GLubyte indicesS[6] = { 2, 1, 0,
-							2, 3, 1 };
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indicesS, GL_STATIC_DRAW);
+    mSpriteBuffer.BufferIndices(
+    { 
+        2, 1, 0,
+        2, 3, 1 
+    });
+
+	//GLubyte indicesS[6] = { 2, 1, 0,
+	//						2, 3, 1 };
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indicesS, GL_STATIC_DRAW);
 
 
 	GetWindowSize();
@@ -2842,20 +2846,11 @@ mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be 
 //--------------------------------------------------------------------------------------
 GLUFDialogResourceManager::~GLUFDialogResourceManager()
 {
-	for (auto it = m_FontCache.begin(); it != m_FontCache.end(); ++it)
-	{
-		GLUF_SAFE_DELETE(*it);
-	}
-	m_FontCache.clear();
-
-	for (auto it = m_TextureCache.begin(); it != m_TextureCache.end(); ++it)
-	{
-		GLUF_SAFE_DELETE(*it);
-	}
-	m_TextureCache.clear();
+	mFontCache.clear();
+	mTextureCache.clear();
 
 	//TODO: make this with a class in the buffer sections
-	glBindVertexArray(m_pVBScreenQuadVAO);
+	/*glBindVertexArray(m_pVBScreenQuadVAO);
 	glDeleteBuffers(1, &m_pVBScreenQuadPositions);
 	glDeleteBuffers(1, &m_pVBScreenQuadColor);
 	glDeleteBuffers(1, &m_pVBScreenQuadUVs);
@@ -2866,12 +2861,12 @@ GLUFDialogResourceManager::~GLUFDialogResourceManager()
 	glDeleteBuffers(1, &m_SpriteBufferColors);
 	glDeleteBuffers(1, &m_SpriteBufferTexCoords);
 	glDeleteVertexArrays(1, &m_SpriteBufferVao);
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialogResourceManager::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int param2, int param3, int param4)
+bool GLUFDialogResourceManager::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4)
 {
 	GLUF_UNREFERENCED_PARAMETER(msg);
 	//GLUF_UNREFERENCED_PARAMETER(param1);
@@ -2882,8 +2877,8 @@ bool GLUFDialogResourceManager::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int p
 	switch (msg)
 	{
 	case GM_RESIZE:
-		m_WndSize.width = 0L;
-		m_WndSize.height = 0L;
+		mWndSize.width = 0L;
+		mWndSize.height = 0L;
 		GetWindowSize();
 
 		//refresh the fonts to the new window size
@@ -2895,287 +2890,32 @@ bool GLUFDialogResourceManager::MsgProc(GLUF_MESSAGE_TYPE msg, int param1, int p
 	return false;
 }
 
-/*
-
-GLUFResult GLUFDialogResourceManager::OnD3D11CreateDevice(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3d11DeviceContext)
-{
-	m_pd3d11Device = pd3dDevice;
-	m_pd3d11DeviceContext = pd3d11DeviceContext;
-
-	GLUFResult hr = GR_SUCCESS;
-
-	// Compile Shaders
-	ID3DBlob* pVSBlob = nullptr;
-	ID3DBlob* pPSBlob = nullptr;
-	ID3DBlob* pPSUntexBlob = nullptr;
-	V_RETURN(D3DCompile(g_strUIEffectFile, g_uUIEffectFileSize, "none", nullptr, nullptr, "VS", "vs_4_0_level_9_1",
-		D3D10_SHADER_ENABLE_BACKWARDS_COMPATIBILITY, 0, &pVSBlob, nullptr));
-	V_RETURN(D3DCompile(g_strUIEffectFile, g_uUIEffectFileSize, "none", nullptr, nullptr, "PS", "ps_4_0_level_9_1",
-		D3D10_SHADER_ENABLE_BACKWARDS_COMPATIBILITY, 0, &pPSBlob, nullptr));
-	V_RETURN(D3DCompile(g_strUIEffectFile, g_uUIEffectFileSize, "none", nullptr, nullptr, "PSUntex", "ps_4_0_level_9_1",
-		D3D10_SHADER_ENABLE_BACKWARDS_COMPATIBILITY, 0, &pPSUntexBlob, nullptr));
-
-	// Create Shaders
-	V_RETURN(pd3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &m_pVSRenderUI11));
-	GLUF_SetDebugName(m_pVSRenderUI11, "GLUFDialogResourceManager");
-
-	V_RETURN(pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &m_pPSRenderUI11));
-	GLUF_SetDebugName(m_pPSRenderUI11, "GLUFDialogResourceManager");
-
-	V_RETURN(pd3dDevice->CreatePixelShader(pPSUntexBlob->GetBufferPointer(), pPSUntexBlob->GetBufferSize(), nullptr, &m_pPSRenderUIUntex11));
-	GLUF_SetDebugName(m_pPSRenderUIUntex11, "GLUFDialogResourceManager");
-
-	// States
-	D3D11_DEPTH_STENCIL_DESC DSDesc;
-	ZeroMemory(&DSDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-	DSDesc.DepthEnable = FALSE;
-	DSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	DSDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	DSDesc.StencilEnable = FALSE;
-	V_RETURN(pd3dDevice->CreateDepthStencilState(&DSDesc, &m_pDepthStencilStateUI11));
-	GLUF_SetDebugName(m_pDepthStencilStateUI11, "GLUFDialogResourceManager");
-
-	D3D11_RASTERIZER_DESC RSDesc;
-	RSDesc.AntialiasedLineEnable = FALSE;
-	RSDesc.CullMode = D3D11_CULL_BACK;
-	RSDesc.DepthBias = 0;
-	RSDesc.DepthBiasClamp = 0.0f;
-	RSDesc.DepthClipEnable = TRUE;
-	RSDesc.FillMode = D3D11_FILL_SOLID;
-	RSDesc.FrontCounterClockwise = FALSE;
-	RSDesc.MultisampleEnable = TRUE;
-	RSDesc.ScissorEnable = FALSE;
-	RSDesc.SlopeScaledDepthBias = 0.0f;
-	V_RETURN(pd3dDevice->CreateRasterizerState(&RSDesc, &m_pRasterizerStateUI11));
-	GLUF_SetDebugName(m_pRasterizerStateUI11, "GLUFDialogResourceManager");
-
-	D3D11_BLEND_DESC BSDesc;
-	ZeroMemory(&BSDesc, sizeof(D3D11_BLEND_DESC));
-
-	BSDesc.RenderTarget[0].BlendEnable = TRUE;
-	BSDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	BSDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	BSDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	BSDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	BSDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	BSDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	BSDesc.RenderTarget[0].RenderTargetWriteMask = 0x0F;
-
-	V_RETURN(pd3dDevice->CreateBlendState(&BSDesc, &m_pBlendStateUI11));
-	GLUF_SetDebugName(m_pBlendStateUI11, "GLUFDialogResourceManager");
-
-	D3D11_SAMPLER_DESC SSDesc;
-	ZeroMemory(&SSDesc, sizeof(D3D11_SAMPLER_DESC));
-	SSDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	SSDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	SSDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	SSDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	SSDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	SSDesc.MaxAnisotropy = 16;
-	SSDesc.MinLOD = 0;
-	SSDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	if (pd3dDevice->GetFeatureLevel() < D3D_FEATURE_LEVEL_9_3)
-	{
-		SSDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		SSDesc.MaxAnisotropy = 0;
-	}
-	V_RETURN(pd3dDevice->CreateSamplerState(&SSDesc, &m_pSamplerStateUI11));
-	GLUF_SetDebugName(m_pSamplerStateUI11, "GLUFDialogResourceManager");
-
-	// Create the texture objects in the cache arrays.
-	for (size_t i = 0; i < m_TextureCache.size(); i++)
-	{
-		hr = CreateTexture11(static_cast<UINT>(i));
-		if (FAILED(hr))
-			return hr;
-	}
-
-	// Create input layout
-	const D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	V_RETURN(pd3dDevice->CreateInputLayout(layout, ARRAYSIZE(layout), pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pInputLayout11));
-	GLUF_SetDebugName(m_pInputLayout11, "GLUFDialogResourceManager");
-
-	// Release the blobs
-	SAFE_RELEASE(pVSBlob);
-	SAFE_RELEASE(pPSBlob);
-	SAFE_RELEASE(pPSUntexBlob);
-
-	// Create a vertex buffer quad for rendering later
-	D3D11_BUFFER_DESC BufDesc;
-	BufDesc.ByteWidth = sizeof(GLUF_SCREEN_VERTEX_10) * 4;
-	BufDesc.Usage = D3D11_USAGE_DYNAMIC;
-	BufDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	BufDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	BufDesc.MiscFlags = 0;
-	V_RETURN(pd3dDevice->CreateBuffer(&BufDesc, nullptr, &m_pVBScreenQuad11));
-	GLUF_SetDebugName(m_pVBScreenQuad11, "GLUFDialogResourceManager");
-
-	// Init the D3D11 font
-	InitFont11(pd3dDevice, m_pInputLayout11);
-
-	return GR_SUCCESS;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-GLUFResult GLUFDialogResourceManager::OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,
-const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
-{
-	GLUF_UNREFERENCED_PARAMETER(pd3dDevice);
-
-	GLUFResult hr = GR_SUCCESS;
-
-	m_nBackBufferWidth = pBackBufferSurfaceDesc->Width;
-	m_nBackBufferHeight = pBackBufferSurfaceDesc->Height;
-
-	return hr;
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::OnD3D11ReleasingSwapChain()
-{
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::OnD3D11DestroyDevice()
-{
-	// Release the resources but don't clear the cache, as these will need to be
-	// recreated if the device is recreated
-
-	for (auto it = m_TextureCache.begin(); it != m_TextureCache.end(); ++it)
-	{
-		SAFE_RELEASE((*it)->pTexResView11);
-		SAFE_RELEASE((*it)->pTexture11);
-	}
-
-	// D3D11
-	SAFE_RELEASE(m_pVBScreenQuad11);
-	SAFE_RELEASE(m_pSpriteBuffer11);
-	m_SpriteBufferBytes11 = 0;
-	SAFE_RELEASE(m_pInputLayout11);
-
-	// Shaders
-	SAFE_RELEASE(m_pVSRenderUI11);
-	SAFE_RELEASE(m_pPSRenderUI11);
-	SAFE_RELEASE(m_pPSRenderUIUntex11);
-
-	// States
-	SAFE_RELEASE(m_pDepthStencilStateUI11);
-	SAFE_RELEASE(m_pRasterizerStateUI11);
-	SAFE_RELEASE(m_pBlendStateUI11);
-	SAFE_RELEASE(m_pSamplerStateUI11);
-
-	SAFE_RELEASE(m_pDepthStencilStateStored11);
-	SAFE_RELEASE(m_pRasterizerStateStored11);
-	SAFE_RELEASE(m_pBlendStateStored11);
-	SAFE_RELEASE(m_pSamplerStateStored11);
-
-	EndFont11();
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext)
-{
-	pd3dImmediateContext->OMGetDepthStencilState(&m_pDepthStencilStateStored11, &m_StencilRefStored11);
-	pd3dImmediateContext->RSGetState(&m_pRasterizerStateStored11);
-	pd3dImmediateContext->OMGetBlendState(&m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11);
-	pd3dImmediateContext->PSGetSamplers(0, 1, &m_pSamplerStateStored11);
-}
-
-
-//--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext)
-{
-	pd3dImmediateContext->OMSetDepthStencilState(m_pDepthStencilStateStored11, m_StencilRefStored11);
-	pd3dImmediateContext->RSSetState(m_pRasterizerStateStored11);
-	pd3dImmediateContext->OMSetBlendState(m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11);
-	pd3dImmediateContext->PSSetSamplers(0, 1, &m_pSamplerStateStored11);
-
-	SAFE_RELEASE(m_pDepthStencilStateStored11);
-	SAFE_RELEASE(m_pRasterizerStateStored11);
-	SAFE_RELEASE(m_pBlendStateStored11);
-	SAFE_RELEASE(m_pSamplerStateStored11);
-}
-
-*/
 //--------------------------------------------------------------------------------------
 void GLUFDialogResourceManager::ApplyRenderUI()
 {
 	// Shaders
-	//pd3dImmediateContext->VSSetShader(m_pVSRenderUI11, nullptr, 0);
-	//pd3dImmediateContext->HSSetShader(nullptr, nullptr, 0);
-	//pd3dImmediateContext->DSSetShader(nullptr, nullptr, 0);
-	//pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
-	//pd3dImmediateContext->PSSetShader(m_pPSRenderUI11, nullptr, 0);
-	glEnableVertexAttribArray(g_UIShaderLocations.position);
+	/*glEnableVertexAttribArray(g_UIShaderLocations.position);
 	glEnableVertexAttribArray(g_UIShaderLocations.color);
-	glEnableVertexAttribArray(g_UIShaderLocations.uv);
+	glEnableVertexAttribArray(g_UIShaderLocations.uv);*/
 	GLUFSHADERMANAGER.UseProgram(g_UIProgram);
 
 	ApplyOrtho();
-
-	// States ???
-	//pd3dImmediateContext->OMSetDepthStencilState(m_pDepthStencilStateUI11, 0);
-	//pd3dImmediateContext->RSSetState(m_pRasterizerStateUI11);
-	//float BlendFactor[4] = { 0, 0, 0, 0 };
-	//pd3dImmediateContext->OMSetBlendState(m_pBlendStateUI11, BlendFactor, 0xFFFFFFFF);
-	//pd3dImmediateContext->PSSetSamplers(0, 1, &m_pSamplerStateUI11);
 }
 
 
 //--------------------------------------------------------------------------------------
 void GLUFDialogResourceManager::ApplyRenderUIUntex()
 {
-	// Shaders
-	//pd3dImmediateContext->VSSetShader(m_pVSRenderUI11, nullptr, 0);
-	//pd3dImmediateContext->HSSetShader(nullptr, nullptr, 0);
-	//pd3dImmediateContext->DSSetShader(nullptr, nullptr, 0);
-	//pd3dImmediateContext->GSSetShader(nullptr, nullptr, 0);
-	//pd3dImmediateContext->PSSetShader(m_pPSRenderUIUntex11, nullptr, 0);
-	glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
-	glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);
+	/*glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
+	glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);*/
 	GLUFSHADERMANAGER.UseProgram(g_UIProgramUntex);
 	
 	ApplyOrtho();
-
-	// States
-	//pd3dImmediateContext->OMSetDepthStencilState(m_pDepthStencilStateUI11, 0);
-	//pd3dImmediateContext->RSSetState(m_pRasterizerStateUI11);
-	//float BlendFactor[4] = { 0, 0, 0, 0 };
-	//pd3dImmediateContext->OMSetBlendState(m_pBlendStateUI11, BlendFactor, 0xFFFFFFFF);
-	//pd3dImmediateContext->PSSetSamplers(0, 1, &m_pSamplerStateUI11);
-}
-
-GLUFPoint GLUFDialogResourceManager::GetOrthoPoint()
-{
-	GLUFPoint pt = GetWindowSize();
-	/*if (pt.x >= pt.y)
-	{
-		pt.x = pt.x / pt.y;
-		pt.y = 1.0f;
-	}
-	else
-	{
-		pt.y = pt.y / pt.x;
-		pt.x = 1.0f;
-	}*/
-
-	return pt;
 }
 
 glm::mat4 GLUFDialogResourceManager::GetOrthoMatrix()
 {
-	GLUFPoint pt = GetOrthoPoint();
+	GLUFPoint pt = GetWindowSize();
 	float x2 = (float)pt.x / 2.0f;
 	float y2 = (float)pt.y / 2.0f;
 	return glm::ortho((float)-x2, (float)x2, (float)-y2, (float)y2);
@@ -3203,75 +2943,31 @@ void GLUFDialogResourceManager::ApplyOrtho()
 //--------------------------------------------------------------------------------------
 void GLUFDialogResourceManager::BeginSprites()
 {
-	m_SpriteVertices.clear();
 }
 
 
 //--------------------------------------------------------------------------------------
 
-void GLUFDialogResourceManager::EndSprites(GLUFElement* element, bool textured)
+void GLUFDialogResourceManager::EndSprites(GLUFElementPtr element, bool textured)
 {
-	//this ensures we do not get a "vector subscript out of range"
-	if (m_SpriteVertices.size() == 0)
-		return;
-
-	//buffer the data
-	glBindVertexArray(m_SpriteBufferVao);
-
 	if (textured)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
-		glVertexAttribPointer(g_UIShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
-		glVertexAttribPointer(g_UIShaderLocations.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
-		glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+        mSpriteBuffer.EnableVertexAttribute(2);
 	}
 	else
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
-		glVertexAttribPointer(g_UIShaderLocationsUntex.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
-		glVertexAttribPointer(g_UIShaderLocationsUntex.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+        mSpriteBuffer.DisableVertexAttribute(2);
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferPos);
-	glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec3), m_SpriteVertices.data_pos(), GL_STREAM_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferColors);
-	glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(Color4f), m_SpriteVertices.data_color(), GL_STREAM_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, m_SpriteBufferTexCoords);
-	if (textured)
-	{
-		glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec2), m_SpriteVertices.data_tex(), GL_STREAM_DRAW);
-	}
-	else
-	{
-		glBufferData(GL_ARRAY_BUFFER, m_SpriteVertices.size() * sizeof(glm::vec2), nullptr, GL_STREAM_DRAW);
-	}
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_SpriteBufferIndices);
-
-	// Draw
-	//UINT Stride = sizeof(GLUFSpriteVertex);
-	//UINT Offset = 0;
-	//pd3dImmediateContext->IASetVertexBuffers(0, 1, &m_pSpriteBuffer11, &Stride, &Offset);
-	//pd3dImmediateContext->IASetInputLayout(m_pInputLayout11);
-	//pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//pd3dImmediateContext->Draw(static_cast<UINT>(m_SpriteVertices.size()), 0);
 	
 	if (textured && element)
 	{
 		ApplyRenderUI();
 
-		GLUFTextureNode* pTexture = GetTextureNode(element->iTexture);
+		GLUFTextureNodePtr pTexture = GetTextureNode(element->mTextureIndex);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, pTexture->m_pTextureElement);
+		glBindTexture(GL_TEXTURE_2D, pTexture->mTextureElement);
 		glUniform1i(g_UIShaderLocations.sampler, 0);
 	}
 	else
@@ -3279,60 +2975,57 @@ void GLUFDialogResourceManager::EndSprites(GLUFElement* element, bool textured)
 		ApplyRenderUIUntex();
 	}
 	
-
-	
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
-
-	m_SpriteVertices.clear();
+    mSpriteBuffer.Draw();
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFDialogResourceManager::RegisterDialog(GLUFDialog* pDialog)
+void GLUFDialogResourceManager::RegisterDialog(const GLUFDialogPtr& dialog)
 {
+    if (!dialog)
+        return;
+
 	// Check that the dialog isn't already registered.
-	for (auto it = m_Dialogs.cbegin(); it != m_Dialogs.cend(); ++it)
-	{
-		if (*it == pDialog)
-			return true;
-	}
+    for (auto it : mDialogs)
+    {
+        if (it == dialog)
+            return;
+    }
 
 	// Add to the list.
-	m_Dialogs.push_back(pDialog);
+	mDialogs.push_back(dialog);
 
 	// Set up next and prev pointers.
-	if (m_Dialogs.size() > 1)
-		m_Dialogs[m_Dialogs.size() - 2]->SetNextDialog(pDialog);
-	m_Dialogs[m_Dialogs.size() - 1]->SetNextDialog(m_Dialogs[0]);
-
-	return true;
+	if (mDialogs.size() > 1)
+		mDialogs[mDialogs.size() - 2]->SetNextDialog(dialog);
+	mDialogs[mDialogs.size() - 1]->SetNextDialog(mDialogs[0]);
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialogResourceManager::UnregisterDialog(GLUFDialog* pDialog)
+void GLUFDialogResourceManager::UnregisterDialog(const GLUFDialogPtr& pDialog)
 {
 	// Search for the dialog in the list.
-	for (size_t i = 0; i < m_Dialogs.size(); ++i)
+	for (size_t i = 0; i < mDialogs.size(); ++i)
 	{
-		if (m_Dialogs[i] == pDialog)
+		if (mDialogs[i] == pDialog)
 		{
-			m_Dialogs.erase(m_Dialogs.begin() + i);
-			if (!m_Dialogs.empty())
+			mDialogs.erase(mDialogs.begin() + i);
+			if (!mDialogs.empty())
 			{
 				int l, r;
 
 				if (0 == i)
-					l = int(m_Dialogs.size() - 1);
+					l = int(mDialogs.size() - 1);
 				else
 					l = int(i) - 1;
 
-				if (m_Dialogs.size() == i)
+				if (mDialogs.size() == i)
 					r = 0;
 				else
 					r = int(i);
 
-				m_Dialogs[l]->SetNextDialog(m_Dialogs[r]);
+				mDialogs[l]->SetNextDialog(mDialogs[r]);
 			}
 			return;
 		}
@@ -3344,86 +3037,79 @@ void GLUFDialogResourceManager::UnregisterDialog(GLUFDialog* pDialog)
 void GLUFDialogResourceManager::EnableKeyboardInputForAllDialogs()
 {
 	// Enable keyboard input for all registered dialogs
-	for (auto it = m_Dialogs.begin(); it != m_Dialogs.end(); ++it)
-		(*it)->EnableKeyboardInput(true);
+	for (auto it : mDialogs)
+		it->EnableKeyboardInput(true);
 }
 
 //--------------------------------------------------------------------------------------
 GLUFPoint GLUFDialogResourceManager::GetWindowSize()
 {
-	if (m_WndSize.x == 0L || m_WndSize.y == 0L)
+	if (mWndSize.x == 0L || mWndSize.y == 0L)
 	{
 		int w, h;
 		glfwGetWindowSize(g_pGLFWWindow, &w, &h);
-		m_WndSize.width = (long)w;
-		m_WndSize.height = (long)h;
+		mWndSize.width = (long)w;
+		mWndSize.height = (long)h;
 		g_WndHeight = (unsigned short)h;
 		g_WndWidth = (unsigned short)w;
 	}
-	return m_WndSize;
+	return mWndSize;
 }
 
 //--------------------------------------------------------------------------------------
-int GLUFDialogResourceManager::AddFont(GLUFFontPtr font, float fLeading, GLUF_FONT_WEIGHT weight)
+GLUFFontIndex GLUFDialogResourceManager::AddFont(const GLUFFontPtr& font, GLUFFontSize leading, GLUFFontWeight weight)
 {
 	// See if this font already exists (this is simple)
-	for (size_t i = 0; i < m_FontCache.size(); ++i)
+	for (size_t i = 0; i < mFontCache.size(); ++i)
 	{
-		GLUFFontNode* node = m_FontCache[i];
-		if (font == node->m_pFontType && node->mWeight == weight)
-			return static_cast<int>(i);
+		GLUFFontNodePtr node = mFontCache[i];
+		if (node->mFontType == font && node->mWeight == weight && node->mLeading == leading)
+			return i;
 	}
 
 	// Add a new font and try to create it
-	GLUFFontNode* pNewFontNode = new (std::nothrow) GLUFFontNode;
-	if (!pNewFontNode)
-		return -1;
+    auto newFontNode = std::make_shared<GLUFFontNode>();
 
 	//wcscpy_s(pNewFontNode->strFace, MAX_PATH, strFaceName);
-	pNewFontNode->m_pFontType = font;
-	pNewFontNode->m_Leading = long((float)font->mHeight * fLeading);
+    newFontNode->mFontType = font;
+    newFontNode->mLeading = leading;
 	//pNewFontNode->mSize = height;
-	pNewFontNode->mWeight = weight;
-	//FT_Set_Char_Size(pNewFontNode->m_pFontType->mFontFace, 0, height * 64, 72, 72);
-	m_FontCache.push_back(pNewFontNode);
+    newFontNode->mWeight = weight;
+    mFontCache.push_back(newFontNode);
 
-	int iFont = (int)m_FontCache.size() - 1;
-
-	// If a device is available, try to create immediately
-	return iFont;
+    return mFontCache.size() - 1;
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFDialogResourceManager::AddTexture(GLuint texture)
+GLUFTextureIndex GLUFDialogResourceManager::AddTexture(GLuint texture)
 {
 	// See if this texture already exists
-	for (size_t i = 0; i < m_TextureCache.size(); ++i)
+	for (size_t i = 0; i < mTextureCache.size(); ++i)
 	{
-		GLUFTextureNode* pTextureNode = m_TextureCache[i];
-		if (texture == pTextureNode->m_pTextureElement)
-		{
-			return static_cast<int>(i);
-		}
+		GLUFTextureNodePtr pTextureNode = mTextureCache[i];
+		if (texture == pTextureNode->mTextureElement)
+			return i;
 	}
 
 	// Add a new texture and try to create it
-	GLUFTextureNode* pNewTextureNode = new (std::nothrow) GLUFTextureNode;
-	if (!pNewTextureNode)
-		return -1;
+    auto newTextureNode = std::make_shared<GLUFTextureNode>();
 
-	//ZeroMemory(pNewTextureNode, sizeof(GLUFTextureNode));
-	//pNewTextureNode->bFileSource = true;
-	//wcscpy_s(pNewTextureNode->strFilename, MAX_PATH, strFilename);
-	pNewTextureNode->m_pTextureElement = texture;
-	m_TextureCache.push_back(pNewTextureNode);
+    newTextureNode->mTextureElement = texture;
+    mTextureCache.push_back(newTextureNode);
 
-	int iTexture = int(m_TextureCache.size()) - 1;
-
-	// If a device is available, try to create immediately
-
-	return iTexture;
+	return mTextureCache.size() - 1;
 }
+
+/*
+
+
+Ended Here July 25 2015
+
+
+
+
+*/
 
 
 //======================================================================================
