@@ -1848,12 +1848,6 @@ protected:
 
 public:
 
-	/*virtual void    OnHotkey() noexcept{	if (m_pDialog->IsKeyboardInputEnabled()) 
-									m_pDialog->RequestFocus(this);
-								SetCheckedInternal(!m_bChecked, true);}*/
-
-
-
     /*
     Setters and Getters
 

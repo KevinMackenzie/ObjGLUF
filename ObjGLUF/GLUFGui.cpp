@@ -3553,6 +3553,15 @@ void GLUFCheckBox::Render(float elapsedTime)
 }
 
 
+//--------------------------------------------------------------------------------------
+void GLUFCheckBox::OnHotkey()
+{
+    if (mDialog.IsKeyboardInputEnabled())
+        mDialog.RequestFocus(shared_from_this());
+    SetCheckedInternal(!mChecked, true);
+}
+
+
 /*
 
 
