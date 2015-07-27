@@ -1250,7 +1250,6 @@ struct GLUFSpriteVertexStruct : public GLUFVertexStruct
 
     virtual void buffer_element(void* data, size_t element) override
     {
-
         switch (element)
         {
         case 0:
@@ -2927,18 +2926,15 @@ GLUFTextHelper
         'mManager': a reference to the dialog resource manager
         'mFontIndex': the index of the font within the DRM
         'mFontSize': the font size in points
+        'mLeading': the leading of the text
 */
 class OBJGLUF_API GLUFTextHelper
 {
     GLUF_FORCE_SMART_POINTERS(GLUFTextHelper, GLUFDialogResourceManager& drm);
+
 protected:
-    GLUF::Color mColor;
-    GLUF::GLUFPoint mPoint;
 
     GLUFDialogResourceManager& mManager;
-
-    GLUFFontIndex mFontIndex;
-    GLUFFontSize mFontSize;
 
     /*
     Helper overloads for RenderString
@@ -2951,20 +2947,16 @@ protected:
     template<typename T1>
     void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg);
 
+    GLUFFontIndex mFontIndex;
+    GLUFFontSize mFontSize;
+    GLUFFontSize mLeading;
+
 public:
+    GLUF::Color mColor;
+    GLUF::GLUFPoint mPoint;
+
+
 	~GLUFTextHelper(){};
-
-    /*
-    Setters and Getters    
-    
-        Throws: 
-            no-throw guarantee
-
-    */
-    GLUFFontIndex   GetActiveFontIndex() const noexcept                 { return mFontIndex;    }
-    GLUFFontSize    GetFontSize() const noexcept                        { return mFontSize;     }
-	void            SetInsertionPos(const GLUF::GLUFPoint& pt) noexcept { mPoint = pt;	        }
-	void            SetForegroundColor(const GLUF::Color& clr) noexcept { mColor = clr;         }
 
     /*
     Begin
@@ -2979,7 +2971,7 @@ public:
         Throws:
             'std::out_of_range': if 'drmFont': is out of the range within the DRM
     */
-	void Begin(GLUFFontIndex drmFont, GLUFFontSize size);
+	void Begin(GLUFFontIndex drmFont, GLUFFontSize leading, GLUFFontSize size);
 
     /*
     DrawFormattedTextLine
@@ -3004,6 +2996,9 @@ public:
 
     /*
     DrawTextLine
+
+        Note:
+            The first will automatically bring down the next line to draw, the second will not
 
         Parameters:
             'text': the text to draw

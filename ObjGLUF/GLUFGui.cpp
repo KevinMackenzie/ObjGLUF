@@ -6,6 +6,11 @@
 
 #include <algorithm>
 
+
+
+namespace GLUF
+{
+
 /*
 
 Random Text Helping functions
@@ -13,16 +18,13 @@ Random Text Helping functions
 ================================================= TODO: ==================================================
     Relocate these methods into a more sensible spot/container/namespace/whatever
         Probably in a source file instead of a header file
-
+*/
 void BeginText(const glm::mat4& orthoMatrix);
 
 
-void DrawTextGLUF(const GLUFFontNode& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect = false);
+void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect = false);
 void EndText(const GLUFFontPtr& font); 
-*/
 
-namespace GLUF
-{
 
 //this defines the space in pixels between glyphs in the font
 #define GLYPH_PADDING 5
@@ -182,30 +184,63 @@ struct GLUFScreenVertexUntex
 	Color     color;
 };
 
-struct GLUFTextVertexArray
+struct GLUFTextVertexStruct : public GLUFVertexStruct
 {
-private:
-	std::vector<glm::vec3> vPos;
-	Color4f                vColor;
-	std::vector<glm::vec2> vTex;
-public:
+    glm::vec3 mPos;
+    glm::vec2 mTexCoords;
 
-	glm::vec3* data_pos()  { if (size() > 0) return &vPos[0]; else return nullptr; }
-	glm::vec2* data_tex()  { if (size() > 0) return &vTex[0]; else return nullptr; }
-	Color4f    get_color() { return vColor;						}
+    GLUFTextVertexStruct(const glm::vec3& pos, const glm::vec2& texCoords) :
+        mPos(pos), mTexCoords(texCoords)
+    {}
 
-	void push_back(glm::vec3 pos, glm::vec2 tex)
-	{
-		vPos.push_back(/*GLUFScreenToClipspace(pos)*/pos);	vTex.push_back(tex);
-	}
+    virtual void* operator&() const override
+    {
+        char* ret = new char[size()];
 
-	void set_color(Color col)
-	{
-		vColor = GLUFColorToFloat(col);
-	}
+        memcpy(ret, &mPos[0], 12);
+        memcpy(ret + 12, &mTexCoords[0], 8);
 
-	void clear(){ vPos.clear(); vColor = Color4f(); vTex.clear(); }
-	unsigned long size(){ return (unsigned long)vPos.size(); }
+        return ret;
+    }
+
+    virtual size_t size() const override
+    {
+        return 20; // sizeof(mPos) + sizeof(mTexCoords);
+    }
+
+    virtual size_t n_elem_size(size_t element)
+    {
+        switch (element)
+        {
+        case 0:
+            return 12;
+        case 1:
+            return 8;
+        default:
+            return 0;//if it is too big, just return 0; not worth an exception
+        }
+    }
+
+    virtual void buffer_element(void* data, size_t element) override
+    {
+        switch (element)
+        {
+        case 0:
+            mPos = static_cast<glm::vec3*>(data)[0];
+        case 1:
+            mTexCoords = static_cast<glm::vec2*>(data)[0];
+        default:
+            break;
+        }
+    }
+
+    static GLUFGLVector<GLUFSpriteVertexStruct> MakeMany(size_t howMany)
+    {
+        GLUFGLVector<GLUFSpriteVertexStruct> ret;
+        ret.resize(howMany);
+
+        return ret;
+    }
 };
 
 
@@ -226,7 +261,7 @@ GLUFFontPtr g_DefaultFont = nullptr;
 GLUFProgramPtr g_UIProgram = nullptr;
 GLUFProgramPtr g_UIProgramUntex = nullptr;
 GLUFProgramPtr g_TextProgram = nullptr;
-GLUFTextVertexArray g_TextVerticies;
+GLUFGLVector<GLUFTextVertexStruct> g_TextVerticies;
 GLUFVertexArray g_TextVertexArray(GL_TRIANGLES, GL_STREAM_DRAW, true);
 
 GLFWwindow* g_pGLFWWindow;
@@ -6094,21 +6129,6 @@ void GLUFSlider::Render( float elapsedTime) noexcept
     NOEXCEPT_REGION_END
 }
 
-
-
-
-
-/*
-
-
-Ended Here July 26 2015
-
-
-
-
-*/
-
-
 const std::wstring g_Charsets[] = 
 { 
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
@@ -7693,89 +7713,95 @@ void GLUFEditBox::Analyse()
 
 
 
-//======================================================================================
-// GLUF Text Operations
-//======================================================================================
+
+
+
+/*
+======================================================================================================================================================================================================
+GLUF Text Functions
+
+
+*/
 
 glm::mat4 g_TextOrtho;
 glm::mat4 g_TextModelMatrix;
 
 //--------------------------------------------------------------------------------------
-void BeginText(glm::mat4 orthoMatrix)
+void BeginText(const glm::mat4& orthoMatrix)
 {
 	g_TextOrtho = orthoMatrix;
 	g_TextVerticies.clear();
 }
 
 //--------------------------------------------------------------------------------------
-void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Color vFontColor, unsigned int dwTextFlags, bool bHardRect)
+void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const GLUFRect& rect, const Color& color, GLUFBitfield textFlags, bool hardRect)
 {
 
-	if ((long)font.mFontType->mHeight > GLUFRectHeight(rcScreen) && bHardRect)
+	if ((long)font->mFontType->mHeight > GLUFRectHeight(rect) && hardRect)
 		return;//no sense rendering if it is too big
 
 	//rcScreen = GLUFScreenToClipspace(rcScreen);
 
-	GLUFFontSize tmpSize = font.mFontType->mHeight; // GLUF_FONT_HEIGHT_NDC(font.mFontType->mHeight);
+	GLUFFontSize tmpSize = font->mFontType->mHeight; // GLUF_FONT_HEIGHT_NDC(font->mFontType->mHeight);
 
 	GLUFRectf UV;
 
+    GLUFRect rcScreen = rect;
 	GLUFOffsetRect(rcScreen, -long(g_WndWidth / 2), -long(g_WndHeight / 2));
 
 	long CurX = rcScreen.left;
 	long CurY = rcScreen.top;
 
 	//calc widths
-	long strWidth = font.mFontType->GetStringWidth(strText);
+	long strWidth = font->mFontType->GetStringWidth(text);
 	unsigned int centerOffset = (GLUFRectWidth(rcScreen) - strWidth) / 2;
-	if (dwTextFlags & GT_CENTER)
+	if (textFlags & GT_CENTER)
 	{		
 		CurX = rcScreen.left + centerOffset;
 	}
-	else if (dwTextFlags & GT_RIGHT)
+	else if (textFlags & GT_RIGHT)
 	{
 		CurX = rcScreen.left + centerOffset * 2;
 	}
 
 	int numLines = 1;//always have one to get the GT_VCENTER correct
-	for (auto it : strText)
+	for (auto it : text)
 	{
 		if (it == L'\n')
 			numLines++;
 	}
 
-	if (dwTextFlags & GT_VCENTER)
+	if (textFlags & GT_VCENTER)
 	{
 		long value = GLUFRectHeight(rcScreen);
-		value = value - numLines * font.mFontType->mHeight;
+		value = value - numLines * font->mFontType->mHeight;
 		value /= 2;
-		CurY -= (GLUFRectHeight(rcScreen) - (long)numLines * (long)font.mFontType->mHeight) / 2;
+		CurY -= (GLUFRectHeight(rcScreen) - (long)numLines * (long)font->mFontType->mHeight) / 2;
 	}
-	else if (dwTextFlags & GT_BOTTOM)
+	else if (textFlags & GT_BOTTOM)
 	{
-		CurY -= GLUFRectHeight(rcScreen) - numLines * font.mFontType->mHeight;
+		CurY -= GLUFRectHeight(rcScreen) - numLines * font->mFontType->mHeight;
 	}
 
-	//glBegin(GL_QUADS);
 	float z = GLUF_NEAR_BUTTON_DEPTH;
-	for (auto ch : strText)
+	for (auto ch : text)
 	{
-		int widthConverted = font.mFontType->GetCharAdvance(ch);//(font.mFontType->CellX * tmpSize) / font.mFontType->mAtlasWidth;
+		int widthConverted = font->mFontType->GetCharAdvance(ch);//(font->mFontType->CellX * tmpSize) / font->mFontType->mAtlasWidth;
 
 		//lets support newlines :) (or if the next char will go outside the rect)
-		if (ch == '\n' || (CurX + widthConverted > rcScreen.right && bHardRect))
+		if (ch == '\n' || (CurX + widthConverted > rcScreen.right && hardRect))
 		{
-			if (dwTextFlags & GT_CENTER)
+			if (textFlags & GT_CENTER)
 				CurX = rcScreen.left + centerOffset;
-			else if (dwTextFlags & GT_LEFT)
+			else if (textFlags & GT_LEFT)
 				CurX = rcScreen.left;
-			else if (dwTextFlags & GT_RIGHT)
+			else if (textFlags & GT_RIGHT)
 				CurX = rcScreen.left + centerOffset * 2;
 
-			CurY -= font.mLeading;// *1.1f;//assume a reasonible leding
+			CurY -= font->mLeading;// *1.1f;//assume a reasonible leding
 
 			//if the next line will go off of the page, then don't draw it
-			if ((CurY - (long)font.mLeading < rcScreen.bottom) && bHardRect)
+			if ((CurY - (long)font->mLeading < rcScreen.bottom) && hardRect)
 				break;
 
 			if (ch == '\n')
@@ -7784,26 +7810,26 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 			}
 		}
 
-		//Row = (ch - font.mFontType->Base) / font.mFontType->RowPitch;
-		//Col = (ch - font.mFontType->Base) - Row*font.mFontType->RowPitch;
+		//Row = (ch - font->mFontType->Base) / font->mFontType->RowPitch;
+		//Col = (ch - font->mFontType->Base) - Row*font->mFontType->RowPitch;
 
-		//U = Col*font.mFontType->ColFactor;
-		//V = Row*font.mFontType->RowFactor;
-		//U1 = U + font.mFontType->ColFactor;
-		//V1 = V + font.mFontType->RowFactor;
+		//U = Col*font->mFontType->ColFactor;
+		//V = Row*font->mFontType->RowFactor;
+		//U1 = U + font->mFontType->ColFactor;
+		//V1 = V + font->mFontType->RowFactor;
 
-		//U = font.mFontType->GetTextureXOffset(ch);
+		//U = font->mFontType->GetTextureXOffset(ch);
 		//V = 0.0f;
-		//U1 = U + font.mFontType->GetCharWidth(ch);
+		//U1 = U + font->mFontType->GetCharWidth(ch);
 		//V1 = 1.0f;
-		UV = font.mFontType->GetCharTexRect(ch);
+		UV = font->mFontType->GetCharTexRect(ch);
 
 		//glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
-		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font.mFontType->CellX, CurY);
-		//glTexCoord2f(U1, V); glVertex2i(CurX + font.mFontType->CellX, CurY + font.mFontType->CellY);
-		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font.mFontType->CellY);
+		//glTexCoord2f(U1, V1);  glVertex2i(CurX + font->mFontType->CellX, CurY);
+		//glTexCoord2f(U1, V); glVertex2i(CurX + font->mFontType->CellX, CurY + font->mFontType->CellY);
+		//glTexCoord2f(U, V); glVertex2i(CurX, CurY + font->mFontType->CellY);
 
-		GLUFRect glyph = font.mFontType->GetCharRect(ch);
+		GLUFRect glyph = font->mFontType->GetCharRect(ch);
 
 		//remember to expand for this
 		//glyph.right = GLUF_FONT_HEIGHT_NDC(glyph.right);
@@ -7815,6 +7841,20 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 		//glyph.right = CurX + widthConverted;
 		//glyph.top = CurY;
 		//glyph.bottom = CurY - tmpSize;
+
+
+
+
+
+
+        /*
+
+
+        Ended Here July 26 2015
+
+
+
+        */
 
 
 		//triangle 1
@@ -7864,12 +7904,12 @@ void DrawTextGLUF(GLUFFontNode font, std::wstring strText, GLUFRect rcScreen, Co
 
 	//g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
 	
-	EndText(font.mFontType);
+	EndText(font->mFontType);
 
 }
 
 
-void EndText(GLUFFontPtr font)
+void EndText(const GLUFFontPtr& font)
 {
 	
 	//get the currently bound texture to rebind later
@@ -7919,84 +7959,44 @@ void EndText(GLUFFontPtr font)
 
 
 //GLUFTextHelper
-GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager* pManager) : 
-m_pManager(pManager), m_clr(0, 0, 0, 255), m_pt(0L, 0L), 
-m_fLineHeight(20L), m_nFont(0), m_fFontSize(15L), m_Weight(FONT_WEIGHT_NORMAL)
+GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager& manager) :
+    mManager(manager), mColor(0, 0, 0, 255), mPoint(0L, 0L), 
+    mFontIndex(0), mFontSize(15L)
+{}
+
+void GLUFTextHelper::Begin(GLUFFontIndex drmFont, GLUFFontSize leading, GLUFFontSize size)
 {
-	GLUF_ASSERT(pManager);
+    mManager.GetFontNode(drmFont);
+
+    mFontIndex = drmFont;
+    mFontSize = size;
+    mLeading = leading;
+
+	BeginText(mManager.GetOrthoMatrix());
 }
 
-void GLUFTextHelper::Init(GLUFFontSize fLineHeight)
+void GLUFTextHelper::DrawTextLine(const std::wstring& text)
 {
-	m_fLineHeight = fLineHeight;
-	m_clr = Color(0, 0, 0, 255);
-	m_pt = { 0L, 0L };
-	m_nFont = 0;
-}
-
-void GLUFTextHelper::Begin(GLUFFontIndex fontToUse, GLUF_FONT_WEIGHT weight)
-{
-	m_nFont = fontToUse;
-
-	m_Weight = weight;
-
-	BeginText(m_pManager->GetOrthoMatrix());
-}
-
-GLUFResult GLUFTextHelper::DrawFormattedTextLine(const wchar_t* strMsg, size_t strLen, ...)
-{
-	va_list param;
-	wchar_t* Msg = new wchar_t[strLen];
-
-	va_start(param, strMsg);
-
-	//let sprintf handle all of the formatting
-	swprintf(Msg, strLen, strMsg, param);//TODO: if this fails?
-
-	return DrawTextLine(Msg);
-}
-
-GLUFResult GLUFTextHelper::DrawTextLine(const wchar_t* strMsg)
-{
-	m_pManager->GetFontNode(m_nFont)->mLeading = m_fLineHeight;
-	std::wstring sMsg = strMsg;
-
-	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), sMsg, { m_pt.x, m_pt.y, m_pt.x + 50L, m_pt.y - 50L }, m_clr, GT_LEFT | GT_TOP);
+    DrawTextLine({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
 
 	//set the point down however many lines were drawn
-	for (auto it : sMsg)
+	for (auto it : text)
 	{
 		if (it == '\n')
-			m_pt.y += m_fLineHeight;
+            mPoint.y += mLeading;
 	}
-	m_pt.y -= m_fLineHeight;//once no matter what because we are drawing a LINE of text
-
-	return GR_SUCCESS;
+    mPoint.y -= mLeading;//once no matter what because we are drawing a LINE of text
 }
 
-GLUFResult GLUFTextHelper::DrawFormattedTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg, size_t strLen, ...)
+void GLUFTextHelper::DrawTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& text)
 {
-	va_list param;
-	wchar_t *Msg = new wchar_t[strLen];
-
-	va_start(param, strMsg);
-
-	swprintf(Msg, strLen, strMsg, param);
-
-	return DrawTextLine(rc, dwFlags, Msg);
-}
-
-GLUFResult GLUFTextHelper::DrawTextLine(const GLUFRect& rc, unsigned int dwFlags, const wchar_t* strMsg)
-{
-	m_pManager->GetFontNode(m_nFont)->mLeading = m_fLineHeight;
-	DrawTextGLUF(*m_pManager->GetFontNode(m_nFont), strMsg, rc, m_clr, dwFlags, true);
-
-	return GR_SUCCESS;
+    mManager.GetFontNode(mFontIndex)->mLeading = mLeading;
+    DrawTextGLUF(*mManager.GetFontNode(mFontIndex), text, rc, mColor, flags, true);
 }
 
 void GLUFTextHelper::End()
 {
-	EndText(m_pManager->GetFontNode(m_nFont)->mFontType);
+    EndText(mManager.GetFontNode(mFontIndex)->mFontType);
 }
 
 }
