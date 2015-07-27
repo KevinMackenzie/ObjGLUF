@@ -264,7 +264,7 @@ GLUFFontPtr g_DefaultFont = nullptr;
 GLUFProgramPtr g_UIProgram = nullptr;
 GLUFProgramPtr g_UIProgramUntex = nullptr;
 GLUFProgramPtr g_TextProgram = nullptr;
-GLUFVertexArrayPtr g_TextVertexArray;
+GLUFVertexArrayPtr g_TextVertexArray = nullptr;
 
 GLFWwindow* g_pGLFWWindow;
 GLuint g_pControlTexturePtr;
@@ -336,10 +336,10 @@ std::string g_UIShaderFrag =
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f);							\n"\
 "	//Color = fs_in.Color;											\n"\
 "   vec4 oColor = texture2D(_TS, uvCoord);							\n"\
-"	oColor = vec4(                                                  "\
-"       oColor.r * Color.r,                                         "\
-"       oColor.g * Color.g,                                         "\
-"       oColor.b * Color.b,                                         "\
+"	oColor = vec4(                                                  \n"\
+"       oColor.r * Color.r,                                         \n"\
+"       oColor.g * Color.g,                                         \n"\
+"       oColor.b * Color.b,                                         \n"\
 "       oColor.a * Color.a);	                                    \n"\
 "	gl_FragColor = oColor;											\n"\
 "}																	\n"; 
@@ -2183,8 +2183,8 @@ void GLUFDialog::DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect&
     if (element->mTextureColor.mCurrentColor.a == 0)
         return;
 
-    if (element->mTextureColor.mCurrentColor == element->mTextureColor.mStates[GLUF_STATE_HIDDEN])
-		return;
+    /*if (element->mTextureColor.mCurrentColor == element->mTextureColor.mStates[GLUF_STATE_HIDDEN])
+		return;*/
 
 
     GLUFRectf uvRect = element->mUVRect;
@@ -2226,6 +2226,8 @@ void GLUFDialog::DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect&
         GLUFColorToFloat(element->mTextureColor.mCurrentColor),
         glm::vec2(uvRect.right, uvRect.bottom)
     };
+
+    mDialogManager->mSpriteBuffer.BufferData(thisSprite);
 
 	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
 	// draw a sprite every time to keep the order correct between sprites and text.
@@ -2556,8 +2558,8 @@ void GLUFDialog::InitDefaultElements()
 	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 255);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 30);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(200, 200, 200, 255);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 255);
 	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
 	Element.mFontColor.mStates[GLUF_STATE_NORMAL] = Color(0, 0, 0, 255);
 
@@ -2572,7 +2574,7 @@ void GLUFDialog::InitDefaultElements()
 	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
 	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(200, 200, 200, 10);
 	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(0, 0, 0, 8);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 10);
+	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 255);
 
 
 	// Assign the Element
@@ -2869,9 +2871,9 @@ GLUFDialogResourceManager::GLUFDialogResourceManager() :
 	//glGenBuffers(1, &m_SpriteBufferTexCoords);
 	//glGenBuffers(1, &m_SpriteBufferIndices);
 
-    mSpriteBuffer.AddVertexAttrib({ 4, 3, 0, GL_FLOAT, 0 });
-    mSpriteBuffer.AddVertexAttrib({ 4, 4, 1, GL_FLOAT, 0 });
-    mSpriteBuffer.AddVertexAttrib({ 4, 2, 2, GL_FLOAT, 0 });
+    mSpriteBuffer.AddVertexAttrib({ 4, 3, g_UIShaderLocations.position, GL_FLOAT, 0 }, 0);
+    mSpriteBuffer.AddVertexAttrib({ 4, 4, g_UIShaderLocations.color, GL_FLOAT, 0 }, 12);
+    mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.sampler, GL_FLOAT, 0 }, 28);
 
 	//this is static
 	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
@@ -2953,7 +2955,7 @@ void GLUFDialogResourceManager::ApplyRenderUI() noexcept
         /*glEnableVertexAttribArray(g_UIShaderLocations.position);
         glEnableVertexAttribArray(g_UIShaderLocations.color);
         glEnableVertexAttribArray(g_UIShaderLocations.uv);*/
-        GLUFSHADERMANAGER.UseProgram(g_UIProgram);
+    GLUFSHADERMANAGER.UseProgram(g_UIProgram);
 
     ApplyOrtho();
 
@@ -3012,14 +3014,14 @@ void GLUFDialogResourceManager::BeginSprites() noexcept
 
 void GLUFDialogResourceManager::EndSprites(GLUFElementPtr element, bool textured)
 {
-	if (textured)
+	/*if (textured)
 	{
         mSpriteBuffer.EnableVertexAttribute(2);
 	}
 	else
 	{
         mSpriteBuffer.DisableVertexAttribute(2);
-	}
+	}*/
 
 	
 	if (textured && element)
@@ -3030,12 +3032,13 @@ void GLUFDialogResourceManager::EndSprites(GLUFElementPtr element, bool textured
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, pTexture->mTextureElement);
-		glUniform1i(g_UIShaderLocations.sampler, 0);
+        glUniform1i(g_UIShaderLocations.sampler, 0);
 	}
 	else
 	{
-		ApplyRenderUIUntex();
+        ApplyRenderUIUntex();
 	}
+
 	
     mSpriteBuffer.Draw();
 }

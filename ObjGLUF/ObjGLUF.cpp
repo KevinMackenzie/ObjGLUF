@@ -2027,6 +2027,9 @@ void GLUFShaderManager::UseProgram(const GLUFProgramPtr& program) const
     if (program->GetId() == 0)
         GLUF_NON_CRITICAL_EXCEPTION(UseProgramException());
 
+    //make sure this is not bound when using a program
+    glBindProgramPipeline(0);
+
 	glUseProgram(program->mProgramId);
 }
 
@@ -3556,7 +3559,7 @@ void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::EnableVertexAttribute(GLUFAttribLoc loc)
+/*void GLUFVertexArrayBase::EnableVertexAttribute(GLUFAttribLoc loc)
 {
     auto it = mDisabledAttribInfos.find(loc);
     if (it == mDisabledAttribInfos.end())
@@ -3577,7 +3580,7 @@ void GLUFVertexArrayBase::DisableVertexAttribute(GLUFAttribLoc loc)
     mDisabledAttribInfos[loc] = it->second;
 
     mAttribInfos.erase(it);
-}
+}*/
 
 
 

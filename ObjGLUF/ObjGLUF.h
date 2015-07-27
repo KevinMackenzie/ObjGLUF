@@ -1435,7 +1435,6 @@ protected:
 	GLenum mUsageType;
 	GLenum mPrimitiveType;
 	std::map<GLUFAttribLoc, GLUFVertexAttribInfo> mAttribInfos;
-    std::map<GLUFAttribLoc, GLUFVertexAttribInfo> mDisabledAttribInfos;
 
 	GLuint mIndexBuffer = 0;
 	GLuint mRangedIndexBuffer = 0;
@@ -1635,8 +1634,8 @@ public:
             no-throw guarantee
     
     */
-    void EnableVertexAttribute(GLUFAttribLoc loc) noexcept;
-    void DisableVertexAttribute(GLUFAttribLoc loc) noexcept;
+    //void EnableVertexAttribute(GLUFAttribLoc loc) noexcept;
+    //void DisableVertexAttribute(GLUFAttribLoc loc) noexcept;
 };
 
 
