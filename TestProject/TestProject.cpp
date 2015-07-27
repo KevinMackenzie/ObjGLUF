@@ -6,8 +6,7 @@
 #define GLUF_DEBUG
 #define SUPPRESS_RADIAN_ERROR
 #define SUPPRESS_UTF8_ERROR
-//#include "../ObjGLUF/GLUFGui.h"
-#include "../ObjGLUF/ObjGLUF.h"
+#include "../ObjGLUF/GLUFGui.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
@@ -18,8 +17,8 @@ using namespace GLUF;
 
 GLFWwindow* window;
 
-//GLUFDialogResourceManager *resMan;
-//GLUFDialog *dlg;
+GLUFDialogResourceManagerPtr resMan;
+GLUFDialogPtr dlg;
 
 //extern GLUFFontPtr g_ArielDefault;
 
@@ -35,7 +34,7 @@ void ErrorMethod(const std::string& message, const char* func, const char* file,
     std::cin >> c;
 }
 
-/*bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
+bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 {
 	if (msg == GM_KEY)
 	{
@@ -51,13 +50,13 @@ void ErrorMethod(const std::string& message, const char* func, const char* file,
 	return false;
 }
 
-void CtrlMsgProc(GLUF_EVENT evt, int controlId, GLUFControl* pControl, void* pContext)
+void CtrlMsgProc(GLUFEvent evt, int controlId, GLUFControl* pControl, void* pContext)
 {
 	if (evt == GLUF_EVENT_BUTTON_CLICKED)
 	{
 		printf("HORRAY\n");
 	}
-}*/
+}
 
 struct JustPositions : GLUFVertexStruct
 {
@@ -144,28 +143,28 @@ int main(void)
     gGLVersionMinor = 0;
     gGLVersion2Digit = 20;*/
 
-	//GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
-	//GLUFInitGui(window, MsgProc, ctrlTex);
+	GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
+    GLUFInitGui(window, MsgProc, ctrlTex);
 
-	//resMan = new GLUFDialogResourceManager();
-	//dlg = new GLUFDialog();
-	//dlg->Init(resMan);
-	//dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
-	//dlg->SetCaptionText(L"Caption");
-	//dlg->SetCaptionHeight(50);
-	//dlg->Lock(false);
-	//dlg->EnableAutoClamp();
-	//dlg->EnableGrabAnywhere();
-	//dlg->SetMinimized(true);
-	//dlg->EnableCaption(false);
-	//dlg->SetSize(600, 600);
-	//dlg->SetLocation(50, 50);
-	//dlg->SetBackgroundColor(Color(0, 128, 0, 128));
-	//dlg->EnableKeyboardInput(true);
-	//GLUFRect rc = { 0, 200, 200, 0 };
+    resMan = std::make_shared<GLUFDialogResourceManager>();
+    dlg = CreateDialog();
+	dlg->Init(resMan);
+	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
+	dlg->SetCaptionText(L"Caption");
+	dlg->SetCaptionHeight(50);
+	dlg->Lock(false);
+	dlg->EnableAutoClamp();
+	dlg->EnableGrabAnywhere();
+	dlg->SetMinimized(true);
+	dlg->EnableCaption(false);
+	dlg->SetSize(600, 600);
+	dlg->SetLocation(50, 50);
+	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
+	dlg->EnableKeyboardInput(true);
+	GLUFRect rc = { 0, 200, 200, 0 };
 
 
-	/*std::wifstream t("text.txt");
+	std::wifstream t("text.txt");
 	std::wstring str;
 
 	t.seekg(0, std::ios::end);
@@ -227,7 +226,7 @@ int main(void)
 	box->AddItem(L"Item 26", nullptr);
 	box->AddItem(L"Item 27", nullptr);
 	box->AddItem(L"Item 28", nullptr);
-	box->AddItem(L"Item 29", nullptr);*/
+	box->AddItem(L"Item 29", nullptr);
 
 
 	//load shaders
@@ -375,7 +374,7 @@ int main(void)
 	float currTime = 0.0f;
 
 
-	printf("%i.%i", gGLVersionMajor, gGLVersionMinor);
+	printf("%i.%i", GetGLVersionMajor(), GetGLVersionMinor);
 
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);

@@ -7,7 +7,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    std::shared_ptr<T> GLUFDialog::GetControl(int ID) const
+    std::shared_ptr<T> GLUFDialog::GetControl(GLUFControlIndex ID) const
     {
         // Try to find the control with the given ID
         for (auto it : mControls)
@@ -115,5 +115,72 @@ namespace GLUF
         }
     }
 
+
+    /*
+    
+    Control Creation Functions
+    
+    
+    */
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFDialog> CreateDialog()
+    {
+        return std::shared_ptr<GLUFDialog>(new GLUFDialog());
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFStatic> CreateStatic(GLUFBitfield textFlags, GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFStatic>(new GLUFStatic(textFlags, dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFButton> CreateButton(GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFButton>(new GLUFButton(dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFCheckBox> CreateCheckBox(bool checked, GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFCheckBox>(new GLUFCheckBox(checked, dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFRadioButton> CreateRadioButton(GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFRadioButton>(new GLUFRadioButton(dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFScrollBar> CreateScrollBar(GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFScrollBar>(new GLUFScrollBar(dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFListBox> CreateListBox(GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFListBox>(new GLUFListBox(dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFComboBox> CreateComboBox(GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFComboBox>(new GLUFComboBox(dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFSlider> CreateSlider(GLUFDialog& dialog)
+    {
+        return std::shared_ptr<GLUFSlider>(new GLUFSlider(dialog));
+    }
+
+    //--------------------------------------------------------------------------------------
+    std::shared_ptr<GLUFTextHelper> CreateTextHelper(GLUFDialogResourceManagerPtr& drm)
+    {
+        return std::shared_ptr<GLUFTextHelper>(new GLUFTextHelper(drm));
+    }
 
 }

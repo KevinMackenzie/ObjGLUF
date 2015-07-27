@@ -6,7 +6,9 @@
 
 #include <algorithm>
 
-
+#ifdef WIN32
+#pragma warning( disable : 4715 )
+#endif
 
 namespace GLUF
 {
@@ -189,6 +191,7 @@ struct GLUFTextVertexStruct : public GLUFVertexStruct
     glm::vec3 mPos;
     glm::vec2 mTexCoords;
 
+    GLUFTextVertexStruct(){}
     GLUFTextVertexStruct(const glm::vec3& pos, const glm::vec2& texCoords) :
         mPos(pos), mTexCoords(texCoords)
     {}
@@ -234,9 +237,9 @@ struct GLUFTextVertexStruct : public GLUFVertexStruct
         }
     }
 
-    static GLUFGLVector<GLUFSpriteVertexStruct> MakeMany(size_t howMany)
+    static GLUFGLVector<GLUFTextVertexStruct> MakeMany(size_t howMany)
     {
-        GLUFGLVector<GLUFSpriteVertexStruct> ret;
+        GLUFGLVector<GLUFTextVertexStruct> ret;
         ret.resize(howMany);
 
         return ret;
@@ -261,7 +264,6 @@ GLUFFontPtr g_DefaultFont = nullptr;
 GLUFProgramPtr g_UIProgram = nullptr;
 GLUFProgramPtr g_UIProgramUntex = nullptr;
 GLUFProgramPtr g_TextProgram = nullptr;
-GLUFGLVector<GLUFTextVertexStruct> g_TextVerticies;
 GLUFVertexArray g_TextVertexArray(GL_TRIANGLES, GL_STREAM_DRAW, true);
 
 GLFWwindow* g_pGLFWWindow;
@@ -712,7 +714,7 @@ void GLUFFont::Refresh()
 
 	//load texture data
 	char* dat0 = new char[GLYPH_PADDING * mAtlasSize.y];
-    for (int i = 0; i < GLYPH_PADDING * mAtlasSize.y; ++i)
+    for (uint32_t i = 0; i < GLYPH_PADDING * mAtlasSize.y; ++i)
 		dat0[i] = 0;
 
 	int x = 0;
@@ -1787,7 +1789,7 @@ GLUFElementPtr GLUFDialog::GetDefaultElement(GLUFControlType controlType, GLUFEl
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddStatic(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFBitfield textFlags, bool isDefault, std::shared_ptr<GLUFStaticPtr> ctrlPtr)
 {
-    auto pStatic = std::make_shared<GLUFStatic>(textFlags, *this);
+    auto pStatic = CreateStatic(textFlags, *this);
 
     if (ctrlPtr)
         *ctrlPtr = pStatic;
@@ -1805,7 +1807,7 @@ void GLUFDialog::AddStatic(GLUFControlIndex ID, const std::wstring& strText, con
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddButton(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, int hotkey, bool isDefault, std::shared_ptr<GLUFButtonPtr> ctrlPtr)
 {
-    auto pButton = std::make_shared<GLUFButton>(*this);
+    auto pButton = CreateButton(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pButton;
@@ -1824,7 +1826,7 @@ void GLUFDialog::AddButton(GLUFControlIndex ID, const std::wstring& strText, con
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, bool checked , int hotkey, bool isDefault, std::shared_ptr<GLUFCheckBoxPtr> ctrlPtr)
 {
-    auto pCheckBox = std::make_shared<GLUFCheckBox>(*this);
+    auto pCheckBox = CreateCheckBox(checked, *this);
 
     if (ctrlPtr)
         *ctrlPtr = pCheckBox;
@@ -1844,7 +1846,7 @@ void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, c
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup buttonGroup, const std::wstring& strText, const GLUFRect& region, bool checked, int hotkey, bool isDefault, std::shared_ptr<GLUFRadioButtonPtr> ctrlPtr)
 {
-    auto pRadioButton = std::make_shared<GLUFRadioButton>(*this);
+    auto pRadioButton = CreateRadioButton(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pRadioButton;
@@ -1866,7 +1868,7 @@ void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup button
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int hotKey, bool isDefault, std::shared_ptr<GLUFComboBoxPtr> ctrlPtr)
 {
-    auto pComboBox = std::make_shared<GLUFComboBox>(*this);
+    auto pComboBox = CreateComboBox(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pComboBox;
@@ -1884,7 +1886,7 @@ void GLUFDialog::AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int ho
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min, long max, long value, bool isDefault, std::shared_ptr<GLUFSliderPtr> ctrlPtr)
 {
-    auto pSlider = std::make_shared<GLUFSlider>(*this);
+    auto pSlider = CreateSlider(*this);
 
     if (ctrlPtr)
         *ctrlPtr = pSlider;
@@ -1925,7 +1927,7 @@ void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min
 //--------------------------------------------------------------------------------------
 void GLUFDialog::AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBitfield style, std::shared_ptr<GLUFListBoxPtr> ctrlPtr)
 {
-	auto pListBox = std::make_shared<GLUFListBox>(*this);
+	auto pListBox = CreateListBox(*this);
 
 	if (ctrlPtr)
 		*ctrlPtr = pListBox;
@@ -2411,7 +2413,7 @@ bool GLUFDialog::OnCycleFocus(bool forward) noexcept
     // set the focused control to nullptr. This state, where no control
     // has focus, allows the camera to work.
     int nLastDialogIndex = -1;
-    for (int i = 0; i < mDialogManager->mDialogs.size(); ++i)
+    for (uint32_t i = 0; i < mDialogManager->mDialogs.size(); ++i)
     {
         if (mDialogManager->mDialogs[i] == pLastDialog)
         {
@@ -2421,7 +2423,7 @@ bool GLUFDialog::OnCycleFocus(bool forward) noexcept
     }
 
     int nDialogIndex = -1;
-    for (int i = 0; i < mDialogManager->mDialogs.size(); ++i)
+    for (uint32_t i = 0; i < mDialogManager->mDialogs.size(); ++i)
     {
         if (mDialogManager->mDialogs[i] == pDialog)
         {
@@ -2485,11 +2487,11 @@ void GLUFDialog::InitDefaultElements()
 			GLUFLoadFont(g_ArialDefault, rawData, 15L);
 		}
 
-		fontIndex = mDialogManager->AddFont(g_ArialDefault, 1.15f, FONT_WEIGHT_NORMAL);
+		fontIndex = mDialogManager->AddFont(g_ArialDefault, 20, FONT_WEIGHT_NORMAL);
 	}
 	else
 	{
-        fontIndex = mDialogManager->AddFont(g_DefaultFont, 1.15f, FONT_WEIGHT_NORMAL);
+        fontIndex = mDialogManager->AddFont(g_DefaultFont, 20, FONT_WEIGHT_NORMAL);
 	}
 
 	SetFont(0, fontIndex);
@@ -3207,17 +3209,6 @@ GLUFElementPtr GLUFControl::GetElement(GLUFElementIndex element) const
     return mElements.at(element);
 }
 
-
-//--------------------------------------------------------------------------------------
-void GLUFControl::SetRegion(const GLUF::GLUFRect& region) noexcept
-{
-    NOEXCEPT_REGION_START
-
-    mRegion = region;
-
-    NOEXCEPT_REGION_END
-}
-
 //--------------------------------------------------------------------------------------
 void GLUFControl::SetTextColor(const GLUF::Color& color) noexcept
 {
@@ -3495,7 +3486,7 @@ GLUFCheckBox Functions
 
 */
 
-GLUFCheckBox::GLUFCheckBox(const bool& checked, GLUFDialog& dialog) : GLUFButton(dialog)
+GLUFCheckBox::GLUFCheckBox(bool checked, GLUFDialog& dialog) : GLUFButton(dialog)
 {
 	mType = GLUF_CONTROL_CHECKBOX;
 
@@ -4236,7 +4227,7 @@ GLUFListBox Functions
 
 */
 
-GLUFListBox::GLUFListBox(GLUFDialog& dialog) : mScrollBar(std::make_shared<GLUFScrollBar>(dialog)), GLUFControl(dialog)
+GLUFListBox::GLUFListBox(GLUFDialog& dialog) : mScrollBar(CreateScrollBar(dialog)), GLUFControl(dialog)
 {
     mType = GLUF_CONTROL_LISTBOX;
 
@@ -4259,6 +4250,19 @@ GLUFListBox::~GLUFListBox()
 }
 
 //--------------------------------------------------------------------------------------
+GLUFGenericData& GLUFListBox::GetItemData(const std::wstring& text, GLUFIndex start) const
+{
+    return FindItem(text, start)->mData;
+}
+
+//--------------------------------------------------------------------------------------
+GLUFGenericData& GLUFListBox::GetItemData(GLUFIndex index) const
+{
+    return mItems[index]->mData;
+}
+
+
+//--------------------------------------------------------------------------------------
 void GLUFListBox::UpdateRects() noexcept
 {
     NOEXCEPT_REGION_START
@@ -4270,9 +4274,9 @@ void GLUFListBox::UpdateRects() noexcept
 
     mSelectionRegion = mRegion;
     mSelectionRegion.right -= mSBWidth;
-    GLUFInflateRect(mSelectionRegion, -mHorizontalMargin, -mVerticalMargin);
+    GLUFInflateRect(mSelectionRegion, -(int32_t)mHorizontalMargin, -(int32_t)mVerticalMargin);
     mTextRegion = mSelectionRegion;
-    GLUFInflateRect(mTextRegion, -mHorizontalMargin, mVerticalMargin);
+    GLUFInflateRect(mTextRegion, -(int32_t)mHorizontalMargin, mVerticalMargin);
 
     // Update the scrollbar's rects
     //mScrollBar->SetLocation(mRegion.right - mSBWidth, mRegion.top);
@@ -4313,7 +4317,7 @@ void GLUFListBox::InsertItem(GLUFIndex index, const std::wstring& text, GLUFGene
 {
     NOEXCEPT_REGION_START
 
-    auto newItem = std::make_shared<GLUFListBoxItem>();
+    auto newItem = std::make_shared<GLUFListBoxItem>(data);
 
     //clear the selection vector
     mSelected.clear();//this makes it so we do not have to offset the selection
@@ -4321,7 +4325,6 @@ void GLUFListBox::InsertItem(GLUFIndex index, const std::wstring& text, GLUFGene
 
     //wcscpy_s(pNewItem->mText, 256, wszText);
     newItem->mText = text;
-    newItem->mData = data;
     GLUFSetRect(newItem->mActiveRegion, 0, 0, 0, 0);
     //pNewItem->bSelected = false;
 
@@ -4339,7 +4342,7 @@ void GLUFListBox::InsertItem(GLUFIndex index, const std::wstring& text, GLUFGene
 
 
 //--------------------------------------------------------------------------------------
-void GLUFListBox::RemoveItem(GLUFIndex index) noexcept
+void GLUFListBox::RemoveItem(GLUFIndex index)
 {
     if (index >= (int)mItems.size())
     {
@@ -4494,6 +4497,38 @@ bool GLUFListBox::ContainsItem(const std::wstring& text, GLUFIndex start) const 
     return false;
 
     NOEXCEPT_REGION_END
+}
+
+
+//--------------------------------------------------------------------------------------
+GLUFIndex GLUFListBox::FindItemIndex(const std::wstring& text, GLUFIndex start) const
+{
+	for (GLUFIndex i = start; i < mItems.size(); ++i)
+	{
+		GLUFListBoxItemPtr pItem = mItems[i];
+
+		if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
+		{
+			return static_cast<int>(i);
+		}
+	}
+
+    throw std::invalid_argument("\"text\" was not found in combo box");
+}
+
+
+//--------------------------------------------------------------------------------------
+ GLUFListBoxItemPtr GLUFListBox::FindItem(const std::wstring& text, GLUFIndex start) const
+{
+    for (auto it : mItems)
+    {
+        if (it->mText == text)//REMEMBER if this returns 0, they are the same
+        {
+            return it;
+        }
+    }
+
+    throw std::invalid_argument("\"text\" was not found in combo box");
 }
 
 //--------------------------------------------------------------------------------------
@@ -4730,7 +4765,7 @@ bool GLUFListBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, i
 
                         if (nBegin < nEnd)
                         {
-                            for (int i = nBegin; i <= nEnd; ++i)
+                            for (uint32_t i = nBegin; i <= nEnd; ++i)
                             {
                                 /*GLUFListBoxItemPtr pItem = mItems[i];
                                 pItem->bSelected = true;
@@ -4740,7 +4775,7 @@ bool GLUFListBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, i
                         }
                         else if (nBegin > nEnd)
                         {
-                            for (int i = nBegin; i >= nEnd; --i)
+                            for (uint32_t i = nBegin; i >= nEnd; --i)
                             {
                                 /*GLUFListBoxItemPtr pItem = mItems[i];
                                 pItem->bSelected = true;
@@ -5048,7 +5083,7 @@ GLUFComboBox Functions
 
 */
 
-GLUFComboBox::GLUFComboBox(GLUFDialog& dialog) : mScrollBar(std::make_shared<GLUFScrollBar>(dialog)), GLUFButton(dialog)
+GLUFComboBox::GLUFComboBox(GLUFDialog& dialog) : mScrollBar(CreateScrollBar(dialog)), GLUFButton(dialog)
 {
 	mType = GLUF_CONTROL_COMBOBOX;
 
@@ -5649,10 +5684,10 @@ void GLUFComboBox::AddItem(const std::wstring& text, GLUFGenericData& data) noex
     NOEXCEPT_REGION_START
 
     // Create a new item and set the data
-    auto pItem = std::make_shared<GLUFComboBoxItem>();
+    auto pItem = std::make_shared<GLUFComboBoxItem>(data);
 
     pItem->mText = text;
-    pItem->mData = data;
+    //pItem->mData = data;
 
     mItems.push_back(pItem);
 
@@ -5740,7 +5775,7 @@ GLUFIndex GLUFComboBox::FindItemIndex(const std::wstring& text, GLUFIndex start)
 
 
 //--------------------------------------------------------------------------------------
-GLUFListBoxItemPtr GLUFComboBox::FindItem(const std::wstring& text, GLUFIndex start) const
+GLUFComboBoxItemPtr GLUFComboBox::FindItem(const std::wstring& text, GLUFIndex start) const
 {
     for (auto it : mItems)
     {
@@ -7725,12 +7760,14 @@ GLUF Text Functions
 
 glm::mat4 g_TextOrtho;
 glm::mat4 g_TextModelMatrix;
+GLUFGLVector<GLUFTextVertexStruct> g_TextVertices;
+Color4f g_TextColor;
 
 //--------------------------------------------------------------------------------------
 void BeginText(const glm::mat4& orthoMatrix)
 {
 	g_TextOrtho = orthoMatrix;
-	g_TextVerticies.clear();
+    g_TextVertices.clear();
 }
 
 //--------------------------------------------------------------------------------------
@@ -7856,51 +7893,38 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 
         */
 
+        g_TextVertices = GLUFTextVertexStruct::MakeMany(4);
 
-		//triangle 1
-		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetVec2FromRect(glyph, false, true), z),
-			GLUFGetVec2FromRect(UV, false, true));
-		//glm::vec2(z, 1.0f));
+        g_TextVertices[0] =
+        {
+            glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
+            GLUFGetVec2FromRect(UV, false, false)
+        };
 
-		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
-			GLUFGetVec2FromRect(UV, false, false));
-		//glm::vec2(z, z));
+        g_TextVertices[1] =
+        {
+            glm::vec3(GLUFGetVec2FromRect(glyph, true, false), z),
+            GLUFGetVec2FromRect(UV, true, false)
+        };
 
-		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
-			GLUFGetVec2FromRect(UV, true, true));
-		//glm::vec2(1.0f, 1.0f));
+        g_TextVertices[2] =
+        {
+            glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
+            GLUFGetVec2FromRect(UV, true, true)
+        };
 
-
-		//triangle 2
-
-		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
-			GLUFGetVec2FromRect(UV, false, false));
-		//glm::vec2(z, z));
-
-		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetVec2FromRect(glyph, true, false), z),
-			GLUFGetVec2FromRect(UV, true, false));
-		//glm::vec2(1.0f, z));
-
-		g_TextVerticies.push_back(
-			glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
-			GLUFGetVec2FromRect(UV, true, true));
-		//glm::vec2(1.0f, 1.0f));
-
+        g_TextVertices[3] =
+        {
+            glm::vec3(GLUFGetVec2FromRect(glyph, false, true), z),
+            GLUFGetVec2FromRect(UV, false, true)
+        };
 
 		CurX += widthConverted;
-		//CurX += 0.05;
-
-		//z += 0.00005f;//to solve the depth problem
 		
 	}
 	//glEnd();
-	
-	g_TextVerticies.set_color(vFontColor);
+
+    g_TextColor = GLUFColorToFloat(color);
 
 	//g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
 	
@@ -7911,68 +7935,57 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 
 void EndText(const GLUFFontPtr& font)
 {
-	
-	//get the currently bound texture to rebind later
-	//GLint tmpTexId;
-	//glGetIntegerv(GL_TEXTURE_BINDING_2D, &tmpTexId);
-	//GLUF_ASSERT(tmpTexId >= 0);
-
 	//buffer the data
-	glBindVertexArray(g_TextVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
-	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec3), g_TextVerticies.data_pos(), GL_STREAM_DRAW);
+    g_TextVertexArray.BufferData(g_TextVertices);
 
+    //buffer the indices (TODO: THIS SHOULD ONLY HAPPEN ONCE)
+    static std::vector<glm::u32vec3> indices = 
+    {
+        {3, 0, 2},
+        {2, 0, 1}
+    };
 
-	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
-	glBufferData(GL_ARRAY_BUFFER, g_TextVerticies.size() * sizeof(glm::vec2), g_TextVerticies.data_tex(), GL_STREAM_DRAW);
+    g_TextVertexArray.BufferIndices(indices);
 
 	GLUFSHADERMANAGER.UseProgram(g_TextProgram);
 	
 	//first uniform: model-view matrix
-	glm::mat4 mv = g_TextOrtho;
-	glUniformMatrix4fv(g_TextShaderLocations.ortho, 1, GL_FALSE, glm::value_ptr(mv));
+    GLUFSHADERMANAGER.GLUniformMatrix4f(g_TextShaderLocations.ortho, g_TextOrtho);
 
 	//second, the sampler
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, font->mTexId);
-	glUniform1i(g_TextShaderLocations.sampler, 0);
+    GLUFSHADERMANAGER.GLUniform1i(g_TextShaderLocations.sampler, 0);
 
 
 	//third, the color
-	Color4f color = g_TextVerticies.get_color();
-	glUniform4f(g_TextShaderLocations.color, color.r, color.g, color.b, color.a);
-
-	glEnableVertexAttribArray(g_TextShaderLocations.position);//positions
-	glEnableVertexAttribArray(g_TextShaderLocations.uv);//uvs
+    GLUFSHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, g_TextColor);
 
 	//make sure to enable this with text
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDrawArrays(GL_TRIANGLES, 0, g_TextVerticies.size());
 
-	g_TextVerticies.clear();
-	glBindVertexArray(0);
+    g_TextVertexArray.Draw();
 
-	//lastly, rebind the old texture
-	//glBindTexture(GL_TEXTURE_BINDING_2D, tmpTexId);
+	g_TextVertices.clear();
 }
 
 
 //GLUFTextHelper
-GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManager& manager) :
+GLUFTextHelper::GLUFTextHelper(GLUFDialogResourceManagerPtr& manager) :
     mManager(manager), mColor(0, 0, 0, 255), mPoint(0L, 0L), 
     mFontIndex(0), mFontSize(15L)
 {}
 
 void GLUFTextHelper::Begin(GLUFFontIndex drmFont, GLUFFontSize leading, GLUFFontSize size)
 {
-    mManager.GetFontNode(drmFont);
+    mManager->GetFontNode(drmFont);
 
     mFontIndex = drmFont;
     mFontSize = size;
     mLeading = leading;
 
-	BeginText(mManager.GetOrthoMatrix());
+    BeginText(mManager->GetOrthoMatrix());
 }
 
 void GLUFTextHelper::DrawTextLine(const std::wstring& text)
@@ -7990,13 +8003,13 @@ void GLUFTextHelper::DrawTextLine(const std::wstring& text)
 
 void GLUFTextHelper::DrawTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& text)
 {
-    mManager.GetFontNode(mFontIndex)->mLeading = mLeading;
-    DrawTextGLUF(*mManager.GetFontNode(mFontIndex), text, rc, mColor, flags, true);
+    mManager->GetFontNode(mFontIndex)->mLeading = mLeading;
+    DrawTextGLUF(mManager->GetFontNode(mFontIndex), text, rc, mColor, flags, true);
 }
 
 void GLUFTextHelper::End()
 {
-    EndText(mManager.GetFontNode(mFontIndex)->mFontType);
+    EndText(mManager->GetFontNode(mFontIndex)->mFontType);
 }
 
 }

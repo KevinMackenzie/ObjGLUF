@@ -277,7 +277,7 @@ using GLUFEventCallbackFuncPtr = void(*)(GLUFEvent, GLUFControlPtr, const GLUFEv
 Shorthand Notation for Style
 
 */
-#define GLUF_GUI_CALLBACK_PARAM GLUF_MESSAGE_TYPE msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4
+#define GLUF_GUI_CALLBACK_PARAM GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4
 #define GLUF_PASS_CALLBACK_PARAM msg, param1, param2, param3, param4
 
 /*
@@ -577,7 +577,7 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     std::wstring mCaptionText;
 
     //these are assumed to be based on the origin (bottom left)
-    GLUFRect mRegion = { { 0 }, 0, 0, { 0 } };
+    GLUFRect mRegion;
 
     long mCaptionHeight = 0;
 
@@ -613,7 +613,8 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
             no-throw guaratee
 
     */
-    GLUF_FORCE_SMART_POINTERS(GLUFDialog);
+    GLUFDialog();
+    friend std::shared_ptr<GLUFDialog> CreateDialog();
 
 public:
 	~GLUFDialog();
@@ -1213,6 +1214,7 @@ struct GLUFSpriteVertexStruct : public GLUFVertexStruct
 	GLUF::Color4f mColor;
     glm::vec2 mTexCoords;
 
+    GLUFSpriteVertexStruct(){}
     GLUFSpriteVertexStruct(const glm::vec3& pos, const GLUF::Color4f& color, const glm::vec2& texCoords) : 
         mPos(pos), mColor(color), mTexCoords(texCoords)
     {}
@@ -1565,7 +1567,7 @@ protected:
             'dialog': the parent dialog
 
     */
-    GLUF_FORCE_SMART_POINTERS(GLUFControl, GLUFDialog& dialog);
+    GLUFControl(GLUFDialog& dialog);
 
     friend GLUFDialog;
 
@@ -1765,7 +1767,10 @@ protected:
     std::wstring     mText;
     GLUFBitfield     mTextFlags;
 
-    GLUF_FORCE_SMART_POINTERS(GLUFStatic, const GLUFBitfield& textFlags, GLUFDialog& dialog);
+    GLUFStatic(const GLUFBitfield& textFlags, GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFStatic> CreateStatic(GLUFBitfield textFlags, GLUFDialog& dialog);
+
+    GLUFStatic() = delete;
     
 public:
 
@@ -1812,7 +1817,9 @@ class GLUFButton : public GLUFStatic
 
 protected:
 
-    GLUF_FORCE_SMART_POINTERS(GLUFButton, GLUFDialog& dialog);
+    GLUFButton() = delete;
+    GLUFButton(GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFButton> CreateButton(GLUFDialog& dialog);
 
     bool mPressed;
 
@@ -1847,7 +1854,9 @@ class GLUFCheckBox : public GLUFButton
 
 protected:
 
-    GLUF_FORCE_SMART_POINTERS(GLUFCheckBox, const bool& checked, GLUFDialog& dialog);
+    GLUFCheckBox() = delete;
+    GLUFCheckBox(bool checked, GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFCheckBox> CreateCheckBox(bool checked, GLUFDialog& dialog);
 
     bool mChecked;
     GLUF::GLUFRect mButtonRegion;
@@ -1908,7 +1917,9 @@ class GLUFRadioButton : public GLUFCheckBox
 {
 public:
     
-    GLUF_FORCE_SMART_POINTERS(GLUFRadioButton, GLUFDialog& dialog);
+    GLUFRadioButton() = delete;
+    GLUFRadioButton(GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFRadioButton> CreateRadioButton(GLUFDialog& dialog);
 
     GLUFRadioButtonGroup mButtonGroup;
 
@@ -1995,7 +2006,9 @@ public:
     };
 protected:
 
-    GLUF_FORCE_SMART_POINTERS(GLUFScrollBar, GLUFDialog& dialog);
+    GLUFScrollBar() = delete;
+    GLUFScrollBar(GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFScrollBar> CreateScrollBar(GLUFDialog& dialog);
 
 
     bool mShowThumb;
@@ -2108,6 +2121,8 @@ typedef struct GLUFListBoxItem_t
     GLUFGenericData& mData;
 	bool mVisible;
 	GLUF::GLUFRect mActiveRegion;
+
+    GLUFListBoxItem_t(GLUFGenericData& data) : mData(data){}
 } GLUFListBoxItem, GLUFComboBoxItem;
 
 using GLUFListBoxItemPtr = std::shared_ptr < GLUFListBoxItem > ;
@@ -2146,7 +2161,10 @@ GLUFListBox
 class GLUFListBox : public GLUFControl
 {
 protected:
-    GLUF_FORCE_SMART_POINTERS(GLUFListBox, GLUFDialog& dialog);
+
+    GLUFListBox() = delete;
+    GLUFListBox(GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFListBox> CreateListBox(GLUFDialog& dialog);
 
 
     GLUF::GLUFRect mTextRegion;
@@ -2186,7 +2204,7 @@ public:
 
     */
     
-	GLUFGenericData&    GetItemData(const std::wstring& text) const;
+	GLUFGenericData&    GetItemData(const std::wstring& text, GLUFIndex start) const;
     GLUFGenericData&    GetItemData(GLUFIndex index) const;
 	GLUFSize            GetNumItems() const	noexcept		{ return mItems.size();		}
     GLUFListBoxItemPtr  GetItem(const std::wstring& text, GLUFIndex start = 0) const;
@@ -2440,9 +2458,11 @@ GLUFComboBox
 */
 class GLUFComboBox : public GLUFButton
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFComboBox, GLUFDialog& dialog);
-
 protected:
+
+    GLUFComboBox() = delete;
+    GLUFComboBox(GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFComboBox> CreateComboBox(GLUFDialog& dialog);
 
     GLUFsIndex mSelected;
     GLUFsIndex mFocused;
@@ -2628,7 +2648,7 @@ public:
     
     */
     GLUFIndex           FindItemIndex(const std::wstring& text, GLUFIndex start = 0) const;
-    GLUFListBoxItemPtr  FindItem(const std::wstring& text, GLUFIndex start = 0) const;
+    GLUFComboBoxItemPtr FindItem(const std::wstring& text, GLUFIndex start = 0) const;
 
 
     /*
@@ -2683,7 +2703,9 @@ class GLUFSlider : public GLUFControl
 {
 protected:
 
-    GLUF_FORCE_SMART_POINTERS(GLUFSlider, GLUFDialog& dialog);
+    GLUFSlider() = delete;
+    GLUFSlider(GLUFDialog& dialog);
+    friend std::shared_ptr<GLUFSlider> CreateSlider(GLUFDialog& dialog);
 
     GLUFValue mValue;
     GLUFValue mMin;
@@ -2930,11 +2952,14 @@ GLUFTextHelper
 */
 class OBJGLUF_API GLUFTextHelper
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFTextHelper, GLUFDialogResourceManager& drm);
-
 protected:
 
-    GLUFDialogResourceManager& mManager;
+    GLUFTextHelper() = delete;
+    GLUFTextHelper(GLUFDialogResourceManagerPtr& drm);
+    friend std::shared_ptr<GLUFTextHelper> CreateTextHelper(GLUFDialogResourceManagerPtr& drm);
+
+
+    GLUFDialogResourceManagerPtr& mManager;
 
     /*
     Helper overloads for RenderString

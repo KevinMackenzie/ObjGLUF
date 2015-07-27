@@ -135,9 +135,6 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 #define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; GLUF_ERROR(ss.str().c_str()) } }
 
 
-//used for defining private constructors which can be accessed by 'std::make_shared'; NOTE: all parameters must be const references
-#define GLUF_FORCE_SMART_POINTERS(CLASSNAME, ...) CLASSNAME(__VA_ARGS__); friend std::shared_ptr<CLASSNAME> std::make_shared<CLASSNAME>(__VA_ARGS__); CLASSNAME() = delete;
-
 #ifdef GLUF_DEBUG
 
 #define GLUF_NULLPTR_CHECK(ptr) {if (ptr == nullptr){throw std::invalid_argument("Null Pointer");}}
@@ -1690,7 +1687,7 @@ public:
             May throw something in 'std::vector's move constructor or assignment operator
     */
 
-    GLUFGLVector(GLUFGLVector&& other) : std::vector<T>(std::move(other));
+    GLUFGLVector(GLUFGLVector&& other);
     GLUFGLVector& operator=(GLUFGLVector&& other);
 
     /*

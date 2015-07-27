@@ -57,7 +57,7 @@ namespace GLUF
     */
 
     template<typename T>
-    GLUFGLVector<T>::GLUFGLVector(GLUFGLVector&& other) : std::vector<T>(std::move(other))
+    GLUFGLVector<T>::GLUFGLVector(GLUFGLVector<T>&& other) : std::vector<T>(std::move(other))
     {
         mGLData = other.mGLData;
         other.mGLData = 0;
@@ -73,12 +73,12 @@ namespace GLUF
         mGLData = other.mGLData;
         other.mGLData = 0;
 
-        return *this
+        return *this;
     }
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    GLUFGLVector<T>::GLUFGLVector& operator=(const GLUFGLVector& other)
+    GLUFGLVector<T>& GLUFGLVector<T>::operator=(const GLUFGLVector<T>& other)
     {
         std::vector<T>* thisParentPtr = dynamic_cast<std::vector<T>*>(this);
         *thisParentPtr = other;
