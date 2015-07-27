@@ -2073,19 +2073,28 @@ const GLuint GLUFShaderManager::GetShaderVariableLocation(const GLUFProgramPtr& 
 {
     GLUF_NULLPTR_CHECK(program);
 
-	std::map<std::string, GLuint>::iterator it;
+	GLUFVariableLocMap::iterator it;
 
 	if (locType == GLT_ATTRIB)
 	{
         it = program->mAttributeLocations.find(varName);
+
+        if (it == program->mAttributeLocations.end())
+        {
+            GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program attributes!"));
+            return 0;
+        }
 	}
 	else
 	{
         it = program->mUniformLocations.find(varName);
-	}
 
-    if (it == program->mAttributeLocations.end())
-        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program attributes/uniforms!"));
+        if (it == program->mUniformLocations.end())
+        {
+            GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program uniforms!"));
+            return 0;
+        }
+	}
 
 	return it->second;
 }

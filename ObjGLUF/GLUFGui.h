@@ -270,7 +270,7 @@ GLUFEventCallbackFuncPtr
         the final parameter must be derived from 'GLUFEventCallbackReceivable'
         
 */
-using GLUFEventCallbackFuncPtr = void(*)(GLUFEvent, GLUFControlPtr, const GLUFEventCallbackReceivablePtr&);
+using GLUFEventCallbackFuncPtr = void(__cdecl*)(GLUFEvent, GLUFControlPtr&, const GLUFEventCallbackReceivablePtr&);
 
 /*
 

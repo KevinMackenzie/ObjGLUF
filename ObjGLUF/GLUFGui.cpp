@@ -264,7 +264,7 @@ GLUFFontPtr g_DefaultFont = nullptr;
 GLUFProgramPtr g_UIProgram = nullptr;
 GLUFProgramPtr g_UIProgramUntex = nullptr;
 GLUFProgramPtr g_TextProgram = nullptr;
-GLUFVertexArray g_TextVertexArray(GL_TRIANGLES, GL_STREAM_DRAW, true);
+GLUFVertexArrayPtr g_TextVertexArray;
 
 GLFWwindow* g_pGLFWWindow;
 GLuint g_pControlTexturePtr;
@@ -454,8 +454,9 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, GLUFCallbackFuncPtr callbac
 
 	glBindVertexArray(0);*/
 
-    g_TextVertexArray.AddVertexAttrib({ 4, 3, GL_FLOAT, 0 }, 0);
-    g_TextVertexArray.AddVertexAttrib({ 4, 2, GL_FLOAT, 0 }, 12);
+    g_TextVertexArray = std::make_shared<GLUFVertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true);
+    g_TextVertexArray->AddVertexAttrib({ 4, 3, GL_FLOAT, 0 }, 0);
+    g_TextVertexArray->AddVertexAttrib({ 4, 2, GL_FLOAT, 0 }, 12);
 
 	//initialize the freetype library.
 	FT_Error err = FT_Init_FreeType(&g_FtLib);
@@ -1008,7 +1009,7 @@ void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog
 {
 	if (g_ControlTextureResourceManLocation == -1)
 	{
-        g_ControlTextureResourceManLocation = mDialogManager->AddTexture(g_pControlTexturePtr);
+        g_ControlTextureResourceManLocation = manager->AddTexture(g_pControlTexturePtr);
 	}
 
     Init(manager, registerDialog, g_ControlTextureResourceManLocation);
@@ -1016,7 +1017,7 @@ void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog
 
 
 //--------------------------------------------------------------------------------------
-void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, unsigned int textureIndex)
+void GLUFDialog::Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, GLUFTextureIndex textureIndex)
 {
     if (manager == nullptr)
         throw std::invalid_argument("Nullptr DRM");
@@ -2502,6 +2503,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// Element for the caption
 	//-------------------------------------
+    mCapElement = std::make_shared<GLUFElement>();
 	mCapElement->SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
     mCapElement->SetTexture(0, rcTexture);
@@ -2512,6 +2514,7 @@ void GLUFDialog::InitDefaultElements()
     mCapElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
     mCapElement->mFontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
+    mDlgElement = std::make_shared<GLUFElement>();
 	mDlgElement->SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
 	//GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
@@ -7936,7 +7939,7 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 void EndText(const GLUFFontPtr& font)
 {
 	//buffer the data
-    g_TextVertexArray.BufferData(g_TextVertices);
+    g_TextVertexArray->BufferData(g_TextVertices);
 
     //buffer the indices (TODO: THIS SHOULD ONLY HAPPEN ONCE)
     static std::vector<glm::u32vec3> indices = 
@@ -7945,7 +7948,7 @@ void EndText(const GLUFFontPtr& font)
         {2, 0, 1}
     };
 
-    g_TextVertexArray.BufferIndices(indices);
+    g_TextVertexArray->BufferIndices(indices);
 
 	GLUFSHADERMANAGER.UseProgram(g_TextProgram);
 	
@@ -7965,7 +7968,7 @@ void EndText(const GLUFFontPtr& font)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    g_TextVertexArray.Draw();
+    g_TextVertexArray->Draw();
 
 	g_TextVertices.clear();
 }

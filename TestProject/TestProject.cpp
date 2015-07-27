@@ -50,7 +50,7 @@ bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 	return false;
 }
 
-void CtrlMsgProc(GLUFEvent evt, int controlId, GLUFControl* pControl, void* pContext)
+void ControlEventCallback(GLUFEvent evt, GLUFControlPtr&, const GLUFEventCallbackReceivablePtr&) noexcept
 {
 	if (evt == GLUF_EVENT_BUTTON_CLICKED)
 	{
@@ -149,14 +149,14 @@ int main(void)
     resMan = std::make_shared<GLUFDialogResourceManager>();
     dlg = CreateDialog();
 	dlg->Init(resMan);
-	dlg->SetCallback(CtrlMsgProc);//TODO: fix caption
+    dlg->SetCallback(ControlEventCallback);//TODO: fix caption
 	dlg->SetCaptionText(L"Caption");
 	dlg->SetCaptionHeight(50);
 	dlg->Lock(false);
 	dlg->EnableAutoClamp();
 	dlg->EnableGrabAnywhere();
-	dlg->SetMinimized(true);
-	dlg->EnableCaption(false);
+	dlg->SetMinimized(false);
+	//dlg->EnableCaption(false);
 	dlg->SetSize(600, 600);
 	dlg->SetLocation(50, 50);
 	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
@@ -168,7 +168,7 @@ int main(void)
 	std::wstring str;
 
 	t.seekg(0, std::ios::end);
-	str.reserve(t.tellg());
+	str.reserve(static_cast<uint32_t>(t.tellg()));
 	t.seekg(0, std::ios::beg);
 
 	str.assign((std::istreambuf_iterator<wchar_t>(t)),
@@ -179,11 +179,11 @@ int main(void)
 	//dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
 
 	//dlg->AddCheckBox(2, L"Check Box", 150, 50, 20, 20);
-	dlg->AddRadioButton(3, 0, L"Button 1", 200, 200, 20, 20, true);
-	dlg->AddRadioButton(4, 0, L"Button 2", 200, 250, 20, 20);
-	dlg->AddRadioButton(5, 0, L"Button 3", 200, 300, 20, 20);
+    dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 20, { 20 } }, true);
+    dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 20, { 20 } });
+    dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 20, { 20 } });
 
-	dlg->AddSlider (6, 100, 100, 400, 50, 0, 15, 5);
+    dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
 	//dlg->AddButton(0, L"Button", 25, 10, 75, 20);
 
 	/*dlg->AddButton(0, L"Button", 50, 10, 125, 35);
@@ -549,7 +549,7 @@ int main(void)
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
-			//dlg->OnRender(ellapsedTime);
+			dlg->OnRender(ellapsedTime);
 			//dlg->DrawRect(rc, GLUF::Color(255, 0, 0, 255));
 
         //sky box rendering stuff
@@ -591,7 +591,7 @@ int main(void)
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
-	GLUF::GLUFTerminate();
+	GLUFTerminate();
 
 	return 0;
 }
