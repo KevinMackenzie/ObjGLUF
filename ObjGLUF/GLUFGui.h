@@ -2682,9 +2682,9 @@ GLUFSlider
 */
 class GLUFSlider : public GLUFControl
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFSlider, GLUFDialog& dialog);
-
 protected:
+
+    GLUF_FORCE_SMART_POINTERS(GLUFSlider, GLUFDialog& dialog);
 
     GLUFValue mValue;
     GLUFValue mMin;

@@ -5816,35 +5816,26 @@ void GLUFComboBox::SelectItem(const GLUFGenericData& data)
 }
 
 
-
 /*
-
-
-Ended Here July 26 2015
-
-
+======================================================================================================================================================================================================
+GLUFSlider Functions
 
 
 */
 
-//======================================================================================
-// GLUFSlider class
-//======================================================================================
-
-GLUFSlider::GLUFSlider( GLUFDialog* pDialog)
+GLUFSlider::GLUFSlider(GLUFDialog& dialog) : GLUFControl(dialog)
 {
 	mType = GLUF_CONTROL_SLIDER;
-	mDialog = pDialog;
 
-	m_nMin = 0;
-	m_nMax = 100;
-	m_nValue = 0;
+	mMin = 0;
+	mMax = 100;
+	mValue = 0;
 	mPressed = false;
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFSlider::ContainsPoint(GLUFPoint pt) noexcept
+bool GLUFSlider::ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -5866,171 +5857,24 @@ void GLUFSlider::UpdateRects() noexcept
     mButtonRegion.right = mButtonRegion.left + GLUFRectHeight(mButtonRegion);
     GLUFOffsetRect(mButtonRegion, -GLUFRectWidth(mButtonRegion) / 2, 0);
 
-    m_nButtonX = (int)((float(m_nValue - m_nMin) / float(m_nMax - m_nMin)) * GLUFRectWidth(mRegion));
-    GLUFOffsetRect(mButtonRegion, m_nButtonX, 0);
+    mButtonX = (int)((float(mValue - mMin) / float(mMax - mMin)) * GLUFRectWidth(mRegion));
+    GLUFOffsetRect(mButtonRegion, mButtonX, 0);
 
     NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFSlider::ValueFromPos(long x) noexcept
+GLUFValue GLUFSlider::ValueFromXPos(GLUFUValue x) const noexcept
 {
     NOEXCEPT_REGION_START
 
-    float fValuePerPixel = (float)(m_nMax - m_nMin) / GLUFRectWidth(mRegion);
+    float fValuePerPixel = (float)(mMax - mMin) / GLUFRectWidth(mRegion);
     float fPixelPerValue2 = 1.0f / (2.0f * fValuePerPixel);//use this to get it to change locations at the half way mark instead of using truncate int methods
-    return int(((x - m_x + fPixelPerValue2) * fValuePerPixel) + m_nMin);
+    return int(((x - mRegion.x + fPixelPerValue2) * fValuePerPixel) + mMin);
 
     NOEXCEPT_REGION_END
 }
-
-
-//--------------------------------------------------------------------------------------
-/*
-bool GLUFSlider::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!mEnabled || !mVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-	{
-		switch (wParam)
-		{
-		case VK_HOME:
-			SetValueInternal(m_nMin, true);
-			return true;
-
-		case VK_END:
-			SetValueInternal(m_nMax, true);
-			return true;
-
-		case VK_LEFT:
-		case VK_DOWN:
-			SetValueInternal(m_nValue - 1, true);
-			return true;
-
-		case VK_RIGHT:
-		case VK_UP:
-			SetValueInternal(m_nValue + 1, true);
-			return true;
-
-		case VK_NEXT:
-			SetValueInternal(m_nValue - (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
-				true);
-			return true;
-
-		case VK_PRIOR:
-			SetValueInternal(m_nValue + (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
-				true);
-			return true;
-		}
-		break;
-	}
-	}
-
-
-	return false;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!mEnabled || !mVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-	{
-		if (PtInRect(&mButtonRegion, pt))
-		{
-			// Pressed while inside the control
-			mPressed = true;
-			SetCapture(GLUFGetHWND());
-
-			m_nDragX = pt.x;
-			//m_nDragY = pt.y;
-			m_nDragOffset = m_nButtonX - m_nDragX;
-
-			//m_nDragValue = m_nValue;
-
-			if (!mHasFocus)
-				mDialog.RequestFocus(shared_from_this());
-
-			return true;
-		}
-
-		if (PtInRect(&mRegion, pt))
-		{
-			m_nDragX = pt.x;
-			m_nDragOffset = 0;
-			mPressed = true;
-
-			if (!mHasFocus)
-				mDialog.RequestFocus(shared_from_this());
-
-			if (pt.x > m_nButtonX + m_x)
-			{
-				SetValueInternal(m_nValue + 1, true);
-				return true;
-			}
-
-			if (pt.x < m_nButtonX + m_x)
-			{
-				SetValueInternal(m_nValue - 1, true);
-				return true;
-			}
-		}
-
-		break;
-	}
-
-	case WM_LBUTTONUP:
-	{
-		if (mPressed)
-		{
-			mPressed = false;
-			ReleaseCapture();
-			mDialog.SendEvent(GLUF_EVENTSLIDER_VALUE_CHANGED_UP, true, this);
-
-			return true;
-		}
-
-		break;
-	}
-
-	case WM_MOUSEMOVE:
-	{
-		if (mPressed)
-		{
-			SetValueInternal(ValueFromPos(m_x + pt.x + m_nDragOffset), true);
-			return true;
-		}
-
-		break;
-	}
-
-	case WM_MOUSEWHEEL:
-	{
-		int nScrollAmount = int((short)HIWORD(wParam)) / WHEEL_DELTA;
-		SetValueInternal(m_nValue - nScrollAmount, true);
-		return true;
-	}
-	};
-
-	return false;
-}
-*/
 
 
 //--------------------------------------------------------------------------------------
@@ -6054,11 +5898,11 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
                 mPressed = true;
                 //SetCapture(GLUFGetHWND());
 
-                m_nDragX = pt.x;
+                mDragX = pt.x;
                 //m_nDragY = pt.y;
-                m_nDragOffset = m_nButtonX - m_nDragX;
+                mDragOffset = mButtonX - mDragX;
 
-                //m_nDragValue = m_nValue;
+                //m_nDragValue = mValue;
 
                 if (!mHasFocus)
                     mDialog.RequestFocus(shared_from_this());
@@ -6072,7 +5916,7 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
                 if (!mHasFocus)
                     mDialog.RequestFocus(shared_from_this());
 
-                SetValueInternal(ValueFromPos(pt.x), true);
+                SetValueInternal(ValueFromXPos(pt.x), true);
 
                 return true;
             }
@@ -6083,7 +5927,7 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
             {
                 mPressed = false;
                 //ReleaseCapture();
-                mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, this);
+                mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, shared_from_this());
 
                 return true;
             }
@@ -6098,7 +5942,7 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 
         if (mPressed)
         {
-            SetValueInternal(ValueFromPos(m_x + pt.x + m_nDragOffset), true);
+            SetValueInternal(ValueFromXPos(mRegion.x + pt.x + mDragOffset), true);
             return true;
         }
 
@@ -6108,7 +5952,7 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
     case GM_SCROLL:
     {
         int nScrollAmount = param2 / WHEEL_DELTA;
-        SetValueInternal(m_nValue - nScrollAmount, true);
+        SetValueInternal(mValue - nScrollAmount, true);
         return true;
     }
     case GM_KEY:
@@ -6119,30 +5963,30 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
         switch (param1)
         {
         case GLFW_KEY_HOME:
-            SetValueInternal(m_nMin, true);
+            SetValueInternal(mMin, true);
             return true;
 
         case GLFW_KEY_END:
-            SetValueInternal(m_nMax, true);
+            SetValueInternal(mMax, true);
             return true;
 
         case GLFW_KEY_LEFT:
         case GLFW_KEY_DOWN:
-            SetValueInternal(m_nValue - 3, true);
+            SetValueInternal(mValue - 3, true);
             return true;
 
         case GLFW_KEY_RIGHT:
         case GLFW_KEY_UP:
-            SetValueInternal(m_nValue + 3, true);
+            SetValueInternal(mValue + 3, true);
             return true;
 
         case GLFW_KEY_PAGE_DOWN:
-            SetValueInternal(m_nValue - (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
+            SetValueInternal(mValue - (10 > (mMax - mMin) / 10 ? 10 : (mMax - mMin) / 10),
                 true);
             return true;
 
         case GLFW_KEY_PAGE_UP:
-            SetValueInternal(m_nValue + (10 > (m_nMax - m_nMin) / 10 ? 10 : (m_nMax - m_nMin) / 10),
+            SetValueInternal(mValue + (10 > (mMax - mMin) / 10 ? 10 : (mMax - mMin) / 10),
                 true);
             return true;
         }
@@ -6177,17 +6021,17 @@ void GLUFSlider::SetValueInternal(int nValue, bool bFromInput) noexcept
     NOEXCEPT_REGION_START
 
     // Clamp to range
-    nValue = std::clamp(nValue, m_nMin, m_nMax);
+    nValue = std::clamp(nValue, mMin, mMax);
 
 
-    if (nValue == m_nValue)
+    if (nValue == mValue)
         return;
 
-    m_nValue = nValue;
+    mValue = nValue;
 
     UpdateRects();
 
-    mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED, bFromInput, this);
+    mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED, bFromInput, shared_from_this());
 
     NOEXCEPT_REGION_END
 }
@@ -6251,6 +6095,18 @@ void GLUFSlider::Render( float elapsedTime) noexcept
 }
 
 
+
+
+
+/*
+
+
+Ended Here July 26 2015
+
+
+
+
+*/
 
 
 const wchar_t *g_Charsets[] = { 
