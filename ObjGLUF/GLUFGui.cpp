@@ -2222,7 +2222,7 @@ void GLUFDialog::DrawText(const std::wstring& text, const GLUFElementPtr& elemen
 //--------------------------------------------------------------------------------------
 void GLUFDialog::CalcTextRect(const std::wstring& text, const GLUFElementPtr& element, GLUF::GLUFRect& rect) const
 {
-	GLUFFontNodePtr pFontNode = GetFont(pElement->mFontIndex);
+	GLUFFontNodePtr pFontNode = GetFont(element->mFontIndex);
 	if (!pFontNode)
 		return;
 
@@ -3184,19 +3184,27 @@ void GLUFControl::SetRegion(const GLUF::GLUFRect& region) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFControl::SetTextColor(const GLUF::Color& color)
+void GLUFControl::SetTextColor(const GLUF::Color& color) noexcept
 {
-	GLUFElementPtr element = mElements[0];
+    NOEXCEPT_REGION_START
+
+    GLUFElementPtr element = mElements[0];
 
     if (element)
         element->mFontColor.mStates[GLUF_STATE_NORMAL] = color;
+
+    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFControl::SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element)
+void GLUFControl::SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element) noexcept
 {
+    NOEXCEPT_REGION_START
+
     mElements[elementId] = element;
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -3650,17 +3658,6 @@ void GLUFCheckBox::OnHotkey() noexcept
 
     NOEXCEPT_REGION_END
 }
-
-
-/*
-
-
-Ended Here July 26 2015
-
-
-
-
-*/
 
 
 /*
@@ -5009,18 +5006,6 @@ void GLUFListBox::Render(float elapsedTime) noexcept
     NOEXCEPT_REGION_END
 }
 
-
-
-/*
-
-
-Ended Here July 25 2015
-
-
-
-
-*/
-
 /*
 ======================================================================================================================================================================================================
 GLUFComboBox Functions
@@ -5028,17 +5013,16 @@ GLUFComboBox Functions
 
 */
 
-GLUFComboBox::GLUFComboBox( GLUFDialog* pDialog) : mScrollBar(pDialog)
+GLUFComboBox::GLUFComboBox(GLUFDialog& dialog) : mScrollBar(std::make_shared<GLUFScrollBar>(dialog)), GLUFButton(dialog)
 {
 	mType = GLUF_CONTROL_COMBOBOX;
-	mDialog = pDialog;
 
-	m_fDropHeight = 100L;
+	mDropHeight = 100L;
 
 	mSBWidth = 16L;
-	m_bOpened = false;
-	m_iSelected = -1;
-	m_iFocused = -1;
+	mOpened = false;
+	mSelected = -1;
+	mFocused = -1;
 }
 
 
@@ -5050,17 +5034,21 @@ GLUFComboBox::~GLUFComboBox()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::SetTextColor(Color Color)
+void GLUFComboBox::SetTextColor(const GLUF::Color& Color) noexcept
 {
-	GLUFElementPtr pElement = mElements[0];
+    NOEXCEPT_REGION_START
 
-	if (pElement)
-		pElement->mFontColor.States[GLUF_STATE_NORMAL] = Color;
+    GLUFElementPtr pElement = mElements[0];
 
-	pElement = mElements[2];
+    if (pElement)
+        pElement->mFontColor.mStates[GLUF_STATE_NORMAL] = Color;
 
-	if (pElement)
-		pElement->mFontColor.States[GLUF_STATE_NORMAL] = Color;
+    pElement = mElements[2];
+
+    if (pElement)
+        pElement->mFontColor.mStates[GLUF_STATE_NORMAL] = Color;
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -5072,36 +5060,38 @@ void GLUFComboBox::UpdateRects() noexcept
 
     GLUFButton::UpdateRects();
 
-    m_rcButton = mRegion;
-    m_rcButton.left = m_rcButton.right - GLUFRectHeight(m_rcButton);
+    mButtonRegion = mRegion;
+    mButtonRegion.left = mButtonRegion.right - GLUFRectHeight(mButtonRegion);
 
     mTextRegion = mRegion;
-    mTextRegion.right = m_rcButton.left;
+    mTextRegion.right = mButtonRegion.left;
 
-    m_rcDropdown.left = long(mTextRegion.left * 1.019f);
-    m_rcDropdown.top = long(1.02f * mTextRegion.bottom);
-    m_rcDropdown.right = mTextRegion.right;
-    m_rcDropdown.bottom = m_rcDropdown.top - m_fDropHeight;
-    //GLUFOffsetRect(m_rcDropdown, 0, -GLUFRectHeight(mTextRegion));
+    mDropdownRegion.left = long(mTextRegion.left * 1.019f);
+    mDropdownRegion.top = long(1.02f * mTextRegion.bottom);
+    mDropdownRegion.right = mTextRegion.right;
+    mDropdownRegion.bottom = mDropdownRegion.top - mDropHeight;
+    //GLUFOffsetRect(mDropdownRegion, 0, -GLUFRectHeight(mTextRegion));
 
-    m_rcDropdownText = m_rcDropdown;
-    m_rcDropdownText.left += long(0.1f * GLUFRectWidth(m_rcDropdown));
-    m_rcDropdownText.right -= long(0.1f * GLUFRectWidth(m_rcDropdown));
-    m_rcDropdownText.top += long(0.05f * GLUFRectHeight(m_rcDropdown));
-    m_rcDropdownText.bottom -= long(0.1f * GLUFRectHeight(m_rcDropdown));
+    mDropdownTextRegion = mDropdownRegion;
+    mDropdownTextRegion.left += long(0.1f * GLUFRectWidth(mDropdownRegion));
+    mDropdownTextRegion.right -= long(0.1f * GLUFRectWidth(mDropdownRegion));
+    mDropdownTextRegion.top += long(0.05f * GLUFRectHeight(mDropdownRegion));
+    mDropdownTextRegion.bottom -= long(0.1f * GLUFRectHeight(mDropdownRegion));
 
     // Update the scrollbar's rects
-    mScrollBar->SetLocation(m_rcDropdown.right, m_rcDropdown.bottom);
-    mScrollBar->SetSize(mSBWidth, abs(m_rcButton.bottom - m_rcDropdown.bottom));
-    mScrollBar->m_y = mTextRegion.top;
+    mScrollBar->SetLocation(mDropdownRegion.right, mDropdownRegion.bottom);
+    mScrollBar->SetSize(mSBWidth, abs(mButtonRegion.bottom - mDropdownRegion.bottom));
+    GLUFRect tmpRect = mScrollBar->GetRegion();
+    tmpRect.y = mTextRegion.top;
+    mScrollBar->SetRegion(tmpRect);
     GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[2]->mFontIndex);
     if (pFontNode/* && pFontNode->mSize*/)
     {
-        mScrollBar->SetPageSize(int(GLUFRectHeight(m_rcDropdownText) / pFontNode->mFontType->mHeight));
+        mScrollBar->SetPageSize(int(GLUFRectHeight(mDropdownTextRegion) / pFontNode->mFontType->mHeight));
 
         // The selected item may have been scrolled off the page.
         // Ensure that it is in page again.
-        mScrollBar->ShowItem(m_iSelected);
+        mScrollBar->ShowItem(mSelected);
     }
 
     NOEXCEPT_REGION_END
@@ -5117,12 +5107,12 @@ void GLUFComboBox::UpdateItemRects() noexcept
     if (pFont)
     {
         int curY = mTextRegion.bottom - 4;// +((mScrollBar->GetTrackPos() - 1) * pFont->mSize);
-        int fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mLeading;//subtract the font size initially too, because we do not want it hanging off the edge
+        int fRemainingHeight = GLUFRectHeight(mDropdownTextRegion) - pFont->mLeading;//subtract the font size initially too, because we do not want it hanging off the edge
 
 
         for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
         {
-            GLUFComboBoxItem* pItem = mItems[i];
+            GLUFComboBoxItemPtr pItem = mItems[i];
 
             // Make sure there's room left in the dropdown
             fRemainingHeight -= pFont->mLeading;
@@ -5134,7 +5124,7 @@ void GLUFComboBox::UpdateItemRects() noexcept
 
             pItem->mVisible = true;
 
-            GLUFSetRect(pItem->mActiveRegion, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mFontType->mHeight);
+            GLUFSetRect(pItem->mActiveRegion, mDropdownTextRegion.left, curY, mDropdownTextRegion.right, curY - pFont->mFontType->mHeight);
             curY -= pFont->mLeading;
         }
     }
@@ -5143,11 +5133,15 @@ void GLUFComboBox::UpdateItemRects() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::OnFocusOut()
+void GLUFComboBox::OnFocusOut() noexcept
 {
-	GLUFButton::OnFocusOut();
+    NOEXCEPT_REGION_START
 
-	m_bOpened = false;
+        GLUFButton::OnFocusOut();
+
+    mOpened = false;
+
+    NOEXCEPT_REGION_END
 }
 
 
@@ -5170,30 +5164,30 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
     {
     case GM_CURSOR_POS:
     {
-        /*if (m_bPressed)
+        /*if (mPressed)
         {
         //if the button is pressed and the mouse is moved off, then unpress it
         if (!ContainsPoint(pt))
         {
-        m_bPressed = false;
+        mPressed = false;
 
         ContainsPoint(pt);
 
-        if (!mDialog.m_bKeyboardInput)
+        if (!mDialog.IsKeyboardInputEnabled())
         mDialog.ClearFocus();
         }
         }*/
 
-        if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
+        if (mOpened && GLUFPtInRect(mDropdownRegion, pt))
         {
             // Determine which item has been selected
             for (size_t i = 0; i < mItems.size(); i++)
             {
-                GLUFComboBoxItem* pItem = mItems[i];
+                GLUFComboBoxItemPtr pItem = mItems[i];
                 if (pItem->mVisible &&
                     GLUFPtInRect(pItem->mActiveRegion, pt))
                 {
-                    m_iFocused = static_cast<int>(i);
+                    mFocused = static_cast<int>(i);
                 }
             }
             return true;
@@ -5207,7 +5201,7 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
             if (ContainsPoint(pt))
             {
                 // Pressed while inside the control
-                m_bPressed = true;
+                mPressed = true;
                 //SetCapture(GLUFGetHWND());
 
                 if (!mHasFocus)
@@ -5217,20 +5211,20 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
             }
 
             // Perhaps this click is within the dropdown
-            if (m_bOpened && GLUFPtInRect(m_rcDropdown, pt))
+            if (mOpened && GLUFPtInRect(mDropdownRegion, pt))
             {
                 // Determine which item has been selected
                 for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
                 {
-                    GLUFComboBoxItem* pItem = mItems[i];
+                    GLUFComboBoxItemPtr pItem = mItems[i];
                     if (pItem->mVisible &&
                         GLUFPtInRect(pItem->mActiveRegion, pt))
                     {
-                        m_iFocused = m_iSelected = static_cast<int>(i);
-                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-                        m_bOpened = false;
+                        mFocused = mSelected = static_cast<int>(i);
+                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                        mOpened = false;
 
-                        if (!mDialog.m_bKeyboardInput)
+                        if (!mDialog.IsKeyboardInputEnabled())
                             mDialog.ClearFocus();
 
                         break;
@@ -5241,12 +5235,12 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
             }
 
             // Mouse click not on main control or in dropdown, fire an event if needed
-            if (m_bOpened)
+            if (mOpened)
             {
-                m_iFocused = m_iSelected;
+                mFocused = mSelected;
 
-                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
-                m_bOpened = false;
+                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                mOpened = false;
             }
 
 
@@ -5254,30 +5248,30 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         }
         else if (param2 == GLFW_RELEASE)
         {
-            if (m_bPressed && ContainsPoint(pt))
+            if (mPressed && ContainsPoint(pt))
             {
                 // Button click
-                m_bPressed = false;
+                mPressed = false;
 
                 // Toggle dropdown
                 if (mHasFocus)
                 {
-                    m_bOpened = !m_bOpened;
+                    mOpened = !mOpened;
 
-                    if (!m_bOpened)
+                    if (!mOpened)
                     {
-                        if (!mDialog.m_bKeyboardInput)
+                        if (!mDialog.IsKeyboardInputEnabled())
                             mDialog.ClearFocus();
 
-                        m_iFocused = m_iSelected;
+                        mFocused = mSelected;
                     }
 
                     //setup the scroll bar to the correct position (if it is still within the range, it looks better to keep its old position)
                     int pageMin, pageMax;
                     pageMin = mScrollBar->GetTrackPos();
                     pageMax = mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 2;
-                    if (m_iFocused > pageMax || m_iFocused < pageMin)
-                        mScrollBar->SetTrackPos(m_iFocused);
+                    if (mFocused > pageMax || mFocused < pageMin)
+                        mScrollBar->SetTrackPos(mFocused);
                 }
 
                 //ReleaseCapture();
@@ -5290,7 +5284,7 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
     case GM_SCROLL:
     {
         int zDelta = (param2) / WHEEL_DELTA;
-        if (m_bOpened)
+        if (mOpened)
         {
             //UINT uLines = 0;
             //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
@@ -5302,19 +5296,19 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
             this->MsgProc(GM_CURSOR_POS, 0, 0, 0, 0);//all blank params may be sent because it retrieves the mouse position from the old message
             //TODO: make this work, but for now:
 
-            /*if (GLUFPtInRect(m_rcDropdown, pt))
+            /*if (GLUFPtInRect(mDropdownRegion, pt))
             {
             // Determine which item has been selected
             for (size_t i = 0; i < mItems.size(); i++)
             {
-            GLUFComboBoxItem* pItem = mItems[i];
+            GLUFComboBoxItemPtr pItem = mItems[i];
             GLUFRect oldRect = pItem->mActiveRegion;
 
             GLUFOffsetRect(oldRect, 0, float(mScrollBar->GetTrackPos() - oldValue) * GLUFRectHeight(pItem->mActiveRegion));
             if (pItem->mVisible &&
             GLUFPtInRect(oldRect, pt))
             {
-            m_iFocused = static_cast<int>(i);
+            mFocused = static_cast<int>(i);
             }
             }
             }*/
@@ -5324,24 +5318,24 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         {
             if (zDelta > 0)
             {
-                if (m_iFocused > 0)
+                if (mFocused > 0)
                 {
-                    m_iFocused--;
-                    m_iSelected = m_iFocused;
+                    mFocused--;
+                    mSelected = mFocused;
 
-                    if (!m_bOpened)
-                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                    if (!mOpened)
+                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                 }
             }
             else
             {
-                if (m_iFocused + 1 < (int)GetNumItems())
+                if (mFocused + 1 < (int)GetNumItems())
                 {
-                    m_iFocused++;
-                    m_iSelected = m_iFocused;
+                    mFocused++;
+                    mSelected = mFocused;
 
-                    if (!m_bOpened)
-                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                    if (!mOpened)
+                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                 }
             }
 
@@ -5356,16 +5350,16 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         switch (param1)
         {
         case GLFW_KEY_ENTER:
-            if (m_bOpened)
+            if (mOpened)
             {
-                if (m_iSelected != m_iFocused)
+                if (mSelected != mFocused)
                 {
-                    m_iSelected = m_iFocused;
-                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                    mSelected = mFocused;
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                 }
-                m_bOpened = false;
+                mOpened = false;
 
-                if (!mDialog.m_bKeyboardInput)
+                if (!mDialog.IsKeyboardInputEnabled())
                     mDialog.ClearFocus();
 
                 return true;
@@ -5377,13 +5371,13 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
             /*if (param3 == GLFW_REPEAT)
                 return true;*/
 
-            m_bOpened = !m_bOpened;
+            mOpened = !mOpened;
 
-            if (!m_bOpened)
+            if (!mOpened)
             {
-                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 
-                if (!mDialog.m_bKeyboardInput)
+                if (!mDialog.IsKeyboardInputEnabled())
                     mDialog.ClearFocus();
             }
 
@@ -5391,26 +5385,26 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
 
         case GLFW_KEY_UP:
         case GLFW_KEY_LEFT:
-            if (m_iFocused > 0)
+            if (mFocused > 0)
             {
-                m_iFocused--;
-                m_iSelected = m_iFocused;
+                mFocused--;
+                mSelected = mFocused;
 
-                if (!m_bOpened)
-                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                if (!mOpened)
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
             }
 
             return true;
 
         case GLFW_KEY_RIGHT:
         case GLFW_KEY_DOWN:
-            if (m_iFocused + 1 < (int)GetNumItems())
+            if (mFocused + 1 < (int)GetNumItems())
             {
-                m_iFocused++;
-                m_iSelected = m_iFocused;
+                mFocused++;
+                mSelected = mFocused;
 
-                if (!m_bOpened)
-                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+                if (!mOpened)
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
             }
 
             return true;
@@ -5429,22 +5423,22 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
 //--------------------------------------------------------------------------------------
 void GLUFComboBox::OnHotkey()
 {
-	if (m_bOpened)
+	if (mOpened)
 		return;
 
-	if (m_iSelected == -1)
+	if (mSelected == -1)
 		return;
 
 	if (mDialog.IsKeyboardInputEnabled())
 		mDialog.RequestFocus(shared_from_this());
 
-	m_iSelected++;
+	mSelected++;
 
-	if (m_iSelected >= (int)mItems.size())
-		m_iSelected = 0;
+	if (mSelected >= (int)mItems.size())
+		mSelected = 0;
 
-	m_iFocused = m_iSelected;
-	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, this);
+	mFocused = mSelected;
+    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 }
 
 
@@ -5457,7 +5451,7 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
         return;
     GLUFControlState iState = GLUF_STATE_NORMAL;
 
-    if (!m_bOpened)
+    if (!mOpened)
         iState = GLUF_STATE_HIDDEN;
 
     // Dropdown box
@@ -5470,7 +5464,7 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
     {
         // Update the page size of the scroll bar
         if (mDialog.GetManager()->GetFontNode(pElement->mFontIndex)->mFontType->mHeight)
-            mScrollBar->SetPageSize(int(GLUFRectHeight(m_rcDropdownText) /
+            mScrollBar->SetPageSize(int(GLUFRectHeight(mDropdownTextRegion) /
             (mDialog.GetManager()->GetFontNode(pElement->mFontIndex)->mLeading)));
         else
             mScrollBar->SetPageSize(0);
@@ -5478,7 +5472,7 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
     }
 
     // Scroll bar --EDITED, only render any of this stuff if OPENED
-    if (m_bOpened)
+    if (mOpened)
     {
         mScrollBar->Render(elapsedTime);
 
@@ -5486,26 +5480,26 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
         pElement->mTextureColor.Blend(iState, elapsedTime);
         pElement->mFontColor.Blend(iState, elapsedTime);
 
-        mDialog.DrawSprite(pElement, m_rcDropdown, GLUF_NEAR_BUTTON_DEPTH);
+        mDialog.DrawSprite(pElement, mDropdownRegion, GLUF_NEAR_BUTTON_DEPTH);
 
 
         // Selection outline
         GLUFElementPtr pSelectionElement = mElements[3];
-        pSelectionElement->mTextureColor.Current = pElement->mTextureColor.Current;
-        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.States[GLUF_STATE_NORMAL]*/Color(0, 0, 0, 255));
+        pSelectionElement->mTextureColor.mCurrentColor = pElement->mTextureColor.mCurrentColor;
+        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[GLUF_STATE_NORMAL]*/Color(0, 0, 0, 255));
 
         GLUFFontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
         if (pFont)
         {
-            //float curY = m_rcDropdownText.top - 0.02f;
-            //float fRemainingHeight = GLUFRectHeight(m_rcDropdownText) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
+            //float curY = mDropdownTextRegion.top - 0.02f;
+            //float fRemainingHeight = GLUFRectHeight(mDropdownTextRegion) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
             //WCHAR strDropdown[4096] = {0};
 
             UpdateItemRects();
 
             for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
             {
-                GLUFComboBoxItem* pItem = mItems[i];
+                GLUFComboBoxItemPtr pItem = mItems[i];
                 GLUFRect active = pItem->mActiveRegion;
 
                 active.top = active.bottom + pFont->mLeading;
@@ -5514,7 +5508,7 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
 
                 if (!pItem->mVisible)
                     continue;
-                //GLUFSetRect(pItem->mActiveRegion, m_rcDropdownText.left, curY, m_rcDropdownText.right, curY - pFont->mSize);
+                //GLUFSetRect(pItem->mActiveRegion, mDropdownTextRegion.left, curY, mDropdownTextRegion.right, curY - pFont->mSize);
                 //curY -= pFont->mSize;
 
                 //debug
@@ -5523,17 +5517,17 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
 
                 //pItem->mVisible = true;
 
-                //GLUFSetRect(rc, m_rcDropdown.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), m_rcDropdown.right,
+                //GLUFSetRect(rc, mDropdownRegion.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), mDropdownRegion.right,
                 //	pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
-                //GLUFSetRect(rc, m_rcDropdown.left + GLUFRectWidth(m_rcDropdown) / 12.0f, m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * i), m_rcDropdown.right,
-                //	m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * (i + 1)));
+                //GLUFSetRect(rc, mDropdownRegion.left + GLUFRectWidth(mDropdownRegion) / 12.0f, mDropdownRegion.top - (GLUFRectHeight(pItem->mActiveRegion) * i), mDropdownRegion.right,
+                //	mDropdownRegion.top - (GLUFRectHeight(pItem->mActiveRegion) * (i + 1)));
 
-                if ((int)i == m_iFocused)
+                if ((int)i == mFocused)
                 {
-                    //GLUFSetRect(rc, m_rcDropdown.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), m_rcDropdown.right,
+                    //GLUFSetRect(rc, mDropdownRegion.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), mDropdownRegion.right,
                     //	pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
-                    /*GLUFSetRect(rc, m_rcDropdown.left, m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * i), m_rcDropdown.right,
-                        m_rcDropdown.top - (GLUFRectHeight(pItem->mActiveRegion) * (i + 1)));*/
+                    /*GLUFSetRect(rc, mDropdownRegion.left, mDropdownRegion.top - (GLUFRectHeight(pItem->mActiveRegion) * i), mDropdownRegion.right,
+                        mDropdownRegion.top - (GLUFRectHeight(pItem->mActiveRegion) * (i + 1)));*/
                     //mDialog.DrawText(pItem->mText, pSelectionElement, rc);
                     mDialog.DrawSprite(pSelectionElement, active, GLUF_NEAR_BUTTON_DEPTH);
                     mDialog.DrawText(pItem->mText, pSelectionElement, pItem->mActiveRegion);
@@ -5555,7 +5549,7 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
         iState = GLUF_STATE_HIDDEN;
     else if (mEnabled == false)
         iState = GLUF_STATE_DISABLED;
-    else if (m_bPressed)
+    else if (mPressed)
     {
         iState = GLUF_STATE_PRESSED;
 
@@ -5580,11 +5574,11 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
 
-    GLUFRect rcWindow = m_rcButton;
+    GLUFRect rcWindow = mButtonRegion;
     GLUFOffsetRect(rcWindow, OffsetX, OffsetY);
     mDialog.DrawSprite(pElement, rcWindow, GLUF_FAR_BUTTON_DEPTH);
 
-    if (m_bOpened)
+    if (mOpened)
         iState = GLUF_STATE_PRESSED;
 
 
@@ -5598,9 +5592,9 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
 
     mDialog.DrawSprite(pElement, mTextRegion, GLUF_NEAR_BUTTON_DEPTH);
 
-    if (m_iSelected >= 0 && m_iSelected < (int)mItems.size())
+    if (mSelected >= 0 && mSelected < (int)mItems.size())
     {
-        GLUFComboBoxItem* pItem = mItems[m_iSelected];
+        GLUFComboBoxItemPtr pItem = mItems[mSelected];
         if (pItem)
         {
             mDialog.DrawText(pItem->mText, pElement, mTextRegion, false, true);
@@ -5615,27 +5609,15 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
 
 //--------------------------------------------------------------------------------------
 
-GLUFResult GLUFComboBox::AddItem(std::wstring strText, void* pData) noexcept
+void GLUFComboBox::AddItem(const std::wstring& text, GLUFGenericData& data) noexcept
 {
     NOEXCEPT_REGION_START
 
-    // Validate parameters
-    /*if (!strText)
-    {
-    return E_INVALIDARG;
-    }*/
-
     // Create a new item and set the data
-    GLUFComboBoxItem* pItem = new (std::nothrow) GLUFComboBoxItem;
-    if (!pItem)
-    {
-        return GLUFTRACE_ERR("new", GR_OUTOFMEMORY);
-    }
+    auto pItem = std::make_shared<GLUFComboBoxItem>();
 
-    //ZeroMemory(pItem, sizeof(GLUFComboBoxItem));
-    //wcscpy_s(pItem->mText, 256, strText);
-    pItem->mText = strText;
-    pItem->pData = pData;
+    pItem->mText = text;
+    pItem->mData = data;
 
     mItems.push_back(pItem);
 
@@ -5645,27 +5627,39 @@ GLUFResult GLUFComboBox::AddItem(std::wstring strText, void* pData) noexcept
     // If this is the only item in the list, it's selected
     if (GetNumItems() == 1)
     {
-        m_iSelected = 0;
-        m_iFocused = 0;
-        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
+        mSelected = 0;
+        mFocused = 0;
+        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
     }
-
-    return GR_SUCCESS;
 
     NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFComboBox::RemoveItem( unsigned int index)
+void GLUFComboBox::RemoveItem(GLUFIndex index)
 {
-	auto it = mItems.begin() + index;
-	GLUFComboBoxItem* pItem = *it;
-	GLUF_SAFE_DELETE(pItem);
-	mItems.erase(it);
+    if (index >= mItems.size())
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Error Removing Item From Combo Box"));
+        return;
+    }
+
+    //erase the item (kinda sloppy)
+    std::vector<GLUFComboBoxItemPtr> newItemList;
+    newItemList.resize(mItems.size() - 1);
+    for (GLUFIndex i = 0; i < mItems.size(); ++i)
+    {
+        if (i == index)
+            continue;
+
+        newItemList[i] = mItems[i];
+    }
+    mItems = newItemList;
+
 	mScrollBar->SetTrackRange(0, (int)mItems.size());
-	if (m_iSelected >= (int)mItems.size())
-		m_iSelected = (int)mItems.size() - 1;
+	if (mSelected >= (int)mItems.size())
+		mSelected = (int)mItems.size() - 1;
 }
 
 
@@ -5673,154 +5667,165 @@ void GLUFComboBox::RemoveItem( unsigned int index)
 void GLUFComboBox::RemoveAllItems() noexcept
 {
     NOEXCEPT_REGION_START
-
-    for (auto it = mItems.begin(); it != mItems.end(); ++it)
-    {
-        GLUFComboBoxItem* pItem = *it;
-        GLUF_SAFE_DELETE(pItem);
-    }
-
+    
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
-    m_iFocused = m_iSelected = -1;
+    mFocused = mSelected = -1;
 
     NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-bool GLUFComboBox::ContainsItem(std::wstring strText, unsigned int iStart) noexcept
+bool GLUFComboBox::ContainsItem(const std::wstring& text, GLUFIndex start) const noexcept
 { 
     NOEXCEPT_REGION_START
 
-
-    return (-1 != FindItem(strText, iStart));
+    return (-1 != FindItemIndex(text, start));
 
     NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-int GLUFComboBox::FindItem(std::wstring strText, unsigned int iStart)
+GLUFIndex GLUFComboBox::FindItemIndex(const std::wstring& text, GLUFIndex start) const
 {
-	/*if (!strText)
-		return -1;*/
-
-	for (size_t i = iStart; i < mItems.size(); i++)
+	for (GLUFIndex i = start; i < mItems.size(); ++i)
 	{
-		GLUFComboBoxItem* pItem = mItems[i];
+		GLUFComboBoxItemPtr pItem = mItems[i];
 
-		if (0 != pItem->mText.compare(strText))//REMEMBER if this returns 0, they are the same
+		if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
 		{
 			return static_cast<int>(i);
 		}
 	}
 
-	return -1;
+    throw std::invalid_argument("\"text\" was not found in combo box");
 }
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetSelectedData()
+GLUFListBoxItemPtr GLUFComboBox::FindItem(const std::wstring& text, GLUFIndex start) const
 {
-	if (m_iSelected < 0)
-		return nullptr;
+    for (auto it : mItems)
+    {
+        if (it->mText == text)//REMEMBER if this returns 0, they are the same
+        {
+            return it;
+        }
+    }
 
-	GLUFComboBoxItem* pItem = mItems[m_iSelected];
-	return pItem->pData;
+    throw std::invalid_argument("\"text\" was not found in combo box");
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFComboBoxItem* GLUFComboBox::GetSelectedItem()
+GLUFGenericData& GLUFComboBox::GetSelectedData() const
 {
-	if (m_iSelected < 0)
-		return nullptr;
+    if (mSelected < 0)
+        throw NoItemSelectedException();
 
-	return mItems[m_iSelected];
+	GLUFComboBoxItemPtr pItem = mItems[mSelected];
+	return pItem->mData;
 }
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetItemData(std::wstring strText) 
+GLUFComboBoxItemPtr GLUFComboBox::GetSelectedItem() const
 {
-	int index = FindItem(strText);
-	if (index == -1)
-	{
-		return nullptr;
-	}
+    if (mSelected < 0)
+        throw NoItemSelectedException();
 
-	GLUFComboBoxItem* pItem = mItems[index];
-	if (!pItem)
-	{
-		GLUFTRACE_ERR("GLUFComboBox::GetItemData", GR_FAILURE);
-		return nullptr;
-	}
-
-	return pItem->pData;
+    return mItems[mSelected];
 }
 
 
 //--------------------------------------------------------------------------------------
-void* GLUFComboBox::GetItemData( int nIndex)
+GLUFGenericData& GLUFComboBox::GetItemData(const std::wstring& text, GLUFIndex start) const
 {
-	if (nIndex < 0 || nIndex >= (int)mItems.size())
-		return nullptr;
-
-	return mItems[nIndex]->pData;
+    return FindItem(text, start)->mData;
 }
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByIndex( unsigned int index)
+GLUFGenericData& GLUFComboBox::GetItemData(GLUFIndex index) const
 {
-	if (index >= GetNumItems())
-		return GR_INVALIDARG;
-
-	m_iFocused = m_iSelected = index;
-	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
-
-	return GR_SUCCESS;
+    return mItems[index]->mData;
 }
 
 
-
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByText(std::wstring strText)
+void GLUFComboBox::SelectItem(GLUFIndex index)
 {
-	/*if (!strText)
-		return E_INVALIDARG;*/
+    if (index >= mItems.size())
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Index Too Large"));
+        return;
+    }
 
-	int index = FindItem(strText);
-	if (index == -1)
-		return GR_FAILURE;
-
-	m_iFocused = m_iSelected = index;
-	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
-
-	return GR_SUCCESS;
+	mFocused = mSelected = index;
+	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
 }
 
 
 
 //--------------------------------------------------------------------------------------
-GLUFResult GLUFComboBox::SetSelectedByData( void* pData)
+void GLUFComboBox::SelectItem(const std::wstring& text, GLUFIndex start)
 {
-	for (size_t i = 0; i < mItems.size(); i++)
-	{
-		GLUFComboBoxItem* pItem = mItems[i];
+    GLUFIndex itemIndex = 0;
+    try
+    {
+        itemIndex = FindItemIndex(text, start);
+    }
+    catch (...)
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"text\" not found in combo box"));
+        return;
+    }
 
-		if (pItem->pData == pData)
-		{
-			m_iFocused = m_iSelected = static_cast<int>(i);
-			mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, this);
-			return GR_SUCCESS;
-		}
-	}
-
-	return GR_FAILURE;
+    mFocused = mSelected = itemIndex;
+	mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
 }
 
+
+
+//--------------------------------------------------------------------------------------
+void GLUFComboBox::SelectItem(const GLUFGenericData& data)
+{
+    GLUFsIndex itemIndex = -1;
+    for (unsigned int i = 0; i < mItems.size(); ++i)
+    {
+        if (&mItems[i]->mData == &data)
+        {
+            itemIndex = i;
+            break;
+        }
+    }
+
+    if (itemIndex == -1)
+    {
+        GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"data\" not found"));
+        return;
+    }
+
+    NOEXCEPT_REGION_START
+
+    SelectItem(itemIndex);
+
+    NOEXCEPT_REGION_END
+}
+
+
+
+/*
+
+
+Ended Here July 26 2015
+
+
+
+
+*/
 
 //======================================================================================
 // GLUFSlider class
@@ -5834,7 +5839,7 @@ GLUFSlider::GLUFSlider( GLUFDialog* pDialog)
 	m_nMin = 0;
 	m_nMax = 100;
 	m_nValue = 0;
-	m_bPressed = false;
+	mPressed = false;
 }
 
 
@@ -5844,7 +5849,7 @@ bool GLUFSlider::ContainsPoint(GLUFPoint pt) noexcept
     NOEXCEPT_REGION_START
 
     return (GLUFPtInRect(mRegion, pt) ||
-    GLUFPtInRect(m_rcButton, pt));
+    GLUFPtInRect(mButtonRegion, pt));
 
     NOEXCEPT_REGION_END
 }
@@ -5857,12 +5862,12 @@ void GLUFSlider::UpdateRects() noexcept
 
     GLUFControl::UpdateRects();
 
-    m_rcButton = mRegion;
-    m_rcButton.right = m_rcButton.left + GLUFRectHeight(m_rcButton);
-    GLUFOffsetRect(m_rcButton, -GLUFRectWidth(m_rcButton) / 2, 0);
+    mButtonRegion = mRegion;
+    mButtonRegion.right = mButtonRegion.left + GLUFRectHeight(mButtonRegion);
+    GLUFOffsetRect(mButtonRegion, -GLUFRectWidth(mButtonRegion) / 2, 0);
 
     m_nButtonX = (int)((float(m_nValue - m_nMin) / float(m_nMax - m_nMin)) * GLUFRectWidth(mRegion));
-    GLUFOffsetRect(m_rcButton, m_nButtonX, 0);
+    GLUFOffsetRect(mButtonRegion, m_nButtonX, 0);
 
     NOEXCEPT_REGION_END
 }
@@ -5947,10 +5952,10 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONDBLCLK:
 	{
-		if (PtInRect(&m_rcButton, pt))
+		if (PtInRect(&mButtonRegion, pt))
 		{
 			// Pressed while inside the control
-			m_bPressed = true;
+			mPressed = true;
 			SetCapture(GLUFGetHWND());
 
 			m_nDragX = pt.x;
@@ -5969,7 +5974,7 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 		{
 			m_nDragX = pt.x;
 			m_nDragOffset = 0;
-			m_bPressed = true;
+			mPressed = true;
 
 			if (!mHasFocus)
 				mDialog.RequestFocus(shared_from_this());
@@ -5992,9 +5997,9 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 	case WM_LBUTTONUP:
 	{
-		if (m_bPressed)
+		if (mPressed)
 		{
-			m_bPressed = false;
+			mPressed = false;
 			ReleaseCapture();
 			mDialog.SendEvent(GLUF_EVENTSLIDER_VALUE_CHANGED_UP, true, this);
 
@@ -6006,7 +6011,7 @@ bool GLUFSlider::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM l
 
 	case WM_MOUSEMOVE:
 	{
-		if (m_bPressed)
+		if (mPressed)
 		{
 			SetValueInternal(ValueFromPos(m_x + pt.x + m_nDragOffset), true);
 			return true;
@@ -6043,10 +6048,10 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
     case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
         if (param2 == GLFW_PRESS)
         {
-            if (GLUFPtInRect(m_rcButton, pt))
+            if (GLUFPtInRect(mButtonRegion, pt))
             {
                 // Pressed while inside the control
-                m_bPressed = true;
+                mPressed = true;
                 //SetCapture(GLUFGetHWND());
 
                 m_nDragX = pt.x;
@@ -6074,9 +6079,9 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
         }
         else if (param2 == GLFW_RELEASE)
         {
-            if (m_bPressed)
+            if (mPressed)
             {
-                m_bPressed = false;
+                mPressed = false;
                 //ReleaseCapture();
                 mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, this);
 
@@ -6091,7 +6096,7 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
     case GM_CURSOR_POS:
     {
 
-        if (m_bPressed)
+        if (mPressed)
         {
             SetValueInternal(ValueFromPos(m_x + pt.x + m_nDragOffset), true);
             return true;
@@ -6157,10 +6162,10 @@ void GLUFSlider::SetRange(int nMin, int nMax) noexcept
 {
     NOEXCEPT_REGION_START
 
-    m_nMin = nMin;
-    m_nMax = nMax;
+    mMin = nMin;
+    mMax = nMax;
 
-    SetValueInternal(m_nValue, false);
+    SetValueInternal(mValue, false);
 
     NOEXCEPT_REGION_END
 }
@@ -6209,7 +6214,7 @@ void GLUFSlider::Render( float elapsedTime) noexcept
     {
         iState = GLUF_STATE_DISABLED;
     }
-    else if (m_bPressed)
+    else if (mPressed)
     {
         iState = GLUF_STATE_PRESSED;
 
@@ -6240,7 +6245,7 @@ void GLUFSlider::Render( float elapsedTime) noexcept
 
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
-    mDialog.DrawSprite(pElement, m_rcButton, GLUF_NEAR_BUTTON_DEPTH);
+    mDialog.DrawSprite(pElement, mButtonRegion, GLUF_NEAR_BUTTON_DEPTH);
 
     NOEXCEPT_REGION_END
 }

@@ -207,6 +207,7 @@ using GLUFSize              = uint32_t;
 using GLUFValue             = int32_t;
 using GLUFUValue            = uint32_t;
 using GLUFIndex             = uint32_t;   
+using GLUFsIndex            = int32_t;
 using GLUFKeyId             = uint32_t;
 
 /*
@@ -1692,8 +1693,11 @@ public:
             'elementId': the id to give the element within this control
             'element': the element to add at that id
 
+        Throws:
+            no-throw guarantee
+
     */
-	void SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element);
+	void SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element) noexcept;
 
     /*
     SetTextColor
@@ -1703,9 +1707,12 @@ public:
 
         Parameters:
             'color': the color to set to
+
+        Throws:
+            no-throw guarantee
     
     */
-	virtual void SetTextColor(const GLUF::Color& color);
+	virtual void SetTextColor(const GLUF::Color& color) noexcept;
 
 
 protected:
@@ -1816,7 +1823,7 @@ public:
     Overridden Unambiguous Member Functions
     
     */
-    virtual bool CanHaveFocus()	const override	{ return (mVisible && mEnabled); }
+    virtual bool CanHaveFocus()	const noexcept override	{ return (mVisible && mEnabled); }
     virtual void Render(float elapsedTime) noexcept override;
     virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
@@ -2438,8 +2445,8 @@ class GLUFComboBox : public GLUFButton
 
 protected:
 
-    GLUFIndex mSelected;
-    GLUFIndex mFocused;
+    GLUFsIndex mSelected;
+    GLUFsIndex mFocused;
     GLUFSize mDropHeight;
     GLUFScrollBarPtr mScrollBar;
     GLUFSize mSBWidth;
@@ -2579,13 +2586,15 @@ public:
             'index': the index of the item to select
             'text': the text of the item to select
             'start': the starting point to look for 'text'
+            'data': the data to find
 
         Throws:
             'std::out_of_range': if index is too big in GLUF_DEBUG
-            'std::invalid_argument': if 'text' is not found in GLUF_DEBUG
+            'std::invalid_argument': if 'text' is not found in GLUF_DEBUG, or if 'data' is not found in GLUF_DEBUG
     */
 	void SelectItem(GLUFIndex index);
     void SelectItem(const std::wstring& text, GLUFIndex start = 0);
+    void SelectItem(const GLUFGenericData& data);
     
     /*
     ContainsItem
@@ -2630,12 +2639,12 @@ public:
     */
 	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void OnHotkey() noexcept override;
-	virtual bool CanHaveFocus() const override{ return (mVisible && mEnabled); }
-	virtual void OnFocusOut() override;
-	virtual void Render(float elapsedTime) override;
+	virtual bool CanHaveFocus() const noexcept override{ return (mVisible && mEnabled); }
+	virtual void OnFocusOut() noexcept override;
+	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
-	virtual void OnInit() override{ return m_pDialog->InitControl(&m_ScrollBar); }
-	virtual void SetTextColor(const GLUF::Color& Color) override;
+	virtual void OnInit() override{ return mDialog.InitControl(std::dynamic_pointer_cast<GLUFControl>(mScrollBar)); }
+	virtual void SetTextColor(const GLUF::Color& Color) noexcept override;
 
 protected:
     
