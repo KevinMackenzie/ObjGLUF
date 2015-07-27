@@ -6109,23 +6109,23 @@ Ended Here July 26 2015
 */
 
 
-const wchar_t *g_Charsets[] = { 
+const std::wstring g_Charsets[] = 
+{ 
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ",
 	L"0123456789",
 	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
+	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+};
 
-const unsigned int g_CharsetLengths[] = { 96, 223, 10, 52, 62 };
-
-bool CharsetContains(unsigned int codepoint, Charset charset)
+bool CharsetContains(wchar_t codepoint, GLUFCharset charset)
 {
 	switch (charset)
 	{
 	case Unicode:
 		return true;
 	default:
-		for (unsigned int i = 0; i < g_CharsetLengths[charset]; ++i)
+		for (unsigned int i = 0; i < g_Charsets[charset].size(); ++i)
 		{
 			if (g_Charsets[charset][i] == codepoint)
 				return true;
@@ -6134,7 +6134,7 @@ bool CharsetContains(unsigned int codepoint, Charset charset)
 	}
 }
 
-
+/*
 //======================================================================================
 // GLUFEditBox class
 //======================================================================================
@@ -6232,8 +6232,8 @@ void GLUFEditBox::PlaceCaret( int nCP)
 			{
 				mScrollBar->SetTrackPos(line);
 			}
-			/*if (line < mScrollBar->GetTrackPos() || line > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 1)
-				mScrollBar->SetTrackPos(line);*/
+			//if (line < mScrollBar->GetTrackPos() || line > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 1)
+			//	mScrollBar->SetTrackPos(line);
 		}
 	}
 	else if (!m_bMultiline)
@@ -6245,20 +6245,20 @@ void GLUFEditBox::PlaceCaret( int nCP)
 		}
 		else
 		{
-			/*mScrollBar->SetTrackRange(0, GetTextLength());
-			if (nCP >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
-			mScrollBar->Scroll(delta);
-			else if (nCP < mScrollBar->GetTrackPos())
-			mScrollBar->SetTrackPos(nCP);*/
+			//mScrollBar->SetTrackRange(0, GetTextLength());
+			//if (nCP >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+			//  mScrollBar->Scroll(delta);
+			//else if (nCP < mScrollBar->GetTrackPos())
+			//  mScrollBar->SetTrackPos(nCP);
 
 			m_nCaret = nCP;
 
 			//Analyse();
-			/*
-			if (m_nCaret >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
-			mScrollBar->Scroll(-((mScrollBar->GetTrackPos() + mScrollBar->GetPageSize()) - m_nCaret));
-			else if (m_nCaret < mScrollBar->GetTrackPos())
-			mScrollBar->SetTrackPos(m_nCaret);*/
+			
+			//if (m_nCaret >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
+			//  mScrollBar->Scroll(-((mScrollBar->GetTrackPos() + mScrollBar->GetPageSize()) - m_nCaret));
+			//else if (m_nCaret < mScrollBar->GetTrackPos())
+			//  mScrollBar->SetTrackPos(m_nCaret);
 		}
 
 		//int rendCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
@@ -6284,9 +6284,9 @@ int GLUFEditBox::GetLineNumberFromCharPos(unsigned int nCP)
 		if (m_strBuffer[i] == '\n')
 			++lin;
 
-	/*for (auto it : m_strInsertedNewlineLocations)
-		if (nCP >= it)
-			++lin;*/
+	//for (auto it : m_strInsertedNewlineLocations)
+	//	if (nCP >= it)
+	//		++lin;
 	//add the difference
 	lin += nCP - nCPModified;
 
@@ -6391,7 +6391,7 @@ void GLUFEditBox::UpdateRects() noexcept
 void GLUFEditBox::CopyToClipboard()
 {
 	// Copy the selection text to the clipboard
-	if (m_nCaret != m_nSelStart/* && OpenClipboard(nullptr)*/)
+	if (m_nCaret != m_nSelStart/* && OpenClipboard(nullptr))
 	{
 		//EmptyClipboard();
 
@@ -6415,7 +6415,7 @@ void GLUFEditBox::CopyToClipboard()
 		CloseClipboard();
 		// We must not free the object until CloseClipboard is called.
 		if (hBlock)
-			GlobalFree(hBlock);*/
+			GlobalFree(hBlock);
 
 		//glfw makes this easy
 		std::wstring str = L"";
@@ -6454,7 +6454,7 @@ void GLUFEditBox::PasteFromClipboard()
 				}
 				}
 				CloseClipboard();
-				}*/
+				}
 
 	//glfw makes this easy
 	const char* str;
@@ -6642,7 +6642,7 @@ int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 
 	//this is a little more complex
 	int offset = 0;
-	for (unsigned int i = 0; i+offset < m_strRenderBuffer.length()/*this is usually hit first*/; ++i)
+	for (unsigned int i = 0; i+offset < m_strRenderBuffer.length()/*this is usually hit first; ++i)
 	{
 		if (i >= ret)
 			break;
@@ -6658,200 +6658,6 @@ int GLUFEditBox::GetStrRenderIndexFromStrIndex(int strIndex)
 	return ret;
 }
 #pragma warning(default : 4018)
-//--------------------------------------------------------------------------------------
-/*
-bool GLUFEditBox::HandleKeyboard(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!mEnabled || !mVisible)
-		return false;
-
-	bool bHandled = false;
-
-	switch (uMsg)
-	{
-	case WM_KEYDOWN:
-	{
-		switch (wParam)
-		{
-		case VK_TAB:
-			// We don't process Tab in case keyboard input is enabled and the user
-			// wishes to Tab to other controls.
-			break;
-
-		case VK_HOME:
-			PlaceCaret(0);
-			if (GetKeyState(VK_SHIFT) >= 0)
-				// Shift is not down. Update selection
-				// start along with the caret.
-				m_nSelStart = m_nCaret;
-			ResetCaretBlink();
-			bHandled = true;
-			break;
-
-		case VK_END:
-			PlaceCaret(m_Buffer.GetTextSize());
-			if (GetKeyState(VK_SHIFT) >= 0)
-				// Shift is not down. Update selection
-				// start along with the caret.
-				m_nSelStart = m_nCaret;
-			ResetCaretBlink();
-			bHandled = true;
-			break;
-
-		case VK_INSERT:
-			if (GetKeyState(VK_CONTROL) < 0)
-			{
-				// Control Insert. Copy to clipboard
-				CopyToClipboard();
-			}
-			else if (GetKeyState(VK_SHIFT) < 0)
-			{
-				// Shift Insert. Paste from clipboard
-				PasteFromClipboard();
-			}
-			else
-			{
-				// Toggle caret insert mode
-				m_bInsertMode = !m_bInsertMode;
-			}
-			break;
-
-		case VK_DELETE:
-			// Check if there is a text selection.
-			if (m_nCaret != m_nSelStart)
-			{
-				DeleteSelectionText();
-				mDialog.SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
-			}
-			else
-			{
-				// Deleting one character
-				if (m_Buffer.RemoveChar(m_nCaret))
-					mDialog.SendEvent(GLUF_EVENTEDITBOX_CHANGE, true, this);
-			}
-			ResetCaretBlink();
-			bHandled = true;
-			break;
-
-		case VK_LEFT:
-			if (GetKeyState(VK_CONTROL) < 0)
-			{
-				// Control is down. Move the caret to a new item
-				// instead of a character.
-				m_Buffer.GetPriorItemPos(m_nCaret, &m_nCaret);
-				PlaceCaret(m_nCaret);
-			}
-			else if (m_nCaret > 0)
-				PlaceCaret(m_nCaret - 1);
-			if (GetKeyState(VK_SHIFT) >= 0)
-				// Shift is not down. Update selection
-				// start along with the caret.
-				m_nSelStart = m_nCaret;
-			ResetCaretBlink();
-			bHandled = true;
-			break;
-
-		case VK_RIGHT:
-			if (GetKeyState(VK_CONTROL) < 0)
-			{
-				// Control is down. Move the caret to a new item
-				// instead of a character.
-				m_Buffer.GetNextItemPos(m_nCaret, &m_nCaret);
-				PlaceCaret(m_nCaret);
-			}
-			else if (m_nCaret < m_Buffer.GetTextSize())
-				PlaceCaret(m_nCaret + 1);
-			if (GetKeyState(VK_SHIFT) >= 0)
-				// Shift is not down. Update selection
-				// start along with the caret.
-				m_nSelStart = m_nCaret;
-			ResetCaretBlink();
-			bHandled = true;
-			break;
-
-		case VK_UP:
-		case VK_DOWN:
-			// Trap up and down arrows so that the dialog
-			// does not switch focus to another control.
-			bHandled = true;
-			break;
-
-		default:
-			bHandled = wParam != VK_ESCAPE;  // Let the application handle Esc.
-		}
-	}
-	}
-	return bHandled;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-bool GLUFEditBox::HandleMouse(UINT uMsg, const POINT& pt, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(wParam);
-	UNREFERENCED_PARAMETER(lParam);
-
-	if (!mEnabled || !mVisible)
-		return false;
-
-	switch (uMsg)
-	{
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONDBLCLK:
-	{
-		if (!mHasFocus)
-			mDialog.RequestFocus(shared_from_this());
-
-		if (!ContainsPoint(pt))
-			return false;
-
-		m_bMouseDrag = true;
-		SetCapture(GLUFGetHWND());
-		// Determine the character corresponding to the coordinates.
-		int nCP, nTrail, nX1st;
-		m_Buffer.CPtoX(m_nFirstVisible, FALSE, &nX1st);  // X offset of the 1st visible char
-		if (m_Buffer.XtoCP(pt.x - mTextRegion.left + nX1st, &nCP, &nTrail))
-		{
-			// Cap at the nul character.
-			if (nTrail && nCP < m_Buffer.GetTextSize())
-				PlaceCaret(nCP + 1);
-			else
-				PlaceCaret(nCP);
-			m_nSelStart = m_nCaret;
-			ResetCaretBlink();
-		}
-		return true;
-	}
-
-	case WM_LBUTTONUP:
-		ReleaseCapture();
-		m_bMouseDrag = false;
-		break;
-
-	case WM_MOUSEMOVE:
-		if (m_bMouseDrag)
-		{
-			// Determine the character corresponding to the coordinates.
-			int nCP, nTrail, nX1st;
-			m_Buffer.CPtoX(m_nFirstVisible, FALSE, &nX1st);  // X offset of the 1st visible char
-			if (m_Buffer.XtoCP(pt.x - mTextRegion.left + nX1st, &nCP, &nTrail))
-			{
-				// Cap at the nul character.
-				if (nTrail && nCP < m_Buffer.GetTextSize())
-					PlaceCaret(nCP + 1);
-				else
-					PlaceCaret(nCP);
-			}
-		}
-		break;
-	}
-
-	return false;
-}
-*/
 
 //--------------------------------------------------------------------------------------
 void GLUFEditBox::OnFocusIn() noexcept
@@ -6956,7 +6762,7 @@ bool GLUFEditBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, i
             PlaceCaret(nCP + 1);
             else
             PlaceCaret(nCP);
-            }*/
+            }
 
             //m_bAnalyseRequired = true;
         }
@@ -7161,7 +6967,7 @@ bool GLUFEditBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, i
                         textextex
                         textextextextextext
 
-                        */
+                        
 
                         //THERE IS NOT CURRENTLY SUPPORT FOR THIS FEATURE
 
@@ -7208,7 +7014,7 @@ bool GLUFEditBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, i
                         PlaceCaretRndBuffer(it);
                         }
 
-                        }*/
+                        }
 
                     }
 
@@ -7442,7 +7248,7 @@ void GLUFEditBox::Render( float elapsedTime) noexcept
 
                     GLUFOffsetRect(rcCaret, mTextRegion.left, mTextRegion.bottom);
 
-                    mDialog.DrawRect(rcCaret, m_CaretColor/*GLUF::Color(0, 0, 0, 255)*/);
+                    mDialog.DrawRect(rcCaret, m_CaretColor/*GLUF::Color(0, 0, 0, 255));
                 }
 #pragma warning(default : 4018)
             }
@@ -7461,7 +7267,7 @@ void GLUFEditBox::Render( float elapsedTime) noexcept
     color.g += 10;
     else
     color.r -= 10;
-    }*/
+    }
 
     mElements[0]->mFontColor.SetCurrent(m_TextColor);
     mDialog.DrawText(m_strRenderBuffer.c_str(), mElements[0], mTextRegion);
@@ -7666,7 +7472,7 @@ void GLUFEditBox::Analyse()
 				currXValue += WordWidth;
 			}
 
-			if (currXValue/* + 0.0125f/*a little buffer*/ > TextWidth)
+			if (currXValue/* + 0.0125f/*a little buffer > TextWidth)
 			{
 
 				//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
@@ -7675,7 +7481,7 @@ void GLUFEditBox::Analyse()
 				/*if (it == L" ")
 				{
 
-				}*/
+				}
 				
 				{
 					m_strRenderBuffer.insert(charIndex + addedCharactersCount, 1, '\n');
@@ -7817,7 +7623,7 @@ void GLUFEditBox::Analyse()
 				distanceFromBottom -= fontHeight;
 				/*m_CharBoundingBoxes.pop_back();
 				GLUFSetRect(rc, 0.0f, distanceFromBottom, 0.0f, distanceFromBottom - fontHeight);
-				m_CharBoundingBoxes.push_back();*/
+				m_CharBoundingBoxes.push_back();
 			}
 
 			++i;
@@ -7883,7 +7689,7 @@ void GLUFEditBox::Analyse()
 	m_bAnalyseRequired = false;  // Analysis is up-to-date
 	mScrollBar->ShowItem(m_nCaret);
 
-}
+}*/
 
 
 
