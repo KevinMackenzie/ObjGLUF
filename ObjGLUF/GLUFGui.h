@@ -905,7 +905,7 @@ public:
     long        GetWidth() const noexcept                               { return GLUFRectWidth(mRegion);            }
     long        GetHeight()	const noexcept                              { return GLUFRectHeight(mRegion);           } 
 
-    GLUFPoint   GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;        }
+    GLUFPoint   GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;         }
 
     GLUFDialogResourceManagerPtr GetManager() const noexcept            { return mDialogManager;                    }
 

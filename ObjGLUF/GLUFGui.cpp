@@ -320,7 +320,7 @@ std::string g_UIShaderVert =
 "void main(void)													\n"\
 "{																	\n"\
 "	gl_Position = vec4(_Position, 1.0f) * _Ortho;					\n"\
-"	Color = _Color;													\n"\
+"	Color = _Color;		        									\n"\
 "   uvCoord = abs(vec2(0.0f, 1.0f) - _UV);							\n"\
 "}																	\n";
 /*the V's are inverted because the texture is loaded bottom to top*/
@@ -336,7 +336,11 @@ std::string g_UIShaderFrag =
 "	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f);							\n"\
 "	//Color = fs_in.Color;											\n"\
 "   vec4 oColor = texture2D(_TS, uvCoord);							\n"\
-"	oColor = vec4(mix(oColor.rgb, Color.rgb, Color.a), oColor.a);	\n"\
+"	oColor = vec4(                                                  "\
+"       oColor.r * Color.r,                                         "\
+"       oColor.g * Color.g,                                         "\
+"       oColor.b * Color.b,                                         "\
+"       oColor.a * Color.a);	                                    \n"\
 "	gl_FragColor = oColor;											\n"\
 "}																	\n"; 
 
@@ -2552,7 +2556,7 @@ void GLUFDialog::InitDefaultElements()
 	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 0);
+	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 255);
 	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 30);
 	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
 	Element.mFontColor.mStates[GLUF_STATE_NORMAL] = Color(0, 0, 0, 255);
