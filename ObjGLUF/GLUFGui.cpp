@@ -912,7 +912,13 @@ void GLUFBlendColor::Blend(GLUFControlState state, float elapsedTime, float rate
 {
 	//this is quite condensed, this basically interpolates from the current state to the destination state based on the time
     //the speed of this transition is a recurisve version of e^kx - 1.0f
-    mCurrentColor = glm::mix(mCurrentColor, mStates[state], glm::clamp(powf(GLUF_E_F, rate * elapsedTime) - 1.0f, 0.0f, 1.0f));
+    float delta = elapsedTime - mPrevBlendTime;
+    Color col = mStates[state];
+    float trans = powf(GLUF_E_F, rate * delta) - 1.0f;
+    float clamped = glm::clamp(trans, 0.0f, 1.0f);
+    mCurrentColor = glm::mix(mCurrentColor, col, clamped);
+    mPrevBlendTime = elapsedTime;
+    //mCurrentColor = glm::mix(mCurrentColor, mStates[state], glm::clamp(powf(GLUF_E_F, rate * elapsedTime) - 1.0f, 0.0f, 1.0f));
 }
 
 //--------------------------------------------------------------------------------------
@@ -1331,8 +1337,7 @@ bool GLUFDialog::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 	double x, y;
 	glfwGetCursorPos(g_pGLFWWindow, &x, &y);
 	mMousePosition = GLUFPoint(static_cast<long>(x), g_WndHeight - static_cast<long>(y));
-
-
+    
     //this gets broken when window is too big
 	mMousePositionDialogSpace.x = mMousePosition.x - mRegion.x;
 	mMousePositionDialogSpace.y = mMousePosition.y - mRegion.y - mCaptionHeight;//TODO: fix
@@ -1680,8 +1685,6 @@ GLUFControlPtr GLUFDialog::GetControlAtPoint(const GLUF::GLUFPoint& pt) const
 		}
 	}
 
-    GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("No Control Found At Point"));
-
     return nullptr;
 }
 
@@ -1736,13 +1739,18 @@ void GLUFDialog::OnMouseMove(const GLUF::GLUFPoint& pt) noexcept
 		return;
 
 	// Handle mouse leaving the old control
-	if (mControlMouseOver)
-		mControlMouseOver->OnMouseLeave();
+    if (mControlMouseOver)
+    {
+        mControlMouseOver->OnMouseLeave();
+        mControlMouseOver = nullptr;
+    }
 
 	// Handle mouse entering the new control
 	mControlMouseOver = pControl;
-	if (pControl)
-		mControlMouseOver->OnMouseEnter();
+    if (pControl)
+    {
+        mControlMouseOver->OnMouseEnter();
+    }
 
     NOEXCEPT_REGION_END
 }
@@ -2514,7 +2522,7 @@ void GLUFDialog::InitDefaultElements()
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
     mCapElement->SetTexture(0, rcTexture);
     mCapElement->mTextureColor.Init(Color(255, 255, 255, 255));
-    mCapElement->mFontColor.Init(Color(0, 0, 0, 255));
+    mCapElement->mFontColor.Init(Color(255, 255, 255, 255));
     mCapElement->SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
     mCapElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
@@ -2559,9 +2567,12 @@ void GLUFDialog::InitDefaultElements()
 	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0);
 	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(200, 200, 200, 255);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 255);
-	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
-	Element.mFontColor.mStates[GLUF_STATE_NORMAL] = Color(0, 0, 0, 255);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(200, 200, 200, 255);
+    Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(128, 128, 128, 128);
+    Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 255);
+    Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 255);
+	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 255);
+	Element.mFontColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 255);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, std::make_shared<GLUFElement>(Element));
@@ -2570,10 +2581,10 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFButton - Fill layer
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
-	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
-	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(200, 200, 200, 10);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(0, 0, 0, 8);
+    GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
+	Element.SetTexture(0, rcTexture, Color(200, 200, 200, 255));
+	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 255);
+	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(200, 200, 200, 255);
 	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 255);
 
 
@@ -3459,7 +3470,7 @@ void GLUFButton::Render(float elapsedTime) noexcept
 		iState = GLUF_STATE_FOCUS;
 	}
 
-	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+    float fBlendRate = 5.0f;//(iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
 
 	GLUFRect rcWindow = mRegion;
 	GLUFOffsetRect(rcWindow, nOffsetX, nOffsetY);

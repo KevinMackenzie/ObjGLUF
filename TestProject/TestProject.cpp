@@ -44,6 +44,11 @@ bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 		//return true;
 	}
 
+    /*if (msg != GLUFMessageType::GM_CURSOR_ENTER || msg != GLUFMessageType::GM_CURSOR_POS || msg != GLUFMessageType::GM_FOCUS)
+    {
+        
+    }*/
+
 	resMan->MsgProc(GLUF_PASS_CALLBACK_PARAM);
 	dlg->MsgProc(GLUF_PASS_CALLBACK_PARAM);
 
@@ -185,7 +190,7 @@ int main(void)
     //dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 20, { 20 } });
 
     //dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
-    dlg->AddButton(0, L"Button", { { 25 }, 10, 75, { 20 } });
+    dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
 
 	/*dlg->AddButton(0, L"Button", 50, 10, 125, 35);
 

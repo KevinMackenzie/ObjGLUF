@@ -371,6 +371,7 @@ using ColorStateMap = std::map < GLUFControlState, GLUF::Color > ;
 
 struct GLUFBlendColor
 {
+    float mPrevBlendTime = 0.0f;
 public:
     ColorStateMap       mStates;
     GLUF::Color         mCurrentColor;
@@ -385,7 +386,7 @@ public:
             'hiddenColor': the hidden color state
     
     */
-    void        Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor = { 200, 128, 128, 100 }, const GLUF::Color& hiddenColor = { 0, 0, 0, 0 });
+    void        Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor = { 128, 128, 128, 200 }, const GLUF::Color& hiddenColor = { 255, 255, 255, 0 });
 
     /*
     Blend
@@ -399,7 +400,7 @@ public:
             this is designed to be called every update cycle to provide a smooth blend animation
     
     */
-	void        Blend(GLUFControlState state, float elapsedTime, float rate = 0.7f);
+	void        Blend(GLUFControlState state, float elapsedTime, float rate = 6.0f);
 
     /*
     SetCurrent
@@ -458,7 +459,7 @@ public:
             'defaultTextureBlendColor': the default texture blend color
     
     */
-    void    SetTexture(GLUFTextureIndex textureIndex, const GLUFRectf& uvRect, const GLUF::Color& defaultTextureColor = { 255, 255, 255, 0 });
+    void    SetTexture(GLUFTextureIndex textureIndex, const GLUFRectf& uvRect, const GLUF::Color& defaultTextureColor = { 255, 255, 255, 255 });
 
     /*
     SetFont
@@ -469,7 +470,7 @@ public:
             'textFormat': a bitfield of the horizontal and vertical text formatting
     
     */
-    void    SetFont(GLUFFontIndex font, const GLUF::Color& defaultFontColor = { 0, 0, 0, 255 }, GLUFBitfield textFormat = GT_CENTER | GT_VCENTER);
+    void    SetFont(GLUFFontIndex font, const GLUF::Color& defaultFontColor = { 255, 255, 255, 255 }, GLUFBitfield textFormat = GT_CENTER | GT_VCENTER);
 
     /*
     Refresh
@@ -741,13 +742,13 @@ public:
             'pt': the point in screen coordinates to look for the control
 
         Returns:
-            a pointer to the control found, in release mode, returns nullptr if none found
+            a pointer to the control found, returns nullptr if none found
 
         Throws:
-            'std::invalid_argument': if no control exists at 'pt', but only in GLUF_DEBUG mode
+            no-throw guarantee
     
     */
-	GLUFControlPtr GetControlAtPoint(const GLUF::GLUFPoint& pt) const;
+	GLUFControlPtr GetControlAtPoint(const GLUF::GLUFPoint& pt) const noexcept;
 
     /*
     Set/Get Control Enabled
@@ -1831,6 +1832,7 @@ public:
     */
     virtual bool CanHaveFocus()	const noexcept override	{ return (mVisible && mEnabled); }
     virtual void Render(float elapsedTime) noexcept override;
+    virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override{ return GLUFPtInRect(mRegion, pt); }
     virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
 

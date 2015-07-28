@@ -164,8 +164,16 @@ Utility Macros
 #define GLUF_SAFE_DELETE(ptr) {if(ptr){delete(ptr);} (ptr) = nullptr;}
 #define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))//may be deprecated
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
+
+//in debug mode, don't catch exceptions, because they may be helpful in debugging situations
+#ifdef GLUF_DEBUG
+#define NOEXCEPT_REGION_START
+#define NOEXCEPT_REGION_END
+#else
 #define NOEXCEPT_REGION_START try{
 #define NOEXCEPT_REGION_END }catch(...){}
+#endif
+#define NOX
 #define noexcept throw()
 
 /*
