@@ -137,11 +137,11 @@ enum GLUFControlType
 enum GLUFControlState
 {
     GLUF_STATE_NORMAL = 0,
-    GLUF_STATE_DISABLED,
-    GLUF_STATE_HIDDEN,
-    GLUF_STATE_FOCUS,
-    GLUF_STATE_MOUSEOVER,
-    GLUF_STATE_PRESSED,
+    GLUF_STATE_DISABLED = 1,
+    GLUF_STATE_FOCUS = 2,
+    GLUF_STATE_MOUSEOVER = 3,
+    GLUF_STATE_PRESSED = 4,
+    GLUF_STATE_HIDDEN = 5//THIS SHALL ALWAYS BE LAST
 };
 
 //WIP
@@ -361,21 +361,25 @@ GLUFBlendColor
 
     Note:
         Used to modulate colors for different control states to provide a responsive GUI experience
+        Internally, Colors are represented as signed 16 bit integer vectors, because issues arise when using 
+            'glm::mix' with unsigned values
 
     Data Members:
         'mStates': all of the different control states which can exist
         'mCurrentColor': the current color of the blend state
 
 */
-using ColorStateMap = std::map < GLUFControlState, GLUF::Color > ;
+using HighBitColor = glm::i16vec4;
+using ColorStateMap = std::map < GLUFControlState, HighBitColor >;
 
 struct GLUFBlendColor
 {
     float mPrevBlendTime = 0.0f;
-public:
     ColorStateMap       mStates;
-    GLUF::Color         mCurrentColor;
+    HighBitColor        mCurrentColor;
+public:
 
+    GLUFBlendColor();
 
     /*
     Init
@@ -421,6 +425,10 @@ public:
     
     */
 	void		SetAll(const GLUF::Color& color);
+
+    GLUF::Color GetState(GLUFControlState state) const noexcept;
+    void        SetState(GLUFControlState state, const GLUF::Color& col) noexcept;
+    GLUF::Color GetCurrent() const noexcept;
 };
 
 /*

@@ -894,15 +894,22 @@ GLUFBlendColor Functions
 */
 
 //--------------------------------------------------------------------------------------
+GLUFBlendColor::GLUFBlendColor()
+{
+    SetAll({ 255, 255, 255, 255 });
+}
+
+//--------------------------------------------------------------------------------------
 void GLUFBlendColor::Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor, const GLUF::Color& hiddenColor)
 {
+    HighBitColor defColor = static_cast<HighBitColor>(defaultColor);
     for (auto it = mStates.begin(); it != mStates.end(); ++it)
     {
-        it->second = defaultColor;
+        it->second = defColor;
     }
 
-	mStates[GLUF_STATE_DISABLED] = disabledColor;
-	mStates[GLUF_STATE_HIDDEN] = hiddenColor;
+	mStates[GLUF_STATE_DISABLED] = static_cast<HighBitColor>(disabledColor);
+	mStates[GLUF_STATE_HIDDEN] = static_cast<HighBitColor>(hiddenColor);
 	mCurrentColor = mStates[GLUF_STATE_HIDDEN];//start hidden
 }
 
@@ -913,9 +920,12 @@ void GLUFBlendColor::Blend(GLUFControlState state, float elapsedTime, float rate
 	//this is quite condensed, this basically interpolates from the current state to the destination state based on the time
     //the speed of this transition is a recurisve version of e^kx - 1.0f
     float delta = elapsedTime - mPrevBlendTime;
-    Color col = mStates[state];
+    HighBitColor col = mStates[state];
+    //if (col == Color{ 0, 0, 0, 0 })
+    //    return;
     float trans = powf(GLUF_E_F, rate * delta) - 1.0f;
     float clamped = glm::clamp(trans, 0.0f, 1.0f);
+    HighBitColor old = mCurrentColor;
     mCurrentColor = glm::mix(mCurrentColor, col, clamped);
     mPrevBlendTime = elapsedTime;
     //mCurrentColor = glm::mix(mCurrentColor, mStates[state], glm::clamp(powf(GLUF_E_F, rate * elapsedTime) - 1.0f, 0.0f, 1.0f));
@@ -936,12 +946,30 @@ void GLUFBlendColor::SetCurrent(GLUFControlState state)
 //--------------------------------------------------------------------------------------
 void GLUFBlendColor::SetAll(const Color& color)
 {
-    for (auto it = mStates.begin(); it != mStates.end(); ++it)
+    for (unsigned int i = GLUF_STATE_NORMAL; i <= GLUF_STATE_HIDDEN; ++i)
     {
-        it->second = color;
+        mStates[GLUF_STATE_NORMAL] = color;
     }
 
 	SetCurrent(color);
+}
+
+//--------------------------------------------------------------------------------------
+Color GLUFBlendColor::GetState(GLUFControlState state) const noexcept
+{
+    return static_cast<Color>(mStates.at(state));
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFBlendColor::SetState(GLUFControlState state, const Color& col) noexcept
+{
+    mStates[state] = static_cast<HighBitColor>(col);
+}
+
+//--------------------------------------------------------------------------------------
+Color GLUFBlendColor::GetCurrent() const noexcept
+{
+    return static_cast<Color>(mCurrentColor);
 }
 
 
@@ -2188,10 +2216,10 @@ void GLUFDialog::DrawRect(const GLUFRect& rect, const Color& color)
 void GLUFDialog::DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect& rect, float depth, bool textured)
 {
 	// No need to draw fully transparent layers
-    if (element->mTextureColor.mCurrentColor.a == 0)
+    if (element->mTextureColor.GetCurrent().a == 0)
         return;
 
-    /*if (element->mTextureColor.mCurrentColor == element->mTextureColor.mStates[GLUF_STATE_HIDDEN])
+    /*if (element->mTextureColor.GetCurrent() == element->mTextureColor.mStates[GLUF_STATE_HIDDEN])
 		return;*/
 
 
@@ -2210,28 +2238,28 @@ void GLUFDialog::DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect&
     thisSprite[0] =
     {
         glm::vec3(rcScreen.left, rcScreen.top, depth),
-        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        GLUFColorToFloat(element->mTextureColor.GetCurrent()),
         glm::vec2(uvRect.left, uvRect.top)
     };
 
     thisSprite[1] =
     {
         glm::vec3(rcScreen.right, rcScreen.top, depth),
-        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        GLUFColorToFloat(element->mTextureColor.GetCurrent()),
         glm::vec2(uvRect.right, uvRect.top)
     };
 
     thisSprite[2] =
     {
         glm::vec3(rcScreen.left, rcScreen.bottom, depth),
-        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        GLUFColorToFloat(element->mTextureColor.GetCurrent()),
         glm::vec2(uvRect.left, uvRect.bottom)
     };
 
     thisSprite[3] =
     {
         glm::vec3(rcScreen.right, rcScreen.bottom, depth),
-        GLUFColorToFloat(element->mTextureColor.mCurrentColor),
+        GLUFColorToFloat(element->mTextureColor.GetCurrent()),
         glm::vec2(uvRect.right, uvRect.bottom)
     };
 
@@ -2247,7 +2275,7 @@ void GLUFDialog::DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect&
 void GLUFDialog::DrawText(const std::wstring& text, const GLUFElementPtr& element, const GLUF::GLUFRect& rect, bool shadow, bool hardRect)
 {
 	// No need to draw fully transparent layers
-    if (element->mFontColor.mCurrentColor.a == 0)
+    if (element->mFontColor.GetCurrent().a == 0)
 		return;
 
 	GLUFRect screen = rect;
@@ -2266,8 +2294,8 @@ void GLUFDialog::DrawText(const std::wstring& text, const GLUFElementPtr& elemen
 
 	}*/
 
-    Color vFontColor = element->mFontColor.mCurrentColor;
-    DrawTextGLUF(mDialogManager->GetFontNode(element->mFontIndex), text, screen, element->mFontColor.mCurrentColor, element->mTextFormatFlags, hardRect);
+    Color vFontColor = element->mFontColor.GetCurrent();
+    DrawTextGLUF(mDialogManager->GetFontNode(element->mFontIndex), text, screen, element->mFontColor.GetCurrent(), element->mTextFormatFlags, hardRect);
 }
 
 
@@ -2521,9 +2549,9 @@ void GLUFDialog::InitDefaultElements()
 	mCapElement->SetFont(0);
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
     mCapElement->SetTexture(0, rcTexture);
-    mCapElement->mTextureColor.Init(Color(255, 255, 255, 255));
-    mCapElement->mFontColor.Init(Color(255, 255, 255, 255));
-    mCapElement->SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
+    mCapElement->mTextureColor.Init({ 255, 255, 255, 255 });
+    mCapElement->mFontColor.Init({ 255, 255, 255, 255 });
+    mCapElement->SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
     mCapElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
     mCapElement->mFontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
@@ -2533,27 +2561,27 @@ void GLUFDialog::InitDefaultElements()
 	GLUFSetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
 	//GLUFSetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
 	mDlgElement->SetTexture(0, rcTexture);
-	mDlgElement->mTextureColor.Init(Color(255, 0, 0, 128));
-	mDlgElement->mFontColor.Init(Color(0, 0, 0, 255));
-	mDlgElement->SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
+    mDlgElement->mTextureColor.Init({ 255, 0, 0, 128 });
+    mDlgElement->mFontColor.Init({ 0, 0, 0, 255 });
+    mDlgElement->SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
 	mDlgElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 	mDlgElement->mFontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
 
-	//Element.mFontColor.mStates[GLUF_STATE_NORMAL]		= Color(0, 0, 0, 255);
-	//Element.mFontColor.mStates[GLUF_STATE_DISABLED]	= Color(0, 0, 0, 255);
-	//Element.mFontColor.mStates[GLUF_STATE_HIDDEN]		= Color(0, 0, 0, 255);
-	//Element.mFontColor.mStates[GLUF_STATE_FOCUS]		= Color(0, 0, 0, 255);
-	//Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER]	= Color(0, 0, 0, 255);
-	//Element.mFontColor.mStates[GLUF_STATE_PRESSED]	= Color(0, 0, 0, 255);
+	//Element.mFontColor.SetState(GLUF_STATE_NORMAL]	,{0, 0, 0, 255});
+	//Element.mFontColor.SetState(GLUF_STATE_DISABLED]	,{0, 0, 0, 255});
+	//Element.mFontColor.SetState(GLUF_STATE_HIDDEN]	,{0, 0, 0, 255});
+	//Element.mFontColor.SetState(GLUF_STATE_FOCUS]		,{0, 0, 0, 255});
+	//Element.mFontColor.SetState(GLUF_STATE_MOUSEOVER]	,{0, 0, 0, 255});
+	//Element.mFontColor.SetState(GLUF_STATE_PRESSED]	,{0, 0, 0, 255});
 
 	//-------------------------------------
 	// GLUFStatic
 	//-------------------------------------
 	Element.SetFont(0);
 	Element.mTextFormatFlags = GT_LEFT | GT_VCENTER;
-	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
+    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 200 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_STATIC, 0, std::make_shared<GLUFElement>(Element));
@@ -2566,13 +2594,17 @@ void GLUFDialog::InitDefaultElements()
 	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
 	Element.SetTexture(0, rcTexture);
 	Element.SetFont(0);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(200, 200, 200, 255);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(200, 200, 200, 255);
-    Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(128, 128, 128, 128);
-    Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 255);
-    Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 255);
-	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 255);
-	Element.mFontColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 255);
+    Element.mTextureColor.SetAll({ 200, 200, 200, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_HIDDEN, { 255, 255, 255, 0 });
+
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 175, 175, 175, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 128, 128, 128, 128 });
+    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 230, 230, 230, 255 });
+
+    Element.mFontColor.SetAll({ 255, 255, 255, 255 });
+    Element.mFontColor.SetState(GLUF_STATE_HIDDEN, { 255, 255, 255, 0 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, std::make_shared<GLUFElement>(Element));
@@ -2582,10 +2614,11 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFButton - Fill layer
 	//-------------------------------------
     GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
-	Element.SetTexture(0, rcTexture, Color(200, 200, 200, 255));
-	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 255);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(200, 200, 200, 255);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 255);
+    Element.SetTexture(0, rcTexture, { 200, 200, 200, 255 });
+
+    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 230, 230, 230, 255 });
 
 
 	// Assign the Element
@@ -2597,11 +2630,11 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
 	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
-	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(80, 80, 80, 100);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 20);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 30);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
+    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
+    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 80, 80, 80, 100 });
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 20 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 30 });
+    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 255, 255, 255, 127 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 0, std::make_shared<GLUFElement>(Element));
@@ -2611,7 +2644,7 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFCheckBox - Check
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.10546875f, 0.7890625f, 0.2109375f, 0.68359375f);
-	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
+    Element.SetTexture(0, rcTexture, { 255, 255, 255, 0 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 1, std::make_shared<GLUFElement>(Element));
@@ -2622,11 +2655,11 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
 	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
-	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(0, 0, 0, 255);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(255, 255, 255, 127);
+    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
+    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 0, 0, 0, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 75 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 100 });
+    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 255, 255, 255, 127 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 0, std::make_shared<GLUFElement>(Element));
@@ -2636,8 +2669,8 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFRadioButton - Check
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.31640625f, 0.7890625f, 0.421875f, 0.68359375f);
-	Element.SetTexture(0, rcTexture, Color(255, 255, 255, 0));
-	//Element.mTextureColor.mStates[GLUF_STATE_HIDDEN] = Color(255, 255, 255, 255);
+    Element.SetTexture(0, rcTexture, { 255, 255, 255, 0 });
+	//Element.mTextureColor.SetState[GLUF_STATE_HIDDEN] = {255, 255, 255, 255);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 1, std::make_shared<GLUFElement>(Element));
@@ -2648,13 +2681,13 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
 	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_VCENTER);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(200, 200, 200, 150);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(230, 230, 230, 170);
-	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 70);
-	Element.mFontColor.mStates[GLUF_STATE_MOUSEOVER] = Color(0, 0, 0, 255);
-	Element.mFontColor.mStates[GLUF_STATE_PRESSED] = Color(0, 0, 0, 255);
-	Element.mFontColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 200);
+    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 200, 200, 200, 150 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 230, 230, 230, 170 });
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 70 });
+    Element.mFontColor.SetState(GLUF_STATE_MOUSEOVER, { 0, 0, 0, 255 });
+    Element.mFontColor.SetState(GLUF_STATE_PRESSED, { 0, 0, 0, 255 });
+    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 200 });
 
 
 	// Assign the Element
@@ -2666,11 +2699,11 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
 	Element.SetTexture(0, rcTexture);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 0);
-	Element.mTextureColor.mStates[GLUF_STATE_MOUSEOVER] = Color(255, 255, 255, 50);
-	Element.mTextureColor.mStates[GLUF_STATE_PRESSED] = Color(100, 100, 100, 100);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 20);
-	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(255, 255, 255, 50);
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 0 });
+    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 50 });
+    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 100, 100, 100, 100 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 20 });
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 255, 255, 255, 50 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 1, std::make_shared<GLUFElement>(Element));
@@ -2680,8 +2713,8 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFComboBox - Dropdown
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.37109375f);
-	Element.SetTexture(0, rcTexture, Color(0, 0, 0, 0));
-	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
+    Element.SetTexture(0, rcTexture, { 0, 0, 0, 0 });
+    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_TOP);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 2, std::make_shared<GLUFElement>(Element));
@@ -2692,7 +2725,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.046875f, 0.36328125f, 0.93359375f, 0.28515625f);
 	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_TOP);
+    Element.SetFont(0, { 255, 255, 255, 255 }, GT_LEFT | GT_TOP);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 3, std::make_shared<GLUFElement>(Element));
@@ -2703,9 +2736,9 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.00390625f, 0.26953125f, 0.36328125f, 0.109375f);
 	Element.SetTexture(0, rcTexture);
-	Element.mTextureColor.mStates[GLUF_STATE_NORMAL] = Color(255, 255, 255, 75);
-	Element.mTextureColor.mStates[GLUF_STATE_FOCUS] = Color(255, 255, 255, 100);
-	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(255, 255, 255, 35);
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 75 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 100 });
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 255, 255, 255, 35 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SLIDER, 0, std::make_shared<GLUFElement>(Element));
@@ -2726,7 +2759,7 @@ void GLUFDialog::InitDefaultElements()
 	float nScrollBarStartY = 0.046875f;
 	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
 	Element.SetTexture(0, rcTexture);
-	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 255);
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 255 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 0, std::make_shared<GLUFElement>(Element));
@@ -2736,7 +2769,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
 	Element.SetTexture(0, rcTexture);
-	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(200, 200, 200, 100);
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 100 });
 
 
 	// Assign the Element
@@ -2747,7 +2780,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
 	Element.SetTexture(0, rcTexture);
-	Element.mTextureColor.mStates[GLUF_STATE_DISABLED] = Color(180, 180, 180, 150);
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 180, 180, 180, 150 });
 
 
 	// Assign the Element
@@ -2776,7 +2809,7 @@ void GLUFDialog::InitDefaultElements()
 	//   7 - lower border
 	//   8 - lower right border
 
-	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
+    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_TOP);
 	//TODO: this
 	// Assign the style
 	GLUFSetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
@@ -2820,7 +2853,7 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.375f);
 	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0, Color(0, 0, 0, 255), GT_LEFT | GT_TOP);
+    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_TOP);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_LISTBOX, 0, std::make_shared<GLUFElement>(Element));
@@ -2831,7 +2864,7 @@ void GLUFDialog::InitDefaultElements()
 
 	GLUFSetRect(rcTexture, 0.0625f, 0.3515625f, 0.9375f, 0.28515625f);
 	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0, Color(255, 255, 255, 255), GT_LEFT | GT_TOP);
+    Element.SetFont(0, { 255, 255, 255, 255 }, GT_LEFT | GT_TOP);
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_LISTBOX, 1, std::make_shared<GLUFElement>(Element));
@@ -3404,7 +3437,7 @@ bool GLUFButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
     case GM_KEY:
     {
 
-        if (param1 = GLFW_KEY_SPACE)
+        if (param1 == mHotkey)
         {
             if (param3 == GLFW_PRESS)
             {
@@ -5228,7 +5261,7 @@ void GLUFComboBox::OnFocusOut() noexcept
 {
     NOEXCEPT_REGION_START
 
-        GLUFButton::OnFocusOut();
+    GLUFButton::OnFocusOut();
 
     mOpened = false;
 
@@ -5576,8 +5609,8 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
 
         // Selection outline
         GLUFElementPtr pSelectionElement = mElements[3];
-        pSelectionElement->mTextureColor.mCurrentColor = pElement->mTextureColor.mCurrentColor;
-        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[GLUF_STATE_NORMAL]*/Color(0, 0, 0, 255));
+        pSelectionElement->mTextureColor.GetCurrent() = pElement->mTextureColor.GetCurrent();
+        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[GLUF_STATE_NORMAL]*/{ 0, 0, 0, 255 });
 
         GLUFFontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
         if (pFont)
@@ -6236,10 +6269,10 @@ GLUFEditBox::GLUFEditBox(Charset charset, bool isMultiline, GLUFDialog* pDialog)
 	m_dfLastBlink = glfwGetTime();
 	s_bHideCaret = false;
 	m_nFirstVisible = 0;
-	m_TextColor = Color(16, 16, 16, 255);
-	m_SelTextColor = Color(255, 255, 255, 255);
-	m_SelBkColor = Color(40, 50, 92, 255);
-	m_CaretColor = Color(0, 0, 0, 255);
+	m_TextColor = {16, 16, 16, 255);
+	m_SelTextColor = {255, 255, 255, 255);
+	m_SelBkColor = {40, 50, 92, 255);
+	m_CaretColor = {0, 0, 0, 255);
 	m_nCaret = m_nSelStart = 0;
 	m_bInsertMode = true;
 
@@ -7324,7 +7357,7 @@ void GLUFEditBox::Render( float elapsedTime) noexcept
 
                     GLUFOffsetRect(rcCaret, mTextRegion.left, mTextRegion.bottom);
 
-                    mDialog.DrawRect(rcCaret, m_CaretColor/*GLUF::Color(0, 0, 0, 255));
+                    mDialog.DrawRect(rcCaret, m_CaretColor/*GLUF::{0, 0, 0, 255));
                 }
 #pragma warning(default : 4018)
             }
@@ -7332,7 +7365,7 @@ void GLUFEditBox::Render( float elapsedTime) noexcept
     }
 
     //debugging
-    /*Color color = Color(255, 0, 255, 128);
+    /*Color color = {255, 0, 255, 128);
     for (auto it : m_CharBoundingBoxes)
     {
     GLUFRect copy = it;
