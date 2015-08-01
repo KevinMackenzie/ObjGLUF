@@ -1326,7 +1326,7 @@ GLUFFontNodePtr GLUFDialog::GetFont(GLUFFontIndex index) const
 {
 	if (!mDialogManager)
 		return nullptr;
-	return mDialogManager->GetFontNode(mFonts.at(index));
+	return mDialogManager->GetFontNode(index);
 }
 
 
@@ -1351,7 +1351,7 @@ GLUFTextureNodePtr GLUFDialog::GetTexture(GLUFTextureIndex index) const
 {
 	if (!mDialogManager)
 		return nullptr;
-	return mDialogManager->GetTextureNode(mTextures.at(index));
+	return mDialogManager->GetTextureNode(index);
 }
 
 //--------------------------------------------------------------------------------------
@@ -4445,7 +4445,7 @@ void GLUFListBox::UpdateRects() noexcept
     GLUFRect tmpRegion = mScrollBar->GetRegion();
     tmpRegion.y = mTextRegion.top;
     mScrollBar->SetRegion(tmpRegion);
-    GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0].mFontIndex);
+    GLUFFontNodePtr pFontNode = mDialog.GetFont(mElements[0].mFontIndex);
     if (pFontNode && pFontNode->mFontType->mHeight)
     {
         mScrollBar->SetPageSize(int(GLUFRectHeight(mTextRegion) / pFontNode->mLeading));
@@ -5163,7 +5163,7 @@ void GLUFListBox::Render(float elapsedTime) noexcept
 
     mDialog.DrawSprite(*pElement, mRegion, GLUF_FAR_BUTTON_DEPTH);
 
-    GLUFFontNodePtr pFont = mDialog.GetManager()->GetFontNode(pElement->mFontIndex);
+    GLUFFontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
     // Render the text
     if (!mItems.empty() && pFont)
     {
@@ -5311,7 +5311,7 @@ void GLUFComboBox::UpdateRects() noexcept
     GLUFRect tmpRect = mScrollBar->GetRegion();
     tmpRect.y = mTextRegion.top;
     mScrollBar->SetRegion(tmpRect);
-    GLUFFontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[2].mFontIndex);
+    GLUFFontNodePtr pFontNode = mDialog.GetFont(mElements[2].mFontIndex);
     if (pFontNode/* && pFontNode->mSize*/)
     {
         mScrollBar->SetPageSize(int(GLUFRectHeight(mDropdownTextRegion) / pFontNode->mFontType->mHeight));
@@ -5323,6 +5323,15 @@ void GLUFComboBox::UpdateRects() noexcept
 
     NOEXCEPT_REGION_END
 
+}
+
+
+//--------------------------------------------------------------------------------------
+void GLUFComboBox::OnInit()
+{ 
+    UpdateRects();
+
+    mDialog.InitControl(std::dynamic_pointer_cast<GLUFControl>(mScrollBar)); 
 }
 
 //--------------------------------------------------------------------------------------
@@ -5681,8 +5690,8 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
         return;
     GLUFControlState iState = GLUF_STATE_NORMAL;
 
-    if (!mOpened)
-        iState = GLUF_STATE_HIDDEN;
+    //if (!mOpened)
+    //    iState = GLUF_STATE_HIDDEN;
 
     // Dropdown box
     GLUFElement* pElement = &mElements[2];
@@ -5693,9 +5702,14 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
     if (!bSBInit)
     {
         // Update the page size of the scroll bar
-        if (mDialog.GetManager()->GetFontNode(pElement->mFontIndex)->mFontType->mHeight)
-            mScrollBar->SetPageSize(int(GLUFRectHeight(mDropdownTextRegion) /
-            (mDialog.GetManager()->GetFontNode(pElement->mFontIndex)->mLeading)));
+        auto fontNode = mDialog.GetFont(pElement->mFontIndex);
+        if (fontNode->mFontType->mHeight)
+        {
+            mScrollBar->SetPageSize(
+                static_cast<int>(glm::round(
+                static_cast<float>(GLUFRectHeight(mDropdownTextRegion)) / 
+                static_cast<float>(fontNode->mLeading))));
+        }
         else
             mScrollBar->SetPageSize(0);
         bSBInit = true;

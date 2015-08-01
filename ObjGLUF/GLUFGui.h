@@ -642,7 +642,7 @@ public:
 
     */
 	void Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog = true);
-	void Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, GLUFTextureIndex textureIndex);
+	void Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, GLUFTextureIndexResMan textureIndex);
 
     /*
     MsgProc
@@ -2549,7 +2549,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GLUFGenericData& data) noexcept;
+    void AddItem(const std::wstring& text, GLUFGenericData& data = GLUFGenericData()) noexcept;
 
     /*
     InsertItem
@@ -2693,7 +2693,7 @@ public:
 	virtual void OnFocusOut() noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
-	virtual void OnInit() override{ return mDialog.InitControl(std::dynamic_pointer_cast<GLUFControl>(mScrollBar)); }
+    virtual void OnInit() override;
 	virtual void SetTextColor(const GLUF::Color& Color) noexcept override;
 
 protected:

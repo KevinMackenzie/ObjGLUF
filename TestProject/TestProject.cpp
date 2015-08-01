@@ -182,57 +182,50 @@ int main(void)
 	//dlg->AddEditBox(10, str, 100, 100, 400, 400, GT_LEFT | GT_TOP | GT_MULTI_LINE);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
-    dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 200, 350, { 180 } });
+    dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 500, 350, { 480 } });
 
     dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
     dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 220, { 180 } }, true);
     dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 220, { 230 } });
     dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 220, { 280 } });
 
-    //dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
+    dlg->AddSlider(1, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
     dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
 
-	/*dlg->AddButton(0, L"Button", 50, 10, 125, 35);
+	std::shared_ptr<GLUFComboBoxPtr> boxBase = std::make_shared<GLUFComboBoxPtr>(nullptr);
+    dlg->AddComboBox(7, { { 0 }, 500, 250, { 480 } }, 0, false, boxBase);
 
-	GLUFComboBox* box;
-	dlg->AddComboBox(1, 200, 200, 125, 35, 0, false, &box);
-	dlg->AddCheckBox(2, L"Check Box", 300, 100, 35, 35);
-	dlg->AddRadioButton(3, 0, L"Button 1", 400, 400, 35, 35, true);
-	dlg->AddRadioButton(4, 0, L"Button 2", 400, 450, 35, 35);
-	dlg->AddRadioButton(5, 0, L"Button 3", 400, 500, 35, 35);
-	dlg->AddStatic(6, L"Static", 100, 600, 175, 35);
-	//dlg->AddSlider (6, 0.1f, 0.3f, 0.4f, 0.03625f, 0.0f, 1.0f, 0.25f);
-
-	box->AddItem(L"Item 0", nullptr);
-	box->AddItem(L"Item 1",  nullptr);
-	box->AddItem(L"Item 2",  nullptr);
-	box->AddItem(L"Item 3",  nullptr);
-	box->AddItem(L"Item 4",  nullptr);
-	box->AddItem(L"Item 5", nullptr);
-	box->AddItem(L"Item 6", nullptr);
-	box->AddItem(L"Item 7", nullptr);
-	box->AddItem(L"Item 8", nullptr);
-	box->AddItem(L"Item 9", nullptr);
-	box->AddItem(L"Item 10", nullptr);
-	box->AddItem(L"Item 11", nullptr);
-	box->AddItem(L"Item 12", nullptr);
-	box->AddItem(L"Item 13", nullptr);
-	box->AddItem(L"Item 14", nullptr);
-	box->AddItem(L"Item 15", nullptr);
-	box->AddItem(L"Item 16", nullptr);
-	box->AddItem(L"Item 17", nullptr);
-	box->AddItem(L"Item 18", nullptr);
-	box->AddItem(L"Item 19", nullptr);
-	box->AddItem(L"Item 20", nullptr);
-	box->AddItem(L"Item 21", nullptr);
-	box->AddItem(L"Item 22", nullptr);
-	box->AddItem(L"Item 23", nullptr);
-	box->AddItem(L"Item 24", nullptr);
-	box->AddItem(L"Item 25", nullptr);
-	box->AddItem(L"Item 26", nullptr);
-	box->AddItem(L"Item 27", nullptr);
-	box->AddItem(L"Item 28", nullptr);
-	box->AddItem(L"Item 29", nullptr);
+    auto box = *boxBase;
+	box->AddItem(L"Item 0");
+	box->AddItem(L"Item 1");
+	box->AddItem(L"Item 2");
+	box->AddItem(L"Item 3");
+	box->AddItem(L"Item 4");
+	box->AddItem(L"Item 5");
+	box->AddItem(L"Item 6");
+	box->AddItem(L"Item 7");
+	box->AddItem(L"Item 8");
+	box->AddItem(L"Item 9");
+	box->AddItem(L"Item 10");
+	box->AddItem(L"Item 11");
+	box->AddItem(L"Item 12");
+	box->AddItem(L"Item 13");
+	box->AddItem(L"Item 14");
+	box->AddItem(L"Item 15");
+	box->AddItem(L"Item 16");
+	box->AddItem(L"Item 17");
+	box->AddItem(L"Item 18");
+	box->AddItem(L"Item 19");
+	box->AddItem(L"Item 20");
+	box->AddItem(L"Item 21");
+	box->AddItem(L"Item 22");
+	box->AddItem(L"Item 23");
+	box->AddItem(L"Item 24");
+	box->AddItem(L"Item 25");
+	box->AddItem(L"Item 26");
+	box->AddItem(L"Item 27");
+	box->AddItem(L"Item 28");
+	box->AddItem(L"Item 29");
 
 
 	//load shaders
