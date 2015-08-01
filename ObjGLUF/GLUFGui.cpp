@@ -3651,7 +3651,8 @@ bool GLUFCheckBox::ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept
     NOEXCEPT_REGION_START
 
     return (GLUFPtInRect(mRegion, pt) ||
-    GLUFPtInRect(mButtonRegion, pt));
+    GLUFPtInRect(mButtonRegion, pt) ||
+    GLUFPtInRect(mTextRegion, pt));
 
     NOEXCEPT_REGION_END
 }
@@ -3669,6 +3670,9 @@ void GLUFCheckBox::UpdateRects() noexcept
 
     mTextRegion = mRegion;
     GLUFOffsetRect(mTextRegion, GLUFRectWidth(mButtonRegion)/*1.25f*/, 0L);
+
+    //resize the text rect based on the length of the string
+    mTextRegion.right = mTextRegion.left + mDialog.GetFont(mElements[0].mFontIndex)->mFontType->GetStringWidth(mText);
 
     NOEXCEPT_REGION_END
 }
