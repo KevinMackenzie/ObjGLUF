@@ -1835,13 +1835,13 @@ void GLUFDialog::AddStatic(GLUFControlIndex ID, const std::wstring& strText, con
     if (ctrlPtr)
         *ctrlPtr = pStatic;
 
-	AddControl(std::dynamic_pointer_cast<GLUFControl>(pStatic));
-
 	// Set the ID and list index
 	pStatic->SetID(ID);
 	pStatic->SetText(strText);
     pStatic->SetRegion(region);
 	pStatic->mIsDefault = isDefault;
+
+	AddControl(std::dynamic_pointer_cast<GLUFControl>(pStatic));
 }
 
 
@@ -1853,14 +1853,14 @@ void GLUFDialog::AddButton(GLUFControlIndex ID, const std::wstring& strText, con
     if (ctrlPtr)
         *ctrlPtr = pButton;
 
-    AddControl(std::dynamic_pointer_cast<GLUFControl>(pButton));
-
 	// Set the ID and list index
 	pButton->SetID(ID);
 	pButton->SetText(strText);
     pButton->SetRegion(region);
 	pButton->SetHotkey(hotkey);
 	pButton->mIsDefault = isDefault;
+
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pButton));
 }
 
 
@@ -1872,8 +1872,6 @@ void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, c
     if (ctrlPtr)
         *ctrlPtr = pCheckBox;
 
-    AddControl(std::dynamic_pointer_cast<GLUFControl>(pCheckBox));
-
 	// Set the ID and list index
 	pCheckBox->SetID(ID);
 	pCheckBox->SetText(strText);
@@ -1881,6 +1879,8 @@ void GLUFDialog::AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, c
 	pCheckBox->SetHotkey(hotkey);
 	pCheckBox->mIsDefault = isDefault;
 	pCheckBox->SetChecked(checked);
+
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pCheckBox));
 }
 
 
@@ -1892,8 +1892,6 @@ void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup button
     if (ctrlPtr)
         *ctrlPtr = pRadioButton;
 
-    AddControl(std::dynamic_pointer_cast<GLUFControl>(pRadioButton));
-
 	// Set the ID and list index
 	pRadioButton->SetID(ID);
 	pRadioButton->SetText(strText);
@@ -1903,6 +1901,8 @@ void GLUFDialog::AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup button
 	pRadioButton->SetChecked(checked);
 	pRadioButton->mIsDefault = isDefault;
 	pRadioButton->SetChecked(checked);
+
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pRadioButton));
 }
 
 
@@ -1914,13 +1914,13 @@ void GLUFDialog::AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int ho
     if (ctrlPtr)
         *ctrlPtr = pComboBox;
 
-    AddControl(std::dynamic_pointer_cast<GLUFControl>(pComboBox));
-
 	// Set the ID and list index
 	pComboBox->SetID(ID);
     pComboBox->SetRegion(region);
 	pComboBox->SetHotkey(hotKey);
 	pComboBox->mIsDefault = isDefault;
+
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pComboBox));
 }
 
 
@@ -1932,8 +1932,6 @@ void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min
     if (ctrlPtr)
         *ctrlPtr = pSlider;
 
-    AddControl(std::dynamic_pointer_cast<GLUFControl>(pSlider));
-
 	// Set the ID and list index
 	pSlider->SetID(ID);
     pSlider->SetRegion(region);
@@ -1941,6 +1939,8 @@ void GLUFDialog::AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min
 	pSlider->SetRange(min, max);
 	pSlider->SetValue(value);
 	pSlider->UpdateRects();
+
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pSlider));
 }
 
 
@@ -1973,12 +1973,12 @@ void GLUFDialog::AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBit
 	if (ctrlPtr)
 		*ctrlPtr = pListBox;
 
-    AddControl(std::dynamic_pointer_cast<GLUFControl>(pListBox));
-
 	// Set the ID and position
 	pListBox->SetID(ID);
     pListBox->SetRegion(region);
 	pListBox->SetStyle(style);
+
+    AddControl(std::dynamic_pointer_cast<GLUFControl>(pListBox));
 }
 
 

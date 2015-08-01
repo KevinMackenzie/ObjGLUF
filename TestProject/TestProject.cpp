@@ -189,7 +189,7 @@ int main(void)
     //dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 20, { 20 } });
     //dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 20, { 20 } });
 
-    //dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
+    dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
     dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
 
 	/*dlg->AddButton(0, L"Button", 50, 10, 125, 35);
