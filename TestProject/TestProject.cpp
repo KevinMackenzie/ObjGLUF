@@ -184,10 +184,10 @@ int main(void)
 
 	//dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
 
-	//dlg->AddCheckBox(2, L"Check Box", 150, 50, 20, 20);
-    //dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 20, { 20 } }, true);
-    //dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 20, { 20 } });
-    //dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 20, { 20 } });
+    dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
+    dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 220, { 180 } }, true);
+    dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 220, { 230 } });
+    dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 220, { 280 } });
 
     dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
     dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });

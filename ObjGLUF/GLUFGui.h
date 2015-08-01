@@ -601,8 +601,8 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     std::map<GLUFControlIndex, GLUFControlPtr> mControls;
     std::vector<GLUFElementHolderPtr> mDefaultElements;
 
-    GLUFElementPtr mCapElement;
-    GLUFElementPtr mDlgElement;
+    GLUFElement mCapElement;
+    GLUFElement mDlgElement;
 
     GLUFDialogPtr mNextDialog = nullptr;
     GLUFDialogPtr mPrevDialog = nullptr;
@@ -788,6 +788,18 @@ public:
     void ClearRadioButtonGroup(GLUFRadioButtonGroup group);
 
     /*
+    GetRadioButtonGroup
+
+        Parameters:
+            'groupId': the id of the radio button group
+
+        Returns:
+            a vector of GLUFRadioButton's which have the given group
+    
+    */
+    std::vector<GLUFRadioButtonPtr> GetRadioButtonGroup(GLUFRadioButtonGroup groupId);
+
+    /*
     ClearComboBox
 
         Note:
@@ -817,8 +829,8 @@ public:
             'std::invalid_argument': if 'elementIndex' is not found within 'controlType', but only in GLUF_DEBUG; or if 'element' == nullptr
     
     */
-    void            SetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex, const GLUFElementPtr& element);
-    GLUFElementPtr  GetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex) const;
+    void            SetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex, const GLUFElement& element);
+    GLUFElement     GetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex) const;
 
 
     /*
@@ -873,8 +885,8 @@ public:
     */
 	void DrawRect(const GLUF::GLUFRect& rect, const GLUF::Color& color);
 	//void DrawPolyLine(GLUF::GLUFPoint* apPoints, uint32_t nNumPoints, GLUF::Color color);
-	void DrawSprite(const GLUFElementPtr& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
-    void DrawText(const std::wstring& text, const GLUFElementPtr& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
+	void DrawSprite(const GLUFElement& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
+    void DrawText(const std::wstring& text, const GLUFElement& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
 
     /*
     CalcTextRect -- WIP --
@@ -893,7 +905,7 @@ public:
             'std::invalid_argument': if 'element' == nullptr, in GLUF_DEBUG
     
     */
-	void CalcTextRect(const std::wstring& text, const GLUFElementPtr& element, GLUF::GLUFRect& rect) const;
+	void CalcTextRect(const std::wstring& text, const GLUFElement& element, GLUF::GLUFRect& rect) const;
 
 
     /*
@@ -920,7 +932,7 @@ public:
 
     void        SetVisible(bool visible) noexcept                       { mVisible = visible;                       }
     void        SetMinimized(bool minimized) noexcept                   { mMinimized = minimized;                   }
-    void        SetBackgroundColor(const GLUF::Color& color) noexcept   { mDlgElement->mTextureColor.SetAll(color); }
+    void        SetBackgroundColor(const GLUF::Color& color) noexcept   { mDlgElement.mTextureColor.SetAll(color); }
     void        SetCaptionHeight(long height) noexcept                  { mCaptionHeight = height;                  }
     void        SetCaptionText(const std::wstring& text) noexcept       { mCaptionText = text;                      }
     void        SetLocation(long x, long y) noexcept                    { GLUFRepositionRect(mRegion, x, y);        }
@@ -1365,7 +1377,7 @@ public:
         Throws:
             'std::out_of_range': if element texture index is out of range
     */
-	void EndSprites(GLUFElementPtr element, bool textured);
+	void EndSprites(const GLUFElement* element, bool textured);
 
     /*
     GetFont/TextureNode
@@ -1596,7 +1608,7 @@ protected:
     GLUFControlIndex mIndex;
 
     //use a map, because there may be gaps in indices
-    std::map<GLUFElementIndex, GLUFElementPtr> mElements;
+    std::map<GLUFElementIndex, GLUFElement> mElements;
 
 
 public:
@@ -1610,7 +1622,7 @@ public:
             'GLUFControlInitException': if child class initialization fails
     
     */
-	virtual void OnInit(){ }
+    virtual void OnInit(){ UpdateRects(); }
 
     /*
     Refresh
@@ -1662,8 +1674,8 @@ public:
     int				GetHotkey()	const noexcept		    { return mHotkey;               }
     GLUFControlType GetType() const	noexcept		    { return mType;                 }
 	virtual bool	CanHaveFocus() const noexcept	    { return false;					}
-    GLUFRect GetRegion() const noexcept                 { return mRegion;               }
-    GLUFElementPtr	GetElement(GLUFElementIndex element) const;
+    GLUFRect        GetRegion() const noexcept          { return mRegion;               }
+    GLUFElement&  	GetElement(GLUFElementIndex element);
 
     virtual void	SetEnabled(bool enabled) noexcept		    { mEnabled = enabled;                       }
     virtual void	SetVisible(bool visible) noexcept		    { mVisible = visible;                       }
@@ -1707,7 +1719,7 @@ public:
             no-throw guarantee
 
     */
-	void SetElement(GLUFElementIndex elementId, const GLUFElementPtr& element) noexcept;
+	void SetElement(GLUFElementIndex elementId, const GLUFElement& element) noexcept;
 
     /*
     SetTextColor
@@ -1754,7 +1766,7 @@ struct GLUFElementHolder
 {
 	GLUFControlType mControlType;
 	GLUFElementIndex mElementIndex;
-	GLUFElementPtr mElement;
+	GLUFElement mElement;
 };
 
 
@@ -1953,8 +1965,17 @@ public:
     */
 	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
+    virtual void OnMouseEnter() noexcept override;
+    virtual void OnMouseLeave() noexcept override;
+    virtual void OnFocusIn() noexcept override;
+    virtual void OnFocusOut() noexcept override;
 
 protected:
+
+    void OnMouseEnterNoRecurse() noexcept;
+    void OnMouseLeaveNoRecurse() noexcept;
+    void OnFocusInNoRecurse() noexcept;
+    void OnFocusOutNoRecurse() noexcept;
 
     /*
     SetCheckedInternal
