@@ -3602,7 +3602,7 @@ bool GLUFCheckBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         break;
     }
 
-    case GM_KEY:
+    /*case GM_KEY:
     {
 
         if (param1 = GLFW_KEY_SPACE)
@@ -3625,7 +3625,7 @@ bool GLUFCheckBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         return true;
 
         break;
-    }
+    }*/
     };
 
     return false;
