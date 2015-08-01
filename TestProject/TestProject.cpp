@@ -182,14 +182,14 @@ int main(void)
 	//dlg->AddEditBox(10, str, 100, 100, 400, 400, GT_LEFT | GT_TOP | GT_MULTI_LINE);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
-	//dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", 50, 30, 75, 20);
+    dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 200, 350, { 180 } });
 
     dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
     dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 220, { 180 } }, true);
     dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 220, { 230 } });
     dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 220, { 280 } });
 
-    dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
+    //dlg->AddSlider(6, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
     dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
 
 	/*dlg->AddButton(0, L"Button", 50, 10, 125, 35);

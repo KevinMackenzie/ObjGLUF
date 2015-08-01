@@ -375,9 +375,7 @@ std::string g_TextShaderFrag =
 "	vec4 Color;														\n"\
 "	Color.a = texture2D(_TS, uvCoord).r;							\n"\
 "	Color.rgb = _Color.rgb;											\n"\
-"	//Color.a = 1.0f;												\n"\
 "	Color.a *= _Color.a;											\n"\
-"	//Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);							\n"\
 "	gl_FragColor = Color;											\n"\
 "}																	\n";
 
@@ -459,16 +457,16 @@ bool GLUFInitGui(GLFWwindow* pInitializedGLFWWindow, GLUFCallbackFuncPtr callbac
 	glBindVertexArray(0);*/
 
     g_TextVertexArray = std::make_shared<GLUFVertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true);
-    g_TextVertexArray->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 12 });
-    g_TextVertexArray->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 8 });
+    g_TextVertexArray->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
+    g_TextVertexArray->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12 });
 
-    static std::vector<glm::u32vec3> indices =
+    /*static std::vector<glm::u32vec3> indices =
     {
         { 3, 0, 2 },
         { 2, 0, 1 }
     };
 
-    g_TextVertexArray->BufferIndices(indices);
+    g_TextVertexArray->BufferIndices(indices);*/
 
 	//initialize the freetype library.
 	FT_Error err = FT_Init_FreeType(&g_FtLib);
@@ -7905,14 +7903,14 @@ GLUF Text Functions
 
 glm::mat4 g_TextOrtho;
 glm::mat4 g_TextModelMatrix;
-GLUFGLVector<GLUFTextVertexStruct> g_TextVertices;
+//GLUFGLVector<GLUFTextVertexStruct> g_TextVertices;
 Color4f g_TextColor;
 
 //--------------------------------------------------------------------------------------
 void BeginText(const glm::mat4& orthoMatrix)
 {
 	g_TextOrtho = orthoMatrix;
-    g_TextVertices.clear();
+    //g_TextVertices.clear();
 }
 
 //--------------------------------------------------------------------------------------
@@ -7936,7 +7934,7 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 
 	//calc widths
 	long strWidth = font->mFontType->GetStringWidth(text);
-	unsigned int centerOffset = (GLUFRectWidth(rcScreen) - strWidth) / 2;
+	int centerOffset = (GLUFRectWidth(rcScreen) - strWidth) / 2;
 	if (textFlags & GT_CENTER)
 	{		
 		CurX = rcScreen.left + centerOffset;
@@ -7965,7 +7963,16 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 		CurY -= GLUFRectHeight(rcScreen) - numLines * font->mFontType->mHeight;
 	}
 
+
+    //get the number of vertices
+    GLsizei textBuffLen = text.size() * 4;
+
+    auto textVertices = GLUFTextVertexStruct::MakeMany(textBuffLen);
+    std::vector<glm::u32vec3> indices;
+    indices.resize(text.size() * 2);
+
 	float z = GLUF_NEAR_BUTTON_DEPTH;
+    unsigned int i = 0;
 	for (auto ch : text)
 	{
 		int widthConverted = font->mFontType->GetCharAdvance(ch);//(font->mFontType->CellX * tmpSize) / font->mFontType->mAtlasWidth;
@@ -8024,35 +8031,46 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 		//glyph.top = CurY;
 		//glyph.bottom = CurY - tmpSize;
 
+        unsigned int vertI = i * 4;
 
-        g_TextVertices = GLUFTextVertexStruct::MakeMany(4);
-
-        g_TextVertices[0] =
+        textVertices[vertI] =
         {
             glm::vec3(GLUFGetVec2FromRect(glyph, false, false), z),
             GLUFGetVec2FromRect(UV, false, false)
         };
 
-        g_TextVertices[1] =
+        textVertices[vertI + 1] =
         {
             glm::vec3(GLUFGetVec2FromRect(glyph, true, false), z),
             GLUFGetVec2FromRect(UV, true, false)
         };
 
-        g_TextVertices[2] =
+        textVertices[vertI + 2] =
         {
             glm::vec3(GLUFGetVec2FromRect(glyph, true, true), z),
             GLUFGetVec2FromRect(UV, true, true)
         };
 
-        g_TextVertices[3] =
+        textVertices[vertI + 3] =
         {
             glm::vec3(GLUFGetVec2FromRect(glyph, false, true), z),
             GLUFGetVec2FromRect(UV, false, true)
         };
 
+        unsigned int indexI = i * 2;
+        indices[indexI] =
+        {
+            vertI + 3, vertI, vertI + 2
+        };
+
+        indices[indexI + 1] =
+        {
+            vertI + 2, vertI, vertI + 1
+        };
+
 		CurX += widthConverted;
 		
+        ++i;
 	}
 	//glEnd();
 
@@ -8060,6 +8078,12 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 
 	//g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
 	
+	//buffer the data
+    g_TextVertexArray->BufferData(textVertices);
+
+    //buffer the indices
+    g_TextVertexArray->BufferIndices(indices);
+
 	EndText(font->mFontType);
 
 }
@@ -8067,9 +8091,6 @@ void DrawTextGLUF(const GLUFFontNodePtr& font, const std::wstring& text, const G
 
 void EndText(const GLUFFontPtr& font)
 {
-	//buffer the data
-    g_TextVertexArray->BufferData(g_TextVertices);
-
 	GLUFSHADERMANAGER.UseProgram(g_TextProgram);
 	
 	//first uniform: model-view matrix
@@ -8090,7 +8111,7 @@ void EndText(const GLUFFontPtr& font)
 
     g_TextVertexArray->Draw();
 
-	g_TextVertices.clear();
+	//g_TextVertices.clear();
 }
 
 

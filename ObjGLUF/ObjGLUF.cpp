@@ -3652,8 +3652,9 @@ GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool i
 	//the VAO is already bound
 
 	glGenBuffers(1, &mDataBuffer);
+    glGenBuffers(1, &mCopyBuffer);
 
-    if (mDataBuffer == 0)
+    if (mDataBuffer == 0 || mCopyBuffer == 0)
         GLUF_CRITICAL_EXCEPTION(MakeBufferException());
 }
 
@@ -3751,6 +3752,45 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuin
     glEnableVertexAttribArray(info.mVertexAttribLocation);//not harmful in opengl less than 3.0
 
     UnBindVertexArray();
+}
+
+//--------------------------------------------------------------------------------------
+void GLUFVertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei newOldDataOffset)
+{
+    //if we are keeping the old data, move it into a new buffer
+    GLsizei vertSize = GetVertexSize();
+    GLsizei newTotalSize = vertSize * numVertices;
+    if (keepOldData)
+    {
+        GLsizei totalSize = vertSize * mVertexCount;
+        GLsizei newOldDataTotalOffset = vertSize * newOldDataOffset;
+
+        glBindBuffer(GL_COPY_READ_BUFFER, mDataBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, mCopyBuffer);
+        
+        //resize the copy buffer
+        glBufferData(GL_COPY_WRITE_BUFFER, totalSize, nullptr, GL_STREAM_COPY);
+
+        //copy the data
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, totalSize);
+
+        //change binding
+        glBindBuffer(GL_COPY_READ_BUFFER, mCopyBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, mDataBuffer);
+
+        //resize the data buffer
+        glBufferData(GL_COPY_WRITE_BUFFER, newTotalSize, nullptr, GL_STREAM_COPY);
+
+        //copy the data back
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, newOldDataTotalOffset, totalSize);
+    }
+    else
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
+        glBufferData(GL_ARRAY_BUFFER, newTotalSize, nullptr, GL_STREAM_DRAW);
+    }
+
+    mVertexCount = numVertices;
 }
 
 //--------------------------------------------------------------------------------------

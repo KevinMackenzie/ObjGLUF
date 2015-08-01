@@ -1756,6 +1756,7 @@ GLUFVertexArrayAoS:
 
     Data Members:
         'mDataBuffer': the single buffer that holds the array
+        'mCopyBuffer': a buffer to hold old data when resizeing 'mDataBuffer'
 
 */
 
@@ -1774,7 +1775,7 @@ class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 
 protected:
 	GLuint mDataBuffer = 0;
-
+    GLuint mCopyBuffer = 0;
 
 
 
@@ -1858,6 +1859,20 @@ public:
     */
     template<typename T>
     void BufferData(const GLUFGLVector<T>& data);
+
+    
+    /*
+    ResizeBuffer
+
+        Parameters:
+            'numVertices': the number of vertices the array will be
+            'keepOldData': if the old data in the buffer should be kept
+            'newOldDataOffset': the offset of the new data in VERTICES within the new buffer
+
+        Throws:
+            no-throw guarantee
+    */
+    void ResizeBuffer(GLsizei numVertices, bool keepOldData = false, GLsizei newOldDataOffset = 0);
 
 
     /*
