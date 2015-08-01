@@ -3383,41 +3383,42 @@ bool GLUFButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
         }
 
         break;
-    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-    {
-        if (param2 == GLFW_PRESS)
+    case GM_MB:
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if (ContainsPoint(mousePos))
+            if (param2 == GLFW_PRESS)
             {
-                // Pressed while inside the control
-                mPressed = true;
-                //SetCapture(GLUFGetHWND());
-
-                if (!mHasFocus)
-                    mDialog.RequestFocus(shared_from_this());
-
-                return true;
-
-            }
-        }
-        else if (param2 == GLFW_RELEASE)
-        {
-            if (mPressed)
-            {
-                mPressed = false;
-
-                if (!mDialog.IsKeyboardInputEnabled())
-                    mDialog.ClearFocus();
-
-                // Button click
                 if (ContainsPoint(mousePos))
-                    mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
+                {
+                    // Pressed while inside the control
+                    mPressed = true;
+                    //SetCapture(GLUFGetHWND());
 
-                return true;
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
+
+                    return true;
+
+                }
             }
+            else if (param2 == GLFW_RELEASE)
+            {
+                if (mPressed)
+                {
+                    mPressed = false;
 
+                    if (!mDialog.IsKeyboardInputEnabled())
+                        mDialog.ClearFocus();
+
+                    // Button click
+                    if (ContainsPoint(mousePos))
+                        mDialog.SendEvent(GLUF_EVENT_BUTTON_CLICKED, true, shared_from_this());
+
+                    return true;
+                }
+
+            }
         }
-    }
     break;
 
     case GM_KEY:
@@ -3564,40 +3565,43 @@ bool GLUFCheckBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         }
 
         break;
-    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+    case GM_MB:
     {
-        if (param2 == GLFW_PRESS)
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if (ContainsPoint(mousePos))
+            if (param2 == GLFW_PRESS)
             {
-                // Pressed while inside the control
-                mPressed = true;
-                //SetCapture(GLUFGetHWND());
-
-                if (!mHasFocus)
-                    mDialog.RequestFocus(shared_from_this());
-
-                return true;
-
-            }
-        }
-        else if (param2 == GLFW_RELEASE)
-        {
-            if (mPressed && ContainsPoint(mousePos))
-            {
-                mPressed = false;
-                //ReleaseCapture();
-
-                if (!mDialog.IsKeyboardInputEnabled())
-                    mDialog.ClearFocus();
-
-                // Button click
                 if (ContainsPoint(mousePos))
-                    SetCheckedInternal(!mChecked, true);
+                {
+                    // Pressed while inside the control
+                    mPressed = true;
+                    //SetCapture(GLUFGetHWND());
 
-                return true;
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
+
+                    return true;
+
+                }
             }
+            else if (param2 == GLFW_RELEASE)
+            {
+                if (mPressed && ContainsPoint(mousePos))
+                {
+                    mPressed = false;
+                    //ReleaseCapture();
 
+                    if (!mDialog.IsKeyboardInputEnabled())
+                        mDialog.ClearFocus();
+
+                    // Button click
+                    if (ContainsPoint(mousePos))
+                        SetCheckedInternal(!mChecked, true);
+
+                    return true;
+                }
+
+            }
         }
         break;
     }
@@ -3770,36 +3774,39 @@ bool GLUFRadioButton::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param
         }
 
         break;
-    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
+    case GM_MB:
     {
-        if (param2 == GLFW_PRESS)
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if (ContainsPoint(mousePos))
-            {
-                // Pressed while inside the control
-                mPressed = true;
-                //SetCapture(GLUFGetHWND());
-
-                if (!mHasFocus)
-                    mDialog.RequestFocus(shared_from_this());
-
-                return true;
-
-            }
-        }
-        else if (param2 == GLFW_RELEASE)
-        {
-            if (mPressed || !mChecked)
+            if (param2 == GLFW_PRESS)
             {
                 if (ContainsPoint(mousePos))
                 {
-                    mPressed = false;
+                    // Pressed while inside the control
+                    mPressed = true;
+                    //SetCapture(GLUFGetHWND());
 
-                    SetCheckedInternal(true, true, true);
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
+
                     return true;
+
                 }
             }
+            else if (param2 == GLFW_RELEASE)
+            {
+                if (mPressed || !mChecked)
+                {
+                    if (ContainsPoint(mousePos))
+                    {
+                        mPressed = false;
 
+                        SetCheckedInternal(true, true, true);
+                        return true;
+                    }
+                }
+
+            }
         }
     }
     break;
@@ -4115,76 +4122,79 @@ bool GLUFScrollBar::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2,
 
     switch (msg)
     {
-    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-        if (param2 == GLFW_PRESS)
+    case GM_MB:
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            // Check for click on up button
-
-            if (GLUFPtInRect(mUpButtonRegion, pt))
+            if (param2 == GLFW_PRESS)
             {
-                //SetCapture(GLUFGetHWND());
-                if (mPosition > mStart)
-                    --mPosition;
+                // Check for click on up button
 
-                UpdateThumbRect();
-                mArrow = CLICKED_UP;
-                mArrowTS = GLUFGetTime();
-                return true;
-            }
-
-            // Check for click on down button
-
-            if (GLUFPtInRect(mDownButtonRegion, pt))
-            {
-                //SetCapture(GLUFGetHWND());
-                if (mPosition + mPageSize <= mEnd)
-                    ++mPosition;
-
-                UpdateThumbRect();
-                mArrow = CLICKED_DOWN;
-                mArrowTS = GLUFGetTime();
-                return true;
-            }
-
-            // Check for click on thumb
-
-            if (GLUFPtInRect(mThumbRegion, pt))
-            {
-                //SetCapture(GLUFGetHWND());
-                mDrag = true;
-                nThumbYOffset = mThumbRegion.top - pt.y;
-                return true;
-            }
-
-            // Check for click on track
-
-            if (mThumbRegion.left <= pt.x &&
-                mThumbRegion.right > pt.x)
-            {
-                //SetCapture(GLUFGetHWND());
-                if (mThumbRegion.top > pt.y &&
-                    mTrackRegion.top <= pt.y)
+                if (GLUFPtInRect(mUpButtonRegion, pt))
                 {
-                    Scroll(-(mPageSize - 1));
+                    //SetCapture(GLUFGetHWND());
+                    if (mPosition > mStart)
+                        --mPosition;
+
+                    UpdateThumbRect();
+                    mArrow = CLICKED_UP;
+                    mArrowTS = GLUFGetTime();
                     return true;
                 }
-                else if (mThumbRegion.bottom <= pt.y &&
-                    mTrackRegion.bottom > pt.y)
+
+                // Check for click on down button
+
+                if (GLUFPtInRect(mDownButtonRegion, pt))
                 {
-                    Scroll(mPageSize - 1);
+                    //SetCapture(GLUFGetHWND());
+                    if (mPosition + mPageSize <= mEnd)
+                        ++mPosition;
+
+                    UpdateThumbRect();
+                    mArrow = CLICKED_DOWN;
+                    mArrowTS = GLUFGetTime();
                     return true;
                 }
-            }
 
-            break;
-        }
-        else if (param2 == GLFW_RELEASE)
-        {
-            mDrag = false;
-            //ReleaseCapture();
-            UpdateThumbRect();
-            mArrow = CLEAR;
-            break;
+                // Check for click on thumb
+
+                if (GLUFPtInRect(mThumbRegion, pt))
+                {
+                    //SetCapture(GLUFGetHWND());
+                    mDrag = true;
+                    nThumbYOffset = mThumbRegion.top - pt.y;
+                    return true;
+                }
+
+                // Check for click on track
+
+                if (mThumbRegion.left <= pt.x &&
+                    mThumbRegion.right > pt.x)
+                {
+                    //SetCapture(GLUFGetHWND());
+                    if (mThumbRegion.top > pt.y &&
+                        mTrackRegion.top <= pt.y)
+                    {
+                        Scroll(-(mPageSize - 1));
+                        return true;
+                    }
+                    else if (mThumbRegion.bottom <= pt.y &&
+                        mTrackRegion.bottom > pt.y)
+                    {
+                        Scroll(mPageSize - 1);
+                        return true;
+                    }
+                }
+
+                break;
+            }
+            else if (param2 == GLFW_RELEASE)
+            {
+                mDrag = false;
+                //ReleaseCapture();
+                UpdateThumbRect();
+                mArrow = CLEAR;
+                break;
+            }
         }
 
     case GM_CURSOR_POS:
@@ -5412,90 +5422,93 @@ bool GLUFComboBox::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, 
         break;
     }
 
-    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-        if (param2 == GLFW_PRESS)
+    case GM_MB:
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if (ContainsPoint(pt))
+            if (param2 == GLFW_PRESS)
             {
-                // Pressed while inside the control
-                mPressed = true;
-                //SetCapture(GLUFGetHWND());
-
-                if (!mHasFocus)
-                    mDialog.RequestFocus(shared_from_this());
-
-                return true;
-            }
-
-            // Perhaps this click is within the dropdown
-            if (mOpened && GLUFPtInRect(mDropdownRegion, pt))
-            {
-                // Determine which item has been selected
-                for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
+                if (ContainsPoint(pt))
                 {
-                    GLUFComboBoxItemPtr pItem = mItems[i];
-                    if (pItem->mVisible &&
-                        GLUFPtInRect(pItem->mActiveRegion, pt))
-                    {
-                        mFocused = mSelected = static_cast<int>(i);
-                        mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
-                        mOpened = false;
+                    // Pressed while inside the control
+                    mPressed = true;
+                    //SetCapture(GLUFGetHWND());
 
-                        if (!mDialog.IsKeyboardInputEnabled())
-                            mDialog.ClearFocus();
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
 
-                        break;
-                    }
+                    return true;
                 }
 
-                return true;
-            }
-
-            // Mouse click not on main control or in dropdown, fire an event if needed
-            if (mOpened)
-            {
-                mFocused = mSelected;
-
-                mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
-                mOpened = false;
-            }
-
-
-            break;
-        }
-        else if (param2 == GLFW_RELEASE)
-        {
-            if (mPressed && ContainsPoint(pt))
-            {
-                // Button click
-                mPressed = false;
-
-                // Toggle dropdown
-                if (mHasFocus)
+                // Perhaps this click is within the dropdown
+                if (mOpened && GLUFPtInRect(mDropdownRegion, pt))
                 {
-                    mOpened = !mOpened;
-
-                    if (!mOpened)
+                    // Determine which item has been selected
+                    for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
                     {
-                        if (!mDialog.IsKeyboardInputEnabled())
-                            mDialog.ClearFocus();
+                        GLUFComboBoxItemPtr pItem = mItems[i];
+                        if (pItem->mVisible &&
+                            GLUFPtInRect(pItem->mActiveRegion, pt))
+                        {
+                            mFocused = mSelected = static_cast<int>(i);
+                            mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                            mOpened = false;
 
-                        mFocused = mSelected;
+                            if (!mDialog.IsKeyboardInputEnabled())
+                                mDialog.ClearFocus();
+
+                            break;
+                        }
                     }
 
-                    //setup the scroll bar to the correct position (if it is still within the range, it looks better to keep its old position)
-                    int pageMin, pageMax;
-                    pageMin = mScrollBar->GetTrackPos();
-                    pageMax = mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 2;
-                    if (mFocused > pageMax || mFocused < pageMin)
-                        mScrollBar->SetTrackPos(mFocused);
+                    return true;
                 }
 
-                //ReleaseCapture();
-                return true;
-            }
+                // Mouse click not on main control or in dropdown, fire an event if needed
+                if (mOpened)
+                {
+                    mFocused = mSelected;
 
-            break;
+                    mDialog.SendEvent(GLUF_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                    mOpened = false;
+                }
+
+
+                break;
+            }
+            else if (param2 == GLFW_RELEASE)
+            {
+                if (mPressed && ContainsPoint(pt))
+                {
+                    // Button click
+                    mPressed = false;
+
+                    // Toggle dropdown
+                    if (mHasFocus)
+                    {
+                        mOpened = !mOpened;
+
+                        if (!mOpened)
+                        {
+                            if (!mDialog.IsKeyboardInputEnabled())
+                                mDialog.ClearFocus();
+
+                            mFocused = mSelected;
+                        }
+
+                        //setup the scroll bar to the correct position (if it is still within the range, it looks better to keep its old position)
+                        int pageMin, pageMax;
+                        pageMin = mScrollBar->GetTrackPos();
+                        pageMax = mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 2;
+                        if (mFocused > pageMax || mFocused < pageMin)
+                            mScrollBar->SetTrackPos(mFocused);
+                    }
+
+                    //ReleaseCapture();
+                    return true;
+                }
+
+                break;
+            }
         }
 
     case GM_SCROLL:
@@ -6106,53 +6119,56 @@ bool GLUFSlider::MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, in
 
     switch (msg)
     {
-    case GM_MB && param1 == GLFW_MOUSE_BUTTON_LEFT:
-        if (param2 == GLFW_PRESS)
+    case GM_MB:
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if (GLUFPtInRect(mButtonRegion, pt))
+            if (param2 == GLFW_PRESS)
             {
-                // Pressed while inside the control
-                mPressed = true;
-                //SetCapture(GLUFGetHWND());
+                if (GLUFPtInRect(mButtonRegion, pt))
+                {
+                    // Pressed while inside the control
+                    mPressed = true;
+                    //SetCapture(GLUFGetHWND());
 
-                mDragX = pt.x;
-                //m_nDragY = pt.y;
-                mDragOffset = mButtonX - mDragX;
+                    mDragX = pt.x;
+                    //m_nDragY = pt.y;
+                    mDragOffset = mButtonX - mDragX;
 
-                //m_nDragValue = mValue;
+                    //m_nDragValue = mValue;
 
-                if (!mHasFocus)
-                    mDialog.RequestFocus(shared_from_this());
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
 
-                return true;
+                    return true;
+                }
+
+                if (GLUFPtInRect(mRegion, pt))
+                {
+
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
+
+                    SetValueInternal(ValueFromXPos(pt.x), true);
+
+                    return true;
+                }
             }
-
-            if (GLUFPtInRect(mRegion, pt))
+            else if (param2 == GLFW_RELEASE)
             {
+                if (mPressed)
+                {
+                    mPressed = false;
+                    //ReleaseCapture();
+                    mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, shared_from_this());
 
-                if (!mHasFocus)
-                    mDialog.RequestFocus(shared_from_this());
+                    return true;
+                }
 
-                SetValueInternal(ValueFromXPos(pt.x), true);
+                break;
 
-                return true;
             }
-        }
-        else if (param2 == GLFW_RELEASE)
-        {
-            if (mPressed)
-            {
-                mPressed = false;
-                //ReleaseCapture();
-                mDialog.SendEvent(GLUF_EVENT_SLIDER_VALUE_CHANGED_UP, true, shared_from_this());
-
-                return true;
-            }
-
             break;
-
         }
-        break;
 
     case GM_CURSOR_POS:
     {
