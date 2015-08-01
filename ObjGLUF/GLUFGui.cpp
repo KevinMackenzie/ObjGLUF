@@ -1002,8 +1002,8 @@ void GLUFElement::SetFont(GLUFFontIndex font, const GLUF::Color& defaultFontColo
 //--------------------------------------------------------------------------------------
 void GLUFElement::Refresh()
 {
-	mTextureColor.SetCurrent(GLUF_STATE_HIDDEN);
-	mFontColor.SetCurrent(GLUF_STATE_HIDDEN);
+	//mTextureColor.SetCurrent(GLUF_STATE_HIDDEN);
+	//mFontColor.SetCurrent(GLUF_STATE_HIDDEN);
 }
 
 
@@ -2568,20 +2568,34 @@ void GLUFDialog::InitDefaultElements()
 	mDlgElement->mTextureColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 	mDlgElement->mFontColor.Blend(GLUF_STATE_NORMAL, 10.0f);
 
+    /*
+    
+    Streamline the control blending
+    
+    */
+	Element.mFontColor.SetState(GLUF_STATE_NORMAL, {0, 0, 0, 255});
+	Element.mFontColor.SetState(GLUF_STATE_DISABLED, {0, 0, 0, 128});
+	Element.mFontColor.SetState(GLUF_STATE_HIDDEN, {0, 0, 0, 0});
+	Element.mFontColor.SetState(GLUF_STATE_FOCUS, {0, 0, 0, 255});
+	Element.mFontColor.SetState(GLUF_STATE_MOUSEOVER, {0, 0, 0, 255});
+	Element.mFontColor.SetState(GLUF_STATE_PRESSED, {0, 0, 0, 255});
+    Element.mFontColor.SetCurrent(GLUF_STATE_NORMAL);
 
-	//Element.mFontColor.SetState(GLUF_STATE_NORMAL]	,{0, 0, 0, 255});
-	//Element.mFontColor.SetState(GLUF_STATE_DISABLED]	,{0, 0, 0, 255});
-	//Element.mFontColor.SetState(GLUF_STATE_HIDDEN]	,{0, 0, 0, 255});
-	//Element.mFontColor.SetState(GLUF_STATE_FOCUS]		,{0, 0, 0, 255});
-	//Element.mFontColor.SetState(GLUF_STATE_MOUSEOVER]	,{0, 0, 0, 255});
-	//Element.mFontColor.SetState(GLUF_STATE_PRESSED]	,{0, 0, 0, 255});
+    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 180, 180, 180, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 128, 128, 128, 128 });
+    Element.mTextureColor.SetState(GLUF_STATE_HIDDEN, { 0, 0, 0, 0 });
+    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 255 });
+    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetCurrent(GLUF_STATE_NORMAL);
+
+    Element.mFontIndex = 0;
+    Element.mTextureIndex = 0;
 
 	//-------------------------------------
 	// GLUFStatic
 	//-------------------------------------
-	Element.SetFont(0);
 	Element.mTextFormatFlags = GT_LEFT | GT_VCENTER;
-    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 200 });
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_STATIC, 0, std::make_shared<GLUFElement>(Element));
@@ -2591,20 +2605,7 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFButton - Button
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.0f, 1.0f, 0.53125f, 0.7890625f);
-	//GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
-	Element.SetTexture(0, rcTexture);
-	Element.SetFont(0);
-    Element.mTextureColor.SetAll({ 200, 200, 200, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_HIDDEN, { 255, 255, 255, 0 });
-
-    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 175, 175, 175, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 200, 200, 200, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 128, 128, 128, 128 });
-    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 230, 230, 230, 255 });
-
-    Element.mFontColor.SetAll({ 255, 255, 255, 255 });
-    Element.mFontColor.SetState(GLUF_STATE_HIDDEN, { 255, 255, 255, 0 });
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_BUTTON, 0, std::make_shared<GLUFElement>(Element));
@@ -2614,12 +2615,7 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFButton - Fill layer
 	//-------------------------------------
     GLUFSetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
-    Element.SetTexture(0, rcTexture, { 200, 200, 200, 255 });
-
-    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 200, 200, 200, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 230, 230, 230, 255 });
-
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_BUTTON, 1, std::make_shared<GLUFElement>(Element));
@@ -2629,12 +2625,7 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFCheckBox - Box
 	//-------------------------------------
 	GLUFSetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
-	Element.SetTexture(0, rcTexture);
-    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
-    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 80, 80, 80, 100 });
-    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 20 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 30 });
-    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 255, 255, 255, 127 });
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 0, std::make_shared<GLUFElement>(Element));
@@ -2643,8 +2634,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFCheckBox - Check
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.10546875f, 0.7890625f, 0.2109375f, 0.68359375f);
-    Element.SetTexture(0, rcTexture, { 255, 255, 255, 0 });
+    GLUFSetRect(rcTexture, 0.10546875f, 0.7890625f, 0.2109375f, 0.68359375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_CHECKBOX, 1, std::make_shared<GLUFElement>(Element));
@@ -2653,13 +2644,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFRadioButton - Box
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
-	Element.SetTexture(0, rcTexture);
-    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
-    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 0, 0, 0, 255 });
-    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 75 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 100 });
-    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 255, 255, 255, 127 });
+    GLUFSetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 0, std::make_shared<GLUFElement>(Element));
@@ -2668,9 +2654,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFRadioButton - Check
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.31640625f, 0.7890625f, 0.421875f, 0.68359375f);
-    Element.SetTexture(0, rcTexture, { 255, 255, 255, 0 });
-	//Element.mTextureColor.SetState[GLUF_STATE_HIDDEN] = {255, 255, 255, 255);
+    GLUFSetRect(rcTexture, 0.31640625f, 0.7890625f, 0.421875f, 0.68359375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_RADIOBUTTON, 1, std::make_shared<GLUFElement>(Element));
@@ -2679,15 +2664,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFComboBox - Main
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
-	Element.SetTexture(0, rcTexture);
-    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
-    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 200, 200, 200, 150 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 230, 230, 230, 170 });
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 70 });
-    Element.mFontColor.SetState(GLUF_STATE_MOUSEOVER, { 0, 0, 0, 255 });
-    Element.mFontColor.SetState(GLUF_STATE_PRESSED, { 0, 0, 0, 255 });
-    Element.mFontColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 200 });
+    GLUFSetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
+    Element.mUVRect = rcTexture;
 
 
 	// Assign the Element
@@ -2697,13 +2675,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFComboBox - Button
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
-	Element.SetTexture(0, rcTexture);
-    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 0 });
-    Element.mTextureColor.SetState(GLUF_STATE_MOUSEOVER, { 255, 255, 255, 50 });
-    Element.mTextureColor.SetState(GLUF_STATE_PRESSED, { 100, 100, 100, 100 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 20 });
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 255, 255, 255, 50 });
+    GLUFSetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 1, std::make_shared<GLUFElement>(Element));
@@ -2712,9 +2685,9 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFComboBox - Dropdown
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.37109375f);
-    Element.SetTexture(0, rcTexture, { 0, 0, 0, 0 });
-    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_TOP);
+    GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.37109375f);
+    Element.mUVRect = rcTexture;
+    Element.mTextFormatFlags = GT_LEFT | GT_TOP;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 2, std::make_shared<GLUFElement>(Element));
@@ -2723,9 +2696,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFComboBox - Selection
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.046875f, 0.36328125f, 0.93359375f, 0.28515625f);
-	Element.SetTexture(0, rcTexture);
-    Element.SetFont(0, { 255, 255, 255, 255 }, GT_LEFT | GT_TOP);
+    GLUFSetRect(rcTexture, 0.046875f, 0.36328125f, 0.93359375f, 0.28515625f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_COMBOBOX, 3, std::make_shared<GLUFElement>(Element));
@@ -2734,11 +2706,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFSlider - Track
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.00390625f, 0.26953125f, 0.36328125f, 0.109375f);
-	Element.SetTexture(0, rcTexture);
-    Element.mTextureColor.SetState(GLUF_STATE_NORMAL, { 255, 255, 255, 75 });
-    Element.mTextureColor.SetState(GLUF_STATE_FOCUS, { 255, 255, 255, 100 });
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 255, 255, 255, 35 });
+    GLUFSetRect(rcTexture, 0.00390625f, 0.26953125f, 0.36328125f, 0.109375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SLIDER, 0, std::make_shared<GLUFElement>(Element));
@@ -2746,8 +2715,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFSlider - Button
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.58984375f, 0.24609375f, 0.75f, 0.0859375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.58984375f, 0.24609375f, 0.75f, 0.0859375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SLIDER, 1, std::make_shared<GLUFElement>(Element));
@@ -2757,9 +2726,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	float nScrollBarStartX = 0.76470588f;
 	float nScrollBarStartY = 0.046875f;
-	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
-	Element.SetTexture(0, rcTexture);
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 255 });
+    GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 0, std::make_shared<GLUFElement>(Element));
@@ -2767,9 +2735,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFScrollBar - Down Arrow
 	//-------------------------------------
-	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
-	Element.SetTexture(0, rcTexture);
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 200, 200, 200, 100 });
+    GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
+    Element.mUVRect = rcTexture;
 
 
 	// Assign the Element
@@ -2778,9 +2745,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFScrollBar - Up Arrow
 	//-------------------------------------
-	GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
-	Element.SetTexture(0, rcTexture);
-    Element.mTextureColor.SetState(GLUF_STATE_DISABLED, { 180, 180, 180, 150 });
+    GLUFSetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
+    Element.mUVRect = rcTexture;
 
 
 	// Assign the Element
@@ -2789,8 +2755,8 @@ void GLUFDialog::InitDefaultElements()
 	//-------------------------------------
 	// GLUFScrollBar - Button
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.859375f, 0.25f, 0.9296875f, 0.0859375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.859375f, 0.25f, 0.9296875f, 0.0859375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_SCROLLBAR, 3, std::make_shared<GLUFElement>(Element));
@@ -2809,51 +2775,49 @@ void GLUFDialog::InitDefaultElements()
 	//   7 - lower border
 	//   8 - lower right border
 
-    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_TOP);
 	//TODO: this
 	// Assign the style
-	GLUFSetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 0, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.03125f, 0.6796875f, 0.0546875f, 0.6484375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.03125f, 0.6796875f, 0.0546875f, 0.6484375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 1, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.0546875f, 0.6796875f, 0.94140625f, 0.6484375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.0546875f, 0.6796875f, 0.94140625f, 0.6484375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 2, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.94140625f, 0.6796875f, 0.9609375f, 0.6484375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.94140625f, 0.6796875f, 0.9609375f, 0.6484375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 3, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.03125f, 0.6484375f, 0.0546875f, 0.55859375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.03125f, 0.6484375f, 0.0546875f, 0.55859375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 4, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.94140625f, 0.6484375f, 0.9609375f, 0.55859375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.94140625f, 0.6484375f, 0.9609375f, 0.55859375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 5, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.03125f, 0.55859375f, 0.0546875f, 0.52734375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.03125f, 0.55859375f, 0.0546875f, 0.52734375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 6, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.0546875f, 0.55859375f, 0.94140625f, 0.52734375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.0546875f, 0.55859375f, 0.94140625f, 0.52734375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 7, std::make_shared<GLUFElement>(Element));
 
-	GLUFSetRect(rcTexture, 0.94140625f, 0.55859375f, 0.9609375f, 0.52734375f);
-	Element.SetTexture(0, rcTexture);
+    GLUFSetRect(rcTexture, 0.94140625f, 0.55859375f, 0.9609375f, 0.52734375f);
+    Element.mUVRect = rcTexture;
 	SetDefaultElement(GLUF_CONTROL_EDITBOX, 8, std::make_shared<GLUFElement>(Element));
 
 	//-------------------------------------
 	// GLUFListBox - Main
 	//-------------------------------------
-	GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.375f);
-	Element.SetTexture(0, rcTexture);
-    Element.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_TOP);
+    GLUFSetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.375f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_LISTBOX, 0, std::make_shared<GLUFElement>(Element));
@@ -2862,9 +2826,8 @@ void GLUFDialog::InitDefaultElements()
 	// GLUFListBox - Selection
 	//-------------------------------------
 
-	GLUFSetRect(rcTexture, 0.0625f, 0.3515625f, 0.9375f, 0.28515625f);
-	Element.SetTexture(0, rcTexture);
-    Element.SetFont(0, { 255, 255, 255, 255 }, GT_LEFT | GT_TOP);
+    GLUFSetRect(rcTexture, 0.0625f, 0.3515625f, 0.9375f, 0.28515625f);
+    Element.mUVRect = rcTexture;
 
 	// Assign the Element
 	SetDefaultElement(GLUF_CONTROL_LISTBOX, 1, std::make_shared<GLUFElement>(Element));
@@ -3707,7 +3670,7 @@ void GLUFCheckBox::Render(float elapsedTime) noexcept
 
 	GLUFElementPtr pElement = mElements[0];
 
-	float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+	float fBlendRate = 5.0f;
 
 	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
 	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
@@ -4202,7 +4165,7 @@ void GLUFScrollBar::Render(float elapsedTime) noexcept
         iState = GLUF_STATE_FOCUS;
 
 
-    float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+    float fBlendRate = 5.0f;
 
     // Background track layer
     GLUFElementPtr pElement = mElements[0];
@@ -5690,7 +5653,7 @@ void GLUFComboBox::Render( float elapsedTime) noexcept
     else if (mHasFocus)
         iState = GLUF_STATE_FOCUS;
 
-    float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+    float fBlendRate = 5.0f;
 
     // Button
     pElement = mElements[1];
@@ -6201,7 +6164,7 @@ void GLUFSlider::Render( float elapsedTime) noexcept
         iState = GLUF_STATE_FOCUS;
     }
 
-    float fBlendRate = (iState == GLUF_STATE_PRESSED) ? 0.0f : 0.8f;
+    float fBlendRate = 5.0f;
 
     GLUFElementPtr pElement = mElements[0];
 
