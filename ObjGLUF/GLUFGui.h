@@ -2784,7 +2784,7 @@ protected:
             no-throw guarantee
 
     */
-	GLUFValue ValueFromXPos(GLUFUValue xPos) const noexcept;
+	GLUFValue ValueFromXPos(GLUFValue xPos) const noexcept;
 
 };
 

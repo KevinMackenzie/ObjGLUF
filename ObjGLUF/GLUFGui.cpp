@@ -5989,7 +5989,7 @@ void GLUFSlider::UpdateRects() noexcept
 
 
 //--------------------------------------------------------------------------------------
-GLUFValue GLUFSlider::ValueFromXPos(GLUFUValue x) const noexcept
+GLUFValue GLUFSlider::ValueFromXPos(GLUFValue x) const noexcept
 {
     NOEXCEPT_REGION_START
 
