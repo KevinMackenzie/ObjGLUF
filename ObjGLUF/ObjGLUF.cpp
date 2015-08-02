@@ -852,8 +852,8 @@ ProgramStage ShaderTypeToProgramStage(ShaderType type)
     {
     case SH_VERTEX_SHADER:
         return PPO_VERTEX_SHADER_BIT;
-    case SH_TESS_CONTROL_SHADER:
-        return PPO_TESS_CONTROL_SHADER_BIT;
+    case SH_TESSCONTROL_SHADER:
+        return PPO_TESSCONTROL_SHADER_BIT;
     case SH_TESS_EVALUATION_SHADER:
         return PPO_TESS_EVALUATION_SHADER_BIT;
     case SH_GEOMETRY_SHADER:

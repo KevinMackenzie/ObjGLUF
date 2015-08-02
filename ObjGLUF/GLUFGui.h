@@ -83,19 +83,19 @@ Enumerations and Type Aliases
 
 enum MessageType
 {
-	GM_MB = 0,
-	GM_CURSOR_POS,
-	GM_CURSOR_ENTER,
-	GM_SCROLL, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
-	GM_KEY,//don't' support joysticks yet
-	GM_UNICODE_CHAR,
-	GM_RESIZE,
-	GM_POS,
-	GM_CLOSE,
-	GM_REFRESH,
-	GM_FOCUS,
-	GM_ICONIFY,
-	GM_FRAMEBUFFER_SIZE
+	MB = 0,
+	CURSOR_POS,
+	CURSOR_ENTER,
+	SCROLL, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
+	KEY,//don't' support joysticks yet
+	UNICODE_CHAR,
+	RESIZE,
+	POS,
+	CLOSE,
+	REFRESH,
+	FOCUS,
+	ICONIFY,
+	FRAMEBUFFER_SIZE
 };
 
 //WIP
@@ -121,27 +121,27 @@ enum FontWeight
 
 enum ControlType
 {
-    _CONTROL_BUTTON,
-    _CONTROL_STATIC,
-    _CONTROL_CHECKBOX,
-    _CONTROL_RADIOBUTTON,
-    _CONTROL_COMBOBOX,
-    _CONTROL_SLIDER,
-    _CONTROL_EDITBOX,
-    _CONTROL_IMEEDITBOX,
-    _CONTROL_LISTBOX,
-    _CONTROL_SCROLLBAR,
-    _CONTROL_CUSTOM
+    CONTROL_BUTTON,
+    CONTROL_STATIC,
+    CONTROL_CHECKBOX,
+    CONTROL_RADIOBUTTON,
+    CONTROL_COMBOBOX,
+    CONTROL_SLIDER,
+    CONTROL_EDITBOX,
+    CONTROL_IMEEDITBOX,
+    CONTROL_LISTBOX,
+    CONTROL_SCROLLBAR,
+    CONTROL_CUSTOM
 };
 
 enum ControlState
 {
-    _STATE_NORMAL = 0,
-    _STATE_DISABLED = 1,
-    _STATE_FOCUS = 2,
-    _STATE_MOUSEOVER = 3,
-    _STATE_PRESSED = 4,
-    _STATE_HIDDEN = 5//THIS SHALL ALWAYS BE LAST
+    STATE_NORMAL = 0,
+    STATE_DISABLED = 1,
+    STATE_FOCUS = 2,
+    STATE_MOUSEOVER = 3,
+    STATE_PRESSED = 4,
+    STATE_HIDDEN = 5//THIS SHALL ALWAYS BE LAST
 };
 
 //WIP
@@ -1672,10 +1672,10 @@ public:
     virtual bool	GetVisible() const noexcept		    { return mVisible;              }
     int				GetID() const noexcept			    { return mID;                   }
     int				GetHotkey()	const noexcept		    { return mHotkey;               }
-    ControlType GetType() const	noexcept		    { return mType;                 }
+    ControlType     GetType() const	noexcept		    { return mType;                 }
 	virtual bool	CanHaveFocus() const noexcept	    { return false;					}
-    Rect        GetRegion() const noexcept          { return mRegion;               }
-    Element&  	GetElement(ElementIndex element);
+    Rect            GetRegion() const noexcept          { return mRegion;               }
+    Element&  	    GetElement(ElementIndex element);
 
     virtual void	SetEnabled(bool enabled) noexcept		    { mEnabled = enabled;                       }
     virtual void	SetVisible(bool visible) noexcept		    { mVisible = visible;                       }
@@ -2695,6 +2695,7 @@ public:
 	virtual void UpdateRects() noexcept override;
     virtual void OnInit() override;
 	virtual void SetTextColor(const Color& Color) noexcept override;
+    virtual bool ContainsPoint(const Point& pt) const noexcept override;
 
 protected:
     

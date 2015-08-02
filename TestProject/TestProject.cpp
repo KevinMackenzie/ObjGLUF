@@ -36,7 +36,7 @@ void MyErrorMethod(const std::string& message, const char* func, const char* fil
 
 bool MsgProc(_GUI_CALLBACK_PARAM)
 {
-	if (msg == GM_KEY)
+	if (msg == KEY)
 	{
 		if (param1 == GLFW_KEY_ESCAPE && param3 == GLFW_RELEASE)
 			//DialogOpened = !DialogOpened;
@@ -44,7 +44,7 @@ bool MsgProc(_GUI_CALLBACK_PARAM)
 		//return true;
 	}
 
-    /*if (msg != MessageType::GM_CURSOR_ENTER || msg != MessageType::GM_CURSOR_POS || msg != MessageType::GM_FOCUS)
+    /*if (msg != MessageType::CURSOR_ENTER || msg != MessageType::CURSOR_POS || msg != MessageType::FOCUS)
     {
         
     }*/

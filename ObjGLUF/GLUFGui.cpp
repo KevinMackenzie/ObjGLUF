@@ -72,43 +72,43 @@ GLFW Window Callbacks
 //--------------------------------------------------------------------------------------
 void GLFWWindowPosCallback(GLFWwindow*, int x, int y)
 {
-	MessageProcedure(GM_POS, x, y, 0, 0);
+	MessageProcedure(POS, x, y, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowSizeCallback(GLFWwindow*, int width, int height)
 {
-	MessageProcedure(GM_RESIZE, width, height, 0, 0);
+	MessageProcedure(RESIZE, width, height, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowCloseCallback(GLFWwindow*)
 {
-	MessageProcedure(GM_CLOSE, 0, 0, 0, 0);
+	MessageProcedure(CLOSE, 0, 0, 0, 0);
 }
 /*
 //--------------------------------------------------------------------------------------
 void GLFWWindowRefreshCallback(GLFWwindow*)
 {
-	MessageProcedure(GM_REFRESH, 0, 0, 0, 0);
+	MessageProcedure(REFRESH, 0, 0, 0, 0);
 }*/
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowFocusCallback(GLFWwindow*, int focused)
 {
-	MessageProcedure(GM_FOCUS, focused, 0, 0, 0);
+	MessageProcedure(FOCUS, focused, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowIconifyCallback(GLFWwindow*, int iconified)
 {
-	MessageProcedure(GM_ICONIFY, iconified, 0, 0, 0);
+	MessageProcedure(ICONIFY, iconified, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWFrameBufferSizeCallback(GLFWwindow*, int width, int height)
 {
-	MessageProcedure(GM_FRAMEBUFFER_SIZE, width, height, 0, 0);
+	MessageProcedure(FRAMEBUFFER_SIZE, width, height, 0, 0);
 }
 
 /*
@@ -120,37 +120,37 @@ GLFW Input Callback
 //--------------------------------------------------------------------------------------
 void GLFWMouseButtonCallback(GLFWwindow*, int button, int action, int mods)
 {
-	MessageProcedure(GM_MB, button, action, mods, 0);
+	MessageProcedure(MB, button, action, mods, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWCursorPosCallback(GLFWwindow*, double xPos, double yPos)
 {
-	MessageProcedure(GM_CURSOR_POS, (int)xPos, (int)yPos, 0, 0);
+	MessageProcedure(CURSOR_POS, (int)xPos, (int)yPos, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWCursorEnterCallback(GLFWwindow*, int entered)
 {
-	MessageProcedure(GM_CURSOR_ENTER, entered, 0, 0, 0);
+	MessageProcedure(CURSOR_ENTER, entered, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWScrollCallback(GLFWwindow*, double xoffset, double yoffset)
 {
-	MessageProcedure(GM_SCROLL, (int)(xoffset * 1000.0), (int)(yoffset * 1000.0), 0, 0);
+	MessageProcedure(SCROLL, (int)(xoffset * 1000.0), (int)(yoffset * 1000.0), 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWKeyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 {
-	MessageProcedure(GM_KEY, key, scancode, action, mods);
+	MessageProcedure(KEY, key, scancode, action, mods);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWCharCallback(GLFWwindow*, unsigned int codepoint)
 {
-	MessageProcedure(GM_UNICODE_CHAR, (int)codepoint, 0, 0, 0);
+	MessageProcedure(UNICODE_CHAR, (int)codepoint, 0, 0, 0);
 }
 
 
@@ -917,9 +917,9 @@ void BlendColor::Init(const Color& defaultColor, const Color& disabledColor, con
         it->second = defColor;
     }
 
-	mStates[_STATE_DISABLED] = static_cast<HighBitColor>(disabledColor);
-	mStates[_STATE_HIDDEN] = static_cast<HighBitColor>(hiddenColor);
-	mCurrentColor = mStates[_STATE_HIDDEN];//start hidden
+	mStates[STATE_DISABLED] = static_cast<HighBitColor>(disabledColor);
+	mStates[STATE_HIDDEN] = static_cast<HighBitColor>(hiddenColor);
+	mCurrentColor = mStates[STATE_HIDDEN];//start hidden
 }
 
 
@@ -955,9 +955,9 @@ void BlendColor::SetCurrent(ControlState state)
 //--------------------------------------------------------------------------------------
 void BlendColor::SetAll(const Color& color)
 {
-    for (unsigned int i = _STATE_NORMAL; i <= _STATE_HIDDEN; ++i)
+    for (unsigned int i = STATE_NORMAL; i <= STATE_HIDDEN; ++i)
     {
-        mStates[_STATE_NORMAL] = color;
+        mStates[STATE_NORMAL] = color;
     }
 
 	SetCurrent(color);
@@ -1011,8 +1011,8 @@ void Element::SetFont(FontIndex font, const Color& defaultFontColor, Bitfield te
 //--------------------------------------------------------------------------------------
 void Element::Refresh()
 {
-	//mTextureColor.SetCurrent(_STATE_HIDDEN);
-	//mFontColor.SetCurrent(_STATE_HIDDEN);
+	//mTextureColor.SetCurrent(STATE_HIDDEN);
+	//mFontColor.SetCurrent(STATE_HIDDEN);
 }
 
 
@@ -1251,8 +1251,8 @@ void Dialog::OnRender(float elapsedTime) noexcept
 		// m_nCaptionHeight, so adjust the rect higher
 		// here to negate the effect.
 
-		mCapElement.mTextureColor.SetCurrent(_STATE_NORMAL);
-		mCapElement.mFontColor.SetCurrent(_STATE_NORMAL);
+		mCapElement.mTextureColor.SetCurrent(STATE_NORMAL);
+		mCapElement.mFontColor.SetCurrent(STATE_NORMAL);
 		Rect rc = { 0, 0, GetWidth(), -mCaptionHeight };
 
 		mDialogManager->ApplyRenderUIUntex();
@@ -1388,7 +1388,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	if (!mVisible)
 		return false;
 
-    if (!mKeyboardInput && (msg == GM_KEY || msg == GM_UNICODE_CHAR))
+    if (!mKeyboardInput && (msg == KEY || msg == UNICODE_CHAR))
 		return false;
 
 	// If caption is enable, check for clicks in the caption area.
@@ -1396,7 +1396,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	{
 		static Point totalDelta;
 
-		if (((msg == GM_MB) == true) &&
+		if (((msg == MB) == true) &&
 			((param1 == GLFW_MOUSE_BUTTON_LEFT) == true) &&
 			((param2 == GLFW_PRESS) == true) )
 		{
@@ -1416,7 +1416,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 				return true;
 			}
 		}
-		else if ((msg == GM_MB) == true &&
+		else if ((msg == MB) == true &&
 				(param1 == GLFW_MOUSE_BUTTON_LEFT) == true &&
 				(param2 == GLFW_RELEASE) == true && 
 				(mDrag))
@@ -1444,7 +1444,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 				return true;
 			}
 		}
-		else if ((msg == GM_CURSOR_POS))
+		else if ((msg == CURSOR_POS))
 		{
 			//is it over the caption?
 			if (glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
@@ -1476,7 +1476,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	}
 
 	//this is important, if the window is resized, then make sure to reclamp the dialog position
-	if (mAutoClamp && msg == GM_RESIZE)
+	if (mAutoClamp && msg == RESIZE)
 	{
 		ClampToScreen();
 	}
@@ -1498,8 +1498,8 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
 	switch (msg)
 	{
-	case GM_RESIZE:
-	case GM_POS:
+	case RESIZE:
+	case POS:
 	{
 		// Handle sizing and moving messages so that in case the mouse cursor is moved out
 		// of an UI control because of the window adjustment, we can properly
@@ -1512,7 +1512,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 		break;
 	}
 
-	case GM_FOCUS:
+	case FOCUS:
 		// Call OnFocusIn()/OnFocusOut() of the control that currently has the focus
 		// as the application is activated/deactivated.  This matches the Windows
 		// behavior.
@@ -1528,7 +1528,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 		break;
 
 		// Keyboard messages
-	case GM_KEY:
+	case KEY:
 	//case WM_SYSKEYDOWN:
 	//case WM_KEYUP:
 	//case WM_SYSKEYUP:
@@ -1548,8 +1548,8 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 		// Activate the hotkey if the focus doesn't belong to an
 		// edit box.
 		if (param3 == GLFW_PRESS && (!sControlFocus ||
-			(sControlFocus->GetType() != _CONTROL_EDITBOX
-			&& sControlFocus->GetType() != _CONTROL_IMEEDITBOX)))
+			(sControlFocus->GetType() != CONTROL_EDITBOX
+			&& sControlFocus->GetType() != CONTROL_IMEEDITBOX)))
 		{
 			for (auto it : mControls)
 			{
@@ -1614,9 +1614,9 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	//case WM_RBUTTONDBLCLK:
 	//case WM_XBUTTONDBLCLK:
 	//case WM_MOUSEWHEEL:
-	case GM_MB:
-	case GM_SCROLL:
-	case GM_CURSOR_POS:
+	case MB:
+	case SCROLL:
+	case CURSOR_POS:
 	{
 		// If not accepting mouse input, return false to indicate the message should still 
 		// be handled by the application (usually to move the camera).
@@ -1664,7 +1664,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 		// message should still be handled by the application (usually to move the camera).
 		switch (msg)
 		{
-		case GM_CURSOR_POS:
+		case CURSOR_POS:
 			OnMouseMove(mMousePositionDialogSpace);
 			return false;
 		}
@@ -1672,7 +1672,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 		break;
 	}
 
-	case GM_CURSOR_ENTER:
+	case CURSOR_ENTER:
 	{
 		// The application has lost mouse capture.
 		// The dialog object may not have received
@@ -2130,7 +2130,7 @@ void Dialog::ClearRadioButtonGroup(RadioButtonGroup buttonGroup)
 	// Find all radio buttons with the given group number
 	for (auto it : mControls)
 	{
-		if (it.second->GetType() == _CONTROL_RADIOBUTTON)
+		if (it.second->GetType() == CONTROL_RADIOBUTTON)
 		{
 			RadioButtonPtr radioButton = std::dynamic_pointer_cast<RadioButton>(it.second);
 
@@ -2149,7 +2149,7 @@ std::vector<RadioButtonPtr> Dialog::GetRadioButtonGroup(RadioButtonGroup buttonG
     // Find all radio buttons with the given group number
     for (auto it : mControls)
     {
-        if (it.second->GetType() == _CONTROL_RADIOBUTTON)
+        if (it.second->GetType() == CONTROL_RADIOBUTTON)
         {
             RadioButtonPtr radioButton = std::dynamic_pointer_cast<RadioButton>(it.second);
 
@@ -2246,7 +2246,7 @@ void Dialog::DrawSprite(const Element& element, const Rect& rect, float depth, b
     if (element.mTextureColor.GetCurrent().a == 0)
         return;
 
-    /*if (element->mTextureColor.GetCurrent() == element->mTextureColor.mStates[_STATE_HIDDEN])
+    /*if (element->mTextureColor.GetCurrent() == element->mTextureColor.mStates[STATE_HIDDEN])
 		return;*/
 
 
@@ -2580,8 +2580,8 @@ void Dialog::InitDefaultElements()
     mCapElement.mFontColor.Init({ 255, 255, 255, 255 });
     mCapElement.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
-    mCapElement.mTextureColor.Blend(_STATE_NORMAL, 10.0f);
-    mCapElement.mFontColor.Blend(_STATE_NORMAL, 10.0f);
+    mCapElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
+    mCapElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
 
     //mDlgElement = Element()
 	mDlgElement.SetFont(0);
@@ -2592,29 +2592,29 @@ void Dialog::InitDefaultElements()
     mDlgElement.mFontColor.Init({ 0, 0, 0, 255 });
     mDlgElement.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
 	// Pre-blend as we don't need to transition the state
-	mDlgElement.mTextureColor.Blend(_STATE_NORMAL, 10.0f);
-	mDlgElement.mFontColor.Blend(_STATE_NORMAL, 10.0f);
+	mDlgElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
+	mDlgElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
 
     /*
     
     Streamline the control blending
     
     */
-	Element.mFontColor.SetState(_STATE_NORMAL, {0, 0, 0, 255});
-	Element.mFontColor.SetState(_STATE_DISABLED, {0, 0, 0, 128});
-	Element.mFontColor.SetState(_STATE_HIDDEN, {0, 0, 0, 0});
-	Element.mFontColor.SetState(_STATE_FOCUS, {0, 0, 0, 255});
-	Element.mFontColor.SetState(_STATE_MOUSEOVER, {0, 0, 0, 255});
-	Element.mFontColor.SetState(_STATE_PRESSED, {0, 0, 0, 255});
-    Element.mFontColor.SetCurrent(_STATE_NORMAL);
+	Element.mFontColor.SetState(STATE_NORMAL, {0, 0, 0, 255});
+	Element.mFontColor.SetState(STATE_DISABLED, {0, 0, 0, 128});
+	Element.mFontColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
+	Element.mFontColor.SetState(STATE_FOCUS, {0, 0, 0, 255});
+	Element.mFontColor.SetState(STATE_MOUSEOVER, {0, 0, 0, 255});
+	Element.mFontColor.SetState(STATE_PRESSED, {0, 0, 0, 255});
+    Element.mFontColor.SetCurrent(STATE_NORMAL);
 
-    Element.mTextureColor.SetState(_STATE_NORMAL, { 180, 180, 180, 255 });
-    Element.mTextureColor.SetState(_STATE_DISABLED, { 128, 128, 128, 128 });
-    Element.mTextureColor.SetState(_STATE_HIDDEN, { 0, 0, 0, 0 });
-    Element.mTextureColor.SetState(_STATE_FOCUS, { 200, 200, 200, 255 });
-    Element.mTextureColor.SetState(_STATE_MOUSEOVER, { 255, 255, 255, 255 });
-    Element.mTextureColor.SetState(_STATE_PRESSED, { 200, 200, 200, 255 });
-    Element.mTextureColor.SetCurrent(_STATE_NORMAL);
+    Element.mTextureColor.SetState(STATE_NORMAL, { 180, 180, 180, 255 });
+    Element.mTextureColor.SetState(STATE_DISABLED, { 128, 128, 128, 128 });
+    Element.mTextureColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+    Element.mTextureColor.SetState(STATE_FOCUS, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetState(STATE_MOUSEOVER, { 255, 255, 255, 255 });
+    Element.mTextureColor.SetState(STATE_PRESSED, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetCurrent(STATE_NORMAL);
 
     Element.mFontIndex = 0;
     Element.mTextureIndex = 0;
@@ -2625,7 +2625,7 @@ void Dialog::InitDefaultElements()
 	Element.mTextFormatFlags = GT_LEFT | GT_VCENTER;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_STATIC, 0, Element);
+	SetDefaultElement(CONTROL_STATIC, 0, Element);
 
 
 	//-------------------------------------
@@ -2635,7 +2635,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_BUTTON, 0, Element);
+	SetDefaultElement(CONTROL_BUTTON, 0, Element);
 
 
 	//-------------------------------------
@@ -2645,7 +2645,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_BUTTON, 1, Element);
+	SetDefaultElement(CONTROL_BUTTON, 1, Element);
 
 
 	//-------------------------------------
@@ -2655,7 +2655,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_CHECKBOX, 0, Element);
+	SetDefaultElement(CONTROL_CHECKBOX, 0, Element);
 
 
 	//-------------------------------------
@@ -2665,7 +2665,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_CHECKBOX, 1, Element);
+	SetDefaultElement(CONTROL_CHECKBOX, 1, Element);
 
 
 	//-------------------------------------
@@ -2675,7 +2675,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_RADIOBUTTON, 0, Element);
+	SetDefaultElement(CONTROL_RADIOBUTTON, 0, Element);
 
 
 	//-------------------------------------
@@ -2685,18 +2685,19 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_RADIOBUTTON, 1, Element);
+	SetDefaultElement(CONTROL_RADIOBUTTON, 1, Element);
 
 
 	//-------------------------------------
 	// ComboBox - Main
 	//-------------------------------------
-    SetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
+    //SetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
+    SetRect(rcTexture, 0.05078125f, 0.5234375f, 0.96484375f, 0.3671875f);
     Element.mUVRect = rcTexture;
 
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_COMBOBOX, 0, Element);
+	SetDefaultElement(CONTROL_COMBOBOX, 0, Element);
 
 
 	//-------------------------------------
@@ -2706,7 +2707,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_COMBOBOX, 1, Element);
+	SetDefaultElement(CONTROL_COMBOBOX, 1, Element);
 
 
 	//-------------------------------------
@@ -2717,7 +2718,7 @@ void Dialog::InitDefaultElements()
     Element.mTextFormatFlags = GT_LEFT | GT_TOP;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_COMBOBOX, 2, Element);
+	SetDefaultElement(CONTROL_COMBOBOX, 2, Element);
 
 
 	//-------------------------------------
@@ -2727,7 +2728,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_COMBOBOX, 3, Element);
+	SetDefaultElement(CONTROL_COMBOBOX, 3, Element);
 
 
 	//-------------------------------------
@@ -2737,7 +2738,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_SLIDER, 0, Element);
+	SetDefaultElement(CONTROL_SLIDER, 0, Element);
 
 	//-------------------------------------
 	// Slider - Button
@@ -2746,7 +2747,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_SLIDER, 1, Element);
+	SetDefaultElement(CONTROL_SLIDER, 1, Element);
 
 	//-------------------------------------
 	// ScrollBar - Track
@@ -2757,7 +2758,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_SCROLLBAR, 0, Element);
+	SetDefaultElement(CONTROL_SCROLLBAR, 0, Element);
 
 	//-------------------------------------
 	// ScrollBar - Down Arrow
@@ -2767,7 +2768,7 @@ void Dialog::InitDefaultElements()
 
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_SCROLLBAR, 2, Element);
+	SetDefaultElement(CONTROL_SCROLLBAR, 2, Element);
 
 	//-------------------------------------
 	// ScrollBar - Up Arrow
@@ -2777,7 +2778,7 @@ void Dialog::InitDefaultElements()
 
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_SCROLLBAR, 1, Element);
+	SetDefaultElement(CONTROL_SCROLLBAR, 1, Element);
 
 	//-------------------------------------
 	// ScrollBar - Button
@@ -2786,7 +2787,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_SCROLLBAR, 3, Element);
+	SetDefaultElement(CONTROL_SCROLLBAR, 3, Element);
 
 	//-------------------------------------
 	// EditBox
@@ -2806,39 +2807,39 @@ void Dialog::InitDefaultElements()
 	// Assign the style
     SetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 0, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 0, Element);
 
     SetRect(rcTexture, 0.03125f, 0.6796875f, 0.0546875f, 0.6484375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 1, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 1, Element);
 
     SetRect(rcTexture, 0.0546875f, 0.6796875f, 0.94140625f, 0.6484375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 2, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 2, Element);
 
     SetRect(rcTexture, 0.94140625f, 0.6796875f, 0.9609375f, 0.6484375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 3, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 3, Element);
 
     SetRect(rcTexture, 0.03125f, 0.6484375f, 0.0546875f, 0.55859375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 4, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 4, Element);
 
     SetRect(rcTexture, 0.94140625f, 0.6484375f, 0.9609375f, 0.55859375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 5, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 5, Element);
 
     SetRect(rcTexture, 0.03125f, 0.55859375f, 0.0546875f, 0.52734375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 6, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 6, Element);
 
     SetRect(rcTexture, 0.0546875f, 0.55859375f, 0.94140625f, 0.52734375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 7, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 7, Element);
 
     SetRect(rcTexture, 0.94140625f, 0.55859375f, 0.9609375f, 0.52734375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(_CONTROL_EDITBOX, 8, Element);
+	SetDefaultElement(CONTROL_EDITBOX, 8, Element);
 
 	//-------------------------------------
 	// ListBox - Main
@@ -2847,7 +2848,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_LISTBOX, 0, Element);
+	SetDefaultElement(CONTROL_LISTBOX, 0, Element);
 
 	//-------------------------------------
 	// ListBox - Selection
@@ -2857,7 +2858,7 @@ void Dialog::InitDefaultElements()
     Element.mUVRect = rcTexture;
 
 	// Assign the Element
-	SetDefaultElement(_CONTROL_LISTBOX, 1, Element);
+	SetDefaultElement(CONTROL_LISTBOX, 1, Element);
 }
 
 
@@ -2962,7 +2963,7 @@ bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t par
 
     switch (msg)
     {
-    case GM_RESIZE:
+    case RESIZE:
         mWndSize.width = 0L;
         mWndSize.height = 0L;
         GetWindowSize();
@@ -3226,7 +3227,7 @@ Control Functions
 
 Control::Control(Dialog& dialog) : mDialog(dialog)
 {
-	mType = _CONTROL_BUTTON;
+	mType = CONTROL_BUTTON;
 	mID = 0;
 	mHotkey = 0;
 	mIndex = 0;
@@ -3260,7 +3261,7 @@ void Control::SetTextColor(const Color& color) noexcept
 
     Element& element = mElements[0];
 
-    element.mFontColor.mStates[_STATE_NORMAL] = color;
+    element.mFontColor.mStates[STATE_NORMAL] = color;
 
     NOEXCEPT_REGION_END
 }
@@ -3300,7 +3301,7 @@ Static Functions
 //--------------------------------------------------------------------------------------
 Static::Static(const Bitfield& textFlags, Dialog& dialog) : Control(dialog), mTextFlags(textFlags)
 {
-	mType = _CONTROL_STATIC;
+	mType = CONTROL_STATIC;
 }
 
 
@@ -3312,10 +3313,10 @@ void Static::Render(float elapsedTime) noexcept
     if (!mVisible)
         return;
 
-    ControlState state = _STATE_NORMAL;
+    ControlState state = STATE_NORMAL;
 
     if (mEnabled == false)
-        state = _STATE_DISABLED;
+        state = STATE_DISABLED;
 
     Element& element = mElements[0];
     element.mTextFormatFlags = mTextFlags;
@@ -3337,7 +3338,7 @@ Button Functions
 
 Button::Button(Dialog& dialog) : Static(GT_CENTER | GT_VCENTER, dialog)
 {
-	mType = _CONTROL_BUTTON;
+	mType = CONTROL_BUTTON;
 
 	mPressed = false;
 }
@@ -3369,7 +3370,7 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
     switch (msg)
     {
 
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
 
         if (mPressed)
         {
@@ -3386,7 +3387,7 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
         }
 
         break;
-    case GM_MB:
+    case MB:
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
             if (param2 == GLFW_PRESS)
@@ -3424,7 +3425,7 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
         }
     break;
 
-    case GM_KEY:
+    case KEY:
     {
 
         if (param1 == mHotkey)
@@ -3464,36 +3465,36 @@ void Button::Render(float elapsedTime) noexcept
 
 	Point wndSize = mDialog.GetManager()->GetWindowSize();
 
-	ControlState iState = _STATE_NORMAL;
+	ControlState iState = STATE_NORMAL;
 
 	if (mVisible == false)
 	{
-		iState = _STATE_HIDDEN;
+		iState = STATE_HIDDEN;
 	}
 	else if (mEnabled == false)
 	{
-		iState = _STATE_DISABLED;
+		iState = STATE_DISABLED;
 	}
 	else if (mPressed)
 	{
-		iState = _STATE_PRESSED;
+		iState = STATE_PRESSED;
 
 		nOffsetX = 1;
 		nOffsetY = 2;
 	}
 	else if (mMouseOver)
 	{
-		iState = _STATE_MOUSEOVER;
+		iState = STATE_MOUSEOVER;
 
 		nOffsetX = -1;
 		nOffsetY = -2;
 	}
 	else if (mHasFocus)
 	{
-		iState = _STATE_FOCUS;
+		iState = STATE_FOCUS;
 	}
 
-    float fBlendRate = 5.0f;//(iState == _STATE_PRESSED) ? 0.0f : 0.8f;
+    float fBlendRate = 5.0f;//(iState == STATE_PRESSED) ? 0.0f : 0.8f;
 
 	Rect rcWindow = mRegion;
 	OffsetRect(rcWindow, nOffsetX, nOffsetY);
@@ -3532,7 +3533,7 @@ CheckBox Functions
 
 CheckBox::CheckBox(bool checked, Dialog& dialog) : Button(dialog)
 {
-	mType = _CONTROL_CHECKBOX;
+	mType = CONTROL_CHECKBOX;
 
     mChecked = checked;
 }
@@ -3551,7 +3552,7 @@ bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
     switch (msg)
     {
 
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
 
         if (mPressed)
         {
@@ -3568,7 +3569,7 @@ bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
         }
 
         break;
-    case GM_MB:
+    case MB:
     {
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
@@ -3609,7 +3610,7 @@ bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
         break;
     }
 
-    /*case GM_KEY:
+    /*case KEY:
     {
 
         if (param1 = GLFW_KEY_SPACE)
@@ -3689,18 +3690,18 @@ void CheckBox::UpdateRects() noexcept
 void CheckBox::Render(float elapsedTime) noexcept
 {
     NOEXCEPT_REGION_START
-	ControlState iState = _STATE_NORMAL;
+	ControlState iState = STATE_NORMAL;
 
 	if (mVisible == false)
-		iState = _STATE_HIDDEN;
+		iState = STATE_HIDDEN;
 	else if (mEnabled == false)
-		iState = _STATE_DISABLED;
+		iState = STATE_DISABLED;
 	else if (mPressed)
-		iState = _STATE_PRESSED;
+		iState = STATE_PRESSED;
 	else if (mMouseOver)
-		iState = _STATE_MOUSEOVER;
+		iState = STATE_MOUSEOVER;
 	else if (mHasFocus)
-		iState = _STATE_FOCUS;
+		iState = STATE_FOCUS;
 
 	Element* pElement = &mElements[0];
 
@@ -3746,7 +3747,7 @@ RadioButton Functions
 
 RadioButton::RadioButton(Dialog& dialog) : CheckBox(false, dialog)
 {
-	mType = _CONTROL_RADIOBUTTON;
+	mType = CONTROL_RADIOBUTTON;
 }
 
 //--------------------------------------------------------------------------------------
@@ -3762,7 +3763,7 @@ bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32
     switch (msg)
     {
 
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
 
         if (mPressed)
         {
@@ -3777,7 +3778,7 @@ bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32
         }
 
         break;
-    case GM_MB:
+    case MB:
     {
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
@@ -3814,7 +3815,7 @@ bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32
     }
     break;
 
-    case GM_KEY:
+    case KEY:
     {
 
         if (param1 = GLFW_KEY_SPACE)
@@ -3985,7 +3986,7 @@ ScrollBar Functions
 
 ScrollBar::ScrollBar(Dialog& dialog) : Control(dialog)
 {
-    mType = _CONTROL_SCROLLBAR;
+    mType = CONTROL_SCROLLBAR;
 
     mShowThumb = true;
     mDrag = false;
@@ -4105,7 +4106,7 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
 
     NOEXCEPT_REGION_START
 
-    if (GM_FOCUS == msg && param1 == GL_FALSE)
+    if (FOCUS == msg && param1 == GL_FALSE)
     {
         // The application just lost mouse capture. We may not have gotten
         // the WM_MOUSEUP message, so reset mDrag here.
@@ -4125,7 +4126,7 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
 
     switch (msg)
     {
-    case GM_MB:
+    case MB:
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
             if (param2 == GLFW_PRESS)
@@ -4200,7 +4201,7 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
             }
         }
 
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
     {
         if (mDrag)
         {
@@ -4297,16 +4298,16 @@ void ScrollBar::Render(float elapsedTime) noexcept
         }
     }
 
-    ControlState iState = _STATE_NORMAL;
+    ControlState iState = STATE_NORMAL;
 
     if (mVisible == false)
-        iState = _STATE_HIDDEN;
+        iState = STATE_HIDDEN;
     else if (mEnabled == false || mShowThumb == false)
-        iState = _STATE_DISABLED;
+        iState = STATE_DISABLED;
     else if (mMouseOver)
-        iState = _STATE_MOUSEOVER;
+        iState = STATE_MOUSEOVER;
     else if (mHasFocus)
-        iState = _STATE_FOCUS;
+        iState = STATE_FOCUS;
 
 
     float fBlendRate = 5.0f;
@@ -4321,8 +4322,8 @@ void ScrollBar::Render(float elapsedTime) noexcept
 
     ControlState iArrowState = iState;
     //if it is all the way at the top, then disable
-    if (mPosition == 0 && iState != _STATE_HIDDEN)
-        iArrowState = _STATE_DISABLED;
+    if (mPosition == 0 && iState != STATE_HIDDEN)
+        iArrowState = STATE_DISABLED;
 
     // Up Arrow
     pElement = &mElements[1];
@@ -4334,8 +4335,8 @@ void ScrollBar::Render(float elapsedTime) noexcept
 
     //similar with the bottom
     iArrowState = iState;
-    if ((mPosition + mPageSize - 1 == mEnd && iState != _STATE_HIDDEN) || mEnd == 1/*when no scrolling is necesary*/)
-        iArrowState = _STATE_DISABLED;
+    if ((mPosition + mPageSize - 1 == mEnd && iState != STATE_HIDDEN) || mEnd == 1/*when no scrolling is necesary*/)
+        iArrowState = STATE_DISABLED;
 
     // Down Arrow
     pElement = &mElements[2];
@@ -4390,7 +4391,7 @@ ListBox Functions
 
 ListBox::ListBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Control(dialog)
 {
-    mType = _CONTROL_LISTBOX;
+    mType = CONTROL_LISTBOX;
 
     Point pt = mDialog.GetManager()->GetWindowSize();
 
@@ -4698,7 +4699,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     NOEXCEPT_REGION_START
 
 
-    if (GM_FOCUS == msg && param1 == GL_FALSE)
+    if (FOCUS == msg && param1 == GL_FALSE)
     {
         // The application just lost mouse capture. We may not have gotten
         // the WM_MOUSEUP message, so reset mDrag here.
@@ -4711,7 +4712,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         return false;
 
     // First acquire focus
-    if (GM_MB == msg && param1 == GLFW_MOUSE_BUTTON_LEFT && param2 == GLFW_PRESS)
+    if (MB == msg && param1 == GLFW_MOUSE_BUTTON_LEFT && param2 == GLFW_PRESS)
         if (!mHasFocus)
             mDialog.RequestFocus(shared_from_this());
 
@@ -4721,7 +4722,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
     switch (msg)
     {
-    case GM_KEY:
+    case KEY:
         if (param3 == GLFW_RELEASE)
         {
             switch (param1)
@@ -4822,7 +4823,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         break;
         //case WM_LBUTTONDOWN:
         //case WM_LBUTTONDBLCLK:
-    case GM_MB:
+    case MB:
         if (param2 == GLFW_PRESS)
         {
             // Check for clicks in the text area
@@ -5049,7 +5050,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             return false;
         }
 
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
         /*if (mDrag)
         {
         // Compute the index of the item below cursor
@@ -5091,7 +5092,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         }*/
         break;
 
-    case GM_SCROLL:
+    case SCROLL:
         //UINT uLines = 0;
         //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
         //	uLines = 0;
@@ -5157,12 +5158,12 @@ void ListBox::Render(float elapsedTime) noexcept
         return;
 
     Element* pElement = &mElements[0];
-    pElement->mTextureColor.Blend(_STATE_NORMAL, elapsedTime);
-    pElement->mFontColor.Blend(_STATE_NORMAL, elapsedTime);
+    pElement->mTextureColor.Blend(STATE_NORMAL, elapsedTime);
+    pElement->mFontColor.Blend(STATE_NORMAL, elapsedTime);
 
     Element& pSelElement = mElements[1];
-    pSelElement.mTextureColor.Blend(_STATE_NORMAL, elapsedTime);
-    pSelElement.mFontColor.Blend(_STATE_NORMAL, elapsedTime);
+    pSelElement.mTextureColor.Blend(STATE_NORMAL, elapsedTime);
+    pSelElement.mFontColor.Blend(STATE_NORMAL, elapsedTime);
 
     mDialog.DrawSprite(*pElement, mRegion, _FAR_BUTTON_DEPTH);
 
@@ -5246,7 +5247,7 @@ ComboBox Functions
 
 ComboBox::ComboBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Button(dialog)
 {
-	mType = _CONTROL_COMBOBOX;
+	mType = CONTROL_COMBOBOX;
 
 	mDropHeight = 100L;
 
@@ -5271,12 +5272,12 @@ void ComboBox::SetTextColor(const Color& Color) noexcept
 
     Element* pElement = &mElements[0];
 
-    pElement->mFontColor.mStates[_STATE_NORMAL] = Color;
+    pElement->mFontColor.mStates[STATE_NORMAL] = Color;
 
     pElement = &mElements[2];
 
     if (pElement)
-        pElement->mFontColor.mStates[_STATE_NORMAL] = Color;
+        pElement->mFontColor.mStates[STATE_NORMAL] = Color;
 
     NOEXCEPT_REGION_END
 }
@@ -5295,18 +5296,19 @@ void ComboBox::UpdateRects() noexcept
 
     mTextRegion = mRegion;
     mTextRegion.right = mButtonRegion.left;
+    mTextRegion.left += 5;//so it isn't falling off the edges
 
-    mDropdownRegion.left = long(mTextRegion.left * 1.019f);
-    mDropdownRegion.top = long(1.02f * mTextRegion.bottom);
+    mDropdownRegion.left = long(mRegion.left/* * 1.019f*/);
+    mDropdownRegion.top = long(/*1.02f * */mTextRegion.bottom);
     mDropdownRegion.right = mTextRegion.right;
     mDropdownRegion.bottom = mDropdownRegion.top - mDropHeight;
     //OffsetRect(mDropdownRegion, 0, -RectHeight(mTextRegion));
 
     mDropdownTextRegion = mDropdownRegion;
-    mDropdownTextRegion.left += long(0.1f * RectWidth(mDropdownRegion));
-    mDropdownTextRegion.right -= long(0.1f * RectWidth(mDropdownRegion));
+    mDropdownTextRegion.left += long(0.05f * RectWidth(mDropdownRegion));
+    mDropdownTextRegion.right -= long(0.05f * RectWidth(mDropdownRegion));
     mDropdownTextRegion.top += long(0.05f * RectHeight(mDropdownRegion));
-    mDropdownTextRegion.bottom -= long(0.1f * RectHeight(mDropdownRegion));
+    mDropdownTextRegion.bottom -= long(0.05f * RectHeight(mDropdownRegion));
 
     // Update the scrollbar's rects
     mScrollBar->SetLocation(mDropdownRegion.right, mDropdownRegion.bottom);
@@ -5323,6 +5325,8 @@ void ComboBox::UpdateRects() noexcept
         // Ensure that it is in page again.
         mScrollBar->ShowItem(mSelected);
     }
+
+    mRegion.right = mButtonRegion.left;
 
     NOEXCEPT_REGION_END
 
@@ -5401,7 +5405,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
     switch (msg)
     {
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
     {
         /*if (mPressed)
         {
@@ -5434,7 +5438,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
         break;
     }
 
-    case GM_MB:
+    case MB:
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
             if (param2 == GLFW_PRESS)
@@ -5523,7 +5527,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
             }
         }
 
-    case GM_SCROLL:
+    case SCROLL:
     {
         int zDelta = (param2) / WHEEL_DELTA;
         if (mOpened)
@@ -5535,7 +5539,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
             //if it is scroll, then make sure to also send a mouse move event to select the newly hovered item
             UpdateItemRects();
-            this->MsgProc(GM_CURSOR_POS, 0, 0, 0, 0);//all blank params may be sent because it retrieves the mouse position from the old message
+            this->MsgProc(CURSOR_POS, 0, 0, 0, 0);//all blank params may be sent because it retrieves the mouse position from the old message
             //TODO: make this work, but for now:
 
             /*if (PtInRect(mDropdownRegion, pt))
@@ -5584,7 +5588,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
         }
         return true;
     }
-    case GM_KEY:
+    case KEY:
     {
         if (param3 != GLFW_RELEASE)
             return true;
@@ -5683,6 +5687,15 @@ void ComboBox::OnHotkey()
     mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 }
 
+bool ComboBox::ContainsPoint(const Point& pt) const noexcept
+{
+    NOEXCEPT_REGION_START
+
+    return (PtInRect(mRegion, pt) || PtInRect(mButtonRegion, pt));// || (PtInRect(mDropdownRegion, pt) && mOpened));
+
+    NOEXCEPT_REGION_END
+}
+
 
 //--------------------------------------------------------------------------------------
 void ComboBox::Render( float elapsedTime) noexcept
@@ -5691,10 +5704,10 @@ void ComboBox::Render( float elapsedTime) noexcept
 
     if (mVisible == false)
         return;
-    ControlState iState = _STATE_NORMAL;
+    ControlState iState = STATE_NORMAL;
 
     //if (!mOpened)
-    //    iState = _STATE_HIDDEN;
+    //    iState = STATE_HIDDEN;
 
     // Dropdown box
     Element* pElement = &mElements[2];
@@ -5733,7 +5746,7 @@ void ComboBox::Render( float elapsedTime) noexcept
         // Selection outline
         Element* pSelectionElement = &mElements[3];
         pSelectionElement->mTextureColor.GetCurrent() = pElement->mTextureColor.GetCurrent();
-        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[_STATE_NORMAL]*/{ 0, 0, 0, 255 });
+        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[STATE_NORMAL]*/{ 0, 0, 0, 255 });
 
         FontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
         if (pFont)
@@ -5790,28 +5803,28 @@ void ComboBox::Render( float elapsedTime) noexcept
     int OffsetX = 0;
     int OffsetY = 0;
 
-    iState = _STATE_NORMAL;
+    iState = STATE_NORMAL;
 
     if (mVisible == false)
-        iState = _STATE_HIDDEN;
+        iState = STATE_HIDDEN;
     else if (mEnabled == false)
-        iState = _STATE_DISABLED;
+        iState = STATE_DISABLED;
     else if (mPressed)
     {
-        iState = _STATE_PRESSED;
+        iState = STATE_PRESSED;
 
         OffsetX = 1;
         OffsetY = 2;
     }
     else if (mMouseOver)
     {
-        iState = _STATE_MOUSEOVER;
+        iState = STATE_MOUSEOVER;
 
         OffsetX = -1;
         OffsetY = -2;
     }
     else if (mHasFocus)
-        iState = _STATE_FOCUS;
+        iState = STATE_FOCUS;
 
     float fBlendRate = 5.0f;
 
@@ -5826,7 +5839,7 @@ void ComboBox::Render( float elapsedTime) noexcept
     mDialog.DrawSprite(*pElement, rcWindow, _FAR_BUTTON_DEPTH);
 
     if (mOpened)
-        iState = _STATE_PRESSED;
+        iState = STATE_PRESSED;
 
 
     // Main text box
@@ -5837,7 +5850,7 @@ void ComboBox::Render( float elapsedTime) noexcept
     pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
 
-    mDialog.DrawSprite(*pElement, mTextRegion, _NEAR_BUTTON_DEPTH);
+    mDialog.DrawSprite(*pElement, mRegion, _NEAR_BUTTON_DEPTH);
 
     if (mSelected >= 0 && mSelected < (int)mItems.size())
     {
@@ -6072,7 +6085,7 @@ Slider Functions
 
 Slider::Slider(Dialog& dialog) : Control(dialog)
 {
-	mType = _CONTROL_SLIDER;
+	mType = CONTROL_SLIDER;
 
 	mMin = 0;
 	mMax = 100;
@@ -6136,7 +6149,7 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     switch (msg)
     {
-    case GM_MB:
+    case MB:
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
             if (param2 == GLFW_PRESS)
@@ -6187,7 +6200,7 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             break;
         }
 
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
     {
 
         if (mPressed)
@@ -6199,13 +6212,13 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
         break;
     }
 
-    case GM_SCROLL:
+    case SCROLL:
     {
         int nScrollAmount = param2 / WHEEL_DELTA;
         SetValueInternal(mValue - nScrollAmount, true);
         return true;
     }
-    case GM_KEY:
+    case KEY:
     {
         if (param3 == GLFW_RELEASE)
             break;
@@ -6298,33 +6311,33 @@ void Slider::Render( float elapsedTime) noexcept
     int OffsetX = 0;
     int OffsetY = 0;
 
-    ControlState iState = _STATE_NORMAL;
+    ControlState iState = STATE_NORMAL;
 
     if (mVisible == false)
     {
-        iState = _STATE_HIDDEN;
+        iState = STATE_HIDDEN;
     }
     else if (mEnabled == false)
     {
-        iState = _STATE_DISABLED;
+        iState = STATE_DISABLED;
     }
     else if (mPressed)
     {
-        iState = _STATE_PRESSED;
+        iState = STATE_PRESSED;
 
         OffsetX = 1;
         OffsetY = 2;
     }
     else if (mMouseOver)
     {
-        iState = _STATE_MOUSEOVER;
+        iState = STATE_MOUSEOVER;
 
         OffsetX = -1;
         OffsetY = -2;
     }
     else if (mHasFocus)
     {
-        iState = _STATE_FOCUS;
+        iState = STATE_FOCUS;
     }
 
     float fBlendRate = 5.0f;
@@ -6384,7 +6397,7 @@ bool EditBox::s_bHideCaret;   // If true, we don't render the caret.
 //--------------------------------------------------------------------------------------
 EditBox::EditBox(Charset charset, bool isMultiline, Dialog* pDialog) : Control(pDialog), mScrollBar(pDialog), m_bMultiline(isMultiline), m_Charset(charset)
 {
-	mType = _CONTROL_EDITBOX;
+	mType = CONTROL_EDITBOX;
 	mDialog = pDialog;
 
 	m_fBorder  = 5;  // Default border width
@@ -6934,7 +6947,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
     switch (msg)
     {
-    case GM_MB:
+    case MB:
         //case WM_LBUTTONDBLCLK:
 
         if (!mHasFocus)
@@ -6983,7 +6996,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             bHandled = true;
             break;
         }
-    case GM_CURSOR_POS:
+    case CURSOR_POS:
         if (m_bMouseDrag)
         {
             // Determine the character corresponding to the coordinates.
@@ -7002,7 +7015,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             //m_bAnalyseRequired = true;
         }
         break;
-    case GM_SCROLL:
+    case SCROLL:
         if (!m_bMultiline)
             break;
 
@@ -7014,7 +7027,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
         bHandled = true;
         break;
-    case GM_UNICODE_CHAR:
+    case UNICODE_CHAR:
 
         //is it within the charset?
         if (!CharsetContains(param1, m_Charset))
@@ -7055,7 +7068,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
         bHandled = true;
         break;
-    case GM_KEY:
+    case KEY:
     {
         m_bAnalyseRequired = true;
 
@@ -7417,7 +7430,7 @@ void EditBox::Render( float elapsedTime) noexcept
     for (int e = 0; e < 9; ++e)
     {
         pElement = mElements[e];
-        pElement->mTextureColor.Blend(_STATE_NORMAL, elapsedTime);
+        pElement->mTextureColor.Blend(STATE_NORMAL, elapsedTime);
 
         mDialog.DrawSprite(pElement, m_rcRender[e], _FAR_BUTTON_DEPTH);
     }
