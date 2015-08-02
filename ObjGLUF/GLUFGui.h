@@ -147,17 +147,17 @@ enum ControlState
 //WIP
 enum Event
 {
-    _EVENT_BUTTON_CLICKED = 0,
-    _EVENT_COMBOBOX_SELECTION_CHANGED,
-    _EVENT_RADIOBUTTON_CHANGED,
-    _EVENT_CHECKBOXCHANGED,
-    _EVENT_SLIDER_VALUE_CHANGED,
-    _EVENT_SLIDER_VALUE_CHANGED_UP,
-    _EVENT_EDITBOX_STRING,
-    _EVENT_EDITBOX_CHANGE,//when the listbox contents change due to user input
-    _EVENT_LISTBOX_ITEM_DBLCLK,
-    _EVENT_LISTBOX_SELECTION,//when the selection changes in a single selection list box
-    _EVENT_LISTBOX_SELECTION_END,
+    EVENT_BUTTON_CLICKED = 0,
+    EVENT_COMBOBOX_SELECTION_CHANGED,
+    EVENT_RADIOBUTTON_CHANGED,
+    EVENT_CHECKBOXCHANGED,
+    EVENT_SLIDER_VALUE_CHANGED,
+    EVENT_SLIDER_VALUE_CHANGED_UP,
+    EVENT_EDITBOX_STRING,
+    EVENT_EDITBOX_CHANGE,//when the listbox contents change due to user input
+    EVENT_LISTBOX_ITEM_DBLCLK,
+    EVENT_LISTBOX_SELECTION,//when the selection changes in a single selection list box
+    EVENT_LISTBOX_SELECTION_END,
 };
 
 
@@ -2151,7 +2151,7 @@ typedef struct ListBoxItem_t
 	std::wstring mText;
     GenericData& mData;
 	bool mVisible;
-	Rect mActiveRegion;
+	Rect mTextRegion;
 
     ListBoxItem_t(GenericData& data) : mData(data){}
 } ListBoxItem, ComboBoxItem;
@@ -2243,9 +2243,9 @@ public:
 	Bitfield        GetStyle() const noexcept			{ return mStyle;			}
 	Size            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
 
-	void                SetStyle(Bitfield style)  noexcept				       { mStyle = style;						                       }
-    void                SetScrollBarWidth(Size width) noexcept                 { mSBWidth = width; UpdateRects();                              }
-    void                SetMargins(Size vertical, Size horizontal) noexcept{ mVerticalMargin = vertical; mHorizontalMargin = horizontal;   }
+	void            SetStyle(Bitfield style)  noexcept				        { mStyle = style;						                        }
+    void            SetScrollBarWidth(Size width) noexcept                  { mSBWidth = width; UpdateRects();                              }
+    void            SetMargins(Size vertical, Size horizontal) noexcept     { mVerticalMargin = vertical; mHorizontalMargin = horizontal;   }
 
     /*
     AddItem
@@ -2257,7 +2257,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GenericData& data) noexcept;
+    void AddItem(const std::wstring& text, GenericData& data = GenericData()) noexcept;
 
     /*
     InsertItem
@@ -2443,7 +2443,7 @@ public:
 
     */
 	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar));	}
+    virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar)); UpdateRects(); }
 	virtual bool CanHaveFocus() const noexcept override	{ return (mVisible && mEnabled);			    }
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;

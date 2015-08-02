@@ -3351,7 +3351,7 @@ void Button::OnHotkey() noexcept
     if (mDialog.IsKeyboardInputEnabled())
     {
         mDialog.RequestFocus(shared_from_this());
-        mDialog.SendEvent(_EVENT_BUTTON_CLICKED, true, shared_from_this());
+        mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
     }
 
     NOEXCEPT_REGION_END
@@ -3416,7 +3416,7 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
                     // Button click
                     if (ContainsPoint(mousePos))
-                        mDialog.SendEvent(_EVENT_BUTTON_CLICKED, true, shared_from_this());
+                        mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
 
                     return true;
                 }
@@ -3438,7 +3438,7 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             {
                 mPressed = false;
 
-                mDialog.SendEvent(_EVENT_BUTTON_CLICKED, true, shared_from_this());
+                mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
             }
 
             return true;
@@ -3649,7 +3649,7 @@ void CheckBox::SetCheckedInternal(bool checked, bool fromInput)
 {
     mChecked = checked;
 
-    mDialog.SendEvent(_EVENT_CHECKBOXCHANGED, fromInput, shared_from_this());
+    mDialog.SendEvent(EVENT_CHECKBOXCHANGED, fromInput, shared_from_this());
 }
 
 
@@ -3856,7 +3856,7 @@ void RadioButton::SetCheckedInternal(bool checked, bool clearGroup, bool fromInp
 		mDialog.ClearRadioButtonGroup(mButtonGroup);
 
 	mChecked = checked;
-	mDialog.SendEvent(_EVENT_RADIOBUTTON_CHANGED, fromInput, shared_from_this());
+	mDialog.SendEvent(EVENT_RADIOBUTTON_CHANGED, fromInput, shared_from_this());
 }
 
 //--------------------------------------------------------------------------------------
@@ -4438,7 +4438,7 @@ void ListBox::UpdateRects() noexcept
     mSelectionRegion.right -= mSBWidth;
     InflateRect(mSelectionRegion, -(int32_t)mHorizontalMargin, -(int32_t)mVerticalMargin);
     mTextRegion = mSelectionRegion;
-    InflateRect(mTextRegion, -(int32_t)mHorizontalMargin, mVerticalMargin);
+    InflateRect(mTextRegion, -(int32_t)mHorizontalMargin, -(int32_t)mVerticalMargin);
 
     // Update the scrollbar's rects
     //mScrollBar->SetLocation(mRegion.right - mSBWidth, mRegion.top);
@@ -4446,9 +4446,6 @@ void ListBox::UpdateRects() noexcept
 
     mScrollBar->SetLocation(mRegion.right, mRegion.bottom);
     mScrollBar->SetSize(mSBWidth, RectHeight(mRegion));
-    Rect tmpRegion = mScrollBar->GetRegion();
-    tmpRegion.y = mTextRegion.top;
-    mScrollBar->SetRegion(tmpRegion);
     FontNodePtr pFontNode = mDialog.GetFont(mElements[0].mFontIndex);
     if (pFontNode && pFontNode->mFontType->mHeight)
     {
@@ -4459,6 +4456,7 @@ void ListBox::UpdateRects() noexcept
         mScrollBar->ShowItem(mSelected[mSelected.size() - 1]);
     }
 
+    mScrollBar->UpdateRects();
     UpdateItemRects();
 
     NOEXCEPT_REGION_END
@@ -4487,7 +4485,7 @@ void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& dat
 
     //wcscpy_s(pNewItem->mText, 256, wszText);
     newItem->mText = text;
-    SetRect(newItem->mActiveRegion, 0, 0, 0, 0);
+    SetRect(newItem->mTextRegion, 0, 0, 0, 0);
     //pNewItem->bSelected = false;
 
     if (index >= mItems.size())
@@ -4518,7 +4516,7 @@ void ListBox::RemoveItem(Index index)
     if (mSelected[0] >= (int)mItems.size())
         mSelected[0] = int(mItems.size()) - 1;
 
-    mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+    mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, shared_from_this());
 }
 
 
@@ -4615,7 +4613,7 @@ void ListBox::SelectItem(Index index)
         mScrollBar->ShowItem(mSelected[mSelected.size() - 1]);
     }
 
-    mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+    mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, shared_from_this());
 }
 
 //--------------------------------------------------------------------------------------
@@ -4808,7 +4806,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
                     // Send notification
 
-                    mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+                    mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, shared_from_this());
                 }
                 return true;
             }
@@ -4816,7 +4814,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             // Space is the hotkey for double-clicking an item.
             //
             case GLFW_KEY_SPACE:
-                mDialog.SendEvent(_EVENT_LISTBOX_ITEM_DBLCLK, true, shared_from_this());
+                mDialog.SendEvent(EVENT_LISTBOX_ITEM_DBLCLK, true, shared_from_this());
                 return true;
             }
         }
@@ -4850,7 +4848,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 //TODO: handle doubleclicking
                 if (uMsg == WM_LBUTTONDBLCLK)
                 {
-                mDialog.SendEvent(_EVENT_LISTBOX_ITEM_DBLCLK, true, this);
+                mDialog.SendEvent(EVENT_LISTBOX_ITEM_DBLCLK, true, this);
                 return true;
                 }
 
@@ -4866,7 +4864,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 //the easy way
                 for (unsigned int it = 0; it < mItems.size(); ++it)
                 {
-                    if (PtInRect(mItems[it]->mActiveRegion, pt))
+                    if (PtInRect(mItems[it]->mTextRegion, pt))
                     {
                         currSelectedIndex = it;
                         break;
@@ -5016,7 +5014,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 //sort it for proper functionality when using shift-clicking (NOT HELPFUL)
                 //std::sort(mSelected.begin(), mSelected.end());
 
-                mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, shared_from_this());
+                mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, shared_from_this());
 
 
                 return true;
@@ -5043,9 +5041,9 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             // the user has dragged the mouse to make a selection.
             // Notify the application of this.
             if (mSelected[0] != mSelected[mSelected.size() - 1])
-            mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, this);
+            mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, this);
 
-            mDialog.SendEvent(_EVENT_LISTBOX_SELECTION_END, true, this);
+            mDialog.SendEvent(EVENT_LISTBOX_SELECTION_END, true, this);
             }*/
             return false;
         }
@@ -5072,14 +5070,14 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         nItem < mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
         {
         mSelected[0] = nItem;
-        mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, this);
+        mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, this);
         }
         else if (nItem < (int)mScrollBar->GetTrackPos())
         {
         // User drags the mouse above window top
         mScrollBar->Scroll(-1);
         mSelected[0] = mScrollBar->GetTrackPos();
-        mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, this);
+        mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, this);
         }
         else if (nItem >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
         {
@@ -5087,7 +5085,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         mScrollBar->Scroll(1);
         mSelected[0] = std::min((int)mItems.size(), mScrollBar->GetTrackPos() +
         mScrollBar->GetPageSize()) - 1;
-        mDialog.SendEvent(_EVENT_LISTBOX_SELECTION, true, this);
+        mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, this);
         }
         }*/
         break;
@@ -5116,8 +5114,8 @@ void ListBox::UpdateItemRects() noexcept
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
     if (pFont)
     {
-        int curY = mTextRegion.top - pFont->mLeading / 2;// +((mScrollBar->GetTrackPos() - 1) * pFont->mSize);
-        int nRemainingHeight = RectHeight(mRegion) - pFont->mLeading;
+        int curY = mTextRegion.top - mVerticalMargin;
+        int nRemainingHeight = RectHeight(mRegion) - 2 * mVerticalMargin;
 
 
         //int nRemainingHeight = RectHeight(mRegion) - pFont->mLeading;
@@ -5125,7 +5123,7 @@ void ListBox::UpdateItemRects() noexcept
         //for all of the ones before the displayed, just set them to something impossible
         for (size_t i = 0; i < (size_t)mScrollBar->GetTrackPos(); ++i)
         {
-            SetRect(mItems[i]->mActiveRegion, 0, 0, 0, 0);
+            SetRect(mItems[i]->mTextRegion, 0, 0, 0, 0);
         }
         for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
         {
@@ -5133,7 +5131,7 @@ void ListBox::UpdateItemRects() noexcept
 
             // Make sure there's room left in the box
             nRemainingHeight -= pFont->mLeading;
-            if (nRemainingHeight - mVerticalMargin <= 0)
+            if (nRemainingHeight - (int)mVerticalMargin < 0)
             {
                 pItem->mVisible = false;
                 continue;
@@ -5141,7 +5139,7 @@ void ListBox::UpdateItemRects() noexcept
 
             pItem->mVisible = true;
 
-            SetRect(pItem->mActiveRegion, mRegion.left + mHorizontalMargin, curY + mVerticalMargin, mRegion.right - mHorizontalMargin, curY - pFont->mFontType->mHeight - mVerticalMargin);
+            SetRect(pItem->mTextRegion, mRegion.left + mHorizontalMargin, curY, mRegion.right - mHorizontalMargin, curY - pFont->mFontType->mHeight);
             curY -= pFont->mLeading;
         }
     }
@@ -5185,6 +5183,7 @@ void ListBox::Render(float elapsedTime) noexcept
             bSBInit = true;
         }
 
+
         for (int i = mScrollBar->GetTrackPos(); i < (int)mItems.size(); ++i)
         {
 
@@ -5220,11 +5219,15 @@ void ListBox::Render(float elapsedTime) noexcept
             if (bSelectedStyle)
             {
                 //rcSel.top = rc.top; rcSel.bottom = rc.bottom;
-                mDialog.DrawSprite(pSelElement, pItem->mActiveRegion, _NEAR_BUTTON_DEPTH);
-                mDialog.DrawText(pItem->mText, pSelElement, pItem->mActiveRegion);
+                Rect activeRect = pItem->mTextRegion;
+
+                //add 1 here in order to make SURE the selection will be seamless
+                InflateRect(activeRect, 0, pFont->mLeading / 4 + 1);
+                mDialog.DrawSprite(pSelElement, activeRect, _NEAR_BUTTON_DEPTH);
+                mDialog.DrawText(pItem->mText, pSelElement, pItem->mTextRegion);
             }
             else
-                mDialog.DrawText(pItem->mText, *pElement, pItem->mActiveRegion);
+                mDialog.DrawText(pItem->mText, *pElement, pItem->mTextRegion);
 
             //OffsetRect(rc, 0, m_fTextHeight);
         }
@@ -5368,7 +5371,7 @@ void ComboBox::UpdateItemRects() noexcept
 
             pItem->mVisible = true;
 
-            SetRect(pItem->mActiveRegion, mDropdownTextRegion.left, curY, mDropdownTextRegion.right, curY - pFont->mFontType->mHeight);
+            SetRect(pItem->mTextRegion, mDropdownTextRegion.left, curY, mDropdownTextRegion.right, curY - pFont->mFontType->mHeight);
             curY -= pFont->mLeading;
         }
     }
@@ -5429,7 +5432,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
             {
                 ComboBoxItemPtr pItem = mItems[i];
                 if (pItem->mVisible &&
-                    PtInRect(pItem->mActiveRegion, pt))
+                    PtInRect(pItem->mTextRegion, pt))
                 {
                     mFocused = static_cast<int>(i);
                 }
@@ -5464,10 +5467,10 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                     {
                         ComboBoxItemPtr pItem = mItems[i];
                         if (pItem->mVisible &&
-                            PtInRect(pItem->mActiveRegion, pt))
+                            PtInRect(pItem->mTextRegion, pt))
                         {
                             mFocused = mSelected = static_cast<int>(i);
-                            mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                            mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                             mOpened = false;
 
                             if (!mDialog.IsKeyboardInputEnabled())
@@ -5485,7 +5488,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                 {
                     mFocused = mSelected;
 
-                    mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                     mOpened = false;
                 }
 
@@ -5571,7 +5574,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                     mSelected = mFocused;
 
                     if (!mOpened)
-                        mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                        mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                 }
             }
             else
@@ -5582,7 +5585,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                     mSelected = mFocused;
 
                     if (!mOpened)
-                        mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                        mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                 }
             }
 
@@ -5602,7 +5605,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                 if (mSelected != mFocused)
                 {
                     mSelected = mFocused;
-                    mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                 }
                 mOpened = false;
 
@@ -5622,7 +5625,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
             if (!mOpened)
             {
-                mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 
                 if (!mDialog.IsKeyboardInputEnabled())
                     mDialog.ClearFocus();
@@ -5638,7 +5641,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                 mSelected = mFocused;
 
                 if (!mOpened)
-                    mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
             }
 
             return true;
@@ -5651,7 +5654,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                 mSelected = mFocused;
 
                 if (!mOpened)
-                    mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+                    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
             }
 
             return true;
@@ -5685,7 +5688,7 @@ void ComboBox::OnHotkey()
 		mSelected = 0;
 
 	mFocused = mSelected;
-    mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
+    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 }
 
 bool ComboBox::ContainsPoint(const Point& pt) const noexcept
@@ -5761,7 +5764,7 @@ void ComboBox::Render( float elapsedTime) noexcept
             for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
             {
                 ComboBoxItemPtr pItem = mItems[i];
-                Rect active = pItem->mActiveRegion;
+                Rect active = pItem->mTextRegion;
 
                 active.top = active.bottom + pFont->mLeading;
 
@@ -5791,11 +5794,11 @@ void ComboBox::Render( float elapsedTime) noexcept
                         mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * (i + 1)));*/
                     //mDialog.DrawText(pItem->mText, pSelectionElement, rc);
                     mDialog.DrawSprite(*pSelectionElement, active, _NEAR_BUTTON_DEPTH);
-                    mDialog.DrawText(pItem->mText, *pSelectionElement, pItem->mActiveRegion);
+                    mDialog.DrawText(pItem->mText, *pSelectionElement, pItem->mTextRegion);
                 }
                 else
                 {
-                    mDialog.DrawText(pItem->mText, *pElement, pItem->mActiveRegion);
+                    mDialog.DrawText(pItem->mText, *pElement, pItem->mTextRegion);
                 }
             }
         }
@@ -5890,7 +5893,7 @@ void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
     {
         mSelected = 0;
         mFocused = 0;
-        mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
+        mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
     }
 
     NOEXCEPT_REGION_END
@@ -6025,7 +6028,7 @@ void ComboBox::SelectItem(Index index)
     }
 
 	mFocused = mSelected = index;
-	mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
+	mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
 }
 
 
@@ -6045,7 +6048,7 @@ void ComboBox::SelectItem(const std::wstring& text, Index start)
     }
 
     mFocused = mSelected = itemIndex;
-	mDialog.SendEvent(_EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
+	mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
 }
 
 
@@ -6190,7 +6193,7 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
                 {
                     mPressed = false;
                     //ReleaseCapture();
-                    mDialog.SendEvent(_EVENT_SLIDER_VALUE_CHANGED_UP, true, shared_from_this());
+                    mDialog.SendEvent(EVENT_SLIDER_VALUE_CHANGED_UP, true, shared_from_this());
 
                     return true;
                 }
@@ -6295,7 +6298,7 @@ void Slider::SetValueInternal(int nValue, bool bFromInput) noexcept
 
     UpdateRects();
 
-    mDialog.SendEvent(_EVENT_SLIDER_VALUE_CHANGED, bFromInput, shared_from_this());
+    mDialog.SendEvent(EVENT_SLIDER_VALUE_CHANGED, bFromInput, shared_from_this());
 
     NOEXCEPT_REGION_END
 }
@@ -7065,7 +7068,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
         }
         ResetCaretBlink();
-        mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+        mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
 
         bHandled = true;
         break;
@@ -7125,7 +7128,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 if (m_nCaret != m_nSelStart)
                 {
                     DeleteSelectionText();
-                    mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
                 }
                 else
                 {
@@ -7133,7 +7136,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     if (m_nCaret != m_strBuffer.length() - 1)
                     {
                         RemoveChar(m_nCaret + 1);
-                        mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+                        mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
                     }
                 }
                 ResetCaretBlink();
@@ -7306,7 +7309,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 if (m_nCaret != m_nSelStart)
                 {
                     DeleteSelectionText();
-                    mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
                 }
                 else if (m_nCaret >= 0)
                 {
@@ -7314,7 +7317,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     RemoveChar(m_nCaret);
                     PlaceCaret(m_nCaret - 1);
                     m_nSelStart = m_nCaret;
-                    mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
                 }
                 ResetCaretBlink();
                 bHandled = true;
@@ -7333,7 +7336,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     if (param1 == GLFW_KEY_X)
                     {
                         DeleteSelectionText();
-                        mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+                        mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
 
                     }
 
@@ -7348,7 +7351,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 if (param4 & GLFW_MOD_CONTROL)
                 {
                     PasteFromClipboard();
-                    mDialog.SendEvent(_EVENT_EDITBOX_CHANGE, true, this);
+                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
 
                     bHandled = true;
                 }
@@ -7374,7 +7377,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 if (!m_bMultiline)
                     break;
                 // Invoke the callback when the user presses Enter.
-                //mDialog.SendEvent(_EVENT_EDITBOX_STRING, true, this);
+                //mDialog.SendEvent(EVENT_EDITBOX_STRING, true, this);
                 InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
                 PlaceCaret(m_nCaret + 1);
                 bHandled = true;
