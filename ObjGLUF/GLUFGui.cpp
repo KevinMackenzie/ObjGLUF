@@ -5313,9 +5313,9 @@ void ComboBox::UpdateRects() noexcept
     // Update the scrollbar's rects
     mScrollBar->SetLocation(mDropdownRegion.right, mDropdownRegion.bottom);
     mScrollBar->SetSize(mSBWidth, abs(mButtonRegion.bottom - mDropdownRegion.bottom));
-    Rect tmpRect = mScrollBar->GetRegion();
-    tmpRect.y = mTextRegion.top;
-    mScrollBar->SetRegion(tmpRect);
+    //Rect tmpRect = mScrollBar->GetRegion();
+    //tmpRect.y = mTextRegion.top;
+    //mScrollBar->SetRegion(tmpRect);
     FontNodePtr pFontNode = mDialog.GetFont(mElements[2].mFontIndex);
     if (pFontNode/* && pFontNode->mSize*/)
     {
@@ -5326,6 +5326,7 @@ void ComboBox::UpdateRects() noexcept
         mScrollBar->ShowItem(mSelected);
     }
 
+    mScrollBar->UpdateRects();
     mRegion.right = mButtonRegion.left;
 
     NOEXCEPT_REGION_END
