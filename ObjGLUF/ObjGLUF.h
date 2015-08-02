@@ -128,11 +128,11 @@ Debugging Macros and Setup Functions
 
 */
 
-using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName, const char* sourceFile, unsigned int lineNum);
+using ErrorMethod = void(*)(const std::string& message, const char* funcName, const char* sourceFile, unsigned int lineNum);
 
-#define GLUF_ERROR(message) GLUFGetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
-#define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GLUFGetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
-#define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; GLUF_ERROR(ss.str().c_str()) } }
+#define GLUF_ERROR(message) GetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
+#define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
+#define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; _ERROR(ss.str().c_str()) } }
 
 
 #ifdef GLUF_DEBUG
@@ -144,15 +144,15 @@ using GLUFErrorMethod = void(*)(const std::string& message, const char* funcName
 
 #else
 
-#define GLUF_NULLPTR_CHECK(ptr)
+#define NULLPTR_CHECK(ptr)
 
-#define GLUF_CRITICAL_EXCEPTION(exception) throw exception;
-#define GLUF_NON_CRITICAL_EXCEPTION(exception) ;
+#define CRITICAL_EXCEPTION(exception) throw exception;
+#define NON_CRITICAL_EXCEPTION(exception) ;
 
 #endif
 
-OBJGLUF_API void GLUFRegisterErrorMethod(GLUFErrorMethod method);
-OBJGLUF_API GLUFErrorMethod GLUFGetErrorMethod();
+OBJGLUF_API void RegisterErrorMethod(ErrorMethod method);
+OBJGLUF_API ErrorMethod GetErrorMethod();
 
 
 /*
@@ -166,7 +166,7 @@ Utility Macros
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
 
 //in debug mode, don't catch exceptions, because they may be helpful in debugging situations
-#ifdef GLUF_DEBUG
+#ifdef _DEBUG
 #define NOEXCEPT_REGION_START
 #define NOEXCEPT_REGION_END
 #else
@@ -183,9 +183,9 @@ Multithreading Macros
 */
 
 //for use with mutexes
-#define GLUF_TSAFE_BEGIN(Mutex) { std::lock_guard<std::mutex> __lock__(Mutex);
-#define GLUF_TSAFE_END __lock__.unlock();}
-#define GLUF_TSAFE_SCOPE(Mutex) std::lock_guard<std::mutex> __lock__{Mutex};
+#define _TSAFE_BEGIN(Mutex) { std::lock_guard<std::mutex> __lock__(Mutex);
+#define _TSAFE_END __lock__.unlock();}
+#define _TSAFE_SCOPE(Mutex) std::lock_guard<std::mutex> __lock__{Mutex};
 
 /*
 
@@ -212,9 +212,9 @@ public:
 };
 
 //for use with locks
-#define GLUF_TSAFE_LOCK(Lock) Lock.lock();
-#define GLUF_TSAFE_UNLOCK(Lock) Lock.unlock();
-#define GLUF_TSAFE_LOCK_REGION(Lock) LocalLock __lock__(Lock);
+#define _TSAFE_LOCK(Lock) Lock.lock();
+#define _TSAFE_UNLOCK(Lock) Lock.unlock();
+#define _TSAFE_LOCK_REGION(Lock) LocalLock __lock__(Lock);
 
 
 /*
@@ -223,7 +223,7 @@ Statistics
 
 */
 
-class GLUFStatsData
+class StatsData
 {
 public:
     double mPreviousFrame = 0.0;
@@ -233,12 +233,12 @@ public:
     std::wstring mFormattedStatsData = L"";
 };
 
-OBJGLUF_API void GLUFStats_func();
-OBJGLUF_API const std::wstring& GLUFGetFrameStatsString();
-OBJGLUF_API const GLUFStatsData& GLUFGetFrameStats();
-OBJGLUF_API const std::wstring& GLUFGetDeviceStatus();
+OBJGLUF_API void Stats_func();
+OBJGLUF_API const std::wstring& GetFrameStatsString();
+OBJGLUF_API const StatsData& GetFrameStats();
+OBJGLUF_API const std::wstring& GetDeviceStatus();
 
-#define GLUFStats GLUF::GLUFStats_func
+#define Stats ::Stats_func
 
 
 /*
@@ -266,9 +266,9 @@ Timing Macros (Uses GLFW Built-In Timer)
 
 */
 
-#define GLUFGetTime() glfwGetTime()
-#define GLUFGetTimef() ((float)glfwGetTime())
-#define GLUFGetTimeMs() ((unsigned int)(glfwGetTime() * 1000.0))
+#define GetTime() glfwGetTime()
+#define GetTimef() ((float)glfwGetTime())
+#define GetTimeMs() ((unsigned int)(glfwGetTime() * 1000.0))
 
 
 /*
@@ -284,7 +284,7 @@ using Vec4Array = std::vector<glm::vec4>;
 using Vec3Array =  std::vector<glm::vec3>;
 using Vec2Array = std::vector<glm::vec2>;
 using IndexArray = std::vector<GLuint>;
-using GLUFAttribLoc = GLuint;
+using AttribLoc = GLuint;
 
 
 /*
@@ -293,41 +293,41 @@ Mathematical and Conversion Macros
 
 */
 
-#define GLUF_PI    3.141592653589793
-#define GLUF_PI_F  3.1415927f
-#define GLUF_PI_LD 3.141592653589793238L
+#define _PI    3.141592653589793
+#define _PI_F  3.1415927f
+#define _PI_LD 3.141592653589793238L
 
-#define GLUF_E     2.718281828459045
-#define GLUF_E_F   2.7182818f
-#define GLUF_E_LD  2.718281828459045235L
+#define _E     2.718281828459045
+#define _E_F   2.7182818f
+#define _E_LD  2.718281828459045235L
 
-#define DEG_TO_RAD(value) ((value) *(GLUF_PI / 180))
-#define DEG_TO_RAD_F(value) ((value) *(GLUF_PI_F / 180))
-#define DEG_TO_RAD_LD(value) ((value) *(GLUF_PI_LD / 180))
+#define DEG_TO_RAD(value) ((value) *(_PI / 180))
+#define DEG_TO_RAD_F(value) ((value) *(_PI_F / 180))
+#define DEG_TO_RAD_LD(value) ((value) *(_PI_LD / 180))
 
-#define RAD_TO_DEG(value) ((value) *(180 / GLUF_PI))
-#define RAD_TO_DEG_F(value) ((value) *(180 / GLUF_PI_F))
-#define RAD_TO_DEG_LD(value) ((value) *(180 / GLUF_PI_LD))
+#define RAD_TO_DEG(value) ((value) *(180 / _PI))
+#define RAD_TO_DEG_F(value) ((value) *(180 / _PI_F))
+#define RAD_TO_DEG_LD(value) ((value) *(180 / _PI_LD))
 
-#define GLUF_60HZ 0.0166666666666
+#define _60HZ 0.0166666666666
 
 
 /*
 ======================================================================================================================================================================================================
-GLUF API Core Controller Methods
+ API Core Controller Methods
 
 */
 
 //call this first
-OBJGLUF_API bool GLUFInit();
+OBJGLUF_API bool Init();
 
 //call this after calling glfwMakeContextCurrent on the window
-OBJGLUF_API bool GLUFInitOpenGLExtensions();
+OBJGLUF_API bool InitOpenGLExtensions();
 
 //call this at the very last moment before application termination
-OBJGLUF_API void GLUFTerminate();
+OBJGLUF_API void Terminate();
 
-OBJGLUF_API const std::vector<std::string>& GLUFGetGLExtensions();
+OBJGLUF_API const std::vector<std::string>& GetGLExtensions();
 
 /*
 ======================================================================================================================================================================================================
@@ -355,7 +355,7 @@ IO and Stream Utilities
 
 
 /*
-GLUFLoadFileIntoMemory
+LoadFileIntoMemory
 
     Parameters:
         'path': path of file to load
@@ -367,11 +367,11 @@ GLUFLoadFileIntoMemory
     Note:
         If 'binMemory' is not empty, the data will be overwritten
 */
-OBJGLUF_API void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory);
-OBJGLUF_API void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory);
+OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory);
+OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory);
 
 /*
-GLUFLoadBinaryArrayIntoString
+LoadBinaryArrayIntoString
 
     Parameters:
         'rawMemory': memory to be read from
@@ -383,57 +383,57 @@ GLUFLoadBinaryArrayIntoString
         'std::ios_base::failure': if memory streaming was unsuccessful
 
 */
-OBJGLUF_API void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& outString);
-OBJGLUF_API void GLUFLoadBinaryArrayIntoString(const std::vector<char>& rawMemory, std::string& outString);
+OBJGLUF_API void LoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& outString);
+OBJGLUF_API void LoadBinaryArrayIntoString(const std::vector<char>& rawMemory, std::string& outString);
 
 
 /*
 ======================================================================================================================================================================================================
 OpenGL Basic Data Structures and Operators
 
-Note: these only play a significant role in GLUFGui, but are presented here as basic types and utilities which can be used independently of the GLUFGui
+Note: these only play a significant role in Gui, but are presented here as basic types and utilities which can be used independently of the Gui
 
 */
 
 
 //Rect is supposed to be used where the origin is bottom left
-struct OBJGLUF_API GLUFRect
+struct OBJGLUF_API Rect
 {
     union{ long left, x; };
     long top, right;
     union{ long bottom, y; };
 };
 
-struct OBJGLUF_API GLUFRectf
+struct OBJGLUF_API Rectf
 {
     float left, top, right, bottom;
 };
 
-struct OBJGLUF_API GLUFPoint
+struct OBJGLUF_API Point
 {
     union{ long x, width; };
     union{ long y, height; };
 
-    GLUFPoint(long val1, long val2) : x(val1), y(val2){}
-    GLUFPoint() : x(0L), y(0L){}
+    Point(long val1, long val2) : x(val1), y(val2){}
+    Point() : x(0L), y(0L){}
 };
 
-inline GLUFPoint operator /(const GLUFPoint& pt0, const GLUFPoint& pt1)
+inline Point operator /(const Point& pt0, const Point& pt1)
 {
     return{ pt0.x / pt1.x, pt0.y / pt1.y };
 }
 
-inline GLUFPoint operator /(const GLUFPoint& pt0, const long& f)
+inline Point operator /(const Point& pt0, const long& f)
 {
     return{ pt0.x / f, pt0.y / f };
 }
 
-inline GLUFPoint operator -(const GLUFPoint& pt0, const GLUFPoint& pt1)
+inline Point operator -(const Point& pt0, const Point& pt1)
 {
     return{ pt0.x - pt1.x, pt0.y - pt1.y };
 }
 
-inline bool operator ==(const GLUFRect& rc0, const GLUFRect& rc1)
+inline bool operator ==(const Rect& rc0, const Rect& rc1)
 {
     return
         (
@@ -442,27 +442,27 @@ inline bool operator ==(const GLUFRect& rc0, const GLUFRect& rc1)
         );
 }
 
-inline bool operator !=(const GLUFRect& rc0, const GLUFRect& rc1)
+inline bool operator !=(const Rect& rc0, const Rect& rc1)
 {
     return !(rc0 == rc1);
 }
 
-OBJGLUF_API bool		GLUFPtInRect(const GLUFRect& rect, const GLUFPoint& pt);
-OBJGLUF_API void		GLUFSetRectEmpty(GLUFRect& rect);
-OBJGLUF_API void		GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom);
-OBJGLUF_API void		GLUFSetRect(GLUFRectf& rect, float left, float top, float right, float bottom);
-OBJGLUF_API void		GLUFOffsetRect(GLUFRect& rect, long x, long y);
-OBJGLUF_API void        GLUFRepositionRect(GLUFRect& rect, long newX, long newY);
-OBJGLUF_API long		GLUFRectHeight(const GLUFRect& rect);
-OBJGLUF_API long		GLUFRectWidth(const GLUFRect& rect);
-OBJGLUF_API void		GLUFInflateRect(GLUFRect& rect, long dx, long dy);//center stays in same spot
-OBJGLUF_API void        GLUFResizeRect(GLUFRect& rect, long newWidth, long newHeight);//bottom left stays in same spot
-OBJGLUF_API bool		GLUFIntersectRect(const GLUFRect& rect0, const GLUFRect& rect1, GLUFRect& rectIntersect);
-OBJGLUF_API GLUFPoint	GLUFMultPoints(const GLUFPoint& pt0, const GLUFPoint& pt1);
+OBJGLUF_API bool		PtInRect(const Rect& rect, const Point& pt);
+OBJGLUF_API void		SetRectEmpty(Rect& rect);
+OBJGLUF_API void		SetRect(Rect& rect, long left, long top, long right, long bottom);
+OBJGLUF_API void		SetRect(Rectf& rect, float left, float top, float right, float bottom);
+OBJGLUF_API void		OffsetRect(Rect& rect, long x, long y);
+OBJGLUF_API void        RepositionRect(Rect& rect, long newX, long newY);
+OBJGLUF_API long		RectHeight(const Rect& rect);
+OBJGLUF_API long		RectWidth(const Rect& rect);
+OBJGLUF_API void		InflateRect(Rect& rect, long dx, long dy);//center stays in same spot
+OBJGLUF_API void        ResizeRect(Rect& rect, long newWidth, long newHeight);//bottom left stays in same spot
+OBJGLUF_API bool		IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect);
+OBJGLUF_API Point	MultPoints(const Point& pt0, const Point& pt1);
 
 /*
 ======================================================================================================================================================================================================
-Misc. GLUF Classes
+Misc.  Classes
 
 
 */
@@ -470,13 +470,13 @@ Misc. GLUF Classes
 
 
 /*
-GLUFMatrixStack
+MatrixStack
 
     Interface:
         -Use just as using std::stack, except slightly different naming convention
 
 */
-class OBJGLUF_API GLUFMatrixStack
+class OBJGLUF_API MatrixStack
 {
 	std::stack<glm::mat4> mStack;
 	static glm::mat4 mIdentity;
@@ -517,7 +517,7 @@ String Utilities
 */
 
 /*
-GLUFSplitStr
+SplitStr
 
     Parameters:
         's': string to be split
@@ -529,7 +529,7 @@ GLUFSplitStr
         'elems'
 */
 
-inline std::vector<std::wstring> &GLUFSplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false)
+inline std::vector<std::wstring> &SplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false)
 {
 	std::wstringstream ss(s);
 	std::wstring item;
@@ -542,14 +542,14 @@ inline std::vector<std::wstring> &GLUFSplitStr(const std::wstring &s, wchar_t de
 	return elems;
 }
 
-inline std::vector<std::wstring> GLUFSplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false)
+inline std::vector<std::wstring> SplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false)
 {
 	std::vector<std::wstring> elems;
-	GLUFSplitStr(s, delim, elems, keepDelim);
+	SplitStr(s, delim, elems, keepDelim);
 	return elems;
 }
 
-inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false)
+inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false)
 {
 	std::stringstream ss(s);
 	std::string item;
@@ -562,10 +562,10 @@ inline std::vector<std::string> &GLUFSplitStr(const std::string &s, char delim, 
 	return elems;
 }
 
-inline std::vector<std::string> GLUFSplitStr(const std::string &s, char delim, bool keepDelim = false)
+inline std::vector<std::string> SplitStr(const std::string &s, char delim, bool keepDelim = false)
 {
 	std::vector<std::string> elems;
-	GLUFSplitStr(s, delim, elems, keepDelim);
+	SplitStr(s, delim, elems, keepDelim);
 	return elems;
 }
 
@@ -580,7 +580,7 @@ Datatype Conversion Functions
 
 
 /*
-GLUFArrToVec
+ArrToVec
 
     Parameters:
         'arr': array to put into vector
@@ -597,11 +597,11 @@ GLUFArrToVec
             so avoid using C-Style arrays to begin with!
 */
 template<typename T>
-inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len);
+inline std::vector<T> ArrToVec(T* arr, unsigned long len);
 
 
 /*
-GLUFAdoptArray
+AdoptArray
 
     Parameters:
         'arr': array to have vector adopt
@@ -619,10 +619,10 @@ GLUFAdoptArray
 */
 
 template<typename T>
-inline std::vector<T> GLUFAdoptArray(T*& arr, unsigned long len) noexcept;
+inline std::vector<T> AdoptArray(T*& arr, unsigned long len) noexcept;
 
 /*
-GLUFGetVec2FromRect
+GetVec2FromRect
     
     Parameters:
         'rect': the rect to retreive from
@@ -630,15 +630,15 @@ GLUFGetVec2FromRect
         'y': true: top; false: bottom
 
 */
-OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(const GLUFRect& rect, bool x, bool y);
-OBJGLUF_API glm::vec2 GLUFGetVec2FromRect(const GLUFRectf& rect, bool x, bool y);
+OBJGLUF_API glm::vec2 GetVec2FromRect(const Rect& rect, bool x, bool y);
+OBJGLUF_API glm::vec2 GetVec2FromRect(const Rectf& rect, bool x, bool y);
 
 //used for getting vertices from rects 0,0 is bottom left
-OBJGLUF_API GLUFPoint GLUFGetPointFromRect(const GLUFRect& rect, bool x, bool y);
+OBJGLUF_API Point GetPointFromRect(const Rect& rect, bool x, bool y);
 
 
-OBJGLUF_API Color4f GLUFColorToFloat(const Color& color);//takes 0-255 to 0.0f - 1.0f
-OBJGLUF_API Color3f GLUFColorToFloat3(const Color& color);//takes 0-255 to 0.0f - 1.0f
+OBJGLUF_API Color4f ColorToFloat(const Color& color);//takes 0-255 to 0.0f - 1.0f
+OBJGLUF_API Color3f ColorToFloat3(const Color& color);//takes 0-255 to 0.0f - 1.0f
 
 
 
@@ -653,13 +653,13 @@ Note:
 */
 
 
-enum GLUFLocationType
+enum LocationType
 {
 	GLT_ATTRIB = 0,
 	GLT_UNIFORM,
 };
 
-struct OBJGLUF_API GLUFShaderInfoStruct
+struct OBJGLUF_API ShaderInfoStruct
 {
 	bool mSuccess = false;
 
@@ -671,7 +671,7 @@ struct OBJGLUF_API GLUFShaderInfoStruct
 	}
 };
 
-enum GLUFShaderType
+enum ShaderType
 {
 	SH_VERTEX_SHADER = GL_VERTEX_SHADER,
 	SH_TESS_CONTROL_SHADER = GL_TESS_CONTROL_SHADER,
@@ -680,7 +680,7 @@ enum GLUFShaderType
 	SH_FRAGMENT_SHADER = GL_FRAGMENT_SHADER
 };
 
-enum GLUFProgramStage
+enum ProgramStage
 {
     PPO_INVALID_SHADER_BIT = 0,//this is 0, since passing a null bitfield signifies not to use this program for any stage
     PPO_VERTEX_SHADER_BIT = GL_VERTEX_SHADER_BIT,
@@ -691,19 +691,19 @@ enum GLUFProgramStage
 };
 
 /*
-GLUFShaderTypeToProgramStage
+ShaderTypeToProgramStage
 
     Parameters:
         'type': which shader type it is
 
     Returns:
-        corresponding 'GLUFProgramStage' to 'type'
+        corresponding 'ProgramStage' to 'type'
 */
-GLUFProgramStage GLUFShaderTypeToProgramStage(GLUFShaderType type);
+ProgramStage ShaderTypeToProgramStage(ShaderType type);
 
 //use type alias because the compile and link output are both the same
-using GLUFCompileOutputStruct = GLUFShaderInfoStruct;
-using GLUFLinkOutputStruct    = GLUFShaderInfoStruct;
+using CompileOutputStruct = ShaderInfoStruct;
+using LinkOutputStruct    = ShaderInfoStruct;
 
 
 /*
@@ -712,10 +712,10 @@ Opaque Shader Classes
 
 */
 
-class OBJGLUF_API GLUFShader;
-class OBJGLUF_API GLUFComputeShader;
-class OBJGLUF_API GLUFProgram;
-class OBJGLUF_API GLUFSeparateProgram;
+class OBJGLUF_API Shader;
+class OBJGLUF_API ComputeShader;
+class OBJGLUF_API Program;
+class OBJGLUF_API SeparateProgram;
 
 
 /*
@@ -724,27 +724,27 @@ Shader Aliases
 
 */
 
-using GLUFShaderPtr         = std::shared_ptr<GLUFShader>;
-using GLUFShaderPtrWeak     = std::weak_ptr<GLUFShader>;
-using GLUFProgramPtr        = std::shared_ptr<GLUFProgram>;
-using GLUFProgramPtrWeak    = std::weak_ptr<GLUFProgram>;
-using GLUFSepProgramPtr     = std::shared_ptr<GLUFSeparateProgram>;
-using GLUFSepProgramPtrWeak = std::weak_ptr<GLUFSeparateProgram>;
+using ShaderPtr         = std::shared_ptr<Shader>;
+using ShaderPtrWeak     = std::weak_ptr<Shader>;
+using ProgramPtr        = std::shared_ptr<Program>;
+using ProgramPtrWeak    = std::weak_ptr<Program>;
+using SepProgramPtr     = std::shared_ptr<SeparateProgram>;
+using SepProgramPtrWeak = std::weak_ptr<SeparateProgram>;
 
-using GLUFShaderSourceList      = std::map<GLUFShaderType, std::string>;
-using GLUFShaderPathList        = std::map<GLUFShaderType, std::wstring>;//use wstring, because paths may have unicode characters, but the source shall not
-using GLUFShaderIdList          = std::vector<GLuint>;
-using GLUFProgramIdList         = std::vector<GLuint>;
-using GLUFShaderNameList        = std::vector<std::wstring>;
-using GLUFProgramNameList       = std::vector<std::wstring>;
-using GLUFShaderPtrList         = std::vector<GLUFShaderPtr>;
-using GLUFProgramPtrList        = std::vector<GLUFProgramPtr>;
-using GLUFProgramPtrMap         = std::map<GLUFShaderType, GLUFProgramPtr>;
-using GLUFShaderPtrListWeak     = std::vector<GLUFShaderPtrWeak>;
-using GLUFProgramPtrListWeak    = std::vector<GLUFProgramPtrWeak>;
+using ShaderSourceList      = std::map<ShaderType, std::string>;
+using ShaderPathList        = std::map<ShaderType, std::wstring>;//use wstring, because paths may have unicode characters, but the source shall not
+using ShaderIdList          = std::vector<GLuint>;
+using ProgramIdList         = std::vector<GLuint>;
+using ShaderNameList        = std::vector<std::wstring>;
+using ProgramNameList       = std::vector<std::wstring>;
+using ShaderPtrList         = std::vector<ShaderPtr>;
+using ProgramPtrList        = std::vector<ProgramPtr>;
+using ProgramPtrMap         = std::map<ShaderType, ProgramPtr>;
+using ShaderPtrListWeak     = std::vector<ShaderPtrWeak>;
+using ProgramPtrListWeak    = std::vector<ProgramPtrWeak>;
 
-using GLUFVariableLocMap    = std::map<std::string, GLuint>;
-using GLUFVariableLocPair = std::pair < std::string, GLuint > ;
+using VariableLocMap    = std::map<std::string, GLuint>;
+using VariableLocPair = std::pair < std::string, GLuint > ;
 
 /*
 
@@ -754,27 +754,27 @@ Shader Exceptions
 
 //macro for forcing an exception to show up on the log upon contruction
 #define EXCEPTION_CONSTRUCTOR_BODY \
-    GLUF_ERROR_LONG("GLUF Exception Thrown: \"" << what() << "\"");
+    GLUF_ERROR_LONG(" Exception Thrown: \"" << what() << "\"");
 #define EXCEPTION_CONSTRUCTOR(class_name) \
 class_name() \
 { \
-    GLUF_ERROR_LONG("GLUF Exception Thrown: \"" << what() << "\""); \
+    GLUF_ERROR_LONG(" Exception Thrown: \"" << what() << "\""); \
 }
 
 /*
-GLUFException
+Exception
 
-    Serves as base class for all other GLUF exceptions.  
+    Serves as base class for all other  exceptions.  
     Override MyUniqueMessage in children
 */
-class GLUFException : public std::exception
+class Exception : public std::exception
 { 
 public:
     
     const char* what() const = 0;
 };
 
-class UseProgramException : public GLUFException
+class UseProgramException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -785,7 +785,7 @@ public:
     EXCEPTION_CONSTRUCTOR(UseProgramException)
 };
 
-class MakeShaderException : public GLUFException
+class MakeShaderException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -796,7 +796,7 @@ public:
     EXCEPTION_CONSTRUCTOR(MakeShaderException)
 };
 
-class MakeProgramException : public GLUFException
+class MakeProgramException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -807,7 +807,7 @@ public:
     EXCEPTION_CONSTRUCTOR(MakeProgramException)
 };
 
-class MakePPOException : public GLUFException
+class MakePPOException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -818,7 +818,7 @@ public:
     EXCEPTION_CONSTRUCTOR(MakePPOException)
 };
 
-class NoActiveProgramUniformException : public GLUFException
+class NoActiveProgramUniformException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -830,7 +830,7 @@ public:
 };
 
 /*
-GLUFShaderManager
+ShaderManager
 
     Multithreading:
         -Thread-Safe Functions:
@@ -855,12 +855,12 @@ GLUFShaderManager
 
 */
 
-class OBJGLUF_API GLUFShaderManager
+class OBJGLUF_API ShaderManager
 {
 
 	//a list of logs
-	std::map<GLUFShaderPtr, GLUFShaderInfoStruct>  mCompileLogs;
-	std::map<GLUFProgramPtr, GLUFShaderInfoStruct> mLinklogs;
+	std::map<ShaderPtr, ShaderInfoStruct>  mCompileLogs;
+	std::map<ProgramPtr, ShaderInfoStruct> mLinklogs;
 
     mutable std::mutex mCompLogMutex;
     mutable std::mutex mLinkLogMutex;
@@ -875,7 +875,7 @@ class OBJGLUF_API GLUFShaderManager
         Note:
             This is meant to be use in order to handle thread-safe log access
     */
-    void AddCompileLog(const GLUFShaderPtr& shader, const GLUFShaderInfoStruct& log);
+    void AddCompileLog(const ShaderPtr& shader, const ShaderInfoStruct& log);
 
 
     /*
@@ -888,7 +888,7 @@ class OBJGLUF_API GLUFShaderManager
     Note:
         This is meant to be use in order to handle thread-safe log access
     */
-    void AddLinkLog(const GLUFProgramPtr& program, const GLUFShaderInfoStruct& log);
+    void AddLinkLog(const ProgramPtr& program, const ShaderInfoStruct& log);
 
     /*
     GetUniformIdFromName
@@ -902,8 +902,8 @@ class OBJGLUF_API GLUFShaderManager
             the id of the uniform
     
     */
-    GLuint GetUniformIdFromName(const GLUFSepProgramPtr& ppo, const std::string& name) const;
-    GLuint GetUniformIdFromName(const GLUFProgramPtr& prog, const std::string& name) const;
+    GLuint GetUniformIdFromName(const SepProgramPtr& ppo, const std::string& name) const;
+    GLuint GetUniformIdFromName(const ProgramPtr& prog, const std::string& name) const;
 
 public:
 
@@ -923,9 +923,9 @@ public:
     
     */
 
-	void CreateShaderFromFile(GLUFShaderPtr& outShader, const std::wstring& filePath, GLUFShaderType type);
-    void CreateShaderFromText(GLUFShaderPtr& outShader, const std::string& text, GLUFShaderType type);
-    void CreateShaderFromMemory(GLUFShaderPtr& outShader, const std::vector<char>& memory, GLUFShaderType type);
+	void CreateShaderFromFile(ShaderPtr& outShader, const std::wstring& filePath, ShaderType type);
+    void CreateShaderFromText(ShaderPtr& outShader, const std::string& text, ShaderType type);
+    void CreateShaderFromMemory(ShaderPtr& outShader, const std::vector<char>& memory, ShaderType type);
 
 
     /*
@@ -945,9 +945,9 @@ public:
     
     */
 
-	void CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrList shaders, bool separate = false);
-    void CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderSourceList shaderSources, bool separate = false);
-    void CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPathList shaderPaths, bool separate = false);
+	void CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders, bool separate = false);
+    void CreateProgram(ProgramPtr& outProgram, ShaderSourceList shaderSources, bool separate = false);
+    void CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate = false);
 
 
     /*
@@ -960,7 +960,7 @@ public:
 
         Returns:
             'GLuint': location id of variable
-            'GLUFVariableLocMap': map of attribute/variable names to their respective id's
+            'VariableLocMap': map of attribute/variable names to their respective id's
 
         Throws:
             'std::invalid_argument': if 'prog' == nullptr
@@ -968,12 +968,12 @@ public:
     
     */
 
-	const GLuint GetShaderVariableLocation(const GLUFProgramPtr& program, GLUFLocationType locType, const std::string& varName) const;
-    const GLUFVariableLocMap& GetShaderAttribLocations(const GLUFProgramPtr& program) const;
-    const GLUFVariableLocMap& GetShaderUniformLocations(const GLUFProgramPtr& program) const;
+	const GLuint GetShaderVariableLocation(const ProgramPtr& program, LocationType locType, const std::string& varName) const;
+    const VariableLocMap& GetShaderAttribLocations(const ProgramPtr& program) const;
+    const VariableLocMap& GetShaderUniformLocations(const ProgramPtr& program) const;
 
-    const GLUFVariableLocMap GetShaderAttribLocations(const GLUFSepProgramPtr& program) const;
-    const GLUFVariableLocMap GetShaderUniformLocations(const GLUFSepProgramPtr& program) const;
+    const VariableLocMap GetShaderAttribLocations(const SepProgramPtr& program) const;
+    const VariableLocMap GetShaderUniformLocations(const SepProgramPtr& program) const;
 
 
     /*
@@ -992,8 +992,8 @@ public:
     
     */
 
-	void DeleteShader(GLUFShaderPtr& shader) noexcept;
-	void DeleteProgram(GLUFProgramPtr& program) noexcept;
+	void DeleteShader(ShaderPtr& shader) noexcept;
+	void DeleteProgram(ProgramPtr& program) noexcept;
 
 
     //self-explanitory
@@ -1008,19 +1008,19 @@ public:
 
         Returns:
             'GLuint': id of shader/program
-            'GLUFShaderType': what type of shader it is
-            'GLUFCompileOutputStruct': get log file for compiling
-            'GLUFLinkOutputStruct': get log file for linking
+            'ShaderType': what type of shader it is
+            'CompileOutputStruct': get log file for compiling
+            'LinkOutputStruct': get log file for linking
 
         Throws
             'std::invalid_argument': if shader/program == nullptr
     */
-    const GLuint	        GetShaderId(const GLUFShaderPtr& shader) const;
-    const GLUFShaderType    GetShaderType(const GLUFShaderPtr& shader) const;
-    const GLuint	        GetProgramId(const GLUFProgramPtr& program) const;
+    const GLuint	        GetShaderId(const ShaderPtr& shader) const;
+    const ShaderType    GetShaderType(const ShaderPtr& shader) const;
+    const GLuint	        GetProgramId(const ProgramPtr& program) const;
 
-    const GLUFCompileOutputStruct   GetShaderLog(const GLUFShaderPtr& shaderPtr) const;
-    const GLUFLinkOutputStruct      GetProgramLog(const GLUFProgramPtr& programPtr) const;
+    const CompileOutputStruct   GetShaderLog(const ShaderPtr& shaderPtr) const;
+    const LinkOutputStruct      GetProgramLog(const ProgramPtr& programPtr) const;
 
 
     /*
@@ -1035,8 +1035,8 @@ public:
     
     */
 
-    void UseProgram(const GLUFProgramPtr& program) const;
-    void UseProgram(const GLUFSepProgramPtr& ppo) const;
+    void UseProgram(const ProgramPtr& program) const;
+    void UseProgram(const SepProgramPtr& ppo) const;
 
     //bind program id and ppo id 0
     void UseProgramNull() const noexcept;
@@ -1056,8 +1056,8 @@ public:
             'std::invalid_argument': if program(s) == nullptr
     */
 
-    void AttachPrograms(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const;
-    void AttachProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtr& program) const;
+    void AttachPrograms(SepProgramPtr& ppo, const ProgramPtrList& programs) const;
+    void AttachProgram(SepProgramPtr& ppo, const ProgramPtr& program) const;
 
 
     /*
@@ -1071,7 +1071,7 @@ public:
             'std::invalid_argument': if ppo == nullptr
     */
 
-    void ClearPrograms(GLUFSepProgramPtr& ppo, GLbitfield stages = GL_ALL_SHADER_BITS) const;
+    void ClearPrograms(SepProgramPtr& ppo, GLbitfield stages = GL_ALL_SHADER_BITS) const;
 
 
     /*
@@ -1086,7 +1086,7 @@ public:
             'MakePPOException': if ppo creation failed
     
     */
-    void CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const;
+    void CreateSeparateProgram(SepProgramPtr& ppo, const ProgramPtrList& programs) const;
 
     /*
     GLUniform*
@@ -1134,28 +1134,28 @@ public:
 
 
 
-    void GLUniform1f(const GLUFProgramPtr& prog, const std::string& name, const GLfloat& value) const;
-    void GLUniform2f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec2& value) const;
-    void GLUniform3f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec3& value) const;
-    void GLUniform4f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec4& value) const;
-    void GLUniform1i(const GLUFProgramPtr& prog, const std::string& name, const GLint& value) const;
-    void GLUniform2i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const;
-    void GLUniform3i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec3& value) const;
-    void GLUniform4i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const;
-    void GLUniform1ui(const GLUFProgramPtr& prog, const std::string& name, const GLuint& value) const;
-    void GLUniform2ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const;
-    void GLUniform3ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const;
-    void GLUniform4ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec4& value) const;
+    void GLUniform1f(const ProgramPtr& prog, const std::string& name, const GLfloat& value) const;
+    void GLUniform2f(const ProgramPtr& prog, const std::string& name, const glm::vec2& value) const;
+    void GLUniform3f(const ProgramPtr& prog, const std::string& name, const glm::vec3& value) const;
+    void GLUniform4f(const ProgramPtr& prog, const std::string& name, const glm::vec4& value) const;
+    void GLUniform1i(const ProgramPtr& prog, const std::string& name, const GLint& value) const;
+    void GLUniform2i(const ProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const;
+    void GLUniform3i(const ProgramPtr& prog, const std::string& name, const glm::i32vec3& value) const;
+    void GLUniform4i(const ProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const;
+    void GLUniform1ui(const ProgramPtr& prog, const std::string& name, const GLuint& value) const;
+    void GLUniform2ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const;
+    void GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const;
+    void GLUniform4ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec4& value) const;
 
-    void GLUniformMatrix2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2& value) const;
-    void GLUniformMatrix3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3& value) const;
-    void GLUniformMatrix4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4& value) const;
-    void GLUniformMatrix2x3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2x3& value) const;
-    void GLUniformMatrix3x2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3x2& value) const;
-    void GLUniformMatrix2x4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2x4& value) const;
-    void GLUniformMatrix4x2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4x2& value) const;
-    void GLUniformMatrix3x4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3x4& value) const;
-    void GLUniformMatrix4x3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4x3& value) const;
+    void GLUniformMatrix2f(const ProgramPtr& prog, const std::string& name, const glm::mat2& value) const;
+    void GLUniformMatrix3f(const ProgramPtr& prog, const std::string& name, const glm::mat3& value) const;
+    void GLUniformMatrix4f(const ProgramPtr& prog, const std::string& name, const glm::mat4& value) const;
+    void GLUniformMatrix2x3f(const ProgramPtr& prog, const std::string& name, const glm::mat2x3& value) const;
+    void GLUniformMatrix3x2f(const ProgramPtr& prog, const std::string& name, const glm::mat3x2& value) const;
+    void GLUniformMatrix2x4f(const ProgramPtr& prog, const std::string& name, const glm::mat2x4& value) const;
+    void GLUniformMatrix4x2f(const ProgramPtr& prog, const std::string& name, const glm::mat4x2& value) const;
+    void GLUniformMatrix3x4f(const ProgramPtr& prog, const std::string& name, const glm::mat3x4& value) const;
+    void GLUniformMatrix4x3f(const ProgramPtr& prog, const std::string& name, const glm::mat4x3& value) const;
 
     /*
     GLProgramUniform*
@@ -1177,53 +1177,53 @@ public:
     
     */
 
-    void GLProgramUniform1f(const GLUFSepProgramPtr& ppo, GLuint loc, const GLfloat& value) const;
-    void GLProgramUniform2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec2& value) const;
-    void GLProgramUniform3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec3& value) const;
-    void GLProgramUniform4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec4& value) const;
-    void GLProgramUniform1i(const GLUFSepProgramPtr& ppo, GLuint loc, const GLint& value) const;
-    void GLProgramUniform2i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec2& value) const;
-    void GLProgramUniform3i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec3& value) const;
-    void GLProgramUniform4i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec4& value) const;
-    void GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, GLuint loc, const GLuint& value) const;
-    void GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec2& value) const;
-    void GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec3& value) const;
-    void GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec4& value) const;
+    void GLProgramUniform1f(const SepProgramPtr& ppo, GLuint loc, const GLfloat& value) const;
+    void GLProgramUniform2f(const SepProgramPtr& ppo, GLuint loc, const glm::vec2& value) const;
+    void GLProgramUniform3f(const SepProgramPtr& ppo, GLuint loc, const glm::vec3& value) const;
+    void GLProgramUniform4f(const SepProgramPtr& ppo, GLuint loc, const glm::vec4& value) const;
+    void GLProgramUniform1i(const SepProgramPtr& ppo, GLuint loc, const GLint& value) const;
+    void GLProgramUniform2i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec2& value) const;
+    void GLProgramUniform3i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec3& value) const;
+    void GLProgramUniform4i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec4& value) const;
+    void GLProgramUniform1ui(const SepProgramPtr& ppo, GLuint loc, const GLuint& value) const;
+    void GLProgramUniform2ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec2& value) const;
+    void GLProgramUniform3ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec3& value) const;
+    void GLProgramUniform4ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec4& value) const;
 
-    void GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2& value) const;
-    void GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3& value) const;
-    void GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4& value) const;
-    void GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2x3& value) const;
-    void GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3x2& value) const;
-    void GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2x4& value) const;
-    void GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4x2& value) const;
-    void GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3x4& value) const;
-    void GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4x3& value) const;
+    void GLProgramUniformMatrix2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2& value) const;
+    void GLProgramUniformMatrix3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3& value) const;
+    void GLProgramUniformMatrix4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4& value) const;
+    void GLProgramUniformMatrix2x3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2x3& value) const;
+    void GLProgramUniformMatrix3x2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3x2& value) const;
+    void GLProgramUniformMatrix2x4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2x4& value) const;
+    void GLProgramUniformMatrix4x2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4x2& value) const;
+    void GLProgramUniformMatrix3x4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3x4& value) const;
+    void GLProgramUniformMatrix4x3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4x3& value) const;
 
 
 
-    void GLProgramUniform1f(const GLUFSepProgramPtr& ppo, const std::string& name, const GLfloat& value) const;
-    void GLProgramUniform2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec2& value) const;
-    void GLProgramUniform3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec3& value) const;
-    void GLProgramUniform4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec4& value) const;
-    void GLProgramUniform1i(const GLUFSepProgramPtr& ppo, const std::string& name, const GLint& value) const;
-    void GLProgramUniform2i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec2& value) const;
-    void GLProgramUniform3i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec3& value) const;
-    void GLProgramUniform4i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec4& value) const;
-    void GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, const std::string& name, const GLuint& value) const;
-    void GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec2& value) const;
-    void GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec3& value) const;
-    void GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec4& value) const;
+    void GLProgramUniform1f(const SepProgramPtr& ppo, const std::string& name, const GLfloat& value) const;
+    void GLProgramUniform2f(const SepProgramPtr& ppo, const std::string& name, const glm::vec2& value) const;
+    void GLProgramUniform3f(const SepProgramPtr& ppo, const std::string& name, const glm::vec3& value) const;
+    void GLProgramUniform4f(const SepProgramPtr& ppo, const std::string& name, const glm::vec4& value) const;
+    void GLProgramUniform1i(const SepProgramPtr& ppo, const std::string& name, const GLint& value) const;
+    void GLProgramUniform2i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec2& value) const;
+    void GLProgramUniform3i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec3& value) const;
+    void GLProgramUniform4i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec4& value) const;
+    void GLProgramUniform1ui(const SepProgramPtr& ppo, const std::string& name, const GLuint& value) const;
+    void GLProgramUniform2ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec2& value) const;
+    void GLProgramUniform3ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec3& value) const;
+    void GLProgramUniform4ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec4& value) const;
 
-    void GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2& value) const;
-    void GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3& value) const;
-    void GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4& value) const;
-    void GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2x3& value) const;
-    void GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3x2& value) const;
-    void GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2x4& value) const;
-    void GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4x2& value) const;
-    void GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3x4& value) const;
-    void GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4x3& value) const;
+    void GLProgramUniformMatrix2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2& value) const;
+    void GLProgramUniformMatrix3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3& value) const;
+    void GLProgramUniformMatrix4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4& value) const;
+    void GLProgramUniformMatrix2x3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2x3& value) const;
+    void GLProgramUniformMatrix3x2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3x2& value) const;
+    void GLProgramUniformMatrix2x4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2x4& value) const;
+    void GLProgramUniformMatrix4x2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4x2& value) const;
+    void GLProgramUniformMatrix3x4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3x4& value) const;
+    void GLProgramUniformMatrix4x3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4x3& value) const;
 
 
     /*
@@ -1242,7 +1242,7 @@ public:
             
     */
 
-    void GLActiveShaderProgram(GLUFSepProgramPtr& ppo, GLUFShaderType stage) const;
+    void GLActiveShaderProgram(SepProgramPtr& ppo, ShaderType stage) const;
 
 };
 
@@ -1254,16 +1254,16 @@ Global Shader Manager Instance and Usage Example
 
 */
 
-extern GLUFShaderManager OBJGLUF_API g_ShaderManager;
+extern ShaderManager OBJGLUF_API g_ShaderManager;
 
-#define GLUFSHADERMANAGER GLUF::g_ShaderManager
+#define SHADERMANAGER GLUF::g_ShaderManager
 
 /*
 Usage examples
 
 
 //create the shader
-GLUFShaderPtr shad = GLUFSHADERMANAGER.CreateShader("shader.glsl", ST_VERTEX_SHADER);
+ShaderPtr shad = SHADERMANAGER.CreateShader("shader.glsl", ST_VERTEX_SHADER);
 
 */
 
@@ -1287,7 +1287,7 @@ Texture Utilities:
 
 */
 
-class TextureCreationException : public GLUFException
+class TextureCreationException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -1298,7 +1298,7 @@ public:
     EXCEPTION_CONSTRUCTOR(TextureCreationException)
 };
 
-enum GLUFTextureFileFormat
+enum TextureFileFormat
 {
 	TFF_DDS = 0,//we will ONLY support dds's, because they are flexible enough, AND have mipmaps
 	TTF_DDS_CUBEMAP = 1
@@ -1326,8 +1326,8 @@ LoadTextureFrom*
         If formats other than ABGR are supported, ABGR will likely be faster at loading
 
 */
-GLuint OBJGLUF_API LoadTextureFromFile(const std::wstring& filePath, GLUFTextureFileFormat format);
-GLuint OBJGLUF_API LoadTextureFromMemory(const std::vector<char>& data, GLUFTextureFileFormat format);//this is broken, WHY
+GLuint OBJGLUF_API LoadTextureFromFile(const std::wstring& filePath, TextureFileFormat format);
+GLuint OBJGLUF_API LoadTextureFromMemory(const std::vector<char>& data, TextureFileFormat format);//this is broken, WHY
 
 
 
@@ -1339,7 +1339,7 @@ Buffer Utilities
 */
 
 
-struct GLUFMeshBarebones
+struct MeshBarebones
 {
 	Vec3Array mVertices;
 	IndexArray mIndices;
@@ -1348,7 +1348,7 @@ struct GLUFMeshBarebones
 
 
 /*
-GLUFVertexAttribInfo
+VertexAttribInfo
 
     Member Data:
         'mBytesPerElement': the number of bytes per element of the vertex
@@ -1357,11 +1357,11 @@ GLUFVertexAttribInfo
         'mType': primitive type of the data
 */
 
-struct OBJGLUF_API GLUFVertexAttribInfo
+struct OBJGLUF_API VertexAttribInfo
 {
 	unsigned short mBytesPerElement;//int would be 4
 	unsigned short mElementsPerValue;//vec4 would be 4
-	GLUFAttribLoc  mVertexAttribLocation;
+	AttribLoc  mVertexAttribLocation;
 	GLenum         mType;//float would be GL_FLOAT
     GLuint         mOffset;//will be 0 in SoA
 };
@@ -1373,7 +1373,7 @@ Vertex Array Exceptions
 
 */
 
-class MakeVOAException : public GLUFException
+class MakeVOAException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -1384,7 +1384,7 @@ public:
     EXCEPTION_CONSTRUCTOR(MakeVOAException)
 };
 
-class InvalidSoABufferLenException : public GLUFException
+class InvalidSoABufferLenException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -1395,7 +1395,7 @@ public:
     EXCEPTION_CONSTRUCTOR(InvalidSoABufferLenException)
 };
 
-class MakeBufferException : public GLUFException
+class MakeBufferException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -1406,7 +1406,7 @@ public:
     EXCEPTION_CONSTRUCTOR(MakeBufferException)
 };
 
-class InvalidAttrubuteLocationException : public GLUFException
+class InvalidAttrubuteLocationException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -1418,7 +1418,7 @@ public:
 };
 
 /*
-GLUFVertexArrayBase
+VertexArrayBase
 
     Member Data:
         'mVertexArrayId': The OpenGL assigned id for this vertex array
@@ -1433,7 +1433,7 @@ GLUFVertexArrayBase
 
 */
 
-class OBJGLUF_API GLUFVertexArrayBase
+class OBJGLUF_API VertexArrayBase
 {
 protected:
 	GLuint mVertexArrayId = 0;
@@ -1442,7 +1442,7 @@ protected:
 
 	GLenum mUsageType;
 	GLenum mPrimitiveType;
-	std::map<GLUFAttribLoc, GLUFVertexAttribInfo> mAttribInfos;
+	std::map<AttribLoc, VertexAttribInfo> mAttribInfos;
 
 	GLuint mIndexBuffer = 0;
 	GLuint mRangedIndexBuffer = 0;
@@ -1466,13 +1466,13 @@ protected:
     
     */
 	virtual void RefreshDataBufferAttribute() noexcept = 0;
-	const GLUFVertexAttribInfo& GetAttribInfoFromLoc(GLUFAttribLoc loc) const;
+	const VertexAttribInfo& GetAttribInfoFromLoc(AttribLoc loc) const;
     void BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept;
 
 
     //disallow copy constructor and assignment operator
-	GLUFVertexArrayBase(const GLUFVertexArrayBase& other) = delete;
-    GLUFVertexArrayBase& operator=(const GLUFVertexArrayBase& other) = delete;
+	VertexArrayBase(const VertexArrayBase& other) = delete;
+    VertexArrayBase& operator=(const VertexArrayBase& other) = delete;
 public:
     /*
     
@@ -1488,10 +1488,10 @@ public:
             'MakeBufferException': if index buffer fails to be created (This will not be thrown if 'index' = false)
     */
     
-    GLUFVertexArrayBase(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool index = true);
+    VertexArrayBase(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool index = true);
 	
     
-    ~GLUFVertexArrayBase();
+    ~VertexArrayBase();
 
     /*
     
@@ -1501,8 +1501,8 @@ public:
             May Throw something in Map Copy Constructor
     */
 
-    GLUFVertexArrayBase(GLUFVertexArrayBase&& other);
-    GLUFVertexArrayBase& operator=(GLUFVertexArrayBase&& other);
+    VertexArrayBase(VertexArrayBase&& other);
+    VertexArrayBase& operator=(VertexArrayBase&& other);
 
     /*
     Add/RemoveVertexAttrib
@@ -1516,8 +1516,8 @@ public:
     
     */
 	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-	virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info);
-	virtual void RemoveVertexAttrib(GLUFAttribLoc loc);
+	virtual void AddVertexAttrib(const VertexAttribInfo& info);
+	virtual void RemoveVertexAttrib(AttribLoc loc);
 
     /*
     BindVertexArray
@@ -1642,20 +1642,20 @@ public:
             no-throw guarantee
     
     */
-    //void EnableVertexAttribute(GLUFAttribLoc loc) noexcept;
-    //void DisableVertexAttribute(GLUFAttribLoc loc) noexcept;
+    //void EnableVertexAttribute(AttribLoc loc) noexcept;
+    //void DisableVertexAttribute(AttribLoc loc) noexcept;
 };
 
 
 
 /*
-GLUFVertexStruct
+VertexStruct
 
-    Base struct for data used in 'GLUFVertexArrayAoS'
+    Base struct for data used in 'VertexArrayAoS'
 
 */
 
-struct GLUFVertexStruct
+struct VertexStruct
 {
     virtual void* operator&() const = 0;
     virtual size_t size() const = 0;
@@ -1665,10 +1665,10 @@ struct GLUFVertexStruct
 
 /*
 
-GLUFGLVector
+GLVector
     
     -a small excention to the std::vector class;
-    -use this just like you would std::vector, except T MUST be derived from 'GLUFVertexStruct'
+    -use this just like you would std::vector, except T MUST be derived from 'VertexStruct'
     -T::size() must be the same for every element of the vector, however it will only throw an exception when calling gl_data()
 
     Data Members:
@@ -1676,7 +1676,7 @@ GLUFGLVector
 */
 
 template<typename T>
-class GLUFGLVector : public std::vector<T>
+class GLVector : public std::vector<T>
 {
     mutable char* mGLData = nullptr;
 public:
@@ -1684,7 +1684,7 @@ public:
     /*
     Default Constructor
     */
-    GLUFGLVector(){}
+    GLVector(){}
 
     /*
 
@@ -1694,8 +1694,8 @@ public:
             May throw something in 'std::vector's move constructor or assignment operator
     */
 
-    GLUFGLVector(GLUFGLVector&& other);
-    GLUFGLVector& operator=(GLUFGLVector&& other);
+    GLVector(GLVector&& other);
+    GLVector& operator=(GLVector&& other);
 
     /*
     Copy Constructor and Assignment Operator
@@ -1703,8 +1703,8 @@ public:
         Throws:
             May throw something in 'std::vector's copy constructor or assignment operator
     */
-    GLUFGLVector(const GLUFGLVector& other) : std::vector<T>(other), mGLData(0) {}
-    GLUFGLVector& operator=(const GLUFGLVector& other);
+    GLVector(const GLVector& other) : std::vector<T>(other), mGLData(0) {}
+    GLVector& operator=(const GLVector& other);
 
     /*
     gl_data
@@ -1747,7 +1747,7 @@ public:
 
 /*
 
-GLUFVertexArrayAoS:
+VertexArrayAoS:
     
     An Array of Structures approach to OpenGL buffers
 
@@ -1760,7 +1760,7 @@ GLUFVertexArrayAoS:
 
 */
 
-class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
+class OBJGLUF_API VertexArrayAoS : public VertexArrayBase
 {
 
 
@@ -1771,7 +1771,7 @@ class OBJGLUF_API GLUFVertexArrayAoS : public GLUFVertexArrayBase
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void RemoveVertexAttrib(GLUFAttribLoc loc) sealed {}
+    virtual void RemoveVertexAttrib(AttribLoc loc) sealed {}
 
 protected:
 	GLuint mDataBuffer = 0;
@@ -1779,7 +1779,7 @@ protected:
 
 
 
-    //see 'GLUFVertexArrayBase' Docs
+    //see 'VertexArrayBase' Docs
 	virtual void RefreshDataBufferAttribute();
 
 public:
@@ -1797,9 +1797,9 @@ public:
             'MakeVAOException': if construction fails         
             'MakeBufferException': if buffer creation specifically fails
     */
-	GLUFVertexArrayAoS(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+	VertexArrayAoS(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
 
-    ~GLUFVertexArrayAoS();
+    ~VertexArrayAoS();
 
 
     /*
@@ -1811,8 +1811,8 @@ public:
 
     */
 
-    GLUFVertexArrayAoS(GLUFVertexArrayAoS&& other);
-    GLUFVertexArrayAoS& operator=(GLUFVertexArrayAoS&& other);
+    VertexArrayAoS(VertexArrayAoS&& other);
+    VertexArrayAoS& operator=(VertexArrayAoS&& other);
 
 
     /*
@@ -1840,8 +1840,8 @@ public:
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info);
-    virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuint offset);
+    virtual void AddVertexAttrib(const VertexAttribInfo& info);
+    virtual void AddVertexAttrib(const VertexAttribInfo& info, GLuint offset);
 
 
     /*
@@ -1851,14 +1851,14 @@ public:
 
         Parameters:
             'data': the array of structures 
-            'T': data structure derived from 'GLUFVertexStruct'
+            'T': data structure derived from 'VertexStruct'
 
         Throws:
-            'std::invalid_argument' if derived 'GLUFVertexStruct' is the wrong size or is not derived from 'GLUFVertexStruct', but this does NOT enforce the layout
+            'std::invalid_argument' if derived 'VertexStruct' is the wrong size or is not derived from 'VertexStruct', but this does NOT enforce the layout
     
     */
     template<typename T>
-    void BufferData(const GLUFGLVector<T>& data);
+    void BufferData(const GLVector<T>& data);
 
     
     /*
@@ -1882,30 +1882,30 @@ public:
 
         Parameters:
             'vertexLocations': overwrite these vertices (if size == 1, then that will be the first vertex, then will overwrite sequentially)
-            'data': List of Data which derives from GLUFAoSStruct
+            'data': List of Data which derives from AoSStruct
             'isSorted': set this to 'true' if the vertex locations are in order (not necessessarily contiguous though)
             
         Template Parameters:
-            'T': vertex type, derived from GLUFVertexStruct, which CANNOT contain any pointers, it must only contain primative types, or structures of primative types
+            'T': vertex type, derived from VertexStruct, which CANNOT contain any pointers, it must only contain primative types, or structures of primative types
 
         Throws:
-            'std::invalid_argument' if derived 'GLUFVertexStruct' is the wrong size, but this does NOT enforce the layout
+            'std::invalid_argument' if derived 'VertexStruct' is the wrong size, but this does NOT enforce the layout
             'std::invalid_argument' if size of data array is not the size of the vertex locations, and the size of the vertex locations is not equal to 1
             'std::invalid_argument' if 'T' is not the correct base
             'std::invalid_argument' if 'vertexLocations' contains any duplicates
 
         Note:
-            As efficient as possible, but still not fast.  If this is needed frequently, consider using 'GLUFVertexArraySoA'
+            As efficient as possible, but still not fast.  If this is needed frequently, consider using 'VertexArraySoA'
 
             ****TODO: Possibly one that accepts an array of vertex locations along with chunk sizes****
     */
     template<typename T>
-    void BufferSubData(GLUFGLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted = false);
+    void BufferSubData(GLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted = false);
 
     /*
     Enable/DisableVertexAttrib
 
-        See 'GLUFVertexArrayBase' for doc's
+        See 'VertexArrayBase' for doc's
     
     */
     virtual void EnableVertexAttributes() const noexcept override;
@@ -1915,7 +1915,7 @@ public:
 
 
 /*
-GLUFVertexArraySoA
+VertexArraySoA
 
     Structure of Arrays approach to OpenGL Buffers
 
@@ -1923,11 +1923,11 @@ GLUFVertexArraySoA
         'mDataBuffers': one OpenGL buffer per vertex attribute
 
 */
-class OBJGLUF_API GLUFVertexArraySoA : public GLUFVertexArrayBase
+class OBJGLUF_API VertexArraySoA : public VertexArrayBase
 {
 protected:
 	//       Attrib Location, buffer location
-	std::map<GLUFAttribLoc, GLuint> mDataBuffers;
+	std::map<AttribLoc, GLuint> mDataBuffers;
 
     //see parent docs
 	virtual void RefreshDataBufferAttribute();
@@ -1944,7 +1944,7 @@ protected:
         Throws:
             'InvalidAttrubuteLocationException': if no attrubte has location 'loc'
     */
-	GLuint GetBufferIdFromAttribLoc(GLUFAttribLoc loc) const;
+	GLuint GetBufferIdFromAttribLoc(AttribLoc loc) const;
 
 public:
     /*
@@ -1960,9 +1960,9 @@ public:
             'MakeVAOException': if construction fails
 
     */
-	GLUFVertexArraySoA(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+	VertexArraySoA(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
 
-    ~GLUFVertexArraySoA();
+    ~VertexArraySoA();
 
     /*
 
@@ -1973,8 +1973,8 @@ public:
 
     */
 
-    GLUFVertexArraySoA(GLUFVertexArraySoA&& other);
-    GLUFVertexArraySoA& operator=(GLUFVertexArraySoA&& other);
+    VertexArraySoA(VertexArraySoA&& other);
+    VertexArraySoA& operator=(VertexArraySoA&& other);
 
 
     /*
@@ -1988,7 +1988,7 @@ public:
     
     */
 
-	void GetBarebonesMesh(GLUFMeshBarebones& inData);
+	void GetBarebonesMesh(MeshBarebones& inData);
 
     /*
     BufferData
@@ -2002,7 +2002,7 @@ public:
             'InvalidAttrubuteLocationException': if loc does not exist in this buffer
     */
     template<typename T>
-    void BufferData(GLUFAttribLoc loc, const std::vector<T>& data);
+    void BufferData(AttribLoc loc, const std::vector<T>& data);
 
     /*
     BufferSubData
@@ -2016,7 +2016,7 @@ public:
             'InvalidAttrubuteLocationException': if loc does not exist in this buffer
     */
     template<typename T>
-    void BufferSubData(GLUFAttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data);
+    void BufferSubData(AttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data);
 
 	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
 
@@ -2035,14 +2035,14 @@ public:
                 attribute simply is not added
             if 'loc' does not exist, nothing is deleted
     */
-	virtual void AddVertexAttrib(const GLUFVertexAttribInfo& info) noexcept;
-	virtual void RemoveVertexAttrib(GLUFAttribLoc loc) noexcept;
+	virtual void AddVertexAttrib(const VertexAttribInfo& info) noexcept;
+	virtual void RemoveVertexAttrib(AttribLoc loc) noexcept;
 
 
     /*
     Enable/DisableVertexAttrib
 
-    See 'GLUFVertexArrayBase' for doc's
+    See 'VertexArrayBase' for doc's
 
     */
     virtual void EnableVertexAttributes() const noexcept override;
@@ -2056,10 +2056,10 @@ Vertex Array Object Aliases
 
 */
 
-using GLUFVertexArraySoAPtr = std::shared_ptr<GLUFVertexArraySoA>;
-using GLUFVertexArrayAoSPtr = std::shared_ptr<GLUFVertexArrayAoS>;
-using GLUFVertexArray       = GLUFVertexArrayAoS;
-using GLUFVertexArrayPtr    = std::shared_ptr<GLUFVertexArray>;
+using VertexArraySoAPtr = std::shared_ptr<VertexArraySoA>;
+using VertexArrayAoSPtr = std::shared_ptr<VertexArrayAoS>;
+using VertexArray       = VertexArrayAoS;
+using VertexArrayPtr    = std::shared_ptr<VertexArray>;
 
 
 /*
@@ -2077,15 +2077,15 @@ Utility Functions if Assimp is being used
 
 Data Members for Assimp Loading
 
-GLUFVertexAttribMap:
+VertexAttribMap:
 Data structure of all of the vertex attributes to load from the assimp scene
 
-GLUFVertexAttribPair:
+VertexAttribPair:
 Pair of a vertex attribute, and the attribute info to go with it
 
 */
-using GLUFVertexAttribMap = std::map<unsigned char, GLUFVertexAttribInfo>;
-using GLUFVertexAttribPair = std::pair<unsigned char, GLUFVertexAttribInfo>;
+using VertexAttribMap = std::map<unsigned char, VertexAttribInfo>;
+using VertexAttribPair = std::pair<unsigned char, VertexAttribInfo>;
 
 
 /*
@@ -2112,8 +2112,8 @@ LoadVertexArrayFromScene
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 
 */
-std::shared_ptr<GLUFVertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum = 0);
-std::shared_ptr<GLUFVertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, const GLUFVertexAttribMap& inputs, GLuint meshNum = 0);
+std::shared_ptr<VertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum = 0);
+std::shared_ptr<VertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, const VertexAttribMap& inputs, GLuint meshNum = 0);
 
 
 
@@ -2133,11 +2133,11 @@ LoadVertexArraysFromScene
     Throws:
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 */
-std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset = 0, GLuint numMeshes = 1);
-std::vector<std::shared_ptr<GLUFVertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const GLUFVertexAttribMap&>& inputs, GLuint meshOffset = 0, GLuint numMeshes = 1);
+std::vector<std::shared_ptr<VertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset = 0, GLuint numMeshes = 1);
+std::vector<std::shared_ptr<VertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const VertexAttribMap&>& inputs, GLuint meshOffset = 0, GLuint numMeshes = 1);
 
 
-//the unsigned char represents the below #defines (GLUF_VERTEX_ATTRIB_*)
+//the unsigned char represents the below #defines (_VERTEX_ATTRIB_*)
 #endif
 
 
@@ -2179,30 +2179,30 @@ A Set of Guidelines for Attribute Locations (organized by number of vector eleme
 Premade Attribute Info's which comply with Assimp capibilities, but are not exclusive to them
 
 */
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribPOS;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribNORM;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV0;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV1;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV2;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV3;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV4;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV5;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV6;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribUV7;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR0;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR1;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR2;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR3;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR4;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR5;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR6;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribCOLOR7;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribTAN;
-extern const GLUFVertexAttribInfo OBJGLUF_API g_attribBITAN;
+extern const VertexAttribInfo OBJGLUF_API g_attribPOS;
+extern const VertexAttribInfo OBJGLUF_API g_attribNORM;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV0;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV1;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV2;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV3;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV4;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV5;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV6;
+extern const VertexAttribInfo OBJGLUF_API g_attribUV7;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR0;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR1;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR2;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR3;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR4;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR5;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR6;
+extern const VertexAttribInfo OBJGLUF_API g_attribCOLOR7;
+extern const VertexAttribInfo OBJGLUF_API g_attribTAN;
+extern const VertexAttribInfo OBJGLUF_API g_attribBITAN;
 
-extern std::map<unsigned char, GLUFVertexAttribInfo> OBJGLUF_API g_stdAttrib;
+extern std::map<unsigned char, VertexAttribInfo> OBJGLUF_API g_stdAttrib;
 
-#define GLUFVertAttrib(location, bytes, count, type) {bytes, count, location, type}
+#define VertAttrib(location, bytes, count, type) {bytes, count, location, type}
 
 }
 

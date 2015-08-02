@@ -7,7 +7,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    std::shared_ptr<T> GLUFDialog::GetControl(GLUFControlIndex ID) const
+    std::shared_ptr<T> Dialog::GetControl(ControlIndex ID) const
     {
         // Try to find the control with the given ID
         for (auto it : mControls)
@@ -28,13 +28,13 @@ namespace GLUF
 
     /*
 
-    GLUFTextHelper Template Functions
+    TextHelper Template Functions
 
     */
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void GLUFTextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept
+    void TextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
@@ -48,7 +48,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void GLUFTextHelper::DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args) noexcept
+    void TextHelper::DrawFormattedTextLine(const Rect& rc, Bitfield flags, const std::wstring& format, Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
@@ -62,7 +62,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void GLUFTextHelper::RenderText(const std::wstring& format, std::wstring& outString, Types&... args) noexcept
+    void TextHelper::RenderText(const std::wstring& format, std::wstring& outString, Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
@@ -78,7 +78,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T1, typename... Types>
-    void GLUFTextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg1, Types... args)
+    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg1, Types... args)
     {
         wchar_t ch;
         while (format.get(ch))
@@ -97,7 +97,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T1>
-    void GLUFTextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg)
+    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg)
     {
         wchar_t ch;
         bool usedArg = false;
@@ -124,63 +124,63 @@ namespace GLUF
     */
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFDialog> CreateDialog()
+    std::shared_ptr<Dialog> CreateDialog()
     {
-        return std::shared_ptr<GLUFDialog>(new GLUFDialog());
+        return std::shared_ptr<Dialog>(new Dialog());
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFStatic> CreateStatic(GLUFBitfield textFlags, GLUFDialog& dialog)
+    std::shared_ptr<Static> CreateStatic(Bitfield textFlags, Dialog& dialog)
     {
-        return std::shared_ptr<GLUFStatic>(new GLUFStatic(textFlags, dialog));
+        return std::shared_ptr<Static>(new Static(textFlags, dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFButton> CreateButton(GLUFDialog& dialog)
+    std::shared_ptr<Button> CreateButton(Dialog& dialog)
     {
-        return std::shared_ptr<GLUFButton>(new GLUFButton(dialog));
+        return std::shared_ptr<Button>(new Button(dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFCheckBox> CreateCheckBox(bool checked, GLUFDialog& dialog)
+    std::shared_ptr<CheckBox> CreateCheckBox(bool checked, Dialog& dialog)
     {
-        return std::shared_ptr<GLUFCheckBox>(new GLUFCheckBox(checked, dialog));
+        return std::shared_ptr<CheckBox>(new CheckBox(checked, dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFRadioButton> CreateRadioButton(GLUFDialog& dialog)
+    std::shared_ptr<RadioButton> CreateRadioButton(Dialog& dialog)
     {
-        return std::shared_ptr<GLUFRadioButton>(new GLUFRadioButton(dialog));
+        return std::shared_ptr<RadioButton>(new RadioButton(dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFScrollBar> CreateScrollBar(GLUFDialog& dialog)
+    std::shared_ptr<ScrollBar> CreateScrollBar(Dialog& dialog)
     {
-        return std::shared_ptr<GLUFScrollBar>(new GLUFScrollBar(dialog));
+        return std::shared_ptr<ScrollBar>(new ScrollBar(dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFListBox> CreateListBox(GLUFDialog& dialog)
+    std::shared_ptr<ListBox> CreateListBox(Dialog& dialog)
     {
-        return std::shared_ptr<GLUFListBox>(new GLUFListBox(dialog));
+        return std::shared_ptr<ListBox>(new ListBox(dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFComboBox> CreateComboBox(GLUFDialog& dialog)
+    std::shared_ptr<ComboBox> CreateComboBox(Dialog& dialog)
     {
-        return std::shared_ptr<GLUFComboBox>(new GLUFComboBox(dialog));
+        return std::shared_ptr<ComboBox>(new ComboBox(dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFSlider> CreateSlider(GLUFDialog& dialog)
+    std::shared_ptr<Slider> CreateSlider(Dialog& dialog)
     {
-        return std::shared_ptr<GLUFSlider>(new GLUFSlider(dialog));
+        return std::shared_ptr<Slider>(new Slider(dialog));
     }
 
     //--------------------------------------------------------------------------------------
-    std::shared_ptr<GLUFTextHelper> CreateTextHelper(GLUFDialogResourceManagerPtr& drm)
+    std::shared_ptr<TextHelper> CreateTextHelper(DialogResourceManagerPtr& drm)
     {
-        return std::shared_ptr<GLUFTextHelper>(new GLUFTextHelper(drm));
+        return std::shared_ptr<TextHelper>(new TextHelper(drm));
     }
 
 }

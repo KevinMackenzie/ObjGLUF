@@ -26,7 +26,7 @@ GLExtensions
     Data Members:
         'mExtensionList': a map of the extensions.  Maps are used for fast lookups O(log n), however only the key is needed
         'mBufferedExtensionList': a map of extensions that have been requested, and true or false depending on whether they are supported
-        'mCachedExtensionVector': a variable whose sole purpose is act as a point of data to reference to when calling 'GLUFGetGLExtensions()'
+        'mCachedExtensionVector': a variable whose sole purpose is act as a point of data to reference to when calling 'GetGLExtensions()'
 
     Note:
         even though 'std::map' may have a O(log n) lookup speed, keeping a separate map for extensions that are actually requested only slightly slows down
@@ -52,7 +52,7 @@ class GLExtensions
         mCachedExtensionVector = extensions;
     }
 
-    friend bool GLUFInitOpenGLExtensions();
+    friend bool InitOpenGLExtensions();
 public:
 
     //--------------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ public:
     }
 };
 
-class UnsupportedExtensionException : public GLUFException
+class UnsupportedExtensionException : public Exception
 {
     const std::string mExt;
 public:
@@ -127,9 +127,9 @@ Global Instances
 
 */
 
-GLUFErrorMethod ErrorMethod;
-//GLUFBufferManager g_BufferManager;
-GLUFShaderManager g_ShaderManager;
+ErrorMethod g_ErrorMethod;
+//BufferManager g_BufferManager;
+ShaderManager g_ShaderManager;
 
 
 /*
@@ -141,29 +141,29 @@ Premade Attribute Info's which comply with Assimp capibilities, but are not excl
 
 //initialize the standard vertex attributes
 //							Name				bytes,	count,	location,				    type,     offset
-const GLUFVertexAttribInfo	g_attribPOS		= { 4,		3,		GLUF_VERTEX_ATTRIB_POSITION,GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribNORM	= { 4,		3,		GLUF_VERTEX_ATTRIB_NORMAL,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV0		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV0,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV1		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV1,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV2		= { 4,		2,      GLUF_VERTEX_ATTRIB_UV2,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV3		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV3,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV4		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV4,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV5		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV5,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV6		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV6,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribUV7		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV7,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR0	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR0,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR1	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR1,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR2	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR2,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR3	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR3,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR4	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR4,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR5	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR5,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR6	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR6,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribCOLOR7	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR7,	GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribTAN		= { 4,		3,		GLUF_VERTEX_ATTRIB_TAN,		GL_FLOAT, 0 };
-const GLUFVertexAttribInfo	g_attribBITAN	= { 4,		3,		GLUF_VERTEX_ATTRIB_BITAN,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribPOS		= { 4,		3,		GLUF_VERTEX_ATTRIB_POSITION,GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribNORM	= { 4,		3,		GLUF_VERTEX_ATTRIB_NORMAL,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV0		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV0,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV1		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV1,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV2		= { 4,		2,      GLUF_VERTEX_ATTRIB_UV2,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV3		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV3,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV4		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV4,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV5		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV5,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV6		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV6,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribUV7		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV7,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR0	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR0,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR1	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR1,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR2	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR2,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR3	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR3,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR4	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR4,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR5	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR5,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR6	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR6,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribCOLOR7	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR7,	GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribTAN		= { 4,		3,		GLUF_VERTEX_ATTRIB_TAN,		GL_FLOAT, 0 };
+const VertexAttribInfo	g_attribBITAN	= { 4,		3,		GLUF_VERTEX_ATTRIB_BITAN,	GL_FLOAT, 0 };
 
 
-GLUFVertexAttribMap g_stdAttrib;
+VertexAttribMap g_stdAttrib;
 
 /*
 
@@ -201,9 +201,9 @@ Debugging Macros and Setup Functions
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFRegisterErrorMethod(GLUFErrorMethod method)
+void RegisterErrorMethod(ErrorMethod method)
 {
-	ErrorMethod = method;
+	g_ErrorMethod = method;
 }
 
 //--------------------------------------------------------------------------------------
@@ -216,9 +216,9 @@ void GLFWErrorMethod(int error, const char* description)
 
 
 //--------------------------------------------------------------------------------------
-GLUFErrorMethod GLUFGetErrorMethod()
+ErrorMethod GetErrorMethod()
 {
-	return ErrorMethod;
+	return g_ErrorMethod;
 }
 
 	/*
@@ -232,11 +232,11 @@ GLUFErrorMethod GLUFGetErrorMethod()
 
 /*
 ======================================================================================================================================================================================================
-GLUF API Core Controller Methods
+ API Core Controller Methods
 
 */
 //--------------------------------------------------------------------------------------
-bool GLUFInit()
+bool Init()
 {
 	glfwSetErrorCallback(GLFWErrorMethod);
 	if (!glfwInit())
@@ -250,7 +250,7 @@ bool GLUFInit()
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFInitOpenGLExtensions()
+bool InitOpenGLExtensions()
 {
     GLenum err = glewInit();
     if (err != GLEW_OK)
@@ -261,14 +261,14 @@ bool GLUFInitOpenGLExtensions()
 
     //get the list of extensions
     const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-    gExtensions.Init(GLUFSplitStr(extensions, ' '));
+    gExtensions.Init(SplitStr(extensions, ' '));
 
 
     //setup global openGL version
     const char* version = (const char*)glGetString(GL_VERSION);
 
     std::vector<std::string> vsVec;
-    vsVec = GLUFSplitStr((const char*)version, L'.');//TODO: global openGL version
+    vsVec = SplitStr((const char*)version, L'.');//TODO: global openGL version
     gGLVersionMajor = std::stoi(vsVec[0]);
     gGLVersionMinor = std::stoi(vsVec[1]);
     gGLVersion2Digit = gGLVersionMajor * 10 + gGLVersionMinor;
@@ -280,44 +280,44 @@ bool GLUFInitOpenGLExtensions()
         return false;
     }
 
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, g_attribPOS));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, g_attribNORM));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, g_attribPOS));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR0, g_attribCOLOR0));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_TAN, g_attribTAN));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_BITAN, g_attribBITAN));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, g_attribPOS));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, g_attribNORM));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, g_attribPOS));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR0, g_attribCOLOR0));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_TAN, g_attribTAN));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_BITAN, g_attribBITAN));
 
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV1, g_attribUV1));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV2, g_attribUV2));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV3, g_attribUV3));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV4, g_attribUV4));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV5, g_attribUV5));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV6, g_attribUV6));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV7, g_attribUV7));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV1, g_attribUV1));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV2, g_attribUV2));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV3, g_attribUV3));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV4, g_attribUV4));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV5, g_attribUV5));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV6, g_attribUV6));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV7, g_attribUV7));
 
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR1, g_attribCOLOR1));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR2, g_attribCOLOR2));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR3, g_attribCOLOR3));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR4, g_attribCOLOR4));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR5, g_attribCOLOR5));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR6, g_attribCOLOR6));
-    g_stdAttrib.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR7, g_attribCOLOR7));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR1, g_attribCOLOR1));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR2, g_attribCOLOR2));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR3, g_attribCOLOR3));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR4, g_attribCOLOR4));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR5, g_attribCOLOR5));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR6, g_attribCOLOR6));
+    g_stdAttrib.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_COLOR7, g_attribCOLOR7));
 
     return true;
 }
 
 
 //--------------------------------------------------------------------------------------
-const std::vector<std::string>& GLUFGetGLExtensions()
+const std::vector<std::string>& GetGLExtensions()
 {
     return gExtensions;
 }
 
-//void GLUFTerminate()
+//void Terminate()
 //{
 //
 //}
-//See GLUFGui for this function; it destroys the font library
+//See Gui for this function; it destroys the font library
 
 /*
 ======================================================================================================================================================================================================
@@ -325,19 +325,19 @@ Statistics
 
 */
 
-namespace Stats
+namespace FrameStats
 {
-    GLUFStatsData g_StatsData;
+    StatsData g_StatsData;
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFStats_func()
+void Stats_func()
 {
-    using namespace Stats;
+    using namespace FrameStats;
 
     ++g_StatsData.mFrameCount;
 
-	double thisFrame = GLUFGetTime();
+	double thisFrame = GetTime();
     if (thisFrame - g_StatsData.mPreviousFrame < g_StatsData.mUpdateInterval)
 		return;//don't update statistics
 
@@ -358,22 +358,22 @@ void GLUFStats_func()
 }
 
 //--------------------------------------------------------------------------------------
-const std::wstring& GLUFGetFrameStatsString()
+const std::wstring& GetFrameStatsString()
 {
-    return Stats::g_StatsData.mFormattedStatsData;
+    return FrameStats::g_StatsData.mFormattedStatsData;
 }
 
 //--------------------------------------------------------------------------------------
 std::wstring g_DeviceStatusCache = L"WIP";
-const std::wstring& GLUFGetDeviceStatus()
+const std::wstring& GetDeviceStatus()
 {
     return g_DeviceStatusCache;
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFStatsData& GLUFGetFrameStats()
+const StatsData& GetFrameStats()
 {
-    return Stats::g_StatsData;
+    return FrameStats::g_StatsData;
 }
 
 /*
@@ -383,7 +383,7 @@ IO and Stream Utilities
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
+void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
 {
     //try to open file
     std::ifstream inFile;
@@ -423,7 +423,7 @@ void GLUFLoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemo
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
+void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
 {
     //try to open file
     std::ifstream inFile;
@@ -463,7 +463,7 @@ void GLUFLoadFileIntoMemory(const std::string& path, std::vector<char>& binMemor
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& outString)
+void LoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& outString)
 {
     if (rawMemory == nullptr)
     {
@@ -493,24 +493,24 @@ void GLUFLoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::strin
 
 
 //--------------------------------------------------------------------------------------
-void GLUFLoadBinaryArrayIntoString(const std::vector<char>& rawMemory, std::string& outString)
+void LoadBinaryArrayIntoString(const std::vector<char>& rawMemory, std::string& outString)
 {
     //const cast is OK to use here, because we know 'rawMemory' will not be modified
-    GLUFLoadBinaryArrayIntoString(const_cast<char*>(&rawMemory[0]), rawMemory.size(), outString);
+    LoadBinaryArrayIntoString(const_cast<char*>(&rawMemory[0]), rawMemory.size(), outString);
 }
 
 
 /*
 ======================================================================================================================================================================================================
-Misc. GLUF Classes
+Misc.  Classes
 
 
 */
 
-glm::mat4 GLUFMatrixStack::mIdentity = glm::mat4();
+glm::mat4 MatrixStack::mIdentity = glm::mat4();
 
 //--------------------------------------------------------------------------------------
-void GLUFMatrixStack::Push(const glm::mat4& matrix)
+void MatrixStack::Push(const glm::mat4& matrix)
 {
 	if (mStack.size() != 0)
 	{
@@ -527,13 +527,13 @@ void GLUFMatrixStack::Push(const glm::mat4& matrix)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFMatrixStack::Pop(void)
+void MatrixStack::Pop(void)
 {
 	mStack.pop();
 }
 
 //--------------------------------------------------------------------------------------
-const glm::mat4& GLUFMatrixStack::Top(void) const
+const glm::mat4& MatrixStack::Top(void) const
 {
 	//if it is empty, then we want to return the identity
 	if (mStack.size() == 0)
@@ -543,13 +543,13 @@ const glm::mat4& GLUFMatrixStack::Top(void) const
 }
 
 //--------------------------------------------------------------------------------------
-size_t GLUFMatrixStack::Size(void) const
+size_t MatrixStack::Size(void) const
 {
 	return mStack.size();
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFMatrixStack::Empty(void) const
+bool MatrixStack::Empty(void) const
 {
 	return mStack.empty();
 }
@@ -562,7 +562,7 @@ OpenGL Basic Data Structures and Operators
 */
 
 //--------------------------------------------------------------------------------------
-bool GLUFPtInRect(const GLUFRect& rect, const GLUFPoint& pt)
+bool PtInRect(const Rect& rect, const Point& pt)
 {
 	//for the first comparison, it is impossible for both statements to be false, 
 	//because if the y is greater than the top, it is automatically greater than the bottom, and vise versa
@@ -571,13 +571,13 @@ bool GLUFPtInRect(const GLUFRect& rect, const GLUFPoint& pt)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSetRectEmpty(GLUFRect& rect)
+void SetRectEmpty(Rect& rect)
 {
 	rect.top = rect.bottom = rect.left = rect.right = 0;
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom)
+void SetRect(Rect& rect, long left, long top, long right, long bottom)
 {
 	rect.top = top;
 	rect.bottom = bottom;
@@ -586,7 +586,7 @@ void GLUFSetRect(GLUFRect& rect, long left, long top, long right, long bottom)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSetRect(GLUFRectf& rect, float left, float top, float right, float bottom)
+void SetRect(Rectf& rect, float left, float top, float right, float bottom)
 {
 	rect.top = top;
 	rect.bottom = bottom;
@@ -595,7 +595,7 @@ void GLUFSetRect(GLUFRectf& rect, float left, float top, float right, float bott
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFOffsetRect(GLUFRect& rect, long x, long y)
+void OffsetRect(Rect& rect, long x, long y)
 {
 	rect.top += y;
 	rect.bottom += y;
@@ -604,7 +604,7 @@ void GLUFOffsetRect(GLUFRect& rect, long x, long y)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFRepositionRect(GLUFRect& rect, long newX, long newY)
+void RepositionRect(Rect& rect, long newX, long newY)
 {
     long deltaX = newX - rect.left;
     long deltaY = newY - rect.bottom;
@@ -616,20 +616,20 @@ void GLUFRepositionRect(GLUFRect& rect, long newX, long newY)
 }
 
 //--------------------------------------------------------------------------------------
-long GLUFRectHeight(const GLUFRect& rect)
+long RectHeight(const Rect& rect)
 {
 	return rect.top - rect.bottom;
 }
 
 //--------------------------------------------------------------------------------------
-long GLUFRectWidth(const GLUFRect& rect)
+long RectWidth(const Rect& rect)
 {
 	return rect.right - rect.left;
 }
 
 
 //--------------------------------------------------------------------------------------
-void GLUFInflateRect(GLUFRect& rect, long dx, long dy)
+void InflateRect(Rect& rect, long dx, long dy)
 {
 	long dx2 = dx / 2;
 	long dy2 = dy / 2;
@@ -641,14 +641,14 @@ void GLUFInflateRect(GLUFRect& rect, long dx, long dy)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFResizeRect(GLUFRect& rect, long newWidth, long newHeight)
+void ResizeRect(Rect& rect, long newWidth, long newHeight)
 {
     rect.top = rect.bottom + newHeight;
     rect.right = rect.left + newWidth;
 }
 
 //--------------------------------------------------------------------------------------
-bool GLUFIntersectRect(const GLUFRect& rect0, const GLUFRect& rect1, GLUFRect& rectIntersect)
+bool IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect)
 {
 
 	//Left
@@ -695,7 +695,7 @@ bool GLUFIntersectRect(const GLUFRect& rect0, const GLUFRect& rect1, GLUFRect& r
 	//this will ONLY happen if the do NOT intersect
 	if (rectIntersect.left > rectIntersect.right || rectIntersect.top < rectIntersect.bottom)
 	{
-		GLUFSetRectEmpty(rectIntersect);
+		SetRectEmpty(rectIntersect);
 		return false;
 	}
 
@@ -710,7 +710,7 @@ Datatype Conversion Functions
 */
 
 //--------------------------------------------------------------------------------------
-Color4f GLUFColorToFloat(const Color& color)
+Color4f ColorToFloat(const Color& color)
 {
 	Color4f col;
 	col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
@@ -721,7 +721,7 @@ Color4f GLUFColorToFloat(const Color& color)
 }
 
 //--------------------------------------------------------------------------------------
-Color3f GLUFColorToFloat3(const Color& color)
+Color3f ColorToFloat3(const Color& color)
 {
 	Color3f col;
 	col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
@@ -731,9 +731,9 @@ Color3f GLUFColorToFloat3(const Color& color)
 }
 
 //--------------------------------------------------------------------------------------
-GLUFPoint GLUFMultPoints(const GLUFPoint& pt0, const GLUFPoint& pt1)
+Point MultPoints(const Point& pt0, const Point& pt1)
 {
-    GLUFPoint retPt;
+    Point retPt;
     retPt.x = pt1.x * pt0.x;
     retPt.y = pt1.y * pt1.y;
 
@@ -742,7 +742,7 @@ GLUFPoint GLUFMultPoints(const GLUFPoint& pt0, const GLUFPoint& pt1)
 
 
 //--------------------------------------------------------------------------------------
-glm::vec2 GLUFGetVec2FromRect(const GLUFRect& rect, bool x, bool y)
+glm::vec2 GetVec2FromRect(const Rect& rect, bool x, bool y)
 {
 	if (x)
 		if (y)
@@ -757,7 +757,7 @@ glm::vec2 GLUFGetVec2FromRect(const GLUFRect& rect, bool x, bool y)
 }
 
 //--------------------------------------------------------------------------------------
-glm::vec2 GLUFGetVec2FromRect(const GLUFRectf& rect, bool x, bool y)
+glm::vec2 GetVec2FromRect(const Rectf& rect, bool x, bool y)
 {
 	if (x)
 		if (y)
@@ -781,7 +781,7 @@ Note:
 */
 
 
-class CompileShaderException : public GLUFException
+class CompileShaderException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -792,7 +792,7 @@ public:
     EXCEPTION_CONSTRUCTOR(CompileShaderException)
 };
 
-class CreateGLShaderException : public GLUFException
+class CreateGLShaderException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -803,7 +803,7 @@ public:
     EXCEPTION_CONSTRUCTOR(CreateGLShaderException)
 };
 
-class LinkProgramException : public GLUFException
+class LinkProgramException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -814,7 +814,7 @@ public:
     EXCEPTION_CONSTRUCTOR(LinkProgramException)
 };
 
-class CreateGLProgramException : public GLUFException
+class CreateGLProgramException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -825,7 +825,7 @@ public:
     EXCEPTION_CONSTRUCTOR(CreateGLProgramException)
 };
 
-class CreateGLPPOException : public GLUFException
+class CreateGLPPOException : public Exception
 {
 public:
     virtual const char* what() const override
@@ -840,13 +840,13 @@ public:
 
 /*
 
-GLUFShaderTypeToProgramStage
+ShaderTypeToProgramStage
 
 */
 
 
 //--------------------------------------------------------------------------------------
-GLUFProgramStage GLUFShaderTypeToProgramStage(GLUFShaderType type)
+ProgramStage ShaderTypeToProgramStage(ShaderType type)
 {
     switch (type)
     {
@@ -866,7 +866,7 @@ GLUFProgramStage GLUFShaderTypeToProgramStage(GLUFShaderType type)
 };
 
 /*
-GLUFShader
+Shader
 
     Data Members:
         'mShaderId': OpenGL-Assigned Shader id
@@ -874,20 +874,20 @@ GLUFShader
         'mShaderType': what shader type is it (i.e. GL_FRAGMENT_SHADER)
 
 */
-class GLUFShader
+class Shader
 {
-	friend GLUFShaderManager;
-	friend GLUFProgram;
+	friend ShaderManager;
+	friend Program;
 
 	GLuint mShaderId;
 
 	std::string mTmpShaderText;
 
-	GLUFShaderType mShaderType;
+	ShaderType mShaderType;
 
     //disallow copy and assign, because these must always be refered to by pointers
-    GLUFShader(const GLUFShader& other) = delete;
-    GLUFShader& operator=(const GLUFShader& other) = delete;
+    Shader(const Shader& other) = delete;
+    Shader& operator=(const Shader& other) = delete;
 public:
 
     /*
@@ -896,8 +896,8 @@ public:
             no-throw guarantee
     
     */
-	GLUFShader() noexcept;
-	~GLUFShader() noexcept;
+	Shader() noexcept;
+	~Shader() noexcept;
 
 	//common shader is if the shader will not be deleted after building into a program
 	//this is used for things like lighting functions
@@ -911,7 +911,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void Init(GLUFShaderType shaderType) noexcept;
+    void Init(ShaderType shaderType) noexcept;
 
 
     /*
@@ -973,7 +973,7 @@ public:
             'CreateGLShaderException': if shader creaetion failes (because shader creation is stalled until compilation)
     
     */
-	void Compile(GLUFShaderInfoStruct& retStruct);
+	void Compile(ShaderInfoStruct& retStruct);
 
 
     /*
@@ -989,18 +989,18 @@ public:
 
 };
 
-using GLUFShaderP = std::pair<GLUFShaderType, GLUFShaderPtr>;
+using ShaderP = std::pair<ShaderType, ShaderPtr>;
 
 //this is a special instance
-class GLUFComputeShader
+class ComputeShader
 {
-	friend GLUFShaderManager;
+	friend ShaderManager;
 	//TODO: low priority
 };
 
 
 /*
-GLUFProgram
+Program
 
     Data Members:
         'mProgramId': OpenGL assigned id
@@ -1010,15 +1010,15 @@ GLUFProgram
         'mStages': the stages which this program uses; initialized if separable set to true
 
 */
-class GLUFProgram
+class Program
 {
-	friend GLUFShaderManager;
+	friend ShaderManager;
 
 	//GLuint mUniformBuffId;
 	GLuint mProgramId;
-	std::map<GLUFShaderType, GLUFShaderPtr > mShaderBuff;
-	GLUFVariableLocMap mAttributeLocations;
-	GLUFVariableLocMap mUniformLocations;
+	std::map<ShaderType, ShaderPtr > mShaderBuff;
+	VariableLocMap mAttributeLocations;
+	VariableLocMap mUniformLocations;
     GLbitfield mStages;
 
 public:
@@ -1029,8 +1029,8 @@ public:
             no-throw guarantee
 
     */
-    GLUFProgram() noexcept;
-    ~GLUFProgram() noexcept;
+    Program() noexcept;
+    ~Program() noexcept;
 
     /*
     Init
@@ -1051,7 +1051,7 @@ public:
         Throws:
             'std::invalid_argument': if 'shader == nullptr' or 'shader' is invalid
     */
-	void AttachShader(GLUFShaderPtr shader);
+	void AttachShader(ShaderPtr shader);
 
     /*
     FlushShaders
@@ -1074,7 +1074,7 @@ public:
         Throws:
             'LinkProgramException': if program linking fails
     */
-	void Build(GLUFShaderInfoStruct& retStruct, bool separate);
+	void Build(ShaderInfoStruct& retStruct, bool separate);
 
     /*
     GetId
@@ -1106,7 +1106,7 @@ public:
 };
 
 /*
-GLUFSeparateProgram
+SeparateProgram
 
 
     Data Members:
@@ -1115,18 +1115,18 @@ GLUFSeparateProgram
         'mActiveProgram': the currently active program which is having uniforms buffered
 
 */
-class GLUFSeparateProgram
+class SeparateProgram
 {
-	friend GLUFShaderManager;
+	friend ShaderManager;
 	GLuint mPPOId;
 
-	GLUFProgramPtrList mPrograms;//so the programs don't go deleting themselves until the PPO is destroyed
+	ProgramPtrList mPrograms;//so the programs don't go deleting themselves until the PPO is destroyed
 
-    GLUFProgramPtr mActiveProgram;//this is used as the 'active program' when assigning uniforms
+    ProgramPtr mActiveProgram;//this is used as the 'active program' when assigning uniforms
 
 public:
-    GLUFSeparateProgram();
-	~GLUFSeparateProgram();
+    SeparateProgram();
+	~SeparateProgram();
 
     /*
     Init
@@ -1146,7 +1146,7 @@ public:
             no-throw guarantee
 
     */
-	void AttachProgram(const GLUFProgramPtr& program);
+	void AttachProgram(const ProgramPtr& program);
 
     /*
     ClearStages
@@ -1172,7 +1172,7 @@ public:
             no-throw guarantee
     
     */
-    void SetActiveShaderProgram(GLUFProgramStage stage);
+    void SetActiveShaderProgram(ProgramStage stage);
 
 
     /*
@@ -1194,7 +1194,7 @@ public:
             'std::exception' if there is no active program
 
     */
-    const GLUFProgramPtr& GetActiveProgram() const;
+    const ProgramPtr& GetActiveProgram() const;
 
 };
 
@@ -1202,20 +1202,20 @@ public:
 
 /*
 ===================================================================================================
-GLUFSeparateProgram Methods
+SeparateProgram Methods
 
 
 */
 
 //--------------------------------------------------------------------------------------
-GLUFSeparateProgram::GLUFSeparateProgram()
+SeparateProgram::SeparateProgram()
 {
     //prevents from attempting to create separate shaders w/o the extension
     ASSERT_EXTENTION(GL_ARB_separate_shader_objects);
 }
 
 //--------------------------------------------------------------------------------------
-GLUFSeparateProgram::~GLUFSeparateProgram()
+SeparateProgram::~SeparateProgram()
 {
     NOEXCEPT_REGION_START
 
@@ -1225,7 +1225,7 @@ GLUFSeparateProgram::~GLUFSeparateProgram()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSeparateProgram::Init()
+void SeparateProgram::Init()
 {
 	glGenProgramPipelines(1, &mPPOId);
 
@@ -1236,7 +1236,7 @@ void GLUFSeparateProgram::Init()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSeparateProgram::AttachProgram(const GLUFProgramPtr& program)
+void SeparateProgram::AttachProgram(const ProgramPtr& program)
 {
     NOEXCEPT_REGION_START
 
@@ -1248,7 +1248,7 @@ void GLUFSeparateProgram::AttachProgram(const GLUFProgramPtr& program)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSeparateProgram::ClearStages(GLbitfield stages)
+void SeparateProgram::ClearStages(GLbitfield stages)
 {
     NOEXCEPT_REGION_START
 
@@ -1266,7 +1266,7 @@ void GLUFSeparateProgram::ClearStages(GLbitfield stages)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFSeparateProgram::SetActiveShaderProgram(GLUFProgramStage stage)
+void SeparateProgram::SetActiveShaderProgram(ProgramStage stage)
 {
     NOEXCEPT_REGION_START
 
@@ -1305,7 +1305,7 @@ void GLUFSeparateProgram::SetActiveShaderProgram(GLUFProgramStage stage)
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFProgramPtr& GLUFSeparateProgram::GetActiveProgram() const
+const ProgramPtr& SeparateProgram::GetActiveProgram() const
 {
     if (mActiveProgram == nullptr)
     {
@@ -1318,20 +1318,20 @@ const GLUFProgramPtr& GLUFSeparateProgram::GetActiveProgram() const
 
 /*
 ===================================================================================================
-GLUFShader Methods
+Shader Methods
 
 
 */
 
 
 //--------------------------------------------------------------------------------------
-GLUFShader::GLUFShader()
+Shader::Shader()
 {
 	mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-GLUFShader::~GLUFShader()
+Shader::~Shader()
 {
 	if (mShaderId != 0)
 	{
@@ -1341,14 +1341,14 @@ GLUFShader::~GLUFShader()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShader::Init(GLUFShaderType shaderType)
+void Shader::Init(ShaderType shaderType)
 {
 	mShaderType = shaderType;
 	mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShader::Load(const std::string& shaderText, bool append)
+void Shader::Load(const std::string& shaderText, bool append)
 {
 	if (!append)
 		mTmpShaderText.clear();
@@ -1357,7 +1357,7 @@ void GLUFShader::Load(const std::string& shaderText, bool append)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShader::Destroy()
+void Shader::Destroy()
 {
     NOEXCEPT_REGION_START
 
@@ -1372,7 +1372,7 @@ void GLUFShader::Destroy()
 }
 
 //--------------------------------------------------------------------------------------
-/*void GLUFShader::LoadFromMemory(const std::vector<char>& shaderData, bool append)
+/*void Shader::LoadFromMemory(const std::vector<char>& shaderData, bool append)
 {
 	if (!append)
 		mTmpShaderText.clear();
@@ -1381,11 +1381,11 @@ void GLUFShader::Destroy()
 
     try
     {
-        GLUFLoadBinaryArrayIntoString(shaderData, loadedText);
+        LoadBinaryArrayIntoString(shaderData, loadedText);
     }
     catch (...)
     {
-        GLUF_ERROR("(GLUFShader): Failed to load binary memory into shader string");
+        GLUF_ERROR("(Shader): Failed to load binary memory into shader string");
         throw;
     }
 
@@ -1395,7 +1395,7 @@ void GLUFShader::Destroy()
 }*/
 
 //--------------------------------------------------------------------------------------
-/*bool GLUFShader::LoadFromFile(const std::wstring& filePath, bool append)
+/*bool Shader::LoadFromFile(const std::wstring& filePath, bool append)
 {
     if (!append)
         mTmpShaderText.clear();
@@ -1418,7 +1418,7 @@ void GLUFShader::Destroy()
     }
     catch (...)
     {
-        GLUF_ERROR("(GLUFShader): Failed to load shader text from file!");
+        GLUF_ERROR("(Shader): Failed to load shader text from file!");
         throw;
     }
 
@@ -1430,7 +1430,7 @@ void GLUFShader::Destroy()
 
 
 //--------------------------------------------------------------------------------------
-void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
+void Shader::Compile(ShaderInfoStruct& returnStruct)
 {
     //if the shader id is not 0, this means the previous compile attempt was successful, because if it was not, the program is deleted and reset to 0
 	if (mShaderId != 0)
@@ -1493,25 +1493,25 @@ void GLUFShader::Compile(GLUFShaderInfoStruct& returnStruct)
 
 /*
 ===================================================================================================
-GLUFProgram Methods
+Program Methods
 
 
 */
 
 //--------------------------------------------------------------------------------------
-GLUFProgram::GLUFProgram()
+Program::Program()
 {
 	mProgramId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-GLUFProgram::~GLUFProgram()
+Program::~Program()
 {
 	glDeleteProgram(mProgramId);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFProgram::Init()
+void Program::Init()
 {
 	//unlike with the shader, this will be created during initialization
 	mProgramId = glCreateProgram();
@@ -1521,9 +1521,9 @@ void GLUFProgram::Init()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFProgram::AttachShader(GLUFShaderPtr shader)
+void Program::AttachShader(ShaderPtr shader)
 {
-    GLUFShaderP toInsert{ shader->mShaderType, shader };
+    ShaderP toInsert{ shader->mShaderType, shader };
     
     //does this stage already have a shader assigned to it?
     auto exists = mShaderBuff.find(shader->mShaderType);
@@ -1541,7 +1541,7 @@ void GLUFProgram::AttachShader(GLUFShaderPtr shader)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFProgram::FlushShaders(void)
+void Program::FlushShaders(void)
 {
     //simply go through all of the shaders, remove them, and clear the shader buffer
 	for (auto it : mShaderBuff)
@@ -1552,7 +1552,7 @@ void GLUFProgram::FlushShaders(void)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
+void Program::Build(ShaderInfoStruct& retStruct, bool separate)
 {
 	//make sure we enable separate shading
 	if (separate)
@@ -1566,7 +1566,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 
         for (auto it : mShaderBuff)
         {
-            mStages |= GLUFShaderTypeToProgramStage(it.first);
+            mStages |= ShaderTypeToProgramStage(it.first);
         }
     }
 
@@ -1635,7 +1635,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 
             glGetActiveAttrib(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
             TrimString(data);
-            mAttributeLocations.insert(GLUFVariableLocPair(data, glGetAttribLocation(mProgramId, &data[0])));
+            mAttributeLocations.insert(VariableLocPair(data, glGetAttribLocation(mProgramId, &data[0])));
 
             data.clear();
         }
@@ -1650,7 +1650,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 
             glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
             TrimString(data);
-			mUniformLocations.insert(GLUFVariableLocPair(data, glGetUniformLocation(mProgramId, &data[0])));
+			mUniformLocations.insert(VariableLocPair(data, glGetUniformLocation(mProgramId, &data[0])));
 
             data.clear();
 		}
@@ -1658,7 +1658,7 @@ void GLUFProgram::Build(GLUFShaderInfoStruct& retStruct, bool separate)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFProgram::Destroy()
+void Program::Destroy()
 { 
     NOEXCEPT_REGION_START
 
@@ -1675,7 +1675,7 @@ void GLUFProgram::Destroy()
 }
 
 //--------------------------------------------------------------------------------------
-GLbitfield GLUFProgram::GetBitfield() const
+GLbitfield Program::GetBitfield() const
 {
     NOEXCEPT_REGION_START
 
@@ -1689,23 +1689,23 @@ GLbitfield GLUFProgram::GetBitfield() const
 
 /*
 ===================================================================================================
-GLUFShaderManager Methods
+ShaderManager Methods
 
 
 */
 
 /*
 //--------------------------------------------------------------------------------------
-GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType type, bool file, bool separate)
+ShaderPtr ShaderManager::CreateShader(std::wstring shad, ShaderType type, bool file, bool separate)
 {
-	GLUFShaderPtr shader(new GLUFShader());
+	ShaderPtr shader(new Shader());
 	shader->Init(type);
 
 	(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
 
-	GLUFShaderInfoStruct output;
+	ShaderInfoStruct output;
 	shader->Compile(output);
-	mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, output));
+	mCompileLogs.insert(std::pair<ShaderPtr, ShaderInfoStruct>(shader, output));
 
 	//log it if it failed
 	if (!output)
@@ -1720,24 +1720,24 @@ GLUFShaderPtr GLUFShaderManager::CreateShader(std::wstring shad, GLUFShaderType 
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::AddCompileLog(const GLUFShaderPtr& shader, const GLUFShaderInfoStruct& log)
+void ShaderManager::AddCompileLog(const ShaderPtr& shader, const ShaderInfoStruct& log)
 {
     //TODO: vs2013 does not support shared locking
-    GLUF_TSAFE_SCOPE(mCompLogMutex);
+    _TSAFE_SCOPE(mCompLogMutex);
 
-    mCompileLogs.insert(std::pair<GLUFShaderPtr, GLUFShaderInfoStruct>(shader, log));
+    mCompileLogs.insert(std::pair<ShaderPtr, ShaderInfoStruct>(shader, log));
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::AddLinkLog(const GLUFProgramPtr& program, const GLUFShaderInfoStruct& log)
+void ShaderManager::AddLinkLog(const ProgramPtr& program, const ShaderInfoStruct& log)
 {
-    GLUF_TSAFE_SCOPE(mLinkLogMutex);
+    _TSAFE_SCOPE(mLinkLogMutex);
 
-    mLinklogs.insert(std::pair<GLUFProgramPtr, GLUFShaderInfoStruct>(program, log));
+    mLinklogs.insert(std::pair<ProgramPtr, ShaderInfoStruct>(program, log));
 }
 
 //--------------------------------------------------------------------------------------
-GLuint GLUFShaderManager::GetUniformIdFromName(const GLUFSepProgramPtr& ppo, const std::string& name) const
+GLuint ShaderManager::GetUniformIdFromName(const SepProgramPtr& ppo, const std::string& name) const
 {
     auto activeProgram = ppo->GetActiveProgram();
     auto it = activeProgram->mUniformLocations.find(name);
@@ -1751,7 +1751,7 @@ GLuint GLUFShaderManager::GetUniformIdFromName(const GLUFSepProgramPtr& ppo, con
 }
 
 //--------------------------------------------------------------------------------------
-GLuint GLUFShaderManager::GetUniformIdFromName(const GLUFProgramPtr& prog, const std::string& name) const
+GLuint ShaderManager::GetUniformIdFromName(const ProgramPtr& prog, const std::string& name) const
 {
     auto it = prog->mUniformLocations.find(name);
     if (it == prog->mUniformLocations.end())
@@ -1765,16 +1765,16 @@ GLuint GLUFShaderManager::GetUniformIdFromName(const GLUFProgramPtr& prog, const
 
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateShaderFromFile(GLUFShaderPtr& outShader, const std::wstring& filePath, GLUFShaderType type)
+void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::wstring& filePath, ShaderType type)
 {
     //create the shader
-    outShader = std::make_shared<GLUFShader>();
+    outShader = std::make_shared<Shader>();
 
     //file to open
     std::ifstream inFile;
     inFile.exceptions(std::ios::badbit | std::ios::failbit);
 
-    GLUFShaderInfoStruct output;
+    ShaderInfoStruct output;
     try
     {
         //Load the text from the file
@@ -1801,12 +1801,12 @@ void GLUFShaderManager::CreateShaderFromFile(GLUFShaderPtr& outShader, const std
     }
     catch (const std::ios_base::failure& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): Shader File Load Failed: " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): Shader File Load Failed: " << e.what());
         RETHROW;//rethrow here, because if file loading failed, the it never got to compilation
     }
     catch (const CompileShaderException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         //add the log if file load failed
         AddCompileLog(outShader, output);
 
@@ -1814,18 +1814,18 @@ void GLUFShaderManager::CreateShaderFromFile(GLUFShaderPtr& outShader, const std
     }
     catch (const CreateGLShaderException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());//don't add compile log if the shader could not be created
     }
 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateShaderFromText(GLUFShaderPtr& outShader, const std::string& text, GLUFShaderType type)
+void ShaderManager::CreateShaderFromText(ShaderPtr& outShader, const std::string& text, ShaderType type)
 {
-    outShader = std::make_shared<GLUFShader>();
+    outShader = std::make_shared<Shader>();
 
-    GLUFShaderInfoStruct out;
+    ShaderInfoStruct out;
     try
     {
         //initialize the shader
@@ -1840,7 +1840,7 @@ void GLUFShaderManager::CreateShaderFromText(GLUFShaderPtr& outShader, const std
     }
     catch (const CompileShaderException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what() << "\n ========Log======== \n" << out.mLog);
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what() << "\n ========Log======== \n" << out.mLog);
         //add the log if file load failed
         AddCompileLog(outShader, out);
 
@@ -1848,28 +1848,28 @@ void GLUFShaderManager::CreateShaderFromText(GLUFShaderPtr& outShader, const std
     }
     catch (const CreateGLShaderException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());//don't add compile log if the shader could not be created
     }
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateShaderFromMemory(GLUFShaderPtr& outShader, const std::vector<char>& memory, GLUFShaderType type)
+void ShaderManager::CreateShaderFromMemory(ShaderPtr& outShader, const std::vector<char>& memory, ShaderType type)
 {
     //load the string from the memory
     std::string outString;
-    GLUFLoadBinaryArrayIntoString(memory, outString);
+    LoadBinaryArrayIntoString(memory, outString);
 
     //newline here is needed, because end of loaded file might not have one, which is required for the end of a shader for some reason
     return CreateShaderFromText(outShader, outString + "\n", type);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrList shaders, bool separate)
+void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders, bool separate)
 {
-    outProgram = std::make_shared<GLUFProgram>();
+    outProgram = std::make_shared<Program>();
 
-    GLUFShaderInfoStruct out;
+    ShaderInfoStruct out;
     try
     {
         //initialize
@@ -1887,17 +1887,17 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrL
     }
     catch (const CreateGLProgramException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
     catch (const LinkProgramException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what() << "\n ========Log======== \n" << out.mLog);
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what() << "\n ========Log======== \n" << out.mLog);
         AddLinkLog(outProgram, out);//if linking failed, still add the log
     }
     catch (const std::invalid_argument& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         outProgram->FlushShaders();//if any of the shaders failed to add, flush so it is in a valid state
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
@@ -1905,13 +1905,13 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPtrL
 
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderSourceList shaderSources, bool separate)
+void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderSourceList shaderSources, bool separate)
 {
-	GLUFShaderPtrList shaders;
+	ShaderPtrList shaders;
 	for (auto it : shaderSources)
 	{
         //create the shader from the text
-        std::shared_ptr<GLUFShader> nowShader;
+        std::shared_ptr<Shader> nowShader;
         CreateShaderFromText(nowShader, it.second, it.first);
 
         //add the shader to the list
@@ -1925,13 +1925,13 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderSour
 
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPathList shaderPaths, bool separate)
+void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate)
 {
-	GLUFShaderPtrList shaders;
+	ShaderPtrList shaders;
 	for (auto it : shaderPaths)
 	{
         //create the shader from the text
-        auto nowShader = std::make_shared<GLUFShader>();
+        auto nowShader = std::make_shared<Shader>();
         CreateShaderFromFile(nowShader, it.second, it.first);
 
         //add the shader to the list
@@ -1946,7 +1946,7 @@ void GLUFShaderManager::CreateProgram(GLUFProgramPtr& outProgram, GLUFShaderPath
 //for removing things
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::DeleteShader(GLUFShaderPtr& shader)
+void ShaderManager::DeleteShader(ShaderPtr& shader)
 {
     //make sure it exists
     if (shader)
@@ -1954,7 +1954,7 @@ void GLUFShaderManager::DeleteShader(GLUFShaderPtr& shader)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::DeleteProgram(GLUFProgramPtr& program)
+void ShaderManager::DeleteProgram(ProgramPtr& program)
 {
     //make sure it exists
     if (program)
@@ -1962,7 +1962,7 @@ void GLUFShaderManager::DeleteProgram(GLUFProgramPtr& program)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::FlushLogs()
+void ShaderManager::FlushLogs()
 {
 	mLinklogs.clear();
 	mCompileLogs.clear();
@@ -1972,7 +1972,7 @@ void GLUFShaderManager::FlushLogs()
 //for accessing things
 
 //--------------------------------------------------------------------------------------
-const GLuint GLUFShaderManager::GetShaderId(const GLUFShaderPtr& shader) const
+const GLuint ShaderManager::GetShaderId(const ShaderPtr& shader) const
 {
     GLUF_NULLPTR_CHECK(shader);
 
@@ -1981,7 +1981,7 @@ const GLuint GLUFShaderManager::GetShaderId(const GLUFShaderPtr& shader) const
 
 
 //--------------------------------------------------------------------------------------
-const GLUFShaderType GLUFShaderManager::GetShaderType(const GLUFShaderPtr& shader) const
+const ShaderType ShaderManager::GetShaderType(const ShaderPtr& shader) const
 {
     GLUF_NULLPTR_CHECK(shader);
 
@@ -1990,7 +1990,7 @@ const GLUFShaderType GLUFShaderManager::GetShaderType(const GLUFShaderPtr& shade
 
 
 //--------------------------------------------------------------------------------------
-const GLuint GLUFShaderManager::GetProgramId(const GLUFProgramPtr& program) const
+const GLuint ShaderManager::GetProgramId(const ProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
 
@@ -1998,20 +1998,20 @@ const GLuint GLUFShaderManager::GetProgramId(const GLUFProgramPtr& program) cons
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFCompileOutputStruct GLUFShaderManager::GetShaderLog(const GLUFShaderPtr& shaderPtr) const
+const CompileOutputStruct ShaderManager::GetShaderLog(const ShaderPtr& shaderPtr) const
 {
     GLUF_NULLPTR_CHECK(shaderPtr);
-    GLUF_TSAFE_SCOPE(mCompLogMutex);
+    _TSAFE_SCOPE(mCompLogMutex);
 
 	return mCompileLogs.find(shaderPtr)->second;
 }
 
 
 //--------------------------------------------------------------------------------------
-const GLUFLinkOutputStruct GLUFShaderManager::GetProgramLog(const GLUFProgramPtr& programPtr) const
+const LinkOutputStruct ShaderManager::GetProgramLog(const ProgramPtr& programPtr) const
 {
     GLUF_NULLPTR_CHECK(programPtr);
-    GLUF_TSAFE_SCOPE(mLinkLogMutex);
+    _TSAFE_SCOPE(mLinkLogMutex);
 
 	return mLinklogs.find(programPtr)->second;
 }
@@ -2019,7 +2019,7 @@ const GLUFLinkOutputStruct GLUFShaderManager::GetProgramLog(const GLUFProgramPtr
 //for using things
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::UseProgram(const GLUFProgramPtr& program) const
+void ShaderManager::UseProgram(const ProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
 
@@ -2034,16 +2034,16 @@ void GLUFShaderManager::UseProgram(const GLUFProgramPtr& program) const
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::UseProgramNull() const
+void ShaderManager::UseProgramNull() const
 {
 	glUseProgram(0);
 	glBindProgramPipeline(0);//juse in case we are using pipelines
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const
+void ShaderManager::CreateSeparateProgram(SepProgramPtr& ppo, const ProgramPtrList& programs) const
 {
-    ppo = std::make_shared<GLUFSeparateProgram>();
+    ppo = std::make_shared<SeparateProgram>();
 
     try
     {
@@ -2061,22 +2061,22 @@ void GLUFShaderManager::CreateSeparateProgram(GLUFSepProgramPtr& ppo, const GLUF
     }
     catch (const CreateGLPPOException& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakePPOException());
     }
     catch (const std::invalid_argument& e)
     {
-        GLUF_ERROR_LONG("(GLUFShaderManager): " << e.what());
+        GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         RETHROW;
     }
 }
 
 //--------------------------------------------------------------------------------------
-const GLuint GLUFShaderManager::GetShaderVariableLocation(const GLUFProgramPtr& program, GLUFLocationType locType, const std::string& varName) const
+const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr& program, LocationType locType, const std::string& varName) const
 {
     GLUF_NULLPTR_CHECK(program);
 
-	GLUFVariableLocMap::iterator it;
+	VariableLocMap::iterator it;
 
 	if (locType == GLT_ATTRIB)
 	{
@@ -2103,24 +2103,24 @@ const GLuint GLUFShaderManager::GetShaderVariableLocation(const GLUFProgramPtr& 
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFVariableLocMap& GLUFShaderManager::GetShaderAttribLocations(const GLUFProgramPtr& program) const
+const VariableLocMap& ShaderManager::GetShaderAttribLocations(const ProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
     return program->mAttributeLocations;
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFVariableLocMap& GLUFShaderManager::GetShaderUniformLocations(const GLUFProgramPtr& program) const
+const VariableLocMap& ShaderManager::GetShaderUniformLocations(const ProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
     return program->mUniformLocations;
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(const GLUFSepProgramPtr& program) const
+const VariableLocMap ShaderManager::GetShaderAttribLocations(const SepProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
-	GLUFVariableLocMap ret;
+	VariableLocMap ret;
 
     for (auto it : program->mPrograms)
 	{
@@ -2131,11 +2131,11 @@ const GLUFVariableLocMap GLUFShaderManager::GetShaderAttribLocations(const GLUFS
 }
 
 //--------------------------------------------------------------------------------------
-const GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(const GLUFSepProgramPtr& program) const
+const VariableLocMap ShaderManager::GetShaderUniformLocations(const SepProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
 
-	GLUFVariableLocMap ret;
+	VariableLocMap ret;
 
     for (auto it : program->mPrograms)
 	{
@@ -2146,7 +2146,7 @@ const GLUFVariableLocMap GLUFShaderManager::GetShaderUniformLocations(const GLUF
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr& ppo, const GLUFProgramPtr& program) const
+void ShaderManager::AttachProgram(SepProgramPtr& ppo, const ProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(ppo);
     GLUF_NULLPTR_CHECK(program);
@@ -2158,7 +2158,7 @@ void GLUFShaderManager::AttachProgram(GLUFSepProgramPtr& ppo, const GLUFProgramP
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::AttachPrograms(GLUFSepProgramPtr& ppo, const GLUFProgramPtrList& programs) const
+void ShaderManager::AttachPrograms(SepProgramPtr& ppo, const ProgramPtrList& programs) const
 {
     GLUF_NULLPTR_CHECK(ppo);
 
@@ -2173,14 +2173,14 @@ void GLUFShaderManager::AttachPrograms(GLUFSepProgramPtr& ppo, const GLUFProgram
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::ClearPrograms(GLUFSepProgramPtr& ppo, GLbitfield stages) const
+void ShaderManager::ClearPrograms(SepProgramPtr& ppo, GLbitfield stages) const
 {
     GLUF_NULLPTR_CHECK(ppo);
     ppo->ClearStages(stages);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::UseProgram(const GLUFSepProgramPtr& ppo) const
+void ShaderManager::UseProgram(const SepProgramPtr& ppo) const
 {
     GLUF_NULLPTR_CHECK(ppo);
 	glUseProgram(0);
@@ -2188,10 +2188,10 @@ void GLUFShaderManager::UseProgram(const GLUFSepProgramPtr& ppo) const
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLActiveShaderProgram(GLUFSepProgramPtr& ppo, GLUFShaderType stage) const
+void ShaderManager::GLActiveShaderProgram(SepProgramPtr& ppo, ShaderType stage) const
 {
     GLUF_NULLPTR_CHECK(ppo);
-    ppo->SetActiveShaderProgram(GLUFShaderTypeToProgramStage(stage));
+    ppo->SetActiveShaderProgram(ShaderTypeToProgramStage(stage));
 }
 
 /*
@@ -2207,49 +2207,49 @@ float's
 
 */
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform1f(GLuint loc, const GLfloat& value) const
+void ShaderManager::GLUniform1f(GLuint loc, const GLfloat& value) const
 {
     glUniform1f(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform2f(GLuint loc, const glm::vec2& value) const
+void ShaderManager::GLUniform2f(GLuint loc, const glm::vec2& value) const
 {
     glUniform2fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform3f(GLuint loc, const glm::vec3& value) const
+void ShaderManager::GLUniform3f(GLuint loc, const glm::vec3& value) const
 {
     glUniform3fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform4f(GLuint loc, const glm::vec4& value) const
+void ShaderManager::GLUniform4f(GLuint loc, const glm::vec4& value) const
 {
     glUniform4fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform1f(const GLUFProgramPtr& prog, const std::string& name, const GLfloat& value) const
+void ShaderManager::GLUniform1f(const ProgramPtr& prog, const std::string& name, const GLfloat& value) const
 {    
     glUniform1f(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform2f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec2& value) const
+void ShaderManager::GLUniform2f(const ProgramPtr& prog, const std::string& name, const glm::vec2& value) const
 {
     glUniform2fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform3f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec3& value) const
+void ShaderManager::GLUniform3f(const ProgramPtr& prog, const std::string& name, const glm::vec3& value) const
 {
     glUniform3fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform4f(const GLUFProgramPtr& prog, const std::string& name, const glm::vec4& value) const
+void ShaderManager::GLUniform4f(const ProgramPtr& prog, const std::string& name, const glm::vec4& value) const
 {
     glUniform4fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2261,49 +2261,49 @@ int's
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform1i(GLuint loc, const GLint& value) const
+void ShaderManager::GLUniform1i(GLuint loc, const GLint& value) const
 {
     glUniform1i(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform2i(GLuint loc, const glm::i32vec2& value) const
+void ShaderManager::GLUniform2i(GLuint loc, const glm::i32vec2& value) const
 {
     glUniform2iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform3i(GLuint loc, const glm::i32vec3& value) const
+void ShaderManager::GLUniform3i(GLuint loc, const glm::i32vec3& value) const
 {
     glUniform3iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform4i(GLuint loc, const glm::i32vec4& value) const
+void ShaderManager::GLUniform4i(GLuint loc, const glm::i32vec4& value) const
 {
     glUniform4iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform1i(const GLUFProgramPtr& prog, const std::string& name, const GLint& value) const
+void ShaderManager::GLUniform1i(const ProgramPtr& prog, const std::string& name, const GLint& value) const
 {
     glUniform1i(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform2i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const
+void ShaderManager::GLUniform2i(const ProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const
 {
     glUniform2iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform3i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec3& value) const
+void ShaderManager::GLUniform3i(const ProgramPtr& prog, const std::string& name, const glm::i32vec3& value) const
 {
     glUniform3iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform4i(const GLUFProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const
+void ShaderManager::GLUniform4i(const ProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const
 {
     glUniform4iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2316,49 +2316,49 @@ uint's
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform1ui(GLuint loc, const GLuint& value) const
+void ShaderManager::GLUniform1ui(GLuint loc, const GLuint& value) const
 {
     glUniform1ui(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform2ui(GLuint loc, const glm::u32vec2& value) const
+void ShaderManager::GLUniform2ui(GLuint loc, const glm::u32vec2& value) const
 {
     glUniform2uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform3ui(GLuint loc, const glm::u32vec3& value) const
+void ShaderManager::GLUniform3ui(GLuint loc, const glm::u32vec3& value) const
 {
     glUniform3uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform4ui(GLuint loc, const glm::u32vec4& value) const
+void ShaderManager::GLUniform4ui(GLuint loc, const glm::u32vec4& value) const
 {
     glUniform4uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform1ui(const GLUFProgramPtr& prog, const std::string& name, const GLuint& value) const
+void ShaderManager::GLUniform1ui(const ProgramPtr& prog, const std::string& name, const GLuint& value) const
 {
     glUniform1ui(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform2ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const
+void ShaderManager::GLUniform2ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const
 {
     glUniform2uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform3ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const
+void ShaderManager::GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const
 {
     glUniform3uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniform4ui(const GLUFProgramPtr& prog, const std::string& name, const glm::u32vec4& value) const
+void ShaderManager::GLUniform4ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec4& value) const
 {
     glUniform4uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2370,110 +2370,110 @@ matrices
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix2f(GLuint loc, const glm::mat2& value) const
+void ShaderManager::GLUniformMatrix2f(GLuint loc, const glm::mat2& value) const
 {
     glUniformMatrix2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix3f(GLuint loc, const glm::mat3& value) const
+void ShaderManager::GLUniformMatrix3f(GLuint loc, const glm::mat3& value) const
 {
     glUniformMatrix3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix4f(GLuint loc, const glm::mat4& value) const
+void ShaderManager::GLUniformMatrix4f(GLuint loc, const glm::mat4& value) const
 {
     glUniformMatrix4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3& value) const
+void ShaderManager::GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3& value) const
 {
     glUniformMatrix2x3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2& value) const
+void ShaderManager::GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2& value) const
 {
     glUniformMatrix3x2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4& value) const
+void ShaderManager::GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4& value) const
 {
     glUniformMatrix2x4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2& value) const
+void ShaderManager::GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2& value) const
 {
     glUniformMatrix4x2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4& value) const
+void ShaderManager::GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4& value) const
 {
     glUniformMatrix3x4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3& value) const
+void ShaderManager::GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3& value) const
 {
     //warning here can be IGNORED
     glUniformMatrix4x3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2& value) const
+void ShaderManager::GLUniformMatrix2f(const ProgramPtr& prog, const std::string& name, const glm::mat2& value) const
 {
     glUniformMatrix2fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3& value) const
+void ShaderManager::GLUniformMatrix3f(const ProgramPtr& prog, const std::string& name, const glm::mat3& value) const
 {
     glUniformMatrix3fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4& value) const
+void ShaderManager::GLUniformMatrix4f(const ProgramPtr& prog, const std::string& name, const glm::mat4& value) const
 {
     glUniformMatrix4fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix2x3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2x3& value) const
+void ShaderManager::GLUniformMatrix2x3f(const ProgramPtr& prog, const std::string& name, const glm::mat2x3& value) const
 {
     glUniformMatrix2x3fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix3x2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3x2& value) const
+void ShaderManager::GLUniformMatrix3x2f(const ProgramPtr& prog, const std::string& name, const glm::mat3x2& value) const
 {
     glUniformMatrix3x2fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix2x4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat2x4& value) const
+void ShaderManager::GLUniformMatrix2x4f(const ProgramPtr& prog, const std::string& name, const glm::mat2x4& value) const
 {
     glUniformMatrix2x4fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix4x2f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4x2& value) const
+void ShaderManager::GLUniformMatrix4x2f(const ProgramPtr& prog, const std::string& name, const glm::mat4x2& value) const
 {
     glUniformMatrix4x2fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix3x4f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat3x4& value) const
+void ShaderManager::GLUniformMatrix3x4f(const ProgramPtr& prog, const std::string& name, const glm::mat3x4& value) const
 {
     glUniformMatrix3x4fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLUniformMatrix4x3f(const GLUFProgramPtr& prog, const std::string& name, const glm::mat4x3& value) const
+void ShaderManager::GLUniformMatrix4x3f(const ProgramPtr& prog, const std::string& name, const glm::mat4x3& value) const
 {
     glUniformMatrix4x3fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
@@ -2490,7 +2490,7 @@ GLProgramUniform*
 */
 
 //macro for easier readibility; the purpose of this line is to throw a 'NoActiveProgramUniformException' in debug mode 
-#ifdef GLUF_DEBUG
+#ifdef _DEBUG
 
 #define HAS_ACTIVE_PROGRAM(ppo) ppo->GetActiveProgram();
 
@@ -2507,7 +2507,7 @@ float's
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform1f(const GLUFSepProgramPtr& ppo, GLuint loc, const GLfloat& value) const
+void ShaderManager::GLProgramUniform1f(const SepProgramPtr& ppo, GLuint loc, const GLfloat& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2515,7 +2515,7 @@ void GLUFShaderManager::GLProgramUniform1f(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec2& value) const
+void ShaderManager::GLProgramUniform2f(const SepProgramPtr& ppo, GLuint loc, const glm::vec2& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2523,7 +2523,7 @@ void GLUFShaderManager::GLProgramUniform2f(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec3& value) const
+void ShaderManager::GLProgramUniform3f(const SepProgramPtr& ppo, GLuint loc, const glm::vec3& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2531,7 +2531,7 @@ void GLUFShaderManager::GLProgramUniform3f(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::vec4& value) const
+void ShaderManager::GLProgramUniform4f(const SepProgramPtr& ppo, GLuint loc, const glm::vec4& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2539,25 +2539,25 @@ void GLUFShaderManager::GLProgramUniform4f(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform1f(const GLUFSepProgramPtr& ppo, const std::string& name, const GLfloat& value) const
+void ShaderManager::GLProgramUniform1f(const SepProgramPtr& ppo, const std::string& name, const GLfloat& value) const
 {
     glProgramUniform1f(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec2& value) const
+void ShaderManager::GLProgramUniform2f(const SepProgramPtr& ppo, const std::string& name, const glm::vec2& value) const
 {
     glProgramUniform2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec3& value) const
+void ShaderManager::GLProgramUniform3f(const SepProgramPtr& ppo, const std::string& name, const glm::vec3& value) const
 {
     glProgramUniform3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::vec4& value) const
+void ShaderManager::GLProgramUniform4f(const SepProgramPtr& ppo, const std::string& name, const glm::vec4& value) const
 {
     glProgramUniform4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
@@ -2570,7 +2570,7 @@ int's
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform1i(const GLUFSepProgramPtr& ppo, GLuint loc, const GLint& value) const
+void ShaderManager::GLProgramUniform1i(const SepProgramPtr& ppo, GLuint loc, const GLint& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2578,7 +2578,7 @@ void GLUFShaderManager::GLProgramUniform1i(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform2i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec2& value) const
+void ShaderManager::GLProgramUniform2i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec2& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2586,7 +2586,7 @@ void GLUFShaderManager::GLProgramUniform2i(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform3i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec3& value) const
+void ShaderManager::GLProgramUniform3i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec3& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2594,7 +2594,7 @@ void GLUFShaderManager::GLProgramUniform3i(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform4i(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::i32vec4& value) const
+void ShaderManager::GLProgramUniform4i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec4& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2602,25 +2602,25 @@ void GLUFShaderManager::GLProgramUniform4i(const GLUFSepProgramPtr& ppo, GLuint 
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform1i(const GLUFSepProgramPtr& ppo, const std::string& name, const GLint& value) const
+void ShaderManager::GLProgramUniform1i(const SepProgramPtr& ppo, const std::string& name, const GLint& value) const
 {
     glProgramUniform1i(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform2i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec2& value) const
+void ShaderManager::GLProgramUniform2i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec2& value) const
 {
     glProgramUniform2iv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform3i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec3& value) const
+void ShaderManager::GLProgramUniform3i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec3& value) const
 {
     glProgramUniform3iv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform4i(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::i32vec4& value) const
+void ShaderManager::GLProgramUniform4i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec4& value) const
 {
     glProgramUniform4iv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
@@ -2633,7 +2633,7 @@ uint's
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, GLuint loc, const GLuint& value) const
+void ShaderManager::GLProgramUniform1ui(const SepProgramPtr& ppo, GLuint loc, const GLuint& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2641,7 +2641,7 @@ void GLUFShaderManager::GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, GLuint
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec2& value) const
+void ShaderManager::GLProgramUniform2ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec2& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2649,7 +2649,7 @@ void GLUFShaderManager::GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, GLuint
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec3& value) const
+void ShaderManager::GLProgramUniform3ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec3& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2657,7 +2657,7 @@ void GLUFShaderManager::GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, GLuint
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::u32vec4& value) const
+void ShaderManager::GLProgramUniform4ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec4& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2665,25 +2665,25 @@ void GLUFShaderManager::GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, GLuint
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform1ui(const GLUFSepProgramPtr& ppo, const std::string& name, const GLuint& value) const
+void ShaderManager::GLProgramUniform1ui(const SepProgramPtr& ppo, const std::string& name, const GLuint& value) const
 {
     glProgramUniform1ui(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform2ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec2& value) const
+void ShaderManager::GLProgramUniform2ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec2& value) const
 {
     glProgramUniform2uiv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform3ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec3& value) const
+void ShaderManager::GLProgramUniform3ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec3& value) const
 {
     glProgramUniform3uiv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniform4ui(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::u32vec4& value) const
+void ShaderManager::GLProgramUniform4ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec4& value) const
 {
     glProgramUniform4uiv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
@@ -2695,7 +2695,7 @@ matricies
 */
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2& value) const
+void ShaderManager::GLProgramUniformMatrix2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2703,7 +2703,7 @@ void GLUFShaderManager::GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, G
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3& value) const
+void ShaderManager::GLProgramUniformMatrix3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2711,7 +2711,7 @@ void GLUFShaderManager::GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, G
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4& value) const
+void ShaderManager::GLProgramUniformMatrix4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2719,7 +2719,7 @@ void GLUFShaderManager::GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, G
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2x3& value) const
+void ShaderManager::GLProgramUniformMatrix2x3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2x3& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2727,7 +2727,7 @@ void GLUFShaderManager::GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo,
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3x2& value) const
+void ShaderManager::GLProgramUniformMatrix3x2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3x2& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2735,7 +2735,7 @@ void GLUFShaderManager::GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo,
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat2x4& value) const
+void ShaderManager::GLProgramUniformMatrix2x4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2x4& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2743,7 +2743,7 @@ void GLUFShaderManager::GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo,
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4x2& value) const
+void ShaderManager::GLProgramUniformMatrix4x2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4x2& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2751,7 +2751,7 @@ void GLUFShaderManager::GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo,
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat3x4& value) const
+void ShaderManager::GLProgramUniformMatrix3x4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3x4& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2759,7 +2759,7 @@ void GLUFShaderManager::GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo,
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo, GLuint loc, const glm::mat4x3& value) const
+void ShaderManager::GLProgramUniformMatrix4x3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4x3& value) const
 {
     HAS_ACTIVE_PROGRAM(ppo);
 
@@ -2767,55 +2767,55 @@ void GLUFShaderManager::GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo,
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2& value) const
+void ShaderManager::GLProgramUniformMatrix2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2& value) const
 {
     glProgramUniformMatrix2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3& value) const
+void ShaderManager::GLProgramUniformMatrix3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3& value) const
 {
     glProgramUniformMatrix3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4& value) const
+void ShaderManager::GLProgramUniformMatrix4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4& value) const
 {
     glProgramUniformMatrix4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix2x3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2x3& value) const
+void ShaderManager::GLProgramUniformMatrix2x3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2x3& value) const
 {
     glProgramUniformMatrix2x3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix3x2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3x2& value) const
+void ShaderManager::GLProgramUniformMatrix3x2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3x2& value) const
 {
     glProgramUniformMatrix3x2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix2x4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat2x4& value) const
+void ShaderManager::GLProgramUniformMatrix2x4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2x4& value) const
 {
     glProgramUniformMatrix2x4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix4x2f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4x2& value) const
+void ShaderManager::GLProgramUniformMatrix4x2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4x2& value) const
 {
     glProgramUniformMatrix4x2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix3x4f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat3x4& value) const
+void ShaderManager::GLProgramUniformMatrix3x4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3x4& value) const
 {
     glProgramUniformMatrix3x4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFShaderManager::GLProgramUniformMatrix4x3f(const GLUFSepProgramPtr& ppo, const std::string& name, const glm::mat4x3& value) const
+void ShaderManager::GLProgramUniformMatrix4x3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4x3& value) const
 {
     glProgramUniformMatrix4x3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
@@ -3172,13 +3172,13 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
 
 
 //--------------------------------------------------------------------------------------
-GLuint LoadTextureFromFile(const std::wstring& filePath, GLUFTextureFileFormat format)
+GLuint LoadTextureFromFile(const std::wstring& filePath, TextureFileFormat format)
 {
     std::vector<char> memory;
 
     try
     {
-        GLUFLoadFileIntoMemory(filePath, memory);
+        LoadFileIntoMemory(filePath, memory);
     }
     catch (const std::ios_base::failure& e)
     {
@@ -3201,7 +3201,7 @@ GLuint LoadTextureFromFile(const std::wstring& filePath, GLUFTextureFileFormat f
 
 
 //--------------------------------------------------------------------------------------
-GLuint LoadTextureFromMemory(const std::vector<char>& data, GLUFTextureFileFormat format)
+GLuint LoadTextureFromMemory(const std::vector<char>& data, TextureFileFormat format)
 {
 
     try
@@ -3230,7 +3230,7 @@ Buffer Utilities
 */
 
 //--------------------------------------------------------------------------------------
-const GLUFVertexAttribInfo& GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttribLoc loc) const
+const VertexAttribInfo& VertexArrayBase::GetAttribInfoFromLoc(AttribLoc loc) const
 {
     auto val = mAttribInfos.find(loc);
     if (val == mAttribInfos.end())
@@ -3240,7 +3240,7 @@ const GLUFVertexAttribInfo& GLUFVertexArrayBase::GetAttribInfoFromLoc(GLUFAttrib
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
+VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
 {
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
@@ -3273,7 +3273,7 @@ GLUFVertexArrayBase::GLUFVertexArrayBase(GLenum PrimType, GLenum buffUsage, bool
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayBase::~GLUFVertexArrayBase()
+VertexArrayBase::~VertexArrayBase()
 {
 	BindVertexArray();
 
@@ -3288,7 +3288,7 @@ GLUFVertexArrayBase::~GLUFVertexArrayBase()
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayBase::GLUFVertexArrayBase(GLUFVertexArrayBase&& other)
+VertexArrayBase::VertexArrayBase(VertexArrayBase&& other)
 {
     //set this class
     mVertexArrayId      = other.mVertexArrayId;
@@ -3315,7 +3315,7 @@ GLUFVertexArrayBase::GLUFVertexArrayBase(GLUFVertexArrayBase&& other)
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayBase& GLUFVertexArrayBase::operator=(GLUFVertexArrayBase&& other)
+VertexArrayBase& VertexArrayBase::operator=(VertexArrayBase&& other)
 {
     //set this class
     mVertexArrayId = other.mVertexArrayId;
@@ -3344,7 +3344,7 @@ GLUFVertexArrayBase& GLUFVertexArrayBase::operator=(GLUFVertexArrayBase&& other)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::AddVertexAttrib(const GLUFVertexAttribInfo& info)
+void VertexArrayBase::AddVertexAttrib(const VertexAttribInfo& info)
 {
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
@@ -3353,7 +3353,7 @@ void GLUFVertexArrayBase::AddVertexAttrib(const GLUFVertexAttribInfo& info)
     if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
 
-    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
+    mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, info));
 
     //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
     RefreshDataBufferAttribute();
@@ -3365,7 +3365,7 @@ void GLUFVertexArrayBase::AddVertexAttrib(const GLUFVertexAttribInfo& info)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::RemoveVertexAttrib(GLUFAttribLoc loc)
+void VertexArrayBase::RemoveVertexAttrib(AttribLoc loc)
 {
     auto val = mAttribInfos.find(loc);
     if (val == mAttribInfos.end())
@@ -3377,7 +3377,7 @@ void GLUFVertexArrayBase::RemoveVertexAttrib(GLUFAttribLoc loc)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::BindVertexArray()
+void VertexArrayBase::BindVertexArray()
 {
     NOEXCEPT_REGION_START
 
@@ -3396,7 +3396,7 @@ void GLUFVertexArrayBase::BindVertexArray()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::UnBindVertexArray()
+void VertexArrayBase::UnBindVertexArray()
 {    
     NOEXCEPT_REGION_START
 
@@ -3411,7 +3411,7 @@ void GLUFVertexArrayBase::UnBindVertexArray()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::Draw()
+void VertexArrayBase::Draw()
 {
     NOEXCEPT_REGION_START
 
@@ -3445,7 +3445,7 @@ void GLUFVertexArrayBase::Draw()
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::DrawRange(GLuint start, GLuint count)
+void VertexArrayBase::DrawRange(GLuint start, GLuint count)
 {
     NOEXCEPT_REGION_START
 
@@ -3486,7 +3486,7 @@ void GLUFVertexArrayBase::DrawRange(GLuint start, GLuint count)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
+void VertexArrayBase::DrawInstanced(GLuint instances)
 {
     NOEXCEPT_REGION_START
 
@@ -3521,7 +3521,7 @@ void GLUFVertexArrayBase::DrawInstanced(GLuint instances)
 
 //helper function
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data)
+void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data)
 {
     NOEXCEPT_REGION_START
 
@@ -3535,31 +3535,31 @@ void GLUFVertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* dat
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::BufferIndices(const std::vector<GLuint>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<GLuint>& indices)
 {
     BufferIndicesBase(indices.size(), &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec2>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec2>& indices)
 {
     BufferIndicesBase(indices.size() * 2, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec3>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec3>& indices)
 {
     BufferIndicesBase(indices.size() * 3, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices)
 {
     BufferIndicesBase(indices.size() * 4, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-/*void GLUFVertexArrayBase::EnableVertexAttribute(GLUFAttribLoc loc)
+/*void VertexArrayBase::EnableVertexAttribute(AttribLoc loc)
 {
     auto it = mDisabledAttribInfos.find(loc);
     if (it == mDisabledAttribInfos.end())
@@ -3571,7 +3571,7 @@ void GLUFVertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayBase::DisableVertexAttribute(GLUFAttribLoc loc)
+void VertexArrayBase::DisableVertexAttribute(AttribLoc loc)
 {
     auto it = mAttribInfos.find(loc);
     if (it == mAttribInfos.end())
@@ -3621,7 +3621,7 @@ int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayAoS::RefreshDataBufferAttribute()
+void VertexArrayAoS::RefreshDataBufferAttribute()
 {
     NOEXCEPT_REGION_START
 
@@ -3647,7 +3647,7 @@ void GLUFVertexArrayAoS::RefreshDataBufferAttribute()
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
+VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage, indexed)
 {
 	//the VAO is already bound
 
@@ -3659,7 +3659,7 @@ GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool i
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
+VertexArrayAoS::~VertexArrayAoS()
 {
 	BindVertexArray();
 
@@ -3669,7 +3669,7 @@ GLUFVertexArrayAoS::~GLUFVertexArrayAoS()
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLUFVertexArrayAoS&& other) : GLUFVertexArrayBase(std::move(other))
+VertexArrayAoS::VertexArrayAoS(VertexArrayAoS&& other) : VertexArrayBase(std::move(other))
 {
 	mDataBuffer = other.mDataBuffer;
 
@@ -3677,11 +3677,11 @@ GLUFVertexArrayAoS::GLUFVertexArrayAoS(GLUFVertexArrayAoS&& other) : GLUFVertexA
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArrayAoS& GLUFVertexArrayAoS::operator=(GLUFVertexArrayAoS&& other)
+VertexArrayAoS& VertexArrayAoS::operator=(VertexArrayAoS&& other)
 {
     //since there is no possibility for user error, not catching dynamic cast here is A-OK
 
-    GLUFVertexArrayBase* thisParentPtr = dynamic_cast<GLUFVertexArrayBase*>(this);
+    VertexArrayBase* thisParentPtr = dynamic_cast<VertexArrayBase*>(this);
     *thisParentPtr = std::move(other);
 
     mDataBuffer = other.mDataBuffer;
@@ -3691,7 +3691,7 @@ GLUFVertexArrayAoS& GLUFVertexArrayAoS::operator=(GLUFVertexArrayAoS&& other)
 }
 
 //--------------------------------------------------------------------------------------
-GLuint GLUFVertexArrayAoS::GetVertexSize() const noexcept
+GLuint VertexArrayAoS::GetVertexSize() const noexcept
 {
 	GLuint stride = 0;
     NOEXCEPT_REGION_START
@@ -3709,7 +3709,7 @@ GLuint GLUFVertexArrayAoS::GetVertexSize() const noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info)
+void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo& info)
 {
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
@@ -3718,7 +3718,7 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info)
     if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
     
-    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
+    mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, info));
 
     //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
     RefreshDataBufferAttribute();
@@ -3730,7 +3730,7 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuint offset)
+void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo& info, GLuint offset)
 {
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
@@ -3740,10 +3740,10 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuin
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
 
     //insert the offset into the data
-    GLUFVertexAttribInfo tmpCopy = info;
+    VertexAttribInfo tmpCopy = info;
     tmpCopy.mOffset = offset;
 
-    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, tmpCopy));
+    mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, tmpCopy));
 
     //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
     RefreshDataBufferAttribute();
@@ -3755,7 +3755,7 @@ void GLUFVertexArrayAoS::AddVertexAttrib(const GLUFVertexAttribInfo& info, GLuin
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei newOldDataOffset)
+void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei newOldDataOffset)
 {
     //if we are keeping the old data, move it into a new buffer
     GLsizei vertSize = GetVertexSize();
@@ -3794,7 +3794,7 @@ void GLUFVertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLs
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayAoS::EnableVertexAttributes() const
+void VertexArrayAoS::EnableVertexAttributes() const
 {
     NOEXCEPT_REGION_START
 
@@ -3812,7 +3812,7 @@ void GLUFVertexArrayAoS::EnableVertexAttributes() const
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArrayAoS::DisableVertexAttributes() const
+void VertexArrayAoS::DisableVertexAttributes() const
 {
     NOEXCEPT_REGION_START
 
@@ -3829,7 +3829,7 @@ void GLUFVertexArrayAoS::DisableVertexAttributes() const
 
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArraySoA::RefreshDataBufferAttribute()
+void VertexArraySoA::RefreshDataBufferAttribute()
 {
     //this is done at draw time less than opengl 3.0
     SWITCH_GL_VERSION
@@ -3846,7 +3846,7 @@ void GLUFVertexArraySoA::RefreshDataBufferAttribute()
 }
 
 //--------------------------------------------------------------------------------------
-GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLoc(GLUFAttribLoc loc) const
+GLuint VertexArraySoA::GetBufferIdFromAttribLoc(AttribLoc loc) const
 {
     auto ret = mDataBuffers.find(loc);
     if (ret == mDataBuffers.end())
@@ -3856,12 +3856,12 @@ GLuint GLUFVertexArraySoA::GetBufferIdFromAttribLoc(GLUFAttribLoc loc) const
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArraySoA::GLUFVertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : GLUFVertexArrayBase(PrimType, buffUsage, indexed)
+VertexArraySoA::VertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage, indexed)
 {
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArraySoA::~GLUFVertexArraySoA()
+VertexArraySoA::~VertexArraySoA()
 {
 	BindVertexArray();
 	for (auto it : mDataBuffers)
@@ -3870,17 +3870,17 @@ GLUFVertexArraySoA::~GLUFVertexArraySoA()
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArraySoA::GLUFVertexArraySoA(GLUFVertexArraySoA&& other) : GLUFVertexArrayBase(std::move(other))
+VertexArraySoA::VertexArraySoA(VertexArraySoA&& other) : VertexArrayBase(std::move(other))
 {
     mDataBuffers = std::move(other.mDataBuffers);
 }
 
 //--------------------------------------------------------------------------------------
-GLUFVertexArraySoA& GLUFVertexArraySoA::operator=(GLUFVertexArraySoA&& other)
+VertexArraySoA& VertexArraySoA::operator=(VertexArraySoA&& other)
 {
     //since there is no possibility for user error, not catching dynamic cast here is A-OK
 
-    GLUFVertexArrayBase* thisParentPtr = dynamic_cast<GLUFVertexArrayBase*>(this);
+    VertexArrayBase* thisParentPtr = dynamic_cast<VertexArrayBase*>(this);
     *thisParentPtr = std::move(other);
 
     mDataBuffers = std::move(other.mDataBuffers);
@@ -3889,11 +3889,11 @@ GLUFVertexArraySoA& GLUFVertexArraySoA::operator=(GLUFVertexArraySoA&& other)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArraySoA::GetBarebonesMesh(GLUFMeshBarebones& inData)
+void VertexArraySoA::GetBarebonesMesh(MeshBarebones& inData)
 {
 	BindVertexArray();
 
-	std::map<GLUFAttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
+	std::map<AttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
 	if (mIndexBuffer == 0 || it == mDataBuffers.end())
 	{
         GLUF_CRITICAL_EXCEPTION(InvalidAttrubuteLocationException());
@@ -3902,31 +3902,31 @@ void GLUFVertexArraySoA::GetBarebonesMesh(GLUFMeshBarebones& inData)
 	glBindBuffer(GL_ARRAY_BUFFER, it->second);
 	glm::vec3* pVerts = (glm::vec3*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 
-    inData.mVertices = GLUFArrToVec(pVerts, mVertexCount);
+    inData.mVertices = ArrToVec(pVerts, mVertexCount);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 	GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
 
-    inData.mIndices = GLUFArrToVec(pIndices, mIndexCount);
+    inData.mIndices = ArrToVec(pIndices, mIndexCount);
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
     UnBindVertexArray();
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArraySoA::AddVertexAttrib(const GLUFVertexAttribInfo& info)
+void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info)
 {
     NOEXCEPT_REGION_START
 
 	BindVertexArray();
 
-    mAttribInfos.insert(std::pair<GLUFAttribLoc, GLUFVertexAttribInfo>(info.mVertexAttribLocation, info));
+    mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, info));
 
 	GLuint newBuff = 0;
 	glGenBuffers(1, &newBuff);
-	mDataBuffers.insert(std::pair<GLUFAttribLoc, GLuint>(info.mVertexAttribLocation, newBuff));
+	mDataBuffers.insert(std::pair<AttribLoc, GLuint>(info.mVertexAttribLocation, newBuff));
 	
 	RefreshDataBufferAttribute();
 
@@ -3936,7 +3936,7 @@ void GLUFVertexArraySoA::AddVertexAttrib(const GLUFVertexAttribInfo& info)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
+void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc)
 {
     NOEXCEPT_REGION_START
 
@@ -3947,7 +3947,7 @@ void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
 	glDeleteBuffers(1, &(it->second));
 	mDataBuffers.erase(it);
 
-    GLUFVertexArrayBase::RemoveVertexAttrib(loc);
+    VertexArrayBase::RemoveVertexAttrib(loc);
 
     UnBindVertexArray();
 
@@ -3955,7 +3955,7 @@ void GLUFVertexArraySoA::RemoveVertexAttrib(GLUFAttribLoc loc)
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArraySoA::EnableVertexAttributes() const
+void VertexArraySoA::EnableVertexAttributes() const
 {
     NOEXCEPT_REGION_START
 
@@ -3972,7 +3972,7 @@ void GLUFVertexArraySoA::EnableVertexAttributes() const
 }
 
 //--------------------------------------------------------------------------------------
-void GLUFVertexArraySoA::DisableVertexAttributes() const
+void VertexArraySoA::DisableVertexAttributes() const
 {
     NOEXCEPT_REGION_START
 
@@ -3993,14 +3993,14 @@ Assimp Utility Functions
 */
 
 //--------------------------------------------------------------------------------------
-std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum)
+std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum)
 {
     if (meshNum > scene->mNumMeshes)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than number of meshes in \"scene\""));
 
 	//const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	std::shared_ptr<GLUFVertexArray> arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
+	std::shared_ptr<VertexArray> arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
 
 	/*if (mesh->HasPositions())
 		vertexData->AddVertexAttrib(g_attribPOS);
@@ -4104,26 +4104,26 @@ return arr;
 
 /*
 
-GLUFAssimpVertexStruct
+AssimpVertexStruct
 
 
 */
 
 //--------------------------------------------------------------------------------------
-struct GLUFAssimpVertexStruct : public GLUFVertexStruct
+struct AssimpVertexStruct : public VertexStruct
 {
     std::vector<aiVector2D> v2;
     std::vector<aiVector3D> v3;
     std::vector<aiColor4D> v4;
 
-    GLUFAssimpVertexStruct(size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
+    AssimpVertexStruct(size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
     {
         v2.resize(vec2Cnt);
         v3.resize(vec3Cnt);
         v4.resize(vec4Cnt);
     }
 
-    GLUFAssimpVertexStruct(){};
+    AssimpVertexStruct(){};
 
     virtual void* operator&() const override
     {
@@ -4190,13 +4190,13 @@ struct GLUFAssimpVertexStruct : public GLUFVertexStruct
         }
     }
 
-    static GLUFGLVector<GLUFAssimpVertexStruct> MakeMany(size_t howMany, size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
+    static GLVector<AssimpVertexStruct> MakeMany(size_t howMany, size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
     {
-        GLUFGLVector<GLUFAssimpVertexStruct> ret;
+        GLVector<AssimpVertexStruct> ret;
         ret.reserve(howMany);
 
         //the individual struct object that will be cloned to fill the return vector
-        GLUFAssimpVertexStruct clone{ vec2Cnt, vec3Cnt, vec4Cnt };
+        AssimpVertexStruct clone{ vec2Cnt, vec3Cnt, vec4Cnt };
         
         //use 'fill' version of vector::insert for increased speed
         ret.insert(ret.begin(), howMany, clone);
@@ -4207,17 +4207,17 @@ struct GLUFAssimpVertexStruct : public GLUFVertexStruct
 
 
 //--------------------------------------------------------------------------------------
-std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, const GLUFVertexAttribMap& inputs, GLuint meshNum)
+std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, const VertexAttribMap& inputs, GLuint meshNum)
 {
     if (meshNum > scene->mNumMeshes)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than the number of meshes in \"scene\""));
 
 	const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	auto vertexData = std::make_shared<GLUFVertexArray>(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+	auto vertexData = std::make_shared<VertexArray>(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
     //which vertex attributes go where in assimp loading vertex struct
-    std::map<GLUFAttribLoc, int> vertexAttribLoc;
+    std::map<AttribLoc, int> vertexAttribLoc;
 
     //the number of each vec type
     unsigned char numVec2 = 0;
@@ -4411,7 +4411,7 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
 
 
     //the custom vertex array
-    GLUFGLVector<GLUFAssimpVertexStruct> vertexBuffer = GLUFAssimpVertexStruct::MakeMany(mesh->mNumVertices, numVec2, numVec3, numVec4);
+    GLVector<AssimpVertexStruct> vertexBuffer = AssimpVertexStruct::MakeMany(mesh->mNumVertices, numVec2, numVec3, numVec4);
 
     if (mesh->HasPositions() && itPos != inputs.end())
     {
@@ -4545,9 +4545,9 @@ std::shared_ptr<GLUFVertexArray> LoadVertexArrayFromScene(const aiScene* scene, 
 
 
 //--------------------------------------------------------------------------------------
-std::vector<std::shared_ptr<GLUFVertexArray>> LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset, GLuint numMeshes)
+std::vector<std::shared_ptr<VertexArray>> LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset, GLuint numMeshes)
 {
-	std::vector<std::shared_ptr<GLUFVertexArray>> arrays;
+	std::vector<std::shared_ptr<VertexArray>> arrays;
 
 	if (numMeshes > scene->mNumMeshes)
 	{
@@ -4557,13 +4557,13 @@ std::vector<std::shared_ptr<GLUFVertexArray>> LoadVertexArraysFromScene(const ai
 
 	for(unsigned int cnt = 0; cnt < numMeshes; ++cnt)
 	{
-		arrays.push_back(LoadVertexArrayFromScene(scene, cnt));//new GLUFVertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+		arrays.push_back(LoadVertexArrayFromScene(scene, cnt));//new VertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 	}
 	return arrays;
 }
 
 /*
-GLUFVertexArray* LoadVertexArrayFromFile(std::string path)
+VertexArray* LoadVertexArrayFromFile(std::string path)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(path,
@@ -4574,7 +4574,7 @@ GLUFVertexArray* LoadVertexArrayFromFile(std::string path)
 
 	const aiMesh* mesh = scene->mMeshes[0];
 
-	GLUFVertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+	VertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
 	if (mesh->HasPositions())
 		vertexData.AddVertexAttrib(g_attribPOS);
@@ -4619,7 +4619,7 @@ GLUFVertexArray* LoadVertexArrayFromFile(std::string path)
 	return LoadVertexArray(scene);
 }
 
-GLUFVertexArray *LoadVertexArrayFromFile(unsigned int size, void* data)
+VertexArray *LoadVertexArrayFromFile(unsigned int size, void* data)
 {
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFileFromMemory(data, size,

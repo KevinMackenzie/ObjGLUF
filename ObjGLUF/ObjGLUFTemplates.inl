@@ -13,10 +13,10 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    inline std::vector<T> GLUFArrToVec(T* arr, unsigned long len)
+    inline std::vector<T> ArrToVec(T* arr, unsigned long len)
     {
         if (!arr)
-            throw std::invalid_argument("GLUFArrToVec: \'arr\' == nullptr");
+            throw std::invalid_argument("ArrToVec: \'arr\' == nullptr");
 
         return std::vector<T>(arr, arr + len);
     }
@@ -24,10 +24,10 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    inline std::vector<T> GLUFAdoptArray(T*& arr, unsigned long len) noexcept
+    inline std::vector<T> AdoptArray(T*& arr, unsigned long len) noexcept
     {
         if (arr == nullptr)
-        throw std::invalid_argument("GLUFAdoptArray: \'arr\' == nullptr");
+        throw std::invalid_argument("AdoptArray: \'arr\' == nullptr");
 
         NOEXCEPT_REGION_START
 
@@ -52,12 +52,12 @@ namespace GLUF
 
     /*
     ===================================================================================================
-    GLUFGLVector Implementation
+    GLVector Implementation
     
     */
 
     template<typename T>
-    GLUFGLVector<T>::GLUFGLVector(GLUFGLVector<T>&& other) : std::vector<T>(std::move(other))
+    GLVector<T>::GLVector(GLVector<T>&& other) : std::vector<T>(std::move(other))
     {
         mGLData = other.mGLData;
         other.mGLData = 0;
@@ -65,7 +65,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    GLUFGLVector<T>& GLUFGLVector<T>::operator=(GLUFGLVector&& other)
+    GLVector<T>& GLVector<T>::operator=(GLVector&& other)
     {
         std::vector<T>* thisParentPtr = dynamic_cast<std::vector<T>*>(this);
         *thisParentPtr = std::move(other);
@@ -78,7 +78,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    GLUFGLVector<T>& GLUFGLVector<T>::operator=(const GLUFGLVector<T>& other)
+    GLVector<T>& GLVector<T>::operator=(const GLVector<T>& other)
     {
         std::vector<T>* thisParentPtr = dynamic_cast<std::vector<T>*>(this);
         *thisParentPtr = other;
@@ -88,7 +88,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    void* GLUFGLVector<T>::gl_data() const
+    void* GLVector<T>::gl_data() const
     {
         if (size() == 0)
             return nullptr;
@@ -98,7 +98,7 @@ namespace GLUF
             for (auto it : *this)
             {
                 if (it.size() != front().size())
-                    throw std::length_error("Inconsistent Lengths Used in GLUFGLVector");
+                    throw std::length_error("Inconsistent Lengths Used in GLVector");
             }
         }
 
@@ -129,7 +129,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    void* GLUFGLVector<T>::gl_delete_data() const
+    void* GLVector<T>::gl_delete_data() const
     {
         NOEXCEPT_REGION_START
 
@@ -141,7 +141,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    void GLUFGLVector<T>::buffer_element(void* data, size_t element)
+    void GLVector<T>::buffer_element(void* data, size_t element)
     {
         char* tmpUsableData = static_cast<char*>(data);
         if (element >= front().size())
@@ -158,13 +158,13 @@ namespace GLUF
 
     /*
     ===================================================================================================
-    GLUFVertexArrayAoS Template Functions
+    VertexArrayAoS Template Functions
 
     */
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    void GLUFVertexArrayAoS::BufferData(const GLUFGLVector<T>& data)
+    void VertexArrayAoS::BufferData(const GLVector<T>& data)
     {
         //a pretty logical first step
         if (data.size() == 0)
@@ -173,9 +173,9 @@ namespace GLUF
         //next, make sure that 'data' contains data intentended for this buffer operation
         try
         {
-            //this means, if 'T' is not derived from GLUFVertexStructBase, then it cannot be used
+            //this means, if 'T' is not derived from VertexStructBase, then it cannot be used
             T* tTest = new T();//T already needs a default constructor
-            dynamic_cast<GLUFVertexStruct*>(tTest);
+            dynamic_cast<VertexStruct*>(tTest);
             delete tTest;
         }
         catch (...)
@@ -186,7 +186,7 @@ namespace GLUF
         GLuint vertexSize = GetVertexSize();
 
         if (data[0].size() != vertexSize)
-            throw std::invalid_argument("(GLUFVertexArrayAoS::BufferData): data vertex size is not compatible");
+            throw std::invalid_argument("(VertexArrayAoS::BufferData): data vertex size is not compatible");
 
         BindVertexArray();
         glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
@@ -202,7 +202,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T>
-    void GLUFVertexArrayAoS::BufferSubData(GLUFGLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted)
+    void VertexArrayAoS::BufferSubData(GLVector<T> data, std::vector<GLuint> vertexLocations, bool isSorted)
     {
         //a pretty logical first step
         if (data.size() == 0 || vertexLocations.size() == 0)
@@ -211,8 +211,8 @@ namespace GLUF
         //next, make sure that 'data' contains data intentended for this buffer operation
         try
         {
-            //this means, if 'T' is not derived from GLUFVertexStructBase, then it cannot be used
-            dynamic_cast<const GLUFVertexStruct*>(&data[0]);
+            //this means, if 'T' is not derived from VertexStructBase, then it cannot be used
+            dynamic_cast<const VertexStruct*>(&data[0]);
         }
         catch (...)
         {
@@ -222,10 +222,10 @@ namespace GLUF
         GLuint vertexSize = GetVertexSize();
 
         if (data[0].size() != vertexSize)
-            throw std::invalid_argument("(GLUFVertexArrayAoS::BufferSubData): data vertex size is not compatible");
+            throw std::invalid_argument("(VertexArrayAoS::BufferSubData): data vertex size is not compatible");
 
         if (vertexLocations.size() != 1 && vertexLocations.size() != data.size())
-            throw std::invalid_argument("(GLUFVertexArrayAoS::BufferSubData): vertex location array size is too small");
+            throw std::invalid_argument("(VertexArrayAoS::BufferSubData): vertex location array size is too small");
 
 
 
@@ -297,11 +297,11 @@ namespace GLUF
         }
 
         //the chunks and offset for each chunk
-        std::vector<GLUFGLVector<T>> chunkedData;
+        std::vector<GLVector<T>> chunkedData;
         std::vector<GLuint> chunkOffsets;
 
         //the working chunk
-        GLUFGLVector<T> chunk;
+        GLVector<T> chunk;
 
         //the previous vertex location
         GLuint prevLocation = vertexLocations[0];
@@ -364,12 +364,12 @@ namespace GLUF
 
     /*
     ===================================================================================================
-    GLUFVertexArraySoA Template Functions
+    VertexArraySoA Template Functions
 
     */
 
     template<typename T>
-    void GLUFVertexArraySoA::BufferData(GLUFAttribLoc loc, const std::vector<T>& data)
+    void VertexArraySoA::BufferData(AttribLoc loc, const std::vector<T>& data)
     {
         auto buffId = GetBufferIdFromAttribLoc(loc);
 
@@ -388,14 +388,14 @@ namespace GLUF
             mVertexCount = data.size();
         }
 
-        GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
+        VertexAttribInfo info = GetAttribInfoFromLoc(loc);
         GLuint bytesPerValue = info.mBytesPerElement * info.mElementsPerValue;
         glBufferData(GL_ARRAY_BUFFER, mVertexCount * bytesPerValue, data.data(), mUsageType);
         UnBindVertexArray();
     }
 
     template<typename T>
-    void GLUFVertexArraySoA::BufferSubData(GLUFAttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data)
+    void VertexArraySoA::BufferSubData(AttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data)
     {
         auto buffId = GetBufferIdFromAttribLoc(loc);
 
@@ -403,7 +403,7 @@ namespace GLUF
         glBindBuffer(GL_ARRAY_BUFFER, buffId);
 
 
-        GLUFVertexAttribInfo info = GetAttribInfoFromLoc(loc);
+        VertexAttribInfo info = GetAttribInfoFromLoc(loc);
         GLuint bytesPerValue = info.mBytesPerElement * info.mElementsPerValue;
         glBufferSubData(GL_ARRAY_BUFFER, vertexOffsetCount * bytesPerValue, mVertexCount * bytesPerValue, data.data());
         UnBindVertexArray();

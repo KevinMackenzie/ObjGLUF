@@ -56,24 +56,24 @@ Forward Declarations
 
 */
 
-class OBJGLUF_API GLUFDialogResourceManager;
-class OBJGLUF_API GLUFControl;
-class OBJGLUF_API GLUFButton;
-class OBJGLUF_API GLUFStatic;
-class OBJGLUF_API GLUFCheckBox;
-class OBJGLUF_API GLUFRadioButton;
-class OBJGLUF_API GLUFComboBox;
-class OBJGLUF_API GLUFSlider;
-class OBJGLUF_API GLUFEditBox;
-class OBJGLUF_API GLUFListBox;
-class OBJGLUF_API GLUFScrollBar;
-class OBJGLUF_API GLUFElement;
-class OBJGLUF_API GLUFFont;
-class OBJGLUF_API GLUFDialog;
-class OBJGLUF_API GLUFTextHelper;
-struct GLUFElementHolder;
-struct GLUFTextureNode;
-struct GLUFFontNode;
+class OBJGLUF_API DialogResourceManager;
+class OBJGLUF_API Control;
+class OBJGLUF_API Button;
+class OBJGLUF_API Static;
+class OBJGLUF_API CheckBox;
+class OBJGLUF_API RadioButton;
+class OBJGLUF_API ComboBox;
+class OBJGLUF_API Slider;
+class OBJGLUF_API EditBox;
+class OBJGLUF_API ListBox;
+class OBJGLUF_API ScrollBar;
+class OBJGLUF_API Element;
+class OBJGLUF_API Font;
+class OBJGLUF_API Dialog;
+class OBJGLUF_API TextHelper;
+struct ElementHolder;
+struct TextureNode;
+struct FontNode;
 
 /*
 ======================================================================================================================================================================================================
@@ -81,7 +81,7 @@ Enumerations and Type Aliases
 
 */
 
-enum GLUFMessageType
+enum MessageType
 {
 	GM_MB = 0,
 	GM_CURSOR_POS,
@@ -99,7 +99,7 @@ enum GLUFMessageType
 };
 
 //WIP
-enum GLUFFontWeight
+enum FontWeight
 {
     FONT_WEIGHT_HAIRLINE = 0,
     FONT_WEIGHT_THIN,
@@ -119,49 +119,49 @@ enum GLUFFontWeight
 }; 
 
 
-enum GLUFControlType
+enum ControlType
 {
-    GLUF_CONTROL_BUTTON,
-    GLUF_CONTROL_STATIC,
-    GLUF_CONTROL_CHECKBOX,
-    GLUF_CONTROL_RADIOBUTTON,
-    GLUF_CONTROL_COMBOBOX,
-    GLUF_CONTROL_SLIDER,
-    GLUF_CONTROL_EDITBOX,
-    GLUF_CONTROL_IMEEDITBOX,
-    GLUF_CONTROL_LISTBOX,
-    GLUF_CONTROL_SCROLLBAR,
-    GLUF_CONTROL_CUSTOM
+    _CONTROL_BUTTON,
+    _CONTROL_STATIC,
+    _CONTROL_CHECKBOX,
+    _CONTROL_RADIOBUTTON,
+    _CONTROL_COMBOBOX,
+    _CONTROL_SLIDER,
+    _CONTROL_EDITBOX,
+    _CONTROL_IMEEDITBOX,
+    _CONTROL_LISTBOX,
+    _CONTROL_SCROLLBAR,
+    _CONTROL_CUSTOM
 };
 
-enum GLUFControlState
+enum ControlState
 {
-    GLUF_STATE_NORMAL = 0,
-    GLUF_STATE_DISABLED = 1,
-    GLUF_STATE_FOCUS = 2,
-    GLUF_STATE_MOUSEOVER = 3,
-    GLUF_STATE_PRESSED = 4,
-    GLUF_STATE_HIDDEN = 5//THIS SHALL ALWAYS BE LAST
+    _STATE_NORMAL = 0,
+    _STATE_DISABLED = 1,
+    _STATE_FOCUS = 2,
+    _STATE_MOUSEOVER = 3,
+    _STATE_PRESSED = 4,
+    _STATE_HIDDEN = 5//THIS SHALL ALWAYS BE LAST
 };
 
 //WIP
-enum GLUFEvent
+enum Event
 {
-    GLUF_EVENT_BUTTON_CLICKED = 0,
-    GLUF_EVENT_COMBOBOX_SELECTION_CHANGED,
-    GLUF_EVENT_RADIOBUTTON_CHANGED,
-    GLUF_EVENT_CHECKBOXCHANGED,
-    GLUF_EVENT_SLIDER_VALUE_CHANGED,
-    GLUF_EVENT_SLIDER_VALUE_CHANGED_UP,
-    GLUF_EVENT_EDITBOX_STRING,
-    GLUF_EVENT_EDITBOX_CHANGE,//when the listbox contents change due to user input
-    GLUF_EVENT_LISTBOX_ITEM_DBLCLK,
-    GLUF_EVENT_LISTBOX_SELECTION,//when the selection changes in a single selection list box
-    GLUF_EVENT_LISTBOX_SELECTION_END,
+    _EVENT_BUTTON_CLICKED = 0,
+    _EVENT_COMBOBOX_SELECTION_CHANGED,
+    _EVENT_RADIOBUTTON_CHANGED,
+    _EVENT_CHECKBOXCHANGED,
+    _EVENT_SLIDER_VALUE_CHANGED,
+    _EVENT_SLIDER_VALUE_CHANGED_UP,
+    _EVENT_EDITBOX_STRING,
+    _EVENT_EDITBOX_CHANGE,//when the listbox contents change due to user input
+    _EVENT_LISTBOX_ITEM_DBLCLK,
+    _EVENT_LISTBOX_SELECTION,//when the selection changes in a single selection list box
+    _EVENT_LISTBOX_SELECTION_END,
 };
 
 
-enum GLUFCharset
+enum Charset
 {
     ASCII = 0,
     ASCIIExtended = 1,
@@ -173,42 +173,42 @@ enum GLUFCharset
 
 /*
 
-Alphabetized list of GLUF GUI Pointer Aliases
+Alphabetized list of  GUI Pointer Aliases
 
 */
-using GLUFButtonPtr                 = std::shared_ptr < GLUFButton > ;
-using GLUFCheckBoxPtr               = std::shared_ptr < GLUFCheckBox > ;
-using GLUFComboBoxPtr               = std::shared_ptr < GLUFComboBox > ;
-using GLUFControlPtr                = std::shared_ptr < GLUFControl > ;
-using GLUFDialogPtr                 = std::shared_ptr < GLUFDialog > ;
-using GLUFDialogResourceManagerPtr  = std::shared_ptr < GLUFDialogResourceManager > ;
-using GLUFEditBoxPtr                = std::shared_ptr < GLUFEditBox > ;
-using GLUFElementPtr                = std::shared_ptr < GLUFElement > ;
-using GLUFListBoxPtr                = std::shared_ptr < GLUFListBox > ;
-using GLUFRadioButtonPtr            = std::shared_ptr < GLUFRadioButton > ;
-using GLUFScrollBarPtr              = std::shared_ptr < GLUFScrollBar > ;
-using GLUFSliderPtr                 = std::shared_ptr < GLUFSlider > ;
-using GLUFStaticPtr                 = std::shared_ptr < GLUFStatic > ;
-using GLUFTextHelperPtr             = std::shared_ptr < GLUFTextHelper > ;
-using GLUFElementHolderPtr          = std::shared_ptr < GLUFElementHolder > ;
-using GLUFFontNodePtr               = std::shared_ptr < GLUFFontNode > ;
-using GLUFTextureNodePtr            = std::shared_ptr < GLUFTextureNode > ;
+using ButtonPtr                 = std::shared_ptr < Button > ;
+using CheckBoxPtr               = std::shared_ptr < CheckBox > ;
+using ComboBoxPtr               = std::shared_ptr < ComboBox > ;
+using ControlPtr                = std::shared_ptr < Control > ;
+using DialogPtr                 = std::shared_ptr < Dialog > ;
+using DialogResourceManagerPtr  = std::shared_ptr < DialogResourceManager > ;
+using EditBoxPtr                = std::shared_ptr < EditBox > ;
+using ElementPtr                = std::shared_ptr < Element > ;
+using ListBoxPtr                = std::shared_ptr < ListBox > ;
+using RadioButtonPtr            = std::shared_ptr < RadioButton > ;
+using ScrollBarPtr              = std::shared_ptr < ScrollBar > ;
+using SliderPtr                 = std::shared_ptr < Slider > ;
+using StaticPtr                 = std::shared_ptr < Static > ;
+using TextHelperPtr             = std::shared_ptr < TextHelper > ;
+using ElementHolderPtr          = std::shared_ptr < ElementHolder > ;
+using FontNodePtr               = std::shared_ptr < FontNode > ;
+using TextureNodePtr            = std::shared_ptr < TextureNode > ;
 
-using GLUFTextureIndex      = uint32_t;
-using GLUFTextureIndexResMan= uint32_t;
-using GLUFFontIndex         = uint32_t;
-using GLUFFontIndexResMan   = uint32_t;
-using GLUFElementIndex      = uint32_t;
-using GLUFControlIndex      = uint32_t;
-using GLUFRadioButtonGroup  = uint32_t;
-using GLUFBitfield          = uint32_t;
-using GLUFBitfieldL         = uint64_t;
-using GLUFSize              = uint32_t;
-using GLUFValue             = int32_t;
-using GLUFUValue            = uint32_t;
-using GLUFIndex             = uint32_t;   
-using GLUFsIndex            = int32_t;
-using GLUFKeyId             = uint32_t;
+using TextureIndex      = uint32_t;
+using TextureIndexResMan= uint32_t;
+using FontIndex         = uint32_t;
+using FontIndexResMan   = uint32_t;
+using ElementIndex      = uint32_t;
+using ControlIndex      = uint32_t;
+using RadioButtonGroup  = uint32_t;
+using Bitfield          = uint32_t;
+using BitfieldL         = uint64_t;
+using Size              = uint32_t;
+using Value             = int32_t;
+using UValue            = uint32_t;
+using Index             = uint32_t;   
+using sIndex            = int32_t;
+using KeyId             = uint32_t;
 
 /*
 ======================================================================================================================================================================================================
@@ -221,14 +221,14 @@ OBJGLUF_API GLuint GetWindowWidth();
 
 /*
 
-GLUFCallbackFuncPtr
+CallbackFuncPtr
 
     Note:
         This may do whatever it pleases, however
         callbackFunc must explicitly call the callback methods of the 
         dialog manager and the dialog classes (and whatever else)
         to achieve purposeful use of this library.  
-        For each 'GLUFMessageType', see the glfw documentation 
+        For each 'MessageType', see the glfw documentation 
         for help.  If 'msg' requires non-integer data, 
         the floating point data will be multiplied 
         by 1000 and the rest will be truncated.  For
@@ -238,65 +238,65 @@ GLUFCallbackFuncPtr
         'bool': true: the message is consumed; false: the message is not consumed
 
 */
-using GLUFCallbackFuncPtr = bool(*)(GLUFMessageType, int, int, int, int);
+using CallbackFuncPtr = bool(*)(MessageType, int, int, int, int);
 
 
 
 /*
-GLUFEventCallbackReceivable
+EventCallbackReceivable
 
 A base class for all class which want to be able to have an event callback
 
 */
-class GLUFEventCallbackReceivable
+class EventCallbackReceivable
 {
 protected:
-    virtual void GLUFEventCallback() = 0;
+    virtual void EventCallback() = 0;
 
 public:
-    static void GLUFEventCallbackStatic(GLUFEvent event, int ctrlId, GLUFControl);
+    static void EventCallbackStatic(Event event, int ctrlId, Control);
 };
-using GLUFEventCallbackReceivablePtr = std::shared_ptr < GLUFEventCallbackReceivable > ;
+using EventCallbackReceivablePtr = std::shared_ptr < EventCallbackReceivable > ;
 
 /*
-GLUFEventCallbackFuncPtr
+EventCallbackFuncPtr
 
     Parameters:
-        'GLUFEvent': what event occured
-        'GLUFControlPtr': the control which received the event
-        'GLUFEventCallbackReceivablePtr': the if applicable, the instance of the class that will be called
+        'Event': what event occured
+        'ControlPtr': the control which received the event
+        'EventCallbackReceivablePtr': the if applicable, the instance of the class that will be called
 
     Note:
-        the final parameter must be derived from 'GLUFEventCallbackReceivable'
+        the final parameter must be derived from 'EventCallbackReceivable'
         
 */
-using GLUFEventCallbackFuncPtr = void(__cdecl*)(GLUFEvent, GLUFControlPtr&, const GLUFEventCallbackReceivablePtr&);
+using EventCallbackFuncPtr = void(__cdecl*)(Event, ControlPtr&, const EventCallbackReceivablePtr&);
 
 /*
 
 Shorthand Notation for Style
 
 */
-#define GLUF_GUI_CALLBACK_PARAM GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4
-#define GLUF_PASS_CALLBACK_PARAM msg, param1, param2, param3, param4
+#define _GUI_CALLBACK_PARAM MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4
+#define _PASS_CALLBACK_PARAM msg, param1, param2, param3, param4
 
 /*
-GLUFInitGui --Main Setup Function
+InitGui --Main Setup Function
 
     Note:
 
-        This must be called AFTER 'GLUFInitOpenGLExtentions()'
+        This must be called AFTER 'InitOpenGLExtentions()'
 
     Parameters:
-        'initializedGLUFWindow': an initialized GLFW window
+        'initializedWindow': an initialized GLFW window
         'callbackFunc': the Callback function for GLFW messages
         'controltex': the OpenGL id for the default control texture 
 
 */
-OBJGLUF_API bool GLUFInitGui(GLFWwindow* initializedGLUFWindow, GLUFCallbackFuncPtr callbackFunc, GLuint controltex);
+OBJGLUF_API bool InitGui(GLFWwindow* initializedWindow, CallbackFuncPtr callbackFunc, GLuint controltex);
 
 //swaps callback functions, returns old
-OBJGLUF_API GLUFCallbackFuncPtr GLUFChangeCallbackFunc(GLUFCallbackFuncPtr newCallback);
+OBJGLUF_API CallbackFuncPtr ChangeCallbackFunc(CallbackFuncPtr newCallback);
 
 
 
@@ -307,19 +307,19 @@ Everything Fonts
 
 */
 
-using GLUFFontPtr = std::shared_ptr<GLUFFont>;
-using GLUFFontSize = uint32_t;//in 'points'
+using FontPtr = std::shared_ptr<Font>;
+using FontSize = uint32_t;//in 'points'
 
 //TODO: support dpi scaling
-#define GLUF_POINTS_PER_PIXEL 1.333333f
-#define GLUF_POINTS_TO_PIXELS(points) (GLUFFontSize)((float)points * GLUF_POINTS_PER_PIXEL)
-#define GLUF_PICAS_TO_POINTERS(picas) ((picas) * 6.0)
+#define _POINTS_PER_PIXEL 1.333333f
+#define _POINTS_TO_PIXELS(points) (FontSize)((float)points * _POINTS_PER_PIXEL)
+#define _PICAS_TO_POINTERS(picas) ((picas) * 6.0)
 
 
-OBJGLUF_API void GLUFSetDefaultFont(GLUFFontPtr& pDefFont);
+OBJGLUF_API void SetDefaultFont(FontPtr& pDefFont);
 
 
-class LoadFontException : public GLUFException
+class LoadFontException : public Exception
 {
 public:
     virtual const char* what() const
@@ -331,7 +331,7 @@ public:
 };
 
 /*
-GLUFLoadFont
+LoadFont
 
     Parameters:
         'font': an uninitialized font
@@ -342,9 +342,9 @@ GLUFLoadFont
         'LoadFontException': if font loading failed
 
 */
-OBJGLUF_API void GLUFLoadFont(GLUFFontPtr& font, const std::vector<char>& rawData, GLUFFontSize fontHeight);
+OBJGLUF_API void LoadFont(FontPtr& font, const std::vector<char>& rawData, FontSize fontHeight);
 
-OBJGLUF_API GLUFFontSize GLUFGetFontHeight(const GLUFFontPtr& font);
+OBJGLUF_API FontSize GetFontHeight(const FontPtr& font);
 
 
 
@@ -357,7 +357,7 @@ Fundemental Utility Classes For Dialog Element Usage
 
 
 /*
-GLUFBlendColor
+BlendColor
 
     Note:
         Used to modulate colors for different control states to provide a responsive GUI experience
@@ -370,16 +370,16 @@ GLUFBlendColor
 
 */
 using HighBitColor = glm::i16vec4;
-using ColorStateMap = std::map < GLUFControlState, HighBitColor >;
+using ColorStateMap = std::map < ControlState, HighBitColor >;
 
-struct GLUFBlendColor
+struct BlendColor
 {
     float mPrevBlendTime = 0.0f;
     ColorStateMap       mStates;
     HighBitColor        mCurrentColor;
 public:
 
-    GLUFBlendColor();
+    BlendColor();
 
     /*
     Init
@@ -390,7 +390,7 @@ public:
             'hiddenColor': the hidden color state
     
     */
-    void        Init(const GLUF::Color& defaultColor, const GLUF::Color& disabledColor = { 128, 128, 128, 200 }, const GLUF::Color& hiddenColor = { 255, 255, 255, 0 });
+    void        Init(const Color& defaultColor, const Color& disabledColor = { 128, 128, 128, 200 }, const Color& hiddenColor = { 255, 255, 255, 0 });
 
     /*
     Blend
@@ -404,7 +404,7 @@ public:
             this is designed to be called every update cycle to provide a smooth blend animation
     
     */
-	void        Blend(GLUFControlState state, float elapsedTime, float rate = 6.0f);
+	void        Blend(ControlState state, float elapsedTime, float rate = 6.0f);
 
     /*
     SetCurrent
@@ -414,8 +414,8 @@ public:
             'state': the state to set the current state to
     
     */
-	void		SetCurrent(const GLUF::Color& current);
-	void		SetCurrent(GLUFControlState state);
+	void		SetCurrent(const Color& current);
+	void		SetCurrent(ControlState state);
 
     /*
     SetAll
@@ -424,15 +424,15 @@ public:
             'color': the color to set all of the states to; used for static elements
     
     */
-	void		SetAll(const GLUF::Color& color);
+	void		SetAll(const Color& color);
 
-    GLUF::Color GetState(GLUFControlState state) const noexcept;
-    void        SetState(GLUFControlState state, const GLUF::Color& col) noexcept;
-    GLUF::Color GetCurrent() const noexcept;
+    Color GetState(ControlState state) const noexcept;
+    void        SetState(ControlState state, const Color& col) noexcept;
+    Color GetCurrent() const noexcept;
 };
 
 /*
-GLUFElement
+Element
 
     Note:
         Contains all the display tweakables for a sub-control
@@ -445,18 +445,18 @@ GLUFElement
         'mTextureColor': the blend color for the texture for the element
         'mFontColor': the blend color for the font for this element
 */
-class GLUFElement
+class Element
 {
 public:
 
-	GLUFTextureIndex mTextureIndex;
-    GLUFFontIndex mFontIndex;
-    GLUFBitfield mTextFormatFlags;
+	TextureIndex mTextureIndex;
+    FontIndex mFontIndex;
+    Bitfield mTextFormatFlags;
 
-    GLUF::GLUFRectf mUVRect;
+    Rectf mUVRect;
 
-    GLUFBlendColor mTextureColor;
-    GLUFBlendColor mFontColor;
+    BlendColor mTextureColor;
+    BlendColor mFontColor;
 
     /*
     SetTexture
@@ -467,7 +467,7 @@ public:
             'defaultTextureBlendColor': the default texture blend color
     
     */
-    void    SetTexture(GLUFTextureIndex textureIndex, const GLUFRectf& uvRect, const GLUF::Color& defaultTextureColor = { 255, 255, 255, 255 });
+    void    SetTexture(TextureIndex textureIndex, const Rectf& uvRect, const Color& defaultTextureColor = { 255, 255, 255, 255 });
 
     /*
     SetFont
@@ -478,7 +478,7 @@ public:
             'textFormat': a bitfield of the horizontal and vertical text formatting
     
     */
-    void    SetFont(GLUFFontIndex font, const GLUF::Color& defaultFontColor = { 255, 255, 255, 255 }, GLUFBitfield textFormat = GT_CENTER | GT_VCENTER);
+    void    SetFont(FontIndex font, const Color& defaultFontColor = { 255, 255, 255, 255 }, Bitfield textFormat = GT_CENTER | GT_VCENTER);
 
     /*
     Refresh
@@ -498,19 +498,19 @@ Dialog Class
 */
 
 
-class GLUFControlCreationException : public GLUFException
+class ControlCreationException : public Exception
 {
 public:
     virtual const char* what() const override
     {
-        return "GLUFControl Falied to be Created!";
+        return "Control Falied to be Created!";
     }
 
-    EXCEPTION_CONSTRUCTOR(GLUFControlCreationException);
+    EXCEPTION_CONSTRUCTOR(ControlCreationException);
 };
 
 /*
-GLUFDialog
+Dialog
 
     Note:
 
@@ -557,9 +557,9 @@ GLUFDialog
         'mMousePositionOld': the mouse position cached when the mouse is pressed down to detect whether it is a drag or a minimize/maximize event
 
 */
-class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
+class Dialog : public std::enable_shared_from_this<Dialog>
 {
-	friend class GLUFDialogResourceManager;
+	friend class DialogResourceManager;
 
     bool mFirstTime = true;
 
@@ -568,15 +568,15 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     bool mGrabAnywhere = false;
     bool mDragged = false;
 
-    GLUFControlPtr mDefaultControl = nullptr;
+    ControlPtr mDefaultControl = nullptr;
 
     static double sTimeRefresh;
     double mTimePrevRefresh = 0.0;
 
     //TODO: these might not want to be static
-    static GLUFControlPtr sControlFocus;
-    static GLUFControlPtr sControlPressed;
-    GLUFControlPtr mControlMouseOver = nullptr;
+    static ControlPtr sControlFocus;
+    static ControlPtr sControlPressed;
+    ControlPtr mControlMouseOver = nullptr;
 
     bool mVisible = true;
     bool mCaptionEnabled = false;
@@ -586,34 +586,34 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
     std::wstring mCaptionText;
 
     //these are assumed to be based on the origin (bottom left)
-    GLUFRect mRegion;
+    Rect mRegion;
 
     long mCaptionHeight = 0;
 
-    GLUFDialogResourceManagerPtr mDialogManager = nullptr;
+    DialogResourceManagerPtr mDialogManager = nullptr;
 
-    GLUFEventCallbackFuncPtr mCallbackEvent = nullptr;
-    GLUFEventCallbackReceivablePtr mCallbackContext = nullptr;
+    EventCallbackFuncPtr mCallbackEvent = nullptr;
+    EventCallbackReceivablePtr mCallbackContext = nullptr;
 
-    std::map <GLUFTextureIndex, GLUFTextureIndexResMan> mTextures;
-    std::map <GLUFFontIndex, GLUFFontIndexResMan> mFonts;
+    std::map <TextureIndex, TextureIndexResMan> mTextures;
+    std::map <FontIndex, FontIndexResMan> mFonts;
 
-    std::map<GLUFControlIndex, GLUFControlPtr> mControls;
-    std::vector<GLUFElementHolderPtr> mDefaultElements;
+    std::map<ControlIndex, ControlPtr> mControls;
+    std::vector<ElementHolderPtr> mDefaultElements;
 
-    GLUFElement mCapElement;
-    GLUFElement mDlgElement;
+    Element mCapElement;
+    Element mDlgElement;
 
-    GLUFDialogPtr mNextDialog = nullptr;
-    GLUFDialogPtr mPrevDialog = nullptr;
+    DialogPtr mNextDialog = nullptr;
+    DialogPtr mPrevDialog = nullptr;
 
     bool mNonUserEvents = true;
     bool mKeyboardInput = true;
     bool mMouseInput = true;
 
-    GLUF::GLUFPoint mMousePosition;
-    GLUF::GLUFPoint mMousePositionDialogSpace;
-    GLUF::GLUFPoint mMousePositionOld;
+    Point mMousePosition;
+    Point mMousePositionDialogSpace;
+    Point mMousePositionOld;
 
     /*
     Constructor/Destructor
@@ -622,11 +622,11 @@ class GLUFDialog : public std::enable_shared_from_this<GLUFDialog>
             no-throw guaratee
 
     */
-    GLUFDialog();
-    friend std::shared_ptr<GLUFDialog> CreateDialog();
+    Dialog();
+    friend std::shared_ptr<Dialog> CreateDialog();
 
 public:
-	~GLUFDialog();
+	~Dialog();
 
 	
     /*
@@ -641,14 +641,14 @@ public:
             'std::invalid_argument': if 'manager == nullptr'
 
     */
-	void Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog = true);
-	void Init(GLUFDialogResourceManagerPtr& manager, bool registerDialog, GLUFTextureIndexResMan textureIndex);
+	void Init(DialogResourceManagerPtr& manager, bool registerDialog = true);
+	void Init(DialogResourceManagerPtr& manager, bool registerDialog, TextureIndexResMan textureIndex);
 
     /*
     MsgProc
 
         Parameters:
-            see GLUFCallbackFuncPtr for details
+            see CallbackFuncPtr for details
 
         Note:
             Handles message handling for this dialog and all sub controls
@@ -657,7 +657,7 @@ public:
             no-throw guarantee
     
     */
-	bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
+	bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
 
     /*
     Add*
@@ -682,18 +682,18 @@ public:
             'style': the list box style to use; a bitfield of styles; currently only 'MULTISELECTION' is supported
 
         Throws:
-            'GLUFControlCreationException': if control initialization failed
+            'ControlCreationException': if control initialization failed
 
     
     */
-    void AddStatic(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFBitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFStaticPtr> ctrlPtr = nullptr);
-    void AddButton(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, int hotkey = 0, bool isDefault = false, std::shared_ptr<GLUFButtonPtr> ctrlPtr = nullptr);
-    void AddCheckBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<GLUFCheckBoxPtr> ctrlPtr = nullptr);
-    void AddRadioButton(GLUFControlIndex ID, GLUFRadioButtonGroup buttonGroup, const std::wstring& strText, const GLUFRect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<GLUFRadioButtonPtr> ctrlPtr = nullptr);
-    void AddComboBox(GLUFControlIndex ID, const GLUFRect& region, int hotKey = 0, bool isDefault = false, std::shared_ptr<GLUFComboBoxPtr> ctrlPtr = nullptr);
-    void AddSlider(GLUFControlIndex ID, const GLUFRect& region, long min, long max, long value, bool isDefault = false, std::shared_ptr<GLUFSliderPtr> ctrlPtr = nullptr);
-    //void AddEditBox(GLUFControlIndex ID, const std::wstring& strText, const GLUFRect& region, GLUFCharset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<GLUFEditBoxPtr> ctrlPtr = nullptr);
-    void AddListBox(GLUFControlIndex ID, const GLUFRect& region, GLUFBitfield style = 0, std::shared_ptr<GLUFListBoxPtr> ctrlPtr = nullptr);
+    void AddStatic(ControlIndex ID, const std::wstring& strText, const Rect& region, Bitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<StaticPtr> ctrlPtr = nullptr);
+    void AddButton(ControlIndex ID, const std::wstring& strText, const Rect& region, int hotkey = 0, bool isDefault = false, std::shared_ptr<ButtonPtr> ctrlPtr = nullptr);
+    void AddCheckBox(ControlIndex ID, const std::wstring& strText, const Rect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<CheckBoxPtr> ctrlPtr = nullptr);
+    void AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const std::wstring& strText, const Rect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<RadioButtonPtr> ctrlPtr = nullptr);
+    void AddComboBox(ControlIndex ID, const Rect& region, int hotKey = 0, bool isDefault = false, std::shared_ptr<ComboBoxPtr> ctrlPtr = nullptr);
+    void AddSlider(ControlIndex ID, const Rect& region, long min, long max, long value, bool isDefault = false, std::shared_ptr<SliderPtr> ctrlPtr = nullptr);
+    //void AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<EditBoxPtr> ctrlPtr = nullptr);
+    void AddListBox(ControlIndex ID, const Rect& region, Bitfield style = 0, std::shared_ptr<ListBoxPtr> ctrlPtr = nullptr);
 
     /*
     AddControl
@@ -705,10 +705,10 @@ public:
             'control': a pointer to the control to add
 
         Throws:
-            'GLUFControlCreationException': if control initialization failed
+            'ControlCreationException': if control initialization failed
     
     */
-	void AddControl(GLUFControlPtr& control);
+	void AddControl(ControlPtr& control);
 
     /*
     InitControl
@@ -717,10 +717,10 @@ public:
             Initializes a control with the default element, and calls 'OnInit' on it
 
         Throws:
-            'GLUFControlCreationException': if control initialization failed
+            'ControlCreationException': if control initialization failed
 
     */
-	void InitControl(GLUFControlPtr& control);
+	void InitControl(ControlPtr& control);
 
 
     /*
@@ -734,13 +734,13 @@ public:
             a poitner to the control requested, in release mode, returns nullptr if 'ID' not found
 
         Throws:
-            'std::bad_cast' if 'T' is not derived from 'GLUFControl'
-            'std::invalid_argument': if 'ID' is not found, but only in GLUF_DEBUG mode
+            'std::bad_cast' if 'T' is not derived from 'Control'
+            'std::invalid_argument': if 'ID' is not found, but only in _DEBUG mode
     
     */
     template<typename T>
-    std::shared_ptr<T>  GetControl(GLUFControlIndex ID) const;
-    GLUFControlPtr      GetControl(GLUFControlIndex ID, GLUFControlType controlType) const;
+    std::shared_ptr<T>  GetControl(ControlIndex ID) const;
+    ControlPtr      GetControl(ControlIndex ID, ControlType controlType) const;
 
 
     /*
@@ -756,7 +756,7 @@ public:
             no-throw guarantee
     
     */
-	GLUFControlPtr GetControlAtPoint(const GLUF::GLUFPoint& pt) const noexcept;
+	ControlPtr GetControlAtPoint(const Point& pt) const noexcept;
 
     /*
     Set/Get Control Enabled
@@ -769,11 +769,11 @@ public:
             the enabled state
 
         Throws:
-            'std::invalid_argument': if 'ID' does not exist, only in GLUF_DEBUG
+            'std::invalid_argument': if 'ID' does not exist, only in _DEBUG
     
     */
-    bool GetControlEnabled(GLUFControlIndex ID) const;
-    void SetControlEnabled(GLUFControlIndex ID, bool bEnabled);
+    bool GetControlEnabled(ControlIndex ID) const;
+    void SetControlEnabled(ControlIndex ID, bool bEnabled);
 
     /*
     ClearRadioButtonGroup
@@ -785,7 +785,7 @@ public:
             'group': the id of the group
     
     */
-    void ClearRadioButtonGroup(GLUFRadioButtonGroup group);
+    void ClearRadioButtonGroup(RadioButtonGroup group);
 
     /*
     GetRadioButtonGroup
@@ -794,10 +794,10 @@ public:
             'groupId': the id of the radio button group
 
         Returns:
-            a vector of GLUFRadioButton's which have the given group
+            a vector of RadioButton's which have the given group
     
     */
-    std::vector<GLUFRadioButtonPtr> GetRadioButtonGroup(GLUFRadioButtonGroup groupId);
+    std::vector<RadioButtonPtr> GetRadioButtonGroup(RadioButtonGroup groupId);
 
     /*
     ClearComboBox
@@ -809,10 +809,10 @@ public:
             'ID': the id of the combo box
 
         Throws:
-            'std::invalid_argument': if 'ID' does not exist, or is not a combo box, in GLUF_DEBUG mode only
+            'std::invalid_argument': if 'ID' does not exist, or is not a combo box, in _DEBUG mode only
     
     */
-	void ClearComboBox(GLUFControlIndex ID);
+	void ClearComboBox(ControlIndex ID);
 
     /*
     Set/Get DefaultElement
@@ -826,11 +826,11 @@ public:
             the element of the control at 'elementIndex'
 
         Throws:
-            'std::invalid_argument': if 'elementIndex' is not found within 'controlType', but only in GLUF_DEBUG; or if 'element' == nullptr
+            'std::invalid_argument': if 'elementIndex' is not found within 'controlType', but only in _DEBUG; or if 'element' == nullptr
     
     */
-    void            SetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex, const GLUFElement& element);
-    GLUFElement     GetDefaultElement(GLUFControlType controlType, GLUFElementIndex elementIndex) const;
+    void            SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element& element);
+    Element     GetDefaultElement(ControlType controlType, ElementIndex elementIndex) const;
 
 
     /*
@@ -848,7 +848,7 @@ public:
             no-throw guarantee
     
     */
-	void SendEvent(GLUFEvent ctrlEvent, bool triggeredByUser, GLUFControlPtr control) noexcept;
+	void SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept;
 
 
     /*
@@ -858,10 +858,10 @@ public:
             'control': the control to request focus to
 
         Throws:
-            'std::invalid_argument': if 'control' == nullptr, in GLUF_DEBUG mode
+            'std::invalid_argument': if 'control' == nullptr, in _DEBUG mode
     
     */
-	void RequestFocus(GLUFControlPtr& control);
+	void RequestFocus(ControlPtr& control);
 
     /*
     Draw*
@@ -880,13 +880,13 @@ public:
             'hardRect': should the text be bound completely to the rect
 
         Throws:
-            'std::invalid_argument' if 'elemement' == nullptr in GLUF_DEBUG
+            'std::invalid_argument' if 'elemement' == nullptr in _DEBUG
 
     */
-	void DrawRect(const GLUF::GLUFRect& rect, const GLUF::Color& color);
-	//void DrawPolyLine(GLUF::GLUFPoint* apPoints, uint32_t nNumPoints, GLUF::Color color);
-	void DrawSprite(const GLUFElement& element, const GLUF::GLUFRect& rect, float depth, bool textured = true);
-    void DrawText(const std::wstring& text, const GLUFElement& element, const GLUF::GLUFRect& rect, bool shadow = false, bool hardRect = false);
+	void DrawRect(const Rect& rect, const Color& color);
+	//void DrawPolyLine(Point* apPoints, uint32_t nNumPoints, Color color);
+	void DrawSprite(const Element& element, const Rect& rect, float depth, bool textured = true);
+    void DrawText(const std::wstring& text, const Element& element, const Rect& rect, bool shadow = false, bool hardRect = false);
 
     /*
     CalcTextRect -- WIP --
@@ -902,10 +902,10 @@ public:
             'rect the output rect containing a bounding box for the text
 
         Throws:
-            'std::invalid_argument': if 'element' == nullptr, in GLUF_DEBUG
+            'std::invalid_argument': if 'element' == nullptr, in _DEBUG
     
     */
-	void CalcTextRect(const std::wstring& text, const GLUFElement& element, GLUF::GLUFRect& rect) const;
+	void CalcTextRect(const std::wstring& text, const Element& element, Rect& rect) const;
 
 
     /*
@@ -921,22 +921,22 @@ public:
 	bool        GetVisible() const noexcept							    { return mVisible;						    }
     bool        GetMinimized() const noexcept                           { return mMinimized;                        }
     long        GetCaptionHeight() const noexcept                       { return mCaptionHeight;                    }
-    GLUFPoint   GetLocation() const noexcept                            { return{ mRegion.bottom, mRegion.left };   } 
-    GLUFRect    GetRegion() const noexcept                              { return mRegion;                           }
-    long        GetWidth() const noexcept                               { return GLUFRectWidth(mRegion);            }
-    long        GetHeight()	const noexcept                              { return GLUFRectHeight(mRegion);           } 
+    Point   GetLocation() const noexcept                            { return{ mRegion.bottom, mRegion.left };   } 
+    Rect    GetRegion() const noexcept                              { return mRegion;                           }
+    long        GetWidth() const noexcept                               { return RectWidth(mRegion);            }
+    long        GetHeight()	const noexcept                              { return RectHeight(mRegion);           } 
 
-    GLUFPoint   GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;         }
+    Point   GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;         }
 
-    GLUFDialogResourceManagerPtr GetManager() const noexcept            { return mDialogManager;                    }
+    DialogResourceManagerPtr GetManager() const noexcept            { return mDialogManager;                    }
 
     void        SetVisible(bool visible) noexcept                       { mVisible = visible;                       }
     void        SetMinimized(bool minimized) noexcept                   { mMinimized = minimized;                   }
-    void        SetBackgroundColor(const GLUF::Color& color) noexcept   { mDlgElement.mTextureColor.SetAll(color); }
+    void        SetBackgroundColor(const Color& color) noexcept   { mDlgElement.mTextureColor.SetAll(color); }
     void        SetCaptionHeight(long height) noexcept                  { mCaptionHeight = height;                  }
     void        SetCaptionText(const std::wstring& text) noexcept       { mCaptionText = text;                      }
-    void        SetLocation(long x, long y) noexcept                    { GLUFRepositionRect(mRegion, x, y);        }
-    void        SetSize(long width, long height) noexcept               { GLUFResizeRect(mRegion, width, height);   }
+    void        SetLocation(long x, long y) noexcept                    { RepositionRect(mRegion, x, y);        }
+    void        SetSize(long width, long height) noexcept               { ResizeRect(mRegion, width, height);   }
     static void	SetRefreshTime(float time) noexcept                     { sTimeRefresh = time;                      }
 
     void		Lock(bool lock = true) noexcept                         { mLocked = lock;                           }
@@ -968,10 +968,10 @@ public:
             'std::out_of_range': if index/resManFontIndex/resManTexIndex do not exist in their respective locations
 
     */
-    void                SetFont(GLUFFontIndex fontIndex, GLUFFontIndexResMan resManFontIndex);
-    void                SetTexture(GLUFTextureIndex texIndex, GLUFTextureIndexResMan resManTexIndex);
-    GLUFFontNodePtr	    GetFont(GLUFFontIndex index) const;
-    GLUFTextureNodePtr	GetTexture(GLUFTextureIndex index) const;
+    void                SetFont(FontIndex fontIndex, FontIndexResMan resManFontIndex);
+    void                SetTexture(TextureIndex texIndex, TextureIndexResMan resManTexIndex);
+    FontNodePtr	    GetFont(FontIndex index) const;
+    TextureNodePtr	GetTexture(TextureIndex index) const;
 
 
     /*
@@ -990,8 +990,8 @@ public:
             TODO:
     
     */
-	static GLUFControlPtr GetNextControl(GLUFControlPtr control);
-	static GLUFControlPtr GetPrevControl(GLUFControlPtr control);
+	static ControlPtr GetNextControl(ControlPtr control);
+	static ControlPtr GetPrevControl(ControlPtr control);
 
     /*
     ClampToScreen
@@ -1011,10 +1011,10 @@ public:
             'ID': the id of the control to remove
 
         Throws:
-            'std::invalid_argument': in GLUF_DEBUG if no controls have id 'ID'
+            'std::invalid_argument': in _DEBUG if no controls have id 'ID'
     
     */
-	void RemoveControl(GLUFControlIndex ID);
+	void RemoveControl(ControlIndex ID);
 
     /*
     RemoveAllControls
@@ -1041,7 +1041,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void SetCallback(GLUFEventCallbackFuncPtr callback, GLUFEventCallbackReceivablePtr userContext = nullptr) noexcept;
+	void SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext = nullptr) noexcept;
 
 
     /*
@@ -1121,8 +1121,8 @@ private:
             no-throw guarantee
     
     */
-	void OnMouseMove(const GLUF::GLUFPoint& pt) noexcept;
-	void OnMouseUp(const GLUF::GLUFPoint& pt) noexcept;
+	void OnMouseMove(const Point& pt) noexcept;
+	void OnMouseUp(const Point& pt) noexcept;
 
     /*
     SetNextDialog
@@ -1137,7 +1137,7 @@ private:
             no-throw guarantee
     
     */
-	void SetNextDialog(GLUFDialogPtr nextDialog) noexcept;
+	void SetNextDialog(DialogPtr nextDialog) noexcept;
 
     /*
     OnCycleFocus
@@ -1164,7 +1164,7 @@ Structs and Shared Resources
 */
 
 /*
-GLUFTextureNode
+TextureNode
 
     Note:
         A barebones texture node; plans for future expansion
@@ -1173,15 +1173,15 @@ GLUFTextureNode
         'mTextureElement': the index of the texture within the dialog
 
 */
-struct GLUFTextureNode
+struct TextureNode
 {
-	GLUFTextureIndex mTextureElement;
+	TextureIndex mTextureElement;
 };
 
 //WIP, support more font options eg. stroke, italics, variable leading, etc.
 
 /*
-GLUFFontNode
+FontNode
 
     Note:
         Work in progress; support for more typographical options in the future, i.e.:
@@ -1193,12 +1193,12 @@ GLUFFontNode
         'mFontType': an opaque pointer to the font to use, defaults to arial
 
 */
-struct GLUFFontNode
+struct FontNode
 {
-	//GLUFFontSize mSize;
-	GLUFFontWeight mWeight;
-	GLUFFontSize mLeading;
-	GLUFFontPtr mFontType;
+	//FontSize mSize;
+	FontWeight mWeight;
+	FontSize mLeading;
+	FontPtr mFontType;
 };
 
 
@@ -1210,7 +1210,7 @@ struct GLUFFontNode
 
 /*
 ======================================================================================================================================================================================================
-GLUFSpriteVertexStruct
+SpriteVertexStruct
 
 
 */
@@ -1218,7 +1218,7 @@ GLUFSpriteVertexStruct
 
 
 /*
-GLUFSpriteVertexStruct
+SpriteVertexStruct
 
     Note:
         This is derived from the vertex struct class for use on AoS data packing
@@ -1229,14 +1229,14 @@ GLUFSpriteVertexStruct
         'mTexCoords': a uv coord
 
 */
-struct GLUFSpriteVertexStruct : public GLUFVertexStruct
+struct SpriteVertexStruct : public VertexStruct
 {
 	glm::vec3 mPos;
-	GLUF::Color4f mColor;
+	Color4f mColor;
     glm::vec2 mTexCoords;
 
-    GLUFSpriteVertexStruct(){}
-    GLUFSpriteVertexStruct(const glm::vec3& pos, const GLUF::Color4f& color, const glm::vec2& texCoords) : 
+    SpriteVertexStruct(){}
+    SpriteVertexStruct(const glm::vec3& pos, const Color4f& color, const glm::vec2& texCoords) : 
         mPos(pos), mColor(color), mTexCoords(texCoords)
     {}
 
@@ -1286,9 +1286,9 @@ struct GLUFSpriteVertexStruct : public GLUFVertexStruct
         }
     }
 
-    static GLUFGLVector<GLUFSpriteVertexStruct> MakeMany(size_t howMany)
+    static GLVector<SpriteVertexStruct> MakeMany(size_t howMany)
     {
-        GLUFGLVector<GLUFSpriteVertexStruct> ret;
+        GLVector<SpriteVertexStruct> ret;
         ret.resize(howMany);
 
         return ret;
@@ -1296,34 +1296,34 @@ struct GLUFSpriteVertexStruct : public GLUFVertexStruct
 };
 
 /*
-GLUFDialogResourceManager
+DialogResourceManager
 
     Note:
         Manages Resources Shared by the Dialog
 
     Data Members:
         'mWndSize': the size of the window
-        'mSpriteBuffer': the vertex array for drawing sprites; use 'GLUFVertexArray'
+        'mSpriteBuffer': the vertex array for drawing sprites; use 'VertexArray'
             because it automatically handles OpenGL version restrictions
         'mDialogs': the list of registered dialogs
         'mTextureCache': a list of shared textures
         'mFontCache': a list of shared fonts
 
 */
-class GLUFDialogResourceManager
+class DialogResourceManager
 {
 
-    GLUF::GLUFPoint mWndSize;
+    Point mWndSize;
 
-    GLUFVertexArray mSpriteBuffer;
-    std::vector<GLUFDialogPtr> mDialogs;
-    std::vector<GLUFTextureNodePtr> mTextureCache;
-    std::vector<GLUFFontNodePtr>    mFontCache;
+    VertexArray mSpriteBuffer;
+    std::vector<DialogPtr> mDialogs;
+    std::vector<TextureNodePtr> mTextureCache;
+    std::vector<FontNodePtr>    mFontCache;
 
-    friend GLUFDialog;
+    friend Dialog;
 public:
-	GLUFDialogResourceManager();
-	~GLUFDialogResourceManager();
+	DialogResourceManager();
+	~DialogResourceManager();
 
     /*
     MsgProg
@@ -1332,12 +1332,12 @@ public:
             This only cares about window resize messages in order to keep 'mWndSize' accurate
 
         Parameters:
-            see 'GLUFEventCallbackFuncPtr' for details
+            see 'EventCallbackFuncPtr' for details
 
         Throws:
             no-throw guarantee
     */
-	bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
+	bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
     
     /*
     ApplyRenderUI(Untex)
@@ -1377,7 +1377,7 @@ public:
         Throws:
             'std::out_of_range': if element texture index is out of range
     */
-	void EndSprites(const GLUFElement* element, bool textured);
+	void EndSprites(const Element* element, bool textured);
 
     /*
     GetFont/TextureNode
@@ -1388,8 +1388,8 @@ public:
         Throws:
             'std::out_of_range': if 'index' is larger than the size of the font/texture cache
     */
-	GLUFFontNodePtr    GetFontNode(GLUFFontIndex index) const		{ return mFontCache[index];		}
-	GLUFTextureNodePtr GetTextureNode(GLUFTextureIndex index) const	{ return mTextureCache[index];	}
+	FontNodePtr    GetFontNode(FontIndex index) const		{ return mFontCache[index];		}
+	TextureNodePtr GetTextureNode(TextureIndex index) const	{ return mTextureCache[index];	}
 
 
     /*
@@ -1402,8 +1402,8 @@ public:
             no-throw guarantee
     
     */
-	GLUFSize GetTextureCount() const noexcept   { return static_cast<GLUFSize>(mTextureCache.size()); }
-	GLUFSize GetFontCount() const noexcept      { return static_cast<GLUFSize>(mFontCache.size());    }
+	Size GetTextureCount() const noexcept   { return static_cast<Size>(mTextureCache.size()); }
+	Size GetFontCount() const noexcept      { return static_cast<Size>(mFontCache.size());    }
 
     /*
     AddFont
@@ -1420,13 +1420,13 @@ public:
             no-throw guarantee
         
     */
-	GLUFFontIndex AddFont(const GLUFFontPtr& font, GLUFFontSize leading, GLUFFontWeight weight) noexcept;
+	FontIndex AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept;
 
     /*
     AddTexture
         
         Note:
-            TODO: when GLUF supports a more advanced texture system, pass one of those,
+            TODO: when  supports a more advanced texture system, pass one of those,
                 but for now just require an openGL texture id
 
         Parameters:
@@ -1438,7 +1438,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	GLUFTextureIndex AddTexture(GLuint texture) noexcept;
+	TextureIndex AddTexture(GLuint texture) noexcept;
 
     /*
     RegisterDialog
@@ -1453,7 +1453,7 @@ public:
             no-throw guarantee
     
     */
-	void RegisterDialog(const GLUFDialogPtr& pDialog) noexcept;
+	void RegisterDialog(const DialogPtr& pDialog) noexcept;
 
     /*
     UnregisterDialog
@@ -1462,10 +1462,10 @@ public:
             'dialog': the dialog to remove
 
         Throws:
-            'std::invalid_argument': if 'dialog' == nullptr or if 'dialog' is not a registered dialog in GLUF_DEBUG mode
+            'std::invalid_argument': if 'dialog' == nullptr or if 'dialog' is not a registered dialog in _DEBUG mode
     
     */
-	void UnregisterDialog(const GLUFDialogPtr& dialog);
+	void UnregisterDialog(const DialogPtr& dialog);
 
     /*
     EnableKeyboardInputForAllDialogs
@@ -1490,7 +1490,7 @@ public:
             The size of the window in pixels
     
     */
-	GLUF::GLUFPoint GetWindowSize();
+	Point GetWindowSize();
     
     /*
     GetOrthoMatrix
@@ -1515,7 +1515,7 @@ public:
             'ref': a reference to a dialog
     
     */
-    GLUFDialogPtr GetDialogPtrFromRef(const GLUFDialog& ref);
+    DialogPtr GetDialogPtrFromRef(const Dialog& ref);
 protected:
     /*
     ApplyOrtho
@@ -1541,18 +1541,18 @@ Note:
 
 */
 
-class GLUFControlInitException
+class ControlInitException
 {
     virtual const char* what() const
     {
-        return "GLUFControl or child failed to initialized correctly!";
+        return "Control or child failed to initialized correctly!";
     }
 
-    EXCEPTION_CONSTRUCTOR(GLUFControlInitException);
+    EXCEPTION_CONSTRUCTOR(ControlInitException);
 };
 
 /*
-GLUFControl
+Control
 
 
     Parents:
@@ -1574,7 +1574,7 @@ GLUFControl
         'mElements': the elements making up this control
 
 */
-class GLUFControl : public std::enable_shared_from_this<GLUFControl>
+class Control : public std::enable_shared_from_this<Control>
 {
 protected:
     /*
@@ -1588,13 +1588,13 @@ protected:
             'dialog': the parent dialog
 
     */
-    GLUFControl(GLUFDialog& dialog);
+    Control(Dialog& dialog);
 
-    friend GLUFDialog;
+    friend Dialog;
 
-    GLUFControlIndex mID;
-    GLUFControlType mType;
-    GLUFKeyId  mHotkey;
+    ControlIndex mID;
+    ControlType mType;
+    KeyId  mHotkey;
 
     bool mEnabled;
     bool mVisible;
@@ -1602,24 +1602,24 @@ protected:
     bool mHasFocus;
     bool mIsDefault;
 
-    GLUFRect mRegion;
+    Rect mRegion;
 
-    GLUFDialog& mDialog;
-    GLUFControlIndex mIndex;
+    Dialog& mDialog;
+    ControlIndex mIndex;
 
     //use a map, because there may be gaps in indices
-    std::map<GLUFElementIndex, GLUFElement> mElements;
+    std::map<ElementIndex, Element> mElements;
 
 
 public:
-	virtual ~GLUFControl();
+	virtual ~Control();
 
 
     /*
     OnInit
 
         Throws:
-            'GLUFControlInitException': if child class initialization fails
+            'ControlInitException': if child class initialization fails
     
     */
     virtual void OnInit(){ UpdateRects(); }
@@ -1652,12 +1652,12 @@ public:
     MsgProc
 
         Parameters:
-            see 'GLUFEventCallbackFuncPtr' for details
+            see 'EventCallbackFuncPtr' for details
 
         Throws:
             no-throw guarantee
     */
-	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept { return false; }
+	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept { return false; }
 
              
     /*
@@ -1672,18 +1672,18 @@ public:
     virtual bool	GetVisible() const noexcept		    { return mVisible;              }
     int				GetID() const noexcept			    { return mID;                   }
     int				GetHotkey()	const noexcept		    { return mHotkey;               }
-    GLUFControlType GetType() const	noexcept		    { return mType;                 }
+    ControlType GetType() const	noexcept		    { return mType;                 }
 	virtual bool	CanHaveFocus() const noexcept	    { return false;					}
-    GLUFRect        GetRegion() const noexcept          { return mRegion;               }
-    GLUFElement&  	GetElement(GLUFElementIndex element);
+    Rect        GetRegion() const noexcept          { return mRegion;               }
+    Element&  	GetElement(ElementIndex element);
 
     virtual void	SetEnabled(bool enabled) noexcept		    { mEnabled = enabled;                       }
     virtual void	SetVisible(bool visible) noexcept		    { mVisible = visible;                       }
-    virtual void    SetRegion(const GLUF::GLUFRect& region) noexcept
+    virtual void    SetRegion(const Rect& region) noexcept
                                                                 { mRegion = region;                         }
-    void			SetLocation(long x, long y) noexcept	    { GLUFRepositionRect(mRegion, x, y);        }
-    void			SetSize(long width, long height) noexcept   { GLUFResizeRect(mRegion, width, height);   }
-    void			SetHotkey(GLUFKeyId hotkey) noexcept		{ mHotkey = hotkey;                         }
+    void			SetLocation(long x, long y) noexcept	    { RepositionRect(mRegion, x, y);        }
+    void			SetSize(long width, long height) noexcept   { ResizeRect(mRegion, width, height);   }
+    void			SetHotkey(KeyId hotkey) noexcept		{ mHotkey = hotkey;                         }
     void			SetID(int ID) noexcept					    { mID = ID;                                 }
 
 
@@ -1697,8 +1697,8 @@ public:
             no-throw guarantee; children may modify this behavior, but should not
     
     */
-    virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept  
-                                            { return GLUFPtInRect(mRegion, pt);                         }
+    virtual bool ContainsPoint(const Point& pt) const noexcept  
+                                            { return PtInRect(mRegion, pt);                         }
 	virtual void OnFocusIn() noexcept		{ mHasFocus = true;						    				}
 	virtual void OnFocusOut() noexcept		{ mHasFocus = false;										}
 	virtual void OnMouseEnter() noexcept	{ mMouseOver = true;										}
@@ -1719,7 +1719,7 @@ public:
             no-throw guarantee
 
     */
-	void SetElement(GLUFElementIndex elementId, const GLUFElement& element) noexcept;
+	void SetElement(ElementIndex elementId, const Element& element) noexcept;
 
     /*
     SetTextColor
@@ -1734,7 +1734,7 @@ public:
             no-throw guarantee
     
     */
-	virtual void SetTextColor(const GLUF::Color& color) noexcept;
+	virtual void SetTextColor(const Color& color) noexcept;
 
 
 protected:
@@ -1751,7 +1751,7 @@ protected:
 
 
 /*
-GLUFElementHolder
+ElementHolder
 
     Note:
         This class is used for default element data structures
@@ -1762,17 +1762,17 @@ GLUFElementHolder
         'mElement': the element itself
 
 */
-struct GLUFElementHolder
+struct ElementHolder
 {
-	GLUFControlType mControlType;
-	GLUFElementIndex mElementIndex;
-	GLUFElement mElement;
+	ControlType mControlType;
+	ElementIndex mElementIndex;
+	Element mElement;
 };
 
 
 
 /*
-GLUFStatic
+Static
 
     Note:
         A Static Text Control; Draws Text with no backgroud
@@ -1782,16 +1782,16 @@ GLUFStatic
         'mTextFlags': the text formatting flats
 
 */
-class GLUFStatic : public GLUFControl
+class Static : public Control
 {
 protected:
     std::wstring     mText;
-    GLUFBitfield     mTextFlags;
+    Bitfield     mTextFlags;
 
-    GLUFStatic(const GLUFBitfield& textFlags, GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFStatic> CreateStatic(GLUFBitfield textFlags, GLUFDialog& dialog);
+    Static(const Bitfield& textFlags, Dialog& dialog);
+    friend std::shared_ptr<Static> CreateStatic(Bitfield textFlags, Dialog& dialog);
 
-    GLUFStatic() = delete;
+    Static() = delete;
     
 public:
 
@@ -1803,7 +1803,7 @@ public:
             This always returns false, because this control never should receive message
     
     */
-	virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const override { return false; }
+	virtual bool ContainsPoint(const Point& pt) const override { return false; }
 
     /*
     Getters and Setters
@@ -1815,7 +1815,7 @@ public:
     void                  GetTextCopy(std::wstring& dest) const noexcept    { dest = mText;         }
 	const std::wstring&   GetText() const noexcept                          { return mText;         }
     void                  SetText(const std::wstring& text) noexcept        { mText = text;         }
-    void                  SetTextFlags(GLUFBitfield flags) noexcept         { mTextFlags = flags;   }
+    void                  SetTextFlags(Bitfield flags) noexcept         { mTextFlags = flags;   }
 
 
     /*
@@ -1827,20 +1827,20 @@ public:
 
 
 /*
-GLUFButton
+Button
 
     DataMembers:
         'mPressed': boolean state of the button
 
 */
-class GLUFButton : public GLUFStatic
+class Button : public Static
 {
 
 protected:
 
-    GLUFButton() = delete;
-    GLUFButton(GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFButton> CreateButton(GLUFDialog& dialog);
+    Button() = delete;
+    Button(Dialog& dialog);
+    friend std::shared_ptr<Button> CreateButton(Dialog& dialog);
 
     bool mPressed;
 
@@ -1852,18 +1852,18 @@ public:
     */
     virtual bool CanHaveFocus()	const noexcept override	{ return (mVisible && mEnabled); }
     virtual void Render(float elapsedTime) noexcept override;
-    virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override{ return GLUFPtInRect(mRegion, pt); }
-    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual bool ContainsPoint(const Point& pt) const noexcept override{ return PtInRect(mRegion, pt); }
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
 
 };
 
 
 /*
-GLUFCheckBox
+CheckBox
 
     Parents:
-        GLUFButton
+        Button
 
     Data Members:
         'mChecked': is the box checked
@@ -1871,18 +1871,18 @@ GLUFCheckBox
         'mTextRegion': the region the text covers
 
 */
-class GLUFCheckBox : public GLUFButton
+class CheckBox : public Button
 {
 
 protected:
 
-    GLUFCheckBox() = delete;
-    GLUFCheckBox(bool checked, GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFCheckBox> CreateCheckBox(bool checked, GLUFDialog& dialog);
+    CheckBox() = delete;
+    CheckBox(bool checked, Dialog& dialog);
+    friend std::shared_ptr<CheckBox> CreateCheckBox(bool checked, Dialog& dialog);
 
     bool mChecked;
-    GLUF::GLUFRect mButtonRegion;
-    GLUF::GLUFRect mTextRegion;
+    Rect mButtonRegion;
+    Rect mTextRegion;
 
 public:
 
@@ -1900,10 +1900,10 @@ public:
     Overridden Unambiguous Member Functions
     
     */
-    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
     virtual void OnHotkey() noexcept override;
-    virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const override;
+    virtual bool ContainsPoint(const Point& pt) const override;
     virtual void UpdateRects() noexcept override;
 
 protected:
@@ -1927,23 +1927,23 @@ protected:
 
 
 /*
-GLUFRadioButton
+RadioButton
 
     Parents:
-        GLUFCheckBox
+        CheckBox
 
     Data Members
         'mButtonGroup': the id of the button group this belongs to in a dialog
 */
-class GLUFRadioButton : public GLUFCheckBox
+class RadioButton : public CheckBox
 {
 public:
     
-    GLUFRadioButton() = delete;
-    GLUFRadioButton(GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFRadioButton> CreateRadioButton(GLUFDialog& dialog);
+    RadioButton() = delete;
+    RadioButton(Dialog& dialog);
+    friend std::shared_ptr<RadioButton> CreateRadioButton(Dialog& dialog);
 
-    GLUFRadioButtonGroup mButtonGroup;
+    RadioButtonGroup mButtonGroup;
 
 public:
 
@@ -1955,7 +1955,7 @@ public:
             no-throw guarantee
     */
 	void            SetChecked(bool checked, bool clearGroup = true) noexcept   { SetCheckedInternal(checked, clearGroup, false);   }
-    void            SetButtonGroup(GLUFRadioButtonGroup buttonGroup) noexcept   { mButtonGroup = buttonGroup;                       }
+    void            SetButtonGroup(RadioButtonGroup buttonGroup) noexcept   { mButtonGroup = buttonGroup;                       }
 	unsigned int    GetButtonGroup() const noexcept                             { return mButtonGroup;                              }
 
 
@@ -1963,7 +1963,7 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
     virtual void OnMouseEnter() noexcept override;
     virtual void OnMouseLeave() noexcept override;
@@ -1994,10 +1994,10 @@ protected:
 
 
 /*
-GLUFScrollBar
+ScrollBar
 
     Parents:
-        GLUFControl
+        Control
         
     Data Members:
         'mShowThumb': show the thumbnail (grabbable scroll piece)
@@ -2014,12 +2014,12 @@ GLUFScrollBar
         'mArrow': the state of the arrows
         'mArrowTS': the timestamp of the previous arrow event
 */
-class GLUFScrollBar : public GLUFControl
+class ScrollBar : public Control
 {
 public:
 
     /*
-    GLUFArrowState
+    ArrowState
 
         'CLEAR':            No arrow is down.
         'CLICKED_UP':       Up arrow is clicked.
@@ -2027,7 +2027,7 @@ public:
         'HELD_UP':          Up arrow is held down for sustained period.
         'HELD_DOWN':        Down arrow is held down for sustained period.
     */
-    enum GLUFArrowState
+    enum ArrowState
     {
         CLEAR,
         CLICKED_UP,
@@ -2037,27 +2037,27 @@ public:
     };
 protected:
 
-    GLUFScrollBar() = delete;
-    GLUFScrollBar(GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFScrollBar> CreateScrollBar(GLUFDialog& dialog);
+    ScrollBar() = delete;
+    ScrollBar(Dialog& dialog);
+    friend std::shared_ptr<ScrollBar> CreateScrollBar(Dialog& dialog);
 
 
     bool mShowThumb;
     bool mDrag;
-    GLUF::GLUFRect mUpButtonRegion;
-    GLUF::GLUFRect mDownButtonRegion;
-    GLUF::GLUFRect mTrackRegion;
-    GLUF::GLUFRect mThumbRegion;
-    GLUFValue mPosition;
-    GLUFValue mPageSize;
-    GLUFValue mStart;
-    GLUFValue mEnd;
-    GLUF::GLUFPoint mPreviousMousePos;
-    GLUFArrowState mArrow;
+    Rect mUpButtonRegion;
+    Rect mDownButtonRegion;
+    Rect mTrackRegion;
+    Rect mThumbRegion;
+    Value mPosition;
+    Value mPageSize;
+    Value mStart;
+    Value mEnd;
+    Point mPreviousMousePos;
+    ArrowState mArrow;
     double mArrowTS;
 
 public:
-	virtual         ~GLUFScrollBar();
+	virtual         ~ScrollBar();
 
 
     /*
@@ -2099,7 +2099,7 @@ public:
     Overridden Unambiguous Member Functions
 
     */
-    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
 
@@ -2127,17 +2127,17 @@ protected:
 
 
 /*
-GLUFGenericData
+GenericData
 
     Note:
-        This should be the base for all data which goes in 'GLUFListBox' or 'GLUFComboBox'
+        This should be the base for all data which goes in 'ListBox' or 'ComboBox'
 
 */
-struct GLUFGenericData
+struct GenericData
 {};
 
 /*
-GLUFListBoxItem
+ListBoxItem
 
     Data Members:
         'mText': the text to represent the data
@@ -2146,20 +2146,20 @@ GLUFListBoxItem
         'mActiveRegion': the active region on the screen
 
 */
-typedef struct GLUFListBoxItem_t
+typedef struct ListBoxItem_t
 {
 	std::wstring mText;
-    GLUFGenericData& mData;
+    GenericData& mData;
 	bool mVisible;
-	GLUF::GLUFRect mActiveRegion;
+	Rect mActiveRegion;
 
-    GLUFListBoxItem_t(GLUFGenericData& data) : mData(data){}
-} GLUFListBoxItem, GLUFComboBoxItem;
+    ListBoxItem_t(GenericData& data) : mData(data){}
+} ListBoxItem, ComboBoxItem;
 
-using GLUFListBoxItemPtr = std::shared_ptr < GLUFListBoxItem > ;
-using GLUFComboBoxItemPtr = std::shared_ptr < GLUFComboBoxItem > ;
+using ListBoxItemPtr = std::shared_ptr < ListBoxItem > ;
+using ComboBoxItemPtr = std::shared_ptr < ComboBoxItem > ;
 
-class NoItemSelectedException : GLUFException
+class NoItemSelectedException : Exception
 {
 public:
     virtual const char* what() const override
@@ -2171,10 +2171,10 @@ public:
 };
 
 /*
-GLUFListBox
+ListBox
 
     Parents:
-        'GLUFControl'
+        'Control'
 
     Data Members:
         'mTextRegion': the bounding box for the text
@@ -2189,31 +2189,31 @@ GLUFListBox
         'mDrag': whether the user is dragging the mouse to select multiple items
 
 */
-class GLUFListBox : public GLUFControl
+class ListBox : public Control
 {
 protected:
 
-    GLUFListBox() = delete;
-    GLUFListBox(GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFListBox> CreateListBox(GLUFDialog& dialog);
+    ListBox() = delete;
+    ListBox(Dialog& dialog);
+    friend std::shared_ptr<ListBox> CreateListBox(Dialog& dialog);
 
 
-    GLUF::GLUFRect mTextRegion;
-    GLUF::GLUFRect mSelectionRegion;
-    GLUFScrollBarPtr mScrollBar;
-    GLUFSize mSBWidth;
-    GLUFSize mVerticalMargin;
-    GLUFSize mHorizontalMargin;
-    GLUFFontSize  mTextHeight; 
-    GLUFBitfield mStyle; 
-    std::vector<GLUFIndex> mSelected;
+    Rect mTextRegion;
+    Rect mSelectionRegion;
+    ScrollBarPtr mScrollBar;
+    Size mSBWidth;
+    Size mVerticalMargin;
+    Size mHorizontalMargin;
+    FontSize  mTextHeight; 
+    Bitfield mStyle; 
+    std::vector<Index> mSelected;
     bool mDrag;
-    std::vector<GLUFListBoxItemPtr> mItems;
+    std::vector<ListBoxItemPtr> mItems;
 
 public:
-	virtual ~GLUFListBox();
+	virtual ~ListBox();
 
-    enum GLUFListBoxStyle
+    enum ListBoxStyle
     {
         MULTISELECTION = 0x01
     };
@@ -2235,17 +2235,17 @@ public:
 
     */
     
-	GLUFGenericData&    GetItemData(const std::wstring& text, GLUFIndex start) const;
-    GLUFGenericData&    GetItemData(GLUFIndex index) const;
-	GLUFSize            GetNumItems() const	noexcept		{ return mItems.size();		}
-    GLUFListBoxItemPtr  GetItem(const std::wstring& text, GLUFIndex start = 0) const;
-    GLUFListBoxItemPtr  GetItem(GLUFIndex index) const		{ return mItems[index];     }
-	GLUFBitfield        GetStyle() const noexcept			{ return mStyle;			}
-	GLUFSize            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
+	GenericData&    GetItemData(const std::wstring& text, Index start) const;
+    GenericData&    GetItemData(Index index) const;
+	Size            GetNumItems() const	noexcept		{ return mItems.size();		}
+    ListBoxItemPtr  GetItem(const std::wstring& text, Index start = 0) const;
+    ListBoxItemPtr  GetItem(Index index) const		{ return mItems[index];     }
+	Bitfield        GetStyle() const noexcept			{ return mStyle;			}
+	Size            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
 
-	void                SetStyle(GLUFBitfield style)  noexcept				       { mStyle = style;						                       }
-    void                SetScrollBarWidth(GLUFSize width) noexcept                 { mSBWidth = width; UpdateRects();                              }
-    void                SetMargins(GLUFSize vertical, GLUFSize horizontal) noexcept{ mVerticalMargin = vertical; mHorizontalMargin = horizontal;   }
+	void                SetStyle(Bitfield style)  noexcept				       { mStyle = style;						                       }
+    void                SetScrollBarWidth(Size width) noexcept                 { mSBWidth = width; UpdateRects();                              }
+    void                SetMargins(Size vertical, Size horizontal) noexcept{ mVerticalMargin = vertical; mHorizontalMargin = horizontal;   }
 
     /*
     AddItem
@@ -2257,7 +2257,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GLUFGenericData& data) noexcept;
+    void AddItem(const std::wstring& text, GenericData& data) noexcept;
 
     /*
     InsertItem
@@ -2275,7 +2275,7 @@ public:
             no-throw guarantee
     
     */
-    void InsertItem(GLUFIndex index, const std::wstring& text, GLUFGenericData& data) noexcept;
+    void InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept;
 
     /*
     RemoveItem
@@ -2284,10 +2284,10 @@ public:
             'index': the index to remove, which then makes all elements after move back one
         
         Throws:
-            'std::out_of_range': if 'index' is too big in GLUF_DEBUG
+            'std::out_of_range': if 'index' is too big in _DEBUG
 
     */
-	void RemoveItem(GLUFIndex index);
+	void RemoveItem(Index index);
 
     /*
     RemoveAllItems
@@ -2318,8 +2318,8 @@ public:
             'NoItemSelectedException': if no item is selected
 
     */
-	GLUFIndex GetSelectedIndex(GLUFIndex previousSelected) const;//for multi-line
-    GLUFIndex GetSelectedIndex() const;//for single-line (or finding the first selected item)
+	Index GetSelectedIndex(Index previousSelected) const;//for multi-line
+    Index GetSelectedIndex() const;//for single-line (or finding the first selected item)
 
     /*
     GetSelectedItem
@@ -2334,8 +2334,8 @@ public:
             'NoItemSelectedException': if no item is selected
     
     */
-    GLUFListBoxItemPtr GetSelectedItem(GLUFIndex previousSelected) const{ return GetItem(GetSelectedIndex(previousSelected)); }
-    GLUFListBoxItemPtr GetSelectedItem() const { return GetItem(GetSelectedIndex()); }
+    ListBoxItemPtr GetSelectedItem(Index previousSelected) const{ return GetItem(GetSelectedIndex(previousSelected)); }
+    ListBoxItemPtr GetSelectedItem() const { return GetItem(GetSelectedIndex()); }
     
     /*
     GetSelectedData
@@ -2350,8 +2350,8 @@ public:
             'NoItemSelectedException': if no item is selected
     
     */
-    GLUFGenericData& GetSelectedData(GLUFIndex previousSelected) const { return GetItemData(GetSelectedIndex(previousSelected)); }
-    GLUFGenericData& GetSelectedData() const { return GetItemData(GetSelectedIndex()); }
+    GenericData& GetSelectedData(Index previousSelected) const { return GetItemData(GetSelectedIndex(previousSelected)); }
+    GenericData& GetSelectedData() const { return GetItemData(GetSelectedIndex()); }
 
     /*
     SelectItem
@@ -2366,11 +2366,11 @@ public:
             'start': the starting point to look for 'text'
 
         Throws:
-            'std::out_of_range': if index is too big in GLUF_DEBUG
-            'std::invalid_argument': if 'text' is not found in GLUF_DEBUG
+            'std::out_of_range': if index is too big in _DEBUG
+            'std::invalid_argument': if 'text' is not found in _DEBUG
     */
-	void SelectItem(GLUFIndex index);
-    void SelectItem(const std::wstring& text, GLUFIndex start = 0);
+	void SelectItem(Index index);
+    void SelectItem(const std::wstring& text, Index start = 0);
 
     /*
     ClearSelected
@@ -2396,10 +2396,10 @@ public:
             'start': the starting index of the selected list to start looking for 'text'
 
         Throws:
-            'std::invalid_argument': if 'index' does not exist, in GLUF_DEBUG
+            'std::invalid_argument': if 'index' does not exist, in _DEBUG
     */
-    void RemoveSelected(GLUFIndex index);
-    void RemoveSelected(const std::wstring& text, GLUFIndex start = 0);
+    void RemoveSelected(Index index);
+    void RemoveSelected(const std::wstring& text, Index start = 0);
 
     /*
     ContainsItem
@@ -2415,7 +2415,7 @@ public:
             no-throw guarantee
     
     */
-    bool ContainsItem(const std::wstring& text, GLUFIndex start = 0) const noexcept;
+    bool ContainsItem(const std::wstring& text, Index start = 0) const noexcept;
 
     /*
     FindItem(Index)
@@ -2433,8 +2433,8 @@ public:
             'std::invalid_argument': if no item is found
     
     */
-    GLUFIndex           FindItemIndex(const std::wstring& text, GLUFIndex start = 0) const;
-    GLUFListBoxItemPtr  FindItem(const std::wstring& text, GLUFIndex start = 0) const;
+    Index           FindItemIndex(const std::wstring& text, Index start = 0) const;
+    ListBoxItemPtr  FindItem(const std::wstring& text, Index start = 0) const;
 
 
     /*
@@ -2442,12 +2442,12 @@ public:
     
 
     */
-	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<GLUFControl>(mScrollBar));	}
+	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+	virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar));	}
 	virtual bool CanHaveFocus() const noexcept override	{ return (mVisible && mEnabled);			    }
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
-	virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override{ return GLUFControl::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt); }
+	virtual bool ContainsPoint(const Point& pt) const noexcept override{ return Control::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt); }
 
 protected:
 
@@ -2468,10 +2468,10 @@ protected:
 
 
 /*
-GLUFComboBox
+ComboBox
 
     Parents:   
-        'GLUFButton'
+        'Button'
 
     Data Members:
         'mSelected': the index of the selected item
@@ -2487,31 +2487,31 @@ GLUFComboBox
         'mItems': the items within the combo box
 
 */
-class GLUFComboBox : public GLUFButton
+class ComboBox : public Button
 {
 protected:
 
-    GLUFComboBox() = delete;
-    GLUFComboBox(GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFComboBox> CreateComboBox(GLUFDialog& dialog);
+    ComboBox() = delete;
+    ComboBox(Dialog& dialog);
+    friend std::shared_ptr<ComboBox> CreateComboBox(Dialog& dialog);
 
-    GLUFsIndex mSelected;
-    GLUFsIndex mFocused;
-    GLUFSize mDropHeight;
-    GLUFScrollBarPtr mScrollBar;
-    GLUFSize mSBWidth;
+    sIndex mSelected;
+    sIndex mFocused;
+    Size mDropHeight;
+    ScrollBarPtr mScrollBar;
+    Size mSBWidth;
 
     bool mOpened;
 
-    GLUF::GLUFRect mTextRegion;
-    GLUF::GLUFRect mButtonRegion;
-    GLUF::GLUFRect mDropdownRegion;
-    GLUF::GLUFRect mDropdownTextRegion;
+    Rect mTextRegion;
+    Rect mButtonRegion;
+    Rect mDropdownRegion;
+    Rect mDropdownTextRegion;
 
-    std::vector <GLUFComboBoxItemPtr> mItems;
+    std::vector <ComboBoxItemPtr> mItems;
 
 public:
-	virtual         ~GLUFComboBox();
+	virtual         ~ComboBox();
     
 
     /*
@@ -2529,15 +2529,15 @@ public:
 
     */
     
-	GLUFGenericData&    GetItemData(const std::wstring& text, GLUFIndex start = 0) const;
-    GLUFGenericData&    GetItemData(GLUFIndex index) const;
-	GLUFSize            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
-	GLUFSize            GetNumItems() const	noexcept		{ return mItems.size();		}
-    GLUFComboBoxItemPtr GetItem(const std::wstring& text, GLUFIndex start = 0) const;
-    GLUFComboBoxItemPtr GetItem(GLUFIndex index) const		{ return mItems[index]; }
+	GenericData&    GetItemData(const std::wstring& text, Index start = 0) const;
+    GenericData&    GetItemData(Index index) const;
+	Size            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
+	Size            GetNumItems() const	noexcept		{ return mItems.size();		}
+    ComboBoxItemPtr GetItem(const std::wstring& text, Index start = 0) const;
+    ComboBoxItemPtr GetItem(Index index) const		{ return mItems[index]; }
 
-    void                SetDropHeight(GLUFSize nHeight)			    { mDropHeight = nHeight; UpdateRects(); }
-    void                SetScrollBarWidth(GLUFSize width) noexcept  { mSBWidth = width; UpdateRects();      }
+    void                SetDropHeight(Size nHeight)			    { mDropHeight = nHeight; UpdateRects(); }
+    void                SetScrollBarWidth(Size width) noexcept  { mSBWidth = width; UpdateRects();      }
 
     /*
     AddItem
@@ -2549,7 +2549,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GLUFGenericData& data = GLUFGenericData()) noexcept;
+    void AddItem(const std::wstring& text, GenericData& data = GenericData()) noexcept;
 
     /*
     InsertItem
@@ -2567,7 +2567,7 @@ public:
             no-throw guarantee
     
     */
-    void InsertItem(GLUFIndex index, const std::wstring& text, GLUFGenericData& data) noexcept;//IMPLEMENT
+    void InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept;//IMPLEMENT
 
     /*
     RemoveItem
@@ -2576,10 +2576,10 @@ public:
             'index': the index to remove, which then makes all elements after move back one
         
         Throws:
-            'std::out_of_range': if 'index' is too big in GLUF_DEBUG
+            'std::out_of_range': if 'index' is too big in _DEBUG
 
     */
-	void RemoveItem(GLUFIndex index);
+	void RemoveItem(Index index);
 
     /*
     RemoveAllItems
@@ -2603,7 +2603,7 @@ public:
             'NoItemSelectedException': if no item is selected
 
     */
-    GLUFIndex GetSelectedIndex() const;
+    Index GetSelectedIndex() const;
 
     /*
     GetSelectedItem
@@ -2615,7 +2615,7 @@ public:
             'NoItemSelectedException': if no item is selected
     
     */
-    GLUFListBoxItemPtr GetSelectedItem() const;
+    ListBoxItemPtr GetSelectedItem() const;
     
     /*
     GetSelectedData
@@ -2627,7 +2627,7 @@ public:
             'NoItemSelectedException': if no item is selected
     
     */
-    GLUFGenericData& GetSelectedData() const;
+    GenericData& GetSelectedData() const;
 
     /*
     SelectItem
@@ -2639,12 +2639,12 @@ public:
             'data': the data to find
 
         Throws:
-            'std::out_of_range': if index is too big in GLUF_DEBUG
-            'std::invalid_argument': if 'text' is not found in GLUF_DEBUG, or if 'data' is not found in GLUF_DEBUG
+            'std::out_of_range': if index is too big in _DEBUG
+            'std::invalid_argument': if 'text' is not found in _DEBUG, or if 'data' is not found in _DEBUG
     */
-	void SelectItem(GLUFIndex index);
-    void SelectItem(const std::wstring& text, GLUFIndex start = 0);
-    void SelectItem(const GLUFGenericData& data);
+	void SelectItem(Index index);
+    void SelectItem(const std::wstring& text, Index start = 0);
+    void SelectItem(const GenericData& data);
     
     /*
     ContainsItem
@@ -2660,7 +2660,7 @@ public:
             no-throw guarantee
     
     */
-    bool ContainsItem(const std::wstring& text, GLUFIndex start = 0) const noexcept;
+    bool ContainsItem(const std::wstring& text, Index start = 0) const noexcept;
 
     /*
     FindItem(Index)
@@ -2678,8 +2678,8 @@ public:
             'std::invalid_argument': if no item is found
     
     */
-    GLUFIndex           FindItemIndex(const std::wstring& text, GLUFIndex start = 0) const;
-    GLUFComboBoxItemPtr FindItem(const std::wstring& text, GLUFIndex start = 0) const;
+    Index           FindItemIndex(const std::wstring& text, Index start = 0) const;
+    ComboBoxItemPtr FindItem(const std::wstring& text, Index start = 0) const;
 
 
     /*
@@ -2687,14 +2687,14 @@ public:
     
     
     */
-	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void OnHotkey() noexcept override;
 	virtual bool CanHaveFocus() const noexcept override{ return (mVisible && mEnabled); }
 	virtual void OnFocusOut() noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void UpdateRects() noexcept override;
     virtual void OnInit() override;
-	virtual void SetTextColor(const GLUF::Color& Color) noexcept override;
+	virtual void SetTextColor(const Color& Color) noexcept override;
 
 protected:
     
@@ -2714,10 +2714,10 @@ protected:
 
 
 /*
-GLUFSlider
+Slider
 
     Parents:
-        'GLUFControl'
+        'Control'
 
     Data Members:
         'mValue': the value between 'mMin' and 'mMax' where the slider is at
@@ -2730,22 +2730,22 @@ GLUFSlider
         'mButtonRegion': the region the button occupies
 
 */
-class GLUFSlider : public GLUFControl
+class Slider : public Control
 {
 protected:
 
-    GLUFSlider() = delete;
-    GLUFSlider(GLUFDialog& dialog);
-    friend std::shared_ptr<GLUFSlider> CreateSlider(GLUFDialog& dialog);
+    Slider() = delete;
+    Slider(Dialog& dialog);
+    friend std::shared_ptr<Slider> CreateSlider(Dialog& dialog);
 
-    GLUFValue mValue;
-    GLUFValue mMin;
-    GLUFValue mMax;
-    GLUFValue mDragX;
-    GLUFValue mDragOffset;
-    GLUFValue mButtonX;
+    Value mValue;
+    Value mMin;
+    Value mMax;
+    Value mDragX;
+    Value mDragOffset;
+    Value mButtonX;
     bool mPressed;
-    GLUF::GLUFRect mButtonRegion;
+    Rect mButtonRegion;
 
 public:
 
@@ -2756,19 +2756,19 @@ public:
             no-throw guarantee
     
     */
-    GLUFValue   GetValue() const noexcept           { return mValue;                    }
-    void        GetRange(GLUFValue& nMin, GLUFValue& nMax) const noexcept
+    Value   GetValue() const noexcept           { return mValue;                    }
+    void        GetRange(Value& nMin, Value& nMax) const noexcept
                                                     { nMin = mMin; nMax = mMax;         }
-    void        SetValue(GLUFValue nValue) noexcept { SetValueInternal(nValue, false);  }
-    void        SetRange(GLUFValue  nMin, GLUFValue  nMax) noexcept;
+    void        SetValue(Value nValue) noexcept { SetValueInternal(nValue, false);  }
+    void        SetRange(Value  nMin, Value  nMax) noexcept;
 
     /*
     Overridden Unambiguous Member Functions
     
     
     */
-    virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-    virtual bool ContainsPoint(const GLUF::GLUFPoint& pt) const noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual bool ContainsPoint(const Point& pt) const noexcept override;
     virtual bool CanHaveFocus()const noexcept override{ return (mVisible && mEnabled); }
     virtual void UpdateRects() noexcept override;
     virtual void Render(float elapsedTime) noexcept override;
@@ -2805,7 +2805,7 @@ protected:
             no-throw guarantee
 
     */
-	GLUFValue ValueFromXPos(GLUFValue xPos) const noexcept;
+	Value ValueFromXPos(Value xPos) const noexcept;
 
 };
 
@@ -2821,13 +2821,13 @@ Stopped Here June 4 2015
 
 
 /*
-GLUFEditBox
+EditBox
 
     Temp:
         This is a total rebuild of the edit box class
 
     Parents:
-        'GLUFControl'
+        'Control'
 
     Data Members:
         'mText': the source text buffer
@@ -2854,21 +2854,21 @@ GLUFEditBox
         'mHideCaret': whether or not to hide the caret completely
 
 */
-/*class GLUFEditBox : public GLUFControl
+/*class EditBox : public Control
 {
-    GLUF_FORCE_SMART_POINTERS(GLUFEditBox, GLUFCharset& charset, bool& isMultiline, GLUFDialog& dialog);
+    _FORCE_SMART_POINTERS(EditBox, Charset& charset, bool& isMultiline, Dialog& dialog);
 
 protected:
 
     std::wstring mText;
     std::wstring mFormattedText;
 
-    GLUFCharset mCharset;
+    Charset mCharset;
     bool mAnalyseRequired;
 
-    GLUFSize mBorder;
-    GLUFSize mSpacing;
-    GLUF::GLUFRect mTextRegion;
+    Size mBorder;
+    Size mSpacing;
+    Rect mTextRegion;
 
     double mBlinkPeriod;
     double mPreviousBlink;
@@ -2876,20 +2876,20 @@ protected:
     bool mMultiline = true;
     bool mCaretOn;
     bool mHideCaret;
-    GLUFValue mCaretPos;
+    Value mCaretPos;
     bool mInsertMode;
-    GLUFValue mSelStart;
+    Value mSelStart;
 
-    GLUF::Color mTextColor;
-    GLUF::Color mSelTextColor;
-    GLUF::Color mSelBkColor;
-    GLUF::Color mCaretColor;
+    Color mTextColor;
+    Color mSelTextColor;
+    Color mSelBkColor;
+    Color mCaretColor;
 
-    GLUFScrollBar mScrollBar;
-    GLUFSize mSBWidth;
+    ScrollBar mScrollBar;
+    Size mSBWidth;
 
 public:
-	virtual         ~GLUFEditBox();
+	virtual         ~EditBox();
 
     //ended updating here!
 
@@ -2898,10 +2898,10 @@ public:
 	int             GetTextLength(){ return (int)m_strBuffer.length(); }  // Returns text length in chars excluding nullptr.
 	std::wstring     GetTextClamped();//this gets the text, but clamped to the bounding box, (NOTE: this will overflow off the bottom);
 	void            ClearText();
-	virtual void    SetTextColor(GLUF::Color Color){ m_TextColor = Color; }  // Text color
-	void            SetSelectedTextColor(GLUF::Color Color){ m_SelTextColor = Color; }  // Selected text color
-	void            SetSelectedBackColor(GLUF::Color Color){ m_SelBkColor = Color; }  // Selected background color
-	void            SetCaretColor(GLUF::Color Color){ m_CaretColor = Color; }  // Caret color
+	virtual void    SetTextColor(Color Color){ m_TextColor = Color; }  // Text color
+	void            SetSelectedTextColor(Color Color){ m_SelTextColor = Color; }  // Selected text color
+	void            SetSelectedBackColor(Color Color){ m_SelBkColor = Color; }  // Selected background color
+	void            SetCaretColor(Color Color){ m_CaretColor = Color; }  // Caret color
 	void            SetBorderWidth(long fBorder){ m_fBorder = fBorder; UpdateRects(); m_bAnalyseRequired = true; }  // Border of the window
 	void            SetSpacing(long fSpacing){ m_fSpacing = fSpacing; UpdateRects(); m_bAnalyseRequired = true; }
 	//void            ParseFloatArray(float* pNumbers, int nCount);
@@ -2913,7 +2913,7 @@ public:
 
     
     
-	virtual bool MsgProc(GLUFMessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void UpdateRects() noexcept override;
 	virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
 	virtual void Render(float elapsedTime) noexcept override;
@@ -2939,10 +2939,10 @@ protected:
 	void Analyse();
 	
 	//NOTE: input the cursor position in m_strRenderBuffer space
-	bool CPtoRC(int nCP, GLUF::GLUFRect *pPt);
+	bool CPtoRC(int nCP, Rect *pPt);
 
 	//NOTE: outputs the cursor position in m_strRenderBuffer space
-	bool PttoCP(GLUF::GLUFPoint pt, int* pCP, bool* bTrail);
+	bool PttoCP(Point pt, int* pCP, bool* bTrail);
 	
 	//NOTE: all methods referencing a position within the edit box will be done IN STRING  SPACE and will be converted appropriately to make it so
 
@@ -2968,7 +2968,7 @@ Text Controls Below
 
 
 /*
-GLUFTextHelper
+TextHelper
 
     Note:
         This class's purpose is to provide a way to draw text outside of a dialog
@@ -2981,16 +2981,16 @@ GLUFTextHelper
         'mFontSize': the font size in points
         'mLeading': the leading of the text
 */
-class OBJGLUF_API GLUFTextHelper
+class OBJGLUF_API TextHelper
 {
 protected:
 
-    GLUFTextHelper() = delete;
-    GLUFTextHelper(GLUFDialogResourceManagerPtr& drm);
-    friend std::shared_ptr<GLUFTextHelper> CreateTextHelper(GLUFDialogResourceManagerPtr& drm);
+    TextHelper() = delete;
+    TextHelper(DialogResourceManagerPtr& drm);
+    friend std::shared_ptr<TextHelper> CreateTextHelper(DialogResourceManagerPtr& drm);
 
 
-    GLUFDialogResourceManagerPtr& mManager;
+    DialogResourceManagerPtr& mManager;
 
     /*
     Helper overloads for RenderString
@@ -3003,16 +3003,16 @@ protected:
     template<typename T1>
     void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg);
 
-    GLUFFontIndex mFontIndex;
-    GLUFFontSize mFontSize;
-    GLUFFontSize mLeading;
+    FontIndex mFontIndex;
+    FontSize mFontSize;
+    FontSize mLeading;
 
 public:
-    GLUF::Color mColor;
-    GLUF::GLUFPoint mPoint;
+    Color mColor;
+    Point mPoint;
 
 
-	~GLUFTextHelper(){};
+	~TextHelper(){};
 
     /*
     Begin
@@ -3027,7 +3027,7 @@ public:
         Throws:
             'std::out_of_range': if 'drmFont': is out of the range within the DRM
     */
-	void Begin(GLUFFontIndex drmFont, GLUFFontSize leading, GLUFFontSize size);
+	void Begin(FontIndex drmFont, FontSize leading, FontSize size);
 
     /*
     DrawFormattedTextLine
@@ -3048,7 +3048,7 @@ public:
     void DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept;
 
     template<class... Types>
-    void DrawFormattedTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& format, Types&... args) noexcept;
+    void DrawFormattedTextLine(const Rect& rc, Bitfield flags, const std::wstring& format, Types&... args) noexcept;
 
     /*
     DrawTextLine
@@ -3065,7 +3065,7 @@ public:
             no-throw guarantee
     */
 	void DrawTextLine(const std::wstring& text) noexcept;
-	void DrawTextLine(const GLUF::GLUFRect& rc, GLUFBitfield flags, const std::wstring& text) noexcept;
+	void DrawTextLine(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept;
 
     /*
     End

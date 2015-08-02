@@ -17,16 +17,16 @@ using namespace GLUF;
 
 GLFWwindow* window;
 
-GLUFDialogResourceManagerPtr resMan;
-GLUFDialogPtr dlg;
+DialogResourceManagerPtr resMan;
+DialogPtr dlg;
 
-//extern GLUFFontPtr g_ArielDefault;
+//extern FontPtr g_ArielDefault;
 
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 }
-void ErrorMethod(const std::string& message, const char* func, const char* file, unsigned int line)
+void MyErrorMethod(const std::string& message, const char* func, const char* file, unsigned int line)
 {
     std::cout << "(" << func << " | " << line << "): " << message << std::endl;
 	//pause
@@ -34,7 +34,7 @@ void ErrorMethod(const std::string& message, const char* func, const char* file,
     std::cin >> c;
 }
 
-bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
+bool MsgProc(_GUI_CALLBACK_PARAM)
 {
 	if (msg == GM_KEY)
 	{
@@ -44,26 +44,26 @@ bool MsgProc(GLUF_GUI_CALLBACK_PARAM)
 		//return true;
 	}
 
-    /*if (msg != GLUFMessageType::GM_CURSOR_ENTER || msg != GLUFMessageType::GM_CURSOR_POS || msg != GLUFMessageType::GM_FOCUS)
+    /*if (msg != MessageType::GM_CURSOR_ENTER || msg != MessageType::GM_CURSOR_POS || msg != MessageType::GM_FOCUS)
     {
         
     }*/
 
-	resMan->MsgProc(GLUF_PASS_CALLBACK_PARAM);
-	dlg->MsgProc(GLUF_PASS_CALLBACK_PARAM);
+	resMan->MsgProc(_PASS_CALLBACK_PARAM);
+	dlg->MsgProc(_PASS_CALLBACK_PARAM);
 
 	return false;
 }
 
-void ControlEventCallback(GLUFEvent evt, GLUFControlPtr&, const GLUFEventCallbackReceivablePtr&) noexcept
+void ControlEventCallback(Event evt, ControlPtr&, const EventCallbackReceivablePtr&) noexcept
 {
-	if (evt == GLUF_EVENT_BUTTON_CLICKED)
+	if (evt == _EVENT_BUTTON_CLICKED)
 	{
 		printf("HORRAY\n");
 	}
 }
 
-struct JustPositions : GLUFVertexStruct
+struct JustPositions : VertexStruct
 {
     glm::vec3 pos;
 
@@ -89,9 +89,9 @@ struct JustPositions : GLUFVertexStruct
         pos = *static_cast<glm::vec3*>(data);
     }
 
-    static GLUFGLVector<JustPositions> MakeMany(size_t howMany)
+    static GLVector<JustPositions> MakeMany(size_t howMany)
     {
-        GLUFGLVector<JustPositions> ret;
+        GLVector<JustPositions> ret;
         ret.reserve(howMany);
 
         for (size_t i = 0; i < howMany; ++i)
@@ -124,8 +124,8 @@ struct JustPositions : GLUFVertexStruct
 
 int main(void)
 {
-	GLUFRegisterErrorMethod(ErrorMethod);
-	GLUFInit();
+    RegisterErrorMethod(MyErrorMethod);
+	Init();
 
 
 	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
@@ -141,7 +141,7 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 
-	GLUFInitOpenGLExtensions();
+	InitOpenGLExtensions();
     
     //for testing purposes
     /*gGLVersionMajor = 2;
@@ -149,9 +149,9 @@ int main(void)
     gGLVersion2Digit = 20;*/
 
 	GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
-    GLUFInitGui(window, MsgProc, ctrlTex);
+    InitGui(window, MsgProc, ctrlTex);
 
-    resMan = std::make_shared<GLUFDialogResourceManager>();
+    resMan = std::make_shared<DialogResourceManager>();
     dlg = CreateDialog();
 	dlg->Init(resMan);
     dlg->SetCallback(ControlEventCallback);//TODO: fix caption
@@ -167,7 +167,7 @@ int main(void)
 	dlg->SetLocation(50, 50);
 	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
 	dlg->EnableKeyboardInput(true);
-	GLUFRect rc = { 0, 200, 200, 0 };
+	Rect rc = { 0, 200, 200, 0 };
 
 
 	std::wifstream t("text.txt");
@@ -192,7 +192,7 @@ int main(void)
     dlg->AddSlider(1, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
     dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
 
-	std::shared_ptr<GLUFComboBoxPtr> boxBase = std::make_shared<GLUFComboBoxPtr>(nullptr);
+	std::shared_ptr<ComboBoxPtr> boxBase = std::make_shared<ComboBoxPtr>(nullptr);
     dlg->AddComboBox(7, { { 0 }, 500, 250, { 480 } }, 0, false, boxBase);
 
     auto box = *boxBase;
@@ -229,101 +229,101 @@ int main(void)
 
 
 	//load shaders
-	//GLUFProgramPtr frag, vert;
-	/*GLUFProgramPtr Prog;
+	//ProgramPtr frag, vert;
+	/*ProgramPtr Prog;
 
-	//GLUFShaderPathList paths;
-	//paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
-	//paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
+	//ShaderPathList paths;
+	//paths.insert(std::pair<ShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+	//paths.insert(std::pair<ShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
 	
-	GLUFShaderSourceList sources;
+	ShaderSourceList sources;
 	unsigned long len = 0;
 
     std::string text;
     std::vector<char> rawMem;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text);
 
 	text += '\n';
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+	sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
     std::string text1;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text1);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text1);
 	text1 += '\n';
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+	sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-	GLUFSHADERMANAGER.CreateProgram(Prog, sources);*/
+	SHADERMANAGER.CreateProgram(Prog, sources);*/
 
 #ifdef USE_SEPARATE
-    GLUFProgramPtrList Progs;
+    ProgramPtrList Progs;
 
-    //GLUFShaderPathList paths;
-    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
-    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
+    //ShaderPathList paths;
+    //paths.insert(std::pair<ShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+    //paths.insert(std::pair<ShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
 
-    GLUFShaderSourceList VertSources, FragSources;
+    ShaderSourceList VertSources, FragSources;
     unsigned long len = 0;
 
     std::string text;
     std::vector<char> rawMem;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text);
 
     text += '\n';
-    VertSources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+    VertSources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
-    GLUFProgramPtr Vert;
-    GLUFSHADERMANAGER.CreateProgram(Vert, VertSources, true);
+    ProgramPtr Vert;
+    SHADERMANAGER.CreateProgram(Vert, VertSources, true);
 
     std::string text1;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text1);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text1);
     text1 += '\n';
-    FragSources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+    FragSources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-    GLUFProgramPtr Frag;
-    GLUFSHADERMANAGER.CreateProgram(Frag, FragSources, true);
+    ProgramPtr Frag;
+    SHADERMANAGER.CreateProgram(Frag, FragSources, true);
 
-    GLUFProgramPtrList programs;
+    ProgramPtrList programs;
     programs.push_back(Vert);
     programs.push_back(Frag);
 
-    GLUFSepProgramPtr Prog;
+    SepProgramPtr Prog;
 
-    GLUFSHADERMANAGER.CreateSeparateProgram(Prog, programs);
+    SHADERMANAGER.CreateSeparateProgram(Prog, programs);
 
 #else
-    //GLUFShaderPathList paths;
-    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
-    //paths.insert(std::pair<GLUFShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
+    //ShaderPathList paths;
+    //paths.insert(std::pair<ShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
+    //paths.insert(std::pair<ShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
 
-    GLUFProgramPtr Prog;
+    ProgramPtr Prog;
 
-    GLUFShaderSourceList Sources;
+    ShaderSourceList Sources;
     unsigned long len = 0;
 
     std::string text;
     std::vector<char> rawMem;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text);
 
     text += '\n';
-    Sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+    Sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
     std::string text1;
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text1);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text1);
     text1 += '\n';
-    Sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+    Sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-    GLUFSHADERMANAGER.CreateProgram(Prog, Sources);
+    SHADERMANAGER.CreateProgram(Prog, Sources);
 #endif
 
 
-	GLUFVariableLocMap attribs, uniforms;
-	attribs = GLUFSHADERMANAGER.GetShaderAttribLocations(Prog);
-	uniforms = GLUFSHADERMANAGER.GetShaderUniformLocations(Prog);
+	VariableLocMap attribs, uniforms;
+	attribs = SHADERMANAGER.GetShaderAttribLocations(Prog);
+	uniforms = SHADERMANAGER.GetShaderUniformLocations(Prog);
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = uniforms["MVP"];
@@ -338,10 +338,10 @@ int main(void)
 	GLuint vertexUVID = attribs["vertexUV"];
 	GLuint vertexNormal_modelspaceID = attribs["vertexNormal_modelspace"];
 
-	GLUFVertexAttribMap attributes;
-	attributes.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, GLUFVertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT)));
-	attributes.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, GLUFVertAttrib(vertexUVID, 4, 2, GL_FLOAT)));
-	attributes.insert(GLUFVertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, GLUFVertAttrib(vertexNormal_modelspaceID, 4, 3, GL_FLOAT)));
+	VertexAttribMap attributes;
+	attributes.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT)));
+	attributes.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, VertAttrib(vertexUVID, 4, 2, GL_FLOAT)));
+	attributes.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, VertAttrib(vertexNormal_modelspaceID, 4, 3, GL_FLOAT)));
 
 	std::string path = "suzanne.obj.model";
 	
@@ -355,11 +355,11 @@ int main(void)
 
 	//load up the locations
 
-	/*std::shared_ptr<GLUFVertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
+	/*std::shared_ptr<VertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData)
 		EXIT_FAILURE;*/
 
-	std::shared_ptr<GLUFVertexArray> vertexData2 = LoadVertexArrayFromScene(scene, attributes);
+	std::shared_ptr<VertexArray> vertexData2 = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData2)
 		EXIT_FAILURE;
 
@@ -378,45 +378,45 @@ int main(void)
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);
 
-	//GLUF::GLUFTextHelper *textHelper = new GLUF::GLUFTextHelper(resMan);
+	//::TextHelper *textHelper = new ::TextHelper(resMan);
 	//textHelper->Init(20);
 
 
-	/*GLuint skycubemap = GLUF::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
+	/*GLuint skycubemap = ::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
 
     sources.clear();
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text);
 	text += '\n';
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+	sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
-    GLUFLoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
-    GLUFLoadBinaryArrayIntoString(rawMem, text1);
+    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadBinaryArrayIntoString(rawMem, text1);
 	text1 += '\n';
-	sources.insert(std::pair<GLUFShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+	sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-    GLUFProgramPtr sky;
-    GLUFSHADERMANAGER.CreateProgram(sky, sources);
+    ProgramPtr sky;
+    SHADERMANAGER.CreateProgram(sky, sources);
 
-	GLUFVariableLocMap attribLocations = GLUFSHADERMANAGER.GetShaderAttribLocations(sky);
-	GLUFVariableLocMap unifLocations = GLUFSHADERMANAGER.GetShaderUniformLocations(sky);
+	VariableLocMap attribLocations = SHADERMANAGER.GetShaderAttribLocations(sky);
+	VariableLocMap unifLocations = SHADERMANAGER.GetShaderUniformLocations(sky);
 
 	GLuint sampLoc = unifLocations["m_tex0"];
 	GLuint mvpLoc = unifLocations["_mvp"];
 
-	GLUFVariableLocMap::iterator it;
+	VariableLocMap::iterator it;
 
-	GLUFVertexArray m_pVertexArray;
+	VertexArray m_pVertexArray;
 	GLuint mPositionLoc = 0;
 
 	it = attribLocations.find("_position");
 	if (it != attribLocations.end())
 	{
-		m_pVertexArray.AddVertexAttrib(GLUFVertAttrib(it->second, 4, 3, GL_FLOAT));
+		m_pVertexArray.AddVertexAttrib(VertAttrib(it->second, 4, 3, GL_FLOAT));
 		mPositionLoc = it->second;
 	}
 
-    GLUFGLVector<JustPositions> verts = JustPositions::MakeMany(8);
+    GLVector<JustPositions> verts = JustPositions::MakeMany(8);
 	float depth;
 	float val = depth = 10.0f;
     verts[0] = glm::vec3(val, -val, -depth);
@@ -485,62 +485,62 @@ int main(void)
 		// Cull triangles which normal is not towards the camera
 		glEnable(GL_CULL_FACE);
 
-		//GLUFSHADERMANAGER.UseProgram(Prog); 
+		//SHADERMANAGER.UseProgram(Prog); 
 		glm::vec3 pos(3, 5, 6);
 		glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(70), ratio, 0.1f, 1000.f);
 		glm::mat4 ViewMatrix = glm::translate(glm::mat4(), -pos);
-		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), pos) * glm::toMat4(glm::quat(glm::vec3(0, DEG_TO_RAD_F(30) * currTime, 0)));// glm::translate(glm::mat4(), glm::vec3(-1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(GLUF_PI_F / 2, 2.0f * currTime, 0.0f)));
+		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), pos) * glm::toMat4(glm::quat(glm::vec3(0, DEG_TO_RAD_F(30) * currTime, 0)));// glm::translate(glm::mat4(), glm::vec3(-1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(_PI_F / 2, 2.0f * currTime, 0.0f)));
 		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		GLUFSHADERMANAGER.UseProgram(Prog);
+		SHADERMANAGER.UseProgram(Prog);
 
 #ifndef USE_SEPARATE
 
 		glm::vec3 lightPos = glm::vec3(4, 4, 4);
-		GLUFSHADERMANAGER.GLUniform3f(LightID, lightPos);
+		SHADERMANAGER.GLUniform3f(LightID, lightPos);
 
 		// Bind our texture in Texture Unit 0
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
 		// Set our "myTextureSampler" sampler to user Texture Unit 0
-		GLUFSHADERMANAGER.GLUniform1i(TextureID, 0);
+		SHADERMANAGER.GLUniform1i(TextureID, 0);
 
 		ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
 		MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		GLUFSHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
-        GLUFSHADERMANAGER.GLUniformMatrix4f(ModelMatrixID, ModelMatrix);
-        GLUFSHADERMANAGER.GLUniformMatrix4f(ViewMatrixID, ViewMatrix);
+		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
+        SHADERMANAGER.GLUniformMatrix4f(ModelMatrixID, ModelMatrix);
+        SHADERMANAGER.GLUniformMatrix4f(ViewMatrixID, ViewMatrix);
 		
 		vertexData2->Draw();
 
 #else
 
-        GLUFSHADERMANAGER.GLActiveShaderProgram(Prog, SH_FRAGMENT_SHADER);
+        SHADERMANAGER.GLActiveShaderProgram(Prog, SH_FRAGMENT_SHADER);
 
         // Bind our texture in Texture Unit 0
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         // Set our "myTextureSampler" sampler to user Texture Unit 0
-        GLUFSHADERMANAGER.GLProgramUniform1i(Prog, TextureID, 0);
+        SHADERMANAGER.GLProgramUniform1i(Prog, TextureID, 0);
 
         ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
         MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-        GLUFSHADERMANAGER.GLActiveShaderProgram(Prog, SH_VERTEX_SHADER);
+        SHADERMANAGER.GLActiveShaderProgram(Prog, SH_VERTEX_SHADER);
 
         // Send our transformation to the currently bound shader, 
         // in the "MVP" uniform
-        GLUFSHADERMANAGER.GLProgramUniformMatrix4f(Prog, MatrixID, MVP);
-        GLUFSHADERMANAGER.GLProgramUniformMatrix4f(Prog, ModelMatrixID, ModelMatrix);
-        GLUFSHADERMANAGER.GLProgramUniformMatrix4f(Prog, ViewMatrixID, ViewMatrix);
+        SHADERMANAGER.GLProgramUniformMatrix4f(Prog, MatrixID, MVP);
+        SHADERMANAGER.GLProgramUniformMatrix4f(Prog, ModelMatrixID, ModelMatrix);
+        SHADERMANAGER.GLProgramUniformMatrix4f(Prog, ViewMatrixID, ViewMatrix);
 
         glm::vec3 lightPos = glm::vec3(4, 4, 4);
-        GLUFSHADERMANAGER.GLProgramUniform3f(Prog, LightID, lightPos);
+        SHADERMANAGER.GLProgramUniform3f(Prog, LightID, lightPos);
 
         vertexData2->Draw();
 
@@ -549,10 +549,10 @@ int main(void)
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
 			dlg->OnRender(ellapsedTime);
-			//dlg->DrawRect(rc, GLUF::Color(255, 0, 0, 255));
+			//dlg->DrawRect(rc, ::Color(255, 0, 0, 255));
 
         //sky box rendering stuff
-		/*GLUFSHADERMANAGER.UseProgram(sky);
+		/*SHADERMANAGER.UseProgram(sky);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, skycubemap);
 		glUniform1i(sampLoc, 0);
@@ -568,10 +568,10 @@ int main(void)
 		//glEnable(GL_BLEND);
 		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		/*textHelper->Begin(0);
-		textHelper->SetInsertionPos(GLUFPoint(100, 100));
+		textHelper->SetInsertionPos(Point(100, 100));
 		textHelper->DrawTextLine(L"TESTING");
 
-		GLUFSHADERMANAGER.UseProgram(linesprog);
+		SHADERMANAGER.UseProgram(linesprog);
 		glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
 		m_Squares.Draw();*/
 
@@ -590,7 +590,7 @@ int main(void)
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 
-	GLUFTerminate();
+	Terminate();
 
 	return 0;
 }
