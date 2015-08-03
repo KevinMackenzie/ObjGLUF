@@ -2999,10 +2999,10 @@ protected:
     */
 
     template<typename T1, typename... Types>
-    void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg1, Types... args);
+    static void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, const T1& arg1, const Types&... args);
 
     template<typename T1>
-    void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg);
+    static void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, const T1& arg);
 
     FontIndex mFontIndex;
     FontSize mFontSize;
@@ -3046,10 +3046,10 @@ public:
             no-throw guarantee
     */
     template<class... Types>
-    void DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept;
+    void DrawFormattedTextLine(const std::wstring& format, const Types&... args) noexcept;
 
     template<class... Types>
-    void DrawFormattedTextLine(const Rect& rc, Bitfield flags, const std::wstring& format, Types&... args) noexcept;
+    void DrawFormattedTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& format, const Types&... args) noexcept;
 
     /*
     DrawTextLine
@@ -3066,7 +3066,7 @@ public:
             no-throw guarantee
     */
 	void DrawTextLine(const std::wstring& text) noexcept;
-	void DrawTextLine(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept;
+    void DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept;
 
     /*
     End
@@ -3097,7 +3097,7 @@ public:
     
     */
     template<class... Types>
-    static void RenderText(const std::wstring& format, std::wstring& outString, Types&... args) noexcept;
+    static void RenderText(const std::wstring& format, std::wstring& outString, const Types&... args) noexcept;
 };
 
 

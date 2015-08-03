@@ -34,7 +34,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void TextHelper::DrawFormattedTextLine(const std::wstring& format, Types&... args) noexcept
+    void TextHelper::DrawFormattedTextLine(const std::wstring& format, const Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
@@ -48,21 +48,21 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void TextHelper::DrawFormattedTextLine(const Rect& rc, Bitfield flags, const std::wstring& format, Types&... args) noexcept
+    void TextHelper::DrawFormattedTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& format, const Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
         std::wstring outString;
         RenderText(format, outString, args...);
 
-        DrawTextLine(rc, flags, outString);
+        DrawTextLineBase(rc, flags, outString);
 
         NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void TextHelper::RenderText(const std::wstring& format, std::wstring& outString, Types&... args) noexcept
+    void TextHelper::RenderText(const std::wstring& format, std::wstring& outString, const Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
@@ -78,39 +78,39 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T1, typename... Types>
-    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg1, Types... args)
+    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outStringStream, const T1& arg1, const Types&... args)
     {
         wchar_t ch;
-        while (format.get(ch))
+        while (formatStream.get(ch))
         {
             if (ch == '%')
             {
-                outString << arg1;
-                RenderText(format, outString, args...);
+                outStringStream << arg1;
+                RenderText(formatStream, outStringStream, args...);
             }
             else
             {
-                outString << ch;
+                outStringStream << ch;
             }
         }
     }
 
     //--------------------------------------------------------------------------------------
     template<typename T1>
-    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outString, T1 arg)
+    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outStringStream, const T1& arg)
     {
         wchar_t ch;
         bool usedArg = false;
-        while (format.get(ch))
+        while (formatStream.get(ch))
         {
             if (ch == '%' && !usedArg)
             {
-                outString << arg;
+                outStringStream << arg;
                 usedArg = true;
             }
             else
             {
-                outString << ch;
+                outStringStream << ch;
             }
         }
     }

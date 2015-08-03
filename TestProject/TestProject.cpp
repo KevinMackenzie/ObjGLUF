@@ -227,6 +227,7 @@ int main(void)
 	box->AddItem(L"Item 28");
 	box->AddItem(L"Item 29");
 
+    TextHelperPtr textHelper = CreateTextHelper(resMan);
 
 	//load shaders
 	//ProgramPtr frag, vert;
@@ -550,6 +551,10 @@ int main(void)
 		//if ((int)currTime % 2)
 			dlg->OnRender(ellapsedTime);
 			//dlg->DrawRect(rc, ::Color(255, 0, 0, 255));
+
+            textHelper->Begin(0, 20, 15);
+            textHelper->DrawFormattedTextLineBase({ { 500 }, 300, 700, { 280 } }, GT_TOP | GT_LEFT, L"Val1 = %; Val2 = %; Val3 = %", 36, 29.334f, "String");
+            textHelper->End();
 
         //sky box rendering stuff
 		/*SHADERMANAGER.UseProgram(sky);

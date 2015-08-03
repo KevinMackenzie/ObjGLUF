@@ -8180,6 +8180,13 @@ TextHelper::TextHelper(DialogResourceManagerPtr& manager) :
 
 void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
 {
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_CLAMP);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     mManager->GetFontNode(drmFont);
 
     mFontIndex = drmFont;
@@ -8191,7 +8198,7 @@ void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
 
 void TextHelper::DrawTextLine(const std::wstring& text)
 {
-    DrawTextLine({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
+    DrawTextLineBase({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
 
 	//set the point down however many lines were drawn
 	for (auto it : text)
@@ -8202,15 +8209,15 @@ void TextHelper::DrawTextLine(const std::wstring& text)
     mPoint.y -= mLeading;//once no matter what because we are drawing a LINE of text
 }
 
-void TextHelper::DrawTextLine(const Rect& rc, Bitfield flags, const std::wstring& text)
+void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text)
 {
     mManager->GetFontNode(mFontIndex)->mLeading = mLeading;
     Text::DrawText(mManager->GetFontNode(mFontIndex), text, rc, mColor, flags, true);
 }
 
-void TextHelper::End()
+void TextHelper::End() noexcept
 {
-    Text::EndText(mManager->GetFontNode(mFontIndex)->mFontType);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
 }
-
 }
