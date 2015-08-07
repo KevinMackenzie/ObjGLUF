@@ -178,6 +178,12 @@ namespace GLUF
     }
 
     //--------------------------------------------------------------------------------------
+    std::shared_ptr<EditBox> CreateEditBox(Dialog& dialog, bool isMultiline)
+    {
+        return std::shared_ptr<EditBox>(new EditBox(dialog, isMultiline));
+    }
+
+    //--------------------------------------------------------------------------------------
     std::shared_ptr<TextHelper> CreateTextHelper(DialogResourceManagerPtr& drm)
     {
         return std::shared_ptr<TextHelper>(new TextHelper(drm));

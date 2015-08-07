@@ -692,7 +692,7 @@ public:
     void AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const std::wstring& strText, const Rect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<RadioButtonPtr> ctrlPtr = nullptr);
     void AddComboBox(ControlIndex ID, const Rect& region, int hotKey = 0, bool isDefault = false, std::shared_ptr<ComboBoxPtr> ctrlPtr = nullptr);
     void AddSlider(ControlIndex ID, const Rect& region, long min, long max, long value, bool isDefault = false, std::shared_ptr<SliderPtr> ctrlPtr = nullptr);
-    //void AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<EditBoxPtr> ctrlPtr = nullptr);
+    void AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<EditBoxPtr> ctrlPtr = nullptr);
     void AddListBox(ControlIndex ID, const Rect& region, Bitfield style = 0, std::shared_ptr<ListBoxPtr> ctrlPtr = nullptr);
 
     /*
@@ -2812,13 +2812,17 @@ protected:
 
 
 
-/*
 
+class StringContainsInvalidCharacters : public Exception
+{
+public:
+    virtual const char* what() const override
+    {
+        return "String Contained Characters Not In Charset";
+    }
 
-Stopped Here June 4 2015
-
-
-*/
+    EXCEPTION_CONSTRUCTOR(StringContainsInvalidCharacters)
+};
 
 
 /*
@@ -2831,133 +2835,175 @@ EditBox
         'Control'
 
     Data Members:
-        'mText': the source text buffer
-        'mFormattedText': the text which will be rendered (not guaranteed to contain all of the text)
-        'mCharset': the available character set for user input (denies anything not within the charset)
-        'mAnalyseRequired': has the string changed since the previous analysis
-        'mBorder': the boarder on every edge of the edit box
-        'mSpacing': the spacing between the text and the edge of the boarder
-        'mTextRegion': the region the text occupies
-        'mBlinkPeriod': the time between caret blinks in seconds
-        'mPreviousBlink': the previous blink time of the caret
-        'mCaretOn': whether the caret is currently visible due to blinking periods
-        'mCaretPos': the caret position in characters of the original string buffer
-        'mInsertMode': true: insert mode; false: overwrite mode
-        'mSelectStart': the starting position of the selection; the caret marks the end
-        'mTextColor': the color of the text
-        'mSelectTextColor': the color of the selected text
-        'mSelectBkgrndColor': the color of the selected region's highlight
+        'mText': the text in the edit box
+        'mTextRegion': the region where the text will be rendered
+        'mCharset': the charset that is considered valid for this box
+        'mBlinkPeriod': the time between blink state toggles if the caret
+        'mPreviousBlinkTime': the previous time the blink state changed
+        'mMouseDrag': if the mouse is currently pressed down and being moved
+        'mMultiline': is this dialog multiple lines
+        'mCaretOn': the state of the blinking caret
+        'mHideCaret': is the caret enabled
+        'mCaretPos': the caret's position in the original string buffer
+        'mInsertMode': is the box in insert mode, or overwrite mode
+        'mSelStart': the start of the selection, the caret signifies the end of the selection
+        'mHorizontalMargin': the horizontal margin
+        'mVerticalMargin': the vertical margin
+        'mSelTextColor': the color of selected text
+        'mSelBkColor': the color the the background of the selected region
         'mCaretColor': the color of the caret
-        'mScrollBar': the internal scrollbar used in single-line, and one which is displayed in multi-line
-        'mSBWidth': the width of the scrollbar
-        'mMouseDrag': indicates if a drag is in progress
-        'mMultiline': whether or not the box is multiline or not
-        'mHideCaret': whether or not to hide the caret completely
-
+        'mScrollBar': the scroll bar, visible in 'multiline', invisible otherwise
+        'mSBWidth': the width of the scroll bar
+        'mUpdateRequired': whether or not an update of the rendering rects needs to be made this frame
+        'mCharacterRects': the rects of each character
+        'mTextDataBuffer': the text box's openGL data buffer
 */
-/*class EditBox : public Control
+class EditBox : public Control
 {
-    _FORCE_SMART_POINTERS(EditBox, Charset& charset, bool& isMultiline, Dialog& dialog);
-
 protected:
 
+    EditBox() = delete;
+    EditBox(Dialog& dialog, bool isMultiline);
+    friend std::shared_ptr<EditBox> CreateEditBox(Dialog& dialog, bool isMultiline);
+
+    /*
+    
+    Publically Available Attributes
+    
+    */
     std::wstring mText;
-    std::wstring mFormattedText;
 
-    Charset mCharset;
-    bool mAnalyseRequired;
+    Charset mCharset = Unicode;
 
-    Size mBorder;
-    Size mSpacing;
+    double mBlinkPeriod = 0.5;
+    bool mHideCaret = false;
+    Value mCaretPos = -1;//the space behind the first character
+    bool mInsertMode = true;
+    Value mSelStart = -1;//symbolizes nothing to be selected
+    Size mHorizontalMargin;
+    Size mVerticalMargin;
+
+    //Color mTextColor; This is handeled by the elements
+    BlendColor mSelTextColor;
+    BlendColor mSelBkColor;
+    BlendColor mCaretColor;
+
+
+    /*
+    
+    Protected Attributes
+    
+    */
+    const bool mMultiline = true;
+    ScrollBarPtr mScrollBar;
+    Size mSBWidth = 16;
     Rect mTextRegion;
+    double mPreviousBlinkTime = 0;
+    bool mMouseDrag = false;
+    bool mCaretOn = true;
+    bool mUpdateRequired;
 
-    double mBlinkPeriod;
-    double mPreviousBlink;
-    bool mMouseDrag;
-    bool mMultiline = true;
-    bool mCaretOn;
-    bool mHideCaret;
-    Value mCaretPos;
-    bool mInsertMode;
-    Value mSelStart;
+    /*
+    
+    Render Data
+    
+    */
+    std::vector<Rect> mCharacterRects;
+    VertexArray mTextDataBuffer;
 
-    Color mTextColor;
-    Color mSelTextColor;
-    Color mSelBkColor;
-    Color mCaretColor;
+    /*
+    InvalidateRects
+        
+        Note:
+            Sets 'mUpdateRequired' to 'true'
 
-    ScrollBar mScrollBar;
-    Size mSBWidth;
+    */
+    void InvalidateRects() noexcept;
+
+
+    /*
+
+    Text Control Methods
+
+    */
+    Value PointToCharPos(const Point& pt);
+    Value RenderTextToText(Value rndIndex);
+    Value TextToRenderText(Value txtIndex);
+
+
+    /*
+    
+    Text Formatting Methods
+    
+    */
+    void CalculateCharRects() noexcept;
+    void WrapText() noexcept;
+
 
 public:
 	virtual         ~EditBox();
 
-    //ended updating here!
+    /*
+    
+    Setters and Getters
 
-	void            SetText(std::wstring wszText, bool bSelected = false);
-	std::wstring     GetText(){ return m_strBuffer; }
-	int             GetTextLength(){ return (int)m_strBuffer.length(); }  // Returns text length in chars excluding nullptr.
-	std::wstring     GetTextClamped();//this gets the text, but clamped to the bounding box, (NOTE: this will overflow off the bottom);
-	void            ClearText();
-	virtual void    SetTextColor(Color Color){ m_TextColor = Color; }  // Text color
-	void            SetSelectedTextColor(Color Color){ m_SelTextColor = Color; }  // Selected text color
-	void            SetSelectedBackColor(Color Color){ m_SelBkColor = Color; }  // Selected background color
-	void            SetCaretColor(Color Color){ m_CaretColor = Color; }  // Caret color
-	void            SetBorderWidth(long fBorder){ m_fBorder = fBorder; UpdateRects(); m_bAnalyseRequired = true; }  // Border of the window
-	void            SetSpacing(long fSpacing){ m_fSpacing = fSpacing; UpdateRects(); m_bAnalyseRequired = true; }
-	//void            ParseFloatArray(float* pNumbers, int nCount);
-	//void            SetTextFloatArray(const float* pNumbers, int nCount);
+    
+    */
+#pragma region Setters and Getters
+    std::wstring GetText() const noexcept{ return mText; }
+    Charset GetCharset() const noexcept{ return mCharset; }
+    Rect GetTextRegion() const noexcept{ return mTextRegion; }
+    double GetBlinkPeriod() const noexcept{ return mBlinkPeriod; }
+    bool IsCaretHidden() const noexcept{ return mHideCaret; }
+    Value GetCaretPos() const noexcept{ return mCaretPos; }
+    bool GetInsertMode() const noexcept{ return mInsertMode; }
+    Value GetSelectionStart() const noexcept{ return mSelStart; }
+    Size GetHorizontalMargin() const noexcept{ return mHorizontalMargin; }
+    Size GetVerticalMargin() const noexcept{ return mVerticalMargin; }
+    BlendColor& GetSelectedTextBlendColor() noexcept{ return mSelTextColor; }
+    BlendColor& GetSelectedBackgroundBlendColor() noexcept{ return mSelBkColor; }
+    BlendColor& GetCaretBlendColor() noexcept{ return mCaretColor; }
+    BlendColor& GetTextBlendColor() noexcept{ return mElements[0].mFontColor; }
+
+    BlendColor GetSelectedTextCBlendColor() const noexcept{ return mSelTextColor; }
+    BlendColor GetSelectedBackgroundCBlendColor() const noexcept{ return mSelBkColor; }
+    BlendColor GetCaretCBlendColor() const noexcept{ return mCaretColor; }
+    BlendColor GetTextCBlendColor() const noexcept{ return mElements.at(0).mFontColor; }
+        
+
+
+    void SetText(const std::wstring& text); //may throw 'StringContainsInvalidCharacters'
+    void SetCharset(Charset chSet) noexcept;//this will automatically remove all characters not in this charset from the string
+    void SetBlinkPeriod(double period) noexcept;
+    void SetCaretState(bool state) noexcept;
+    void SetCaretPosition(Value pos) noexcept;
+    void SetInsertMode(bool insertMode) noexcept;
+    void SetSelectionStart(Value pos) noexcept;
+    void SetVerticalMargin(Size marg) noexcept;
+    void SetHorizontalMargin(Size marg) noexcept;
+    void SetSelectedTextBlendColor(const BlendColor& col) noexcept;
+    void SetSelectedBackgroundBlendColor(const BlendColor& col) noexcept;
+    void SetCaretBlendColor(const BlendColor& col) noexcept;
+    void SetTextBlendColor(const BlendColor& col) noexcept;
+
+#pragma endregion
+
+
 
 
     /*
     Overriden Unambiguous Member Functions
 
-    
+    */
     
 	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void UpdateRects() noexcept override;
 	virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
 	virtual void Render(float elapsedTime) noexcept override;
 	virtual void OnFocusIn() noexcept override;
-	virtual void OnInit() override { return mDialog.InitControl(mScrollBar); }
+    virtual void OnInit() override;
 
-
-protected:
-	void            PlaceCaret(int nCP);//input m_strBuffer
-	void			PlaceCaretRndBuffer(int nRndCp);//input m_strRenderBuffer
-	void            DeleteSelectionText();
-	void            ResetCaretBlink();
-	void            CopyToClipboard();
-	void            PasteFromClipboard();
-
-	//NOTE: nCP must be the index from m_strRenderBuffer;
-	int             GetLineNumberFromCharPos(unsigned int nCP);//the value returned is the line number within the box, so even if it is scrolled, the top line is still 0
-
-	int				GetStrIndexFromStrRenderIndex(int strRenderIndex);//this is used to convert an index of an object that was clicked on the screen to the index of the real string
-	int             GetStrRenderIndexFromStrIndex(int strIndex);//just the opposite
-
-	//former CUniBuffer Methods
-	void Analyse();
-	
-	//NOTE: input the cursor position in m_strRenderBuffer space
-	bool CPtoRC(int nCP, Rect *pPt);
-
-	//NOTE: outputs the cursor position in m_strRenderBuffer space
-	bool PttoCP(Point pt, int* pCP, bool* bTrail);
-	
-	//NOTE: all methods referencing a position within the edit box will be done IN STRING  SPACE and will be converted appropriately to make it so
-
-	void InsertString(int pos, std::wstring str);
-	void InsertChar(int pos, wchar_t ch);
-
-	void RemoveString(int pos, int len);
-	void RemoveChar(int pos);
-
-	void GetNextItemPos(int pos, int& next);
-	void GetPriorItemPos(int pos, int& prior);
-
-	int GetNumNewlines();
-};*/
+};
 
 
 

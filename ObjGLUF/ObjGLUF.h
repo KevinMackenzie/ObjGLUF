@@ -458,7 +458,7 @@ OBJGLUF_API long		RectWidth(const Rect& rect);
 OBJGLUF_API void		InflateRect(Rect& rect, long dx, long dy);//center stays in same spot
 OBJGLUF_API void        ResizeRect(Rect& rect, long newWidth, long newHeight);//bottom left stays in same spot
 OBJGLUF_API bool		IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect);
-OBJGLUF_API Point	MultPoints(const Point& pt0, const Point& pt1);
+OBJGLUF_API Point	    MultPoints(const Point& pt0, const Point& pt1);
 
 /*
 ======================================================================================================================================================================================================

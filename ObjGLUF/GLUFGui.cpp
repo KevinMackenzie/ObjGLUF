@@ -1951,24 +1951,24 @@ void Dialog::AddSlider(ControlIndex ID, const Rect& region, long min, long max, 
 
 
 //--------------------------------------------------------------------------------------
-/*void Dialog::AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<EditBoxPtr> ctrlPtr = nullptr)
+void Dialog::AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset, GLbitfield textFlags, bool isDefault, std::shared_ptr<EditBoxPtr> ctrlPtr)
 {
-	auto pEditBox = std::make_shared<EditBox>(charset, (textFlags & GT_MULTI_LINE) == GT_MULTI_LINE, this);
+	auto pEditBox = CreateEditBox(*this, (textFlags & GT_MULTI_LINE));
 
 	if (ctrlPtr)
 		*ctrlPtr = pEditBox;
 
-	AddControl(std::dynamic_pointer_cast<Control>(pEditBox));
-
-	pEditBox->GetElement(0)->dwTextFormat = textFlags;
+	pEditBox->GetElement(0).mTextFormatFlags = textFlags;
 
 	// Set the ID and position
 	pEditBox->SetID(ID);
     pEditBox->SetRegion(region);
 	pEditBox->mIsDefault = isDefault;
-
+    pEditBox->SetCharset(charset);
 	pEditBox->SetText(strText);
-}*/
+
+	AddControl(std::dynamic_pointer_cast<Control>(pEditBox));
+}
 
 
 //--------------------------------------------------------------------------------------
@@ -6370,6 +6370,7 @@ const std::wstring g_Charsets[] =
 	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 };
 
+//--------------------------------------------------------------------------------------
 bool CharsetContains(wchar_t codepoint, Charset charset)
 {
 	switch (charset)
@@ -6386,215 +6387,167 @@ bool CharsetContains(wchar_t codepoint, Charset charset)
 	}
 }
 
+//--------------------------------------------------------------------------------------
+bool CharsetContains(const std::wstring& codepoint, Charset charset)
+{
+    switch (charset)
+    {
+    case Unicode:
+        return true;
+    default:
+        for (auto it : codepoint)
+        {
+            if (!CharsetContains(it, charset))
+                return false;
+        }
+        return false;
+    }
+}
+
+
 /*
-//======================================================================================
-// EditBox class
-//======================================================================================
+======================================================================================================================================================================================================
+Edit Box Functions
 
-// Static member initialization
-bool EditBox::s_bHideCaret;   // If true, we don't render the caret.
 
-// When scrolling, EDITBOX_SCROLLEXTENT is reciprocal of the amount to scroll.
-// If EDITBOX_SCROLLEXTENT = 4, then we scroll 1/4 of the control each time.
-#define EDITBOX_SCROLLEXTENT 4
+*/
 
 //--------------------------------------------------------------------------------------
-EditBox::EditBox(Charset charset, bool isMultiline, Dialog* pDialog) : Control(pDialog), mScrollBar(pDialog), m_bMultiline(isMultiline), m_Charset(charset)
+EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog)
 {
-	mType = CONTROL_EDITBOX;
-	mDialog = pDialog;
-
-	m_fBorder  = 5;  // Default border width
-	m_fSpacing = 4;  // Default spacing
-
-	m_bCaretOn = true;
-	m_dfBlink = GetCaretBlinkTime() * 0.001f;
-	m_dfLastBlink = glfwGetTime();
-	s_bHideCaret = false;
-	m_nFirstVisible = 0;
-	m_TextColor = {16, 16, 16, 255);
-	m_SelTextColor = {255, 255, 255, 255);
-	m_SelBkColor = {40, 50, 92, 255);
-	m_CaretColor = {0, 0, 0, 255);
-	m_nCaret = m_nSelStart = 0;
-	m_bInsertMode = true;
-
-	mSBWidth = 16;
-	m_bMouseDrag = false;
-
-	m_bAnalyseRequired = true;
+    mScrollBar = CreateScrollBar(dialog);
 }
-
 
 //--------------------------------------------------------------------------------------
-EditBox::~EditBox()
+void EditBox::InvalidateRects() noexcept
 {
+    mUpdateRequired = true;
 }
 
+#pragma region Setters and Getters
 
 //--------------------------------------------------------------------------------------
-// PlaceCaret: Set the caret to a character position, and adjust the scrolling if
-//             necessary.
+void EditBox::SetText(const std::wstring& text) noexcept
+{
+    if (!CharsetContains(text, mCharset))
+        GLUF_CRITICAL_EXCEPTION(StringContainsInvalidCharacters());
+
+    mText = text;
+    InvalidateRects();
+}
+
 //--------------------------------------------------------------------------------------
-void EditBox::PlaceCaret( int nCP)
+void EditBox::SetCharset(Charset chSet) noexcept
 {
-	if (m_bMultiline)
-	{
-		if (nCP == -1)
-		{
-			mScrollBar->SetTrackPos(0);//top
-			m_nCaret = nCP;
-		}
-		else if (nCP >= GetTextLength())
-		{
-			//anything past this, set to the max
-			m_nCaret = GetTextLength() - 1;
-		}
-		else
-		{
-			//_ASSERT(nCP >= 0 && nCP <= GetTextLength());
-			m_nCaret = nCP;
+    NOEXCEPT_REGION_START
 
-			//if it is a newline, jump to the next character
-			if (m_nCaret != GetTextLength() - 1 && m_strBuffer[m_nCaret + 1] == '\n')
-			{
-				m_nCaret++;
-			}
+    mCharset = chSet;
 
-			int rendCaret = GetStrRenderIndexFromStrIndex(nCP);
-			if (rendCaret == -2)
-			{
-				if (m_strRenderBuffer.size() == 0)
-					rendCaret = 0;
-				else
-					rendCaret = m_strRenderBuffer.back();
-			}
+    //remove all characters from the string that are not in 'chSet'
+    for (auto it = mText.begin(); it != mText.end(); ++it)
+    {
+        if (!CharsetContains(*it, chSet))
+            mText.erase(it);
+    }
 
-			while (rendCaret == -1)
-			{
-				mScrollBar->Scroll(mScrollBar->GetPageSize() - 1);
-				Analyse();
-
-				rendCaret = GetStrRenderIndexFromStrIndex(nCP);
-			}
-
-			int line = GetLineNumberFromCharPos(rendCaret);
-
-			if (line < 0 || line >= mScrollBar->GetPageSize())
-			{
-				mScrollBar->SetTrackPos(line);
-			}
-			//if (line < mScrollBar->GetTrackPos() || line > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 1)
-			//	mScrollBar->SetTrackPos(line);
-		}
-	}
-	else if (!m_bMultiline)
-	{
-		if (nCP >= GetTextLength())
-		{
-			//anything past this, set to the max
-			m_nCaret = GetTextLength() - 1;
-		}
-		else
-		{
-			//mScrollBar->SetTrackRange(0, GetTextLength());
-			//if (nCP >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
-			//  mScrollBar->Scroll(delta);
-			//else if (nCP < mScrollBar->GetTrackPos())
-			//  mScrollBar->SetTrackPos(nCP);
-
-			m_nCaret = nCP;
-
-			//Analyse();
-			
-			//if (m_nCaret >= mScrollBar->GetTrackPos() + mScrollBar->GetPageSize())
-			//  mScrollBar->Scroll(-((mScrollBar->GetTrackPos() + mScrollBar->GetPageSize()) - m_nCaret));
-			//else if (m_nCaret < mScrollBar->GetTrackPos())
-			//  mScrollBar->SetTrackPos(m_nCaret);
-		}
-
-		//int rendCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
-		Analyse();
-	}
+    NOEXCEPT_REGION_END
 }
 
-void EditBox::PlaceCaretRndBuffer(int nRndCp)
+//--------------------------------------------------------------------------------------
+void EditBox::SetBlinkPeriod(double period) noexcept
 {
-	m_nCaret = GetStrIndexFromStrRenderIndex(nRndCp);
-	PlaceCaret(m_nCaret);
+    mBlinkPeriod = period;
 }
 
-int EditBox::GetLineNumberFromCharPos(unsigned int nCP)
+//--------------------------------------------------------------------------------------
+void EditBox::SetCaretState(bool state) noexcept
 {
-	int nCPModified = nCP;
-	int lin = 0;
-	for (auto it : m_strInsertedNewlineLocations)
-		if (nCP >= it)
-			--nCPModified;
-	
-	for (unsigned int i = 0; i < nCPModified + m_strRenderBufferOffset; ++i)
-		if (m_strBuffer[i] == '\n')
-			++lin;
-
-	//for (auto it : m_strInsertedNewlineLocations)
-	//	if (nCP >= it)
-	//		++lin;
-	//add the difference
-	lin += nCP - nCPModified;
-
-	if (m_strRenderBuffer[nCP] == '\n')
-		++lin;
-
-	return lin;
+    mHideCaret = !state;
 }
 
+//--------------------------------------------------------------------------------------
+void EditBox::SetCaretPosition(Value pos) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mCaretPos = glm::clamp(pos, -1, (int32_t)mText.length());
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetInsertMode(bool insertMode) noexcept
+{
+    mInsertMode = insertMode;
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetSelectionStart(Value pos) noexcept
+{
+    mSelStart = pos;
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetHorizontalMargin(Size marg) noexcept
+{
+    mHorizontalMargin = marg;
+   
+    InvalidateRects();
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetVerticalMargin(Size marg) noexcept
+{
+    mVerticalMargin = marg;
+
+    InvalidateRects();
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetSelectedTextBlendColor(const BlendColor& col) noexcept
+{
+    mSelTextColor = col;
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetSelectedBackgroundBlendColor(const BlendColor& col) noexcept
+{
+    mSelBkColor = col;
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetCaretBlendColor(const BlendColor& col) noexcept
+{
+    mCaretColor = col;
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
+{ 
+    NOEXCEPT_REGION_START
+    
+    mElements[0].mFontColor = col;
+
+    NOEXCEPT_REGION_END
+}
+
+
+#pragma endregion
 
 
 //--------------------------------------------------------------------------------------
-void EditBox::ClearText()
+bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-	m_strBuffer.clear();
-	m_nFirstVisible = 0;
-	PlaceCaret(0);
-	m_nSelStart = 0;
+    NOEXCEPT_REGION_START
 
-	m_bAnalyseRequired = true;
+    switch (msg)
+    {
+
+
+    }
+
+    NOEXCEPT_REGION_END
 }
-
-
-//--------------------------------------------------------------------------------------
-void EditBox::SetText( std::wstring wszText,  bool bSelected)
-{
-	//assert(wszText);
-
-	m_strBuffer = wszText;
-	m_nFirstVisible = 0;
-	Analyse();
-
-	// Move the caret to the end of the text
-	PlaceCaret(GetTextLength() - 1);
-	m_nSelStart = bSelected ? 0 : m_nCaret;
-
-
-	m_bAnalyseRequired = true;
-}
-
-
-//--------------------------------------------------------------------------------------
-void EditBox::DeleteSelectionText()
-{
-	int nFirst = std::min(m_nCaret, m_nSelStart);
-	int nLast = std::max(m_nCaret, m_nSelStart);
-	// Update caret and selection
-	PlaceCaret(nFirst);
-	m_nSelStart = m_nCaret;
-	// Remove the characters
-	for (int i = nFirst; i < nLast; ++i)
-		RemoveChar(nFirst);
-
-
-}
-
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRects() noexcept
@@ -6603,1350 +6556,203 @@ void EditBox::UpdateRects() noexcept
 
     Control::UpdateRects();
 
-    // Update the text rectangle
     mTextRegion = mRegion;
-    // First inflate by m_nBorder to compute render rects
-    InflateRect(mTextRegion, -m_fBorder, -m_fBorder);
-
-    mTextRegion.right -= mSBWidth;
-
-    // Update the render rectangles
-    m_rcRender[0] = mTextRegion;
-    SetRect(m_rcRender[1], mRegion.left, mRegion.top, mTextRegion.left, mTextRegion.top);
-    SetRect(m_rcRender[2], mTextRegion.left, mRegion.top, mTextRegion.right, mTextRegion.top);
-    SetRect(m_rcRender[3], mTextRegion.right, mRegion.top, mRegion.right, mTextRegion.top);
-    SetRect(m_rcRender[4], mRegion.left, mTextRegion.top, mTextRegion.left, mTextRegion.bottom);
-    SetRect(m_rcRender[5], mTextRegion.right, mTextRegion.top, mRegion.right, mTextRegion.bottom);
-    SetRect(m_rcRender[6], mRegion.left, mTextRegion.bottom, mTextRegion.left, mRegion.bottom);
-    SetRect(m_rcRender[7], mTextRegion.left, mTextRegion.bottom, mTextRegion.right, mRegion.bottom);
-    SetRect(m_rcRender[8], mTextRegion.right, mTextRegion.bottom, mRegion.right, mRegion.bottom);
-
-    FontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
-
-    // Inflate further by m_nSpacing
-    InflateRect(mTextRegion, -m_fSpacing, -m_fSpacing);
-
-    mScrollBar->SetLocation(mTextRegion.right, mRegion.bottom);
-    mScrollBar->SetSize(mSBWidth, RectHeight(mRegion));
-    mScrollBar->m_y = mTextRegion.top;
+    InflateRect(mTextRegion, -static_cast<int32_t>(mHorizontalMargin), -static_cast<int32_t>(mVerticalMargin));
 
 
-    //Analyse();
-    m_bAnalyseRequired = true;
+
+    auto &element = mElements[0];
+    auto textFlags = element.mTextFormatFlags;
+    auto font = mDialog.GetFont(element.mFontIndex);
+    auto fontHeight = font->mFontType->mHeight;
+    auto leading = font->mLeading;
+
+    std::vector<std::wstring> textLines = { L"" };
+    std::vector<bool> whichLinesCausedByNewlines;
+
+    mCharacterRects.resize(mText.size());
+
+    {
+        auto textRegionWidth = RectWidth(mTextRegion);
+        int lineWidth;
+
+        //get each line of text
+        for (auto i = 0; i < mText.size(); ++i)
+        {
+            auto thisChar = mText[i];
+
+            int potentialNewLineWidth = lineWidth + font->mFontType->GetCharAdvance(thisChar);
+
+            if (thisChar == '\n' || potentialNewLineWidth > textRegionWidth)
+            {
+                textLines.push_back(L"");
+                lineWidth = 0;
+
+                if (thisChar == '\n')
+                {
+                    whichLinesCausedByNewlines.push_back(true);
+                    continue;
+                }
+                whichLinesCausedByNewlines.push_back(false);
+            }
+
+            textLines[textLines.size() - 1] += thisChar;
+        }
+
+        //Get the rects for each line
+        unsigned charIndex = 0;
+        long currY = mTextRegion.top;
+        for (auto i = 0; i < textLines.size() + 1; ++i)
+        {
+            auto thisLine = textLines[i];
+            auto lineWidth = font->mFontType->GetStringWidth(thisLine);
+            long lineXOffset = 0;
+
+
+            //do this at the beginning of the loop to put the newline character in the right place for the caret
+            if (i != 0 && i < whichLinesCausedByNewlines.size())
+            {
+                if (whichLinesCausedByNewlines[i])
+                {
+                    SetRect(mCharacterRects[charIndex], lineXOffset - mHorizontalMargin, currY, lineXOffset, currY - leading);
+                    charIndex++;//add one at the end of each line
+                }
+
+                //this means there is ONLY the newline character on the next line
+                if (i == textLines.size())
+                    break;
+            }
+
+
+
+            if (textFlags & GT_CENTER)
+                lineXOffset = (static_cast<float>(textRegionWidth) / 2.0f) - (static_cast<float>(lineWidth) / 2.0f);
+            else if (textFlags & GT_RIGHT)
+                lineXOffset = textRegionWidth - lineWidth;
+            //else if(textFlags & GT_LEFT)
+            //  lineXOffset = 0;
+
+
+            //get the rects for this line
+            for (auto j = 0; j < thisLine.size(); ++j)
+            {
+                auto thisCharWidth = font->mFontType->GetCharAdvance(thisLine[j]);
+                SetRect(mCharacterRects[charIndex], lineXOffset, currY, lineXOffset + thisCharWidth, currY - leading);
+                lineXOffset += thisCharWidth;
+                charIndex++;
+            }
+
+
+
+            currY -= leading;
+        }
+    }
+
+    GLVector<TextVertexStruct> textVertices = TextVertexStruct::MakeMany(mText.size() * 4);
+    std::vector<glm::u32vec3> indices;
+    indices.resize(mText.size() * 2);
+
+    //buffer the data into openGL
+    float z = _NEAR_BUTTON_DEPTH;
+    for (unsigned int i = 0; i < mText.size(); ++i)
+    {
+        auto &glyph = mCharacterRects[i];
+        auto ch = mText[i];
+
+
+        auto UV = font->mFontType->GetCharTexRect(ch);
+
+        unsigned int vertI = i * 4;
+
+        textVertices[vertI] =
+        {
+            glm::vec3(GetVec2FromRect(glyph, false, false), z),
+            GetVec2FromRect(UV, false, false)
+        };
+
+        textVertices[vertI + 1] =
+        {
+            glm::vec3(GetVec2FromRect(glyph, true, false), z),
+            GetVec2FromRect(UV, true, false)
+        };
+
+        textVertices[vertI + 2] =
+        {
+            glm::vec3(GetVec2FromRect(glyph, true, true), z),
+            GetVec2FromRect(UV, true, true)
+        };
+
+        textVertices[vertI + 3] =
+        {
+            glm::vec3(GetVec2FromRect(glyph, false, true), z),
+            GetVec2FromRect(UV, false, true)
+        };
+
+        unsigned int indexI = i * 2;
+        indices[indexI] =
+        {
+            vertI + 3, vertI, vertI + 2
+        };
+
+        indices[indexI + 1] =
+        {
+            vertI + 2, vertI, vertI + 1
+        };
+    }
+
+    mTextDataBuffer.BufferData(textVertices);
+    mTextDataBuffer.BufferIndices(indices);
 
     NOEXCEPT_REGION_END
 }
 
-#pragma warning(disable : 4018)
-#pragma warning(push)
-#pragma warning( disable : 4616 6386 )
-void EditBox::CopyToClipboard()
+//--------------------------------------------------------------------------------------
+void EditBox::Render(float elapsedTime) noexcept
 {
-	// Copy the selection text to the clipboard
-	if (m_nCaret != m_nSelStart/* && OpenClipboard(nullptr))
-	{
-		//EmptyClipboard();
+    NOEXCEPT_REGION_START
 
-		/*HGLOBAL hBlock = GlobalAlloc(GMEM_MOVEABLE, sizeof(WCHAR) * (m_Buffer.GetTextSize() + 1));
-		if (hBlock)
-		{
-			WCHAR* pwszText = (WCHAR*)GlobalLock(hBlock);
-			if (pwszText)
-			{
-				int nFirst = std::min(m_nCaret, m_nSelStart);
-				int nLast = std::max(m_nCaret, m_nSelStart);
-				if (nLast - nFirst > 0)
-				{
-					memcpy(pwszText, m_Buffer.GetBuffer() + nFirst, (nLast - nFirst) * sizeof(WCHAR));
-				}
-				pwszText[nLast - nFirst] = L'\0';  // Terminate it
-				GlobalUnlock(hBlock);
-			}
-			SetClipboardData(CF_UNICODETEXT, hBlock);
-		}
-		CloseClipboard();
-		// We must not free the object until CloseClipboard is called.
-		if (hBlock)
-			GlobalFree(hBlock);
 
-		//glfw makes this easy
-		std::wstring str = L"";
-		std::wstring strBuffer = m_strBuffer;
-		for (int i = m_nSelStart; i < m_nCaret; ++i)
-		{
-			str += strBuffer[i];
-		}
 
-		char *tmp = new char[256];
-		wcstombs(tmp, str.c_str(), 256);
-
-		glfwSetClipboardString(g_pGLFWWindow, tmp);
-	}
+    NOEXCEPT_REGION_END
 }
-
-void EditBox::PasteFromClipboard()
-{
-	DeleteSelectionText();
-
-	/*if (OpenClipboard(nullptr))
-	{
-		HANDLE handle = GetClipboardData(CF_UNICODETEXT);
-		if (handle)
-		{
-			// Convert the ANSI string to Unicode, then
-			// insert to our buffer.
-			WCHAR* pwszText = (WCHAR*)GlobalLock(handle);
-			if (pwszText)
-			{
-				// Copy all characters up to null.
-				if (m_Buffer.InsertString(m_nCaret, pwszText))
-					PlaceCaret(m_nCaret + (int)wcslen(pwszText));
-				m_nSelStart = m_nCaret;
-				GlobalUnlock(handle);
-				}
-				}
-				CloseClipboard();
-				}
-
-	//glfw makes this easy
-	const char* str;
-	str = glfwGetClipboardString(g_pGLFWWindow);
-	if (str == nullptr)//if glfw cannot support the format
-		return;
-	wchar_t *wStr = new wchar_t[256];
-
-	mbstowcs(wStr, str, 256);
-
-	if (m_nSelStart > m_strRenderBuffer.length())
-		InsertString(m_nSelStart + 1, wStr);
-	else
-		InsertString(m_nCaret + 1, wStr);
-
-
-	//when pasting, set the cursor to the end
-	m_nCaret = (int)m_strBuffer.length() - 1;
-	m_nSelStart = m_nCaret;
-
-	m_bAnalyseRequired = true;
-	//delete str;
-}
-#pragma warning(pop)
-
-
-void EditBox::InsertString(int pos, std::wstring str)
-{
-	for (auto it : str)
-	{
-		if (!CharsetContains(it, m_Charset))
-			return;
-	}
-	//_ASSERT(pos < GetTextLength() - 1);
-	if (pos < 0)
-	{
-		m_strBuffer.insert(0, str.c_str());
-	}
-	if (pos == GetTextLength())
-	{
-		m_strBuffer.append(str.c_str());
-	}
-	else
-	{
-		m_strBuffer.insert(pos, str);
-	}
-
-	m_bAnalyseRequired = true;
-}
-
-void EditBox::RemoveString(int pos, int len)
-{
-	//_ASSERT(pos + len < GetTextLength() - 1);
-
-	if (m_strBuffer.length() <= pos + len)
-	{
-		while (pos < m_strBuffer.length())
-		{
-			m_strBuffer.pop_back();//if len goes past the end, then just remove what we can
-		}
-	}
-	else if (pos < 0)
-	{
-
-	}
-	else
-	{
-		m_strBuffer.erase(pos, len);
-	}
-	m_bAnalyseRequired = true;
-}
-
-void EditBox::InsertChar(int pos, wchar_t ch)
-{
-	if (!CharsetContains(ch, m_Charset))
-		return;
-	//_ASSERT(pos < GetTextLength() - 1);
-	if (pos < 0)
-	{
-		m_strBuffer.insert(0, 1, ch);
-	}
-	else if (pos >= GetTextLength())
-	{
-		//append char
-		m_strBuffer += ch;
-	}
-	else
-	{
-		m_strBuffer.insert(pos, 1, ch);
-	}
-
-	m_bAnalyseRequired = true;
-}
-
-void EditBox::RemoveChar(int pos)
-{
-	//_ASSERT(pos < GetTextLength() - 1);
-	if (pos < 0)
-	{
-		m_strBuffer.erase(0, 1);
-	}
-	else if (pos >= GetTextLength())
-	{
-		m_strBuffer.pop_back();
-	}
-	else
-	{
-		m_strBuffer.erase(pos, 1);
-	}
-
-	m_bAnalyseRequired = true;
-}
-
-void EditBox::GetNextItemPos(int pos, int& next)
-{
-	if (pos == m_strBuffer.size())
-		next = pos;
-	else
-		next = pos + 1;
-}
-
-void EditBox::GetPriorItemPos(int pos, int& prior)
-{
-	if (pos == 0)
-		prior = pos;
-	else
-		prior = pos - 1;
-}
-
-int EditBox::GetNumNewlines()
-{
-	int ret = 0;
-	for (auto it : m_strBuffer)
-	{
-		if (it == '\n')
-			ret++;
-	}
-	ret += (int)m_strInsertedNewlineLocations.size();
-	return ret;
-}
-
-int EditBox::GetStrIndexFromStrRenderIndex(int strRenderIndex)
-{
-	_ASSERT(strRenderIndex < m_strRenderBuffer.length());
-
-	if (m_bAnalyseRequired)
-		Analyse();
-
-	int ret = strRenderIndex;
-
-	//first, offset by the offset
-	ret += m_strRenderBufferOffset;
-
-	//secondly, find all of the added newlines that are less than the index of the render index
-	for (auto it : m_strInsertedNewlineLocations)
-		if (it <= strRenderIndex)
-			--ret;
-
-	//next, find all of the other added characters that are less than the index of the render index
-	for (auto it : m_nAdditionalInsertedCharLocations)
-		if (it <= strRenderIndex)
-			--ret;
-
-	//is there anything else?
-	return ret;
-}
-
-int EditBox::GetStrRenderIndexFromStrIndex(int strIndex)
-{
-	if (m_bAnalyseRequired)
-		Analyse();
-
-	if (strIndex < m_strRenderBufferOffset)
-		return -2;
-
-	int ret = strIndex;
-
-	//offset by the offset
-	ret -= m_strRenderBufferOffset;
-	if (ret < 0 || ret > m_strRenderBuffer.length() - 1)//if it is less than 0, then just return -1
-		return -1;
-
-	if (!m_bMultiline)
-		return ret;//if it is multiline, then get off here
-
-	//this is a little more complex
-	int offset = 0;
-	for (unsigned int i = 0; i+offset < m_strRenderBuffer.length()/*this is usually hit first; ++i)
-	{
-		if (i >= ret)
-			break;
-		//make sure to add an offset for each unmatching character
-		while (m_strRenderBuffer[i + offset] != m_strBuffer[i + m_strRenderBufferOffset])
-			++offset;
-	}
-
-	//offset by the number of different characters up to that point
-	ret += offset;
-
-	//is there anything else?
-	return ret;
-}
-#pragma warning(default : 4018)
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnFocusIn() noexcept
 {
     NOEXCEPT_REGION_START
 
-    Control::OnFocusIn();
 
-    ResetCaretBlink();
-
-    m_bAnalyseRequired = true;
 
     NOEXCEPT_REGION_END
 }
 
-
 //--------------------------------------------------------------------------------------
-
-bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
+void EditBox::OnInit() noexcept
 {
     NOEXCEPT_REGION_START
 
 
-    // Let the scroll bar have a chance to handle it first
-    if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM) && m_bMultiline)//if we are single line, the scroll bar is only here to give us auto scroll
-    {
-        m_bAnalyseRequired = true;
-        return true;
-    }
-
-    //UNREFERENCED_PARAMETER(lParam);
-
-    if (!mEnabled || !mVisible)
-        return false;
-
-    Point pt = mDialog.GetMousePositionDialogSpace();
-
-    bool bHandled = false;
-
-    switch (msg)
-    {
-    case MB:
-        //case WM_LBUTTONDBLCLK:
-
-        if (!mHasFocus)
-            mDialog.RequestFocus(shared_from_this());
-
-        if (param2 == GLFW_PRESS && m_strRenderBuffer.length())
-        {
-
-            if (!ContainsPoint(pt))
-                return false;
-            m_bAnalyseRequired = true;
-
-            m_bMouseDrag = true;
-            //SetCapture(GetHWND());
-            // Determine the character corresponding to the coordinates.
-            int nCP;
-            bool bTrail;
-            //m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
-            if (PttoCP(Point(pt.x - mTextRegion.left, pt.y - mTextRegion.bottom), &nCP, &bTrail))
-            {
-                nCP = GetStrIndexFromStrRenderIndex(nCP);
-                // Cap at the nul character.
-                if (bTrail && nCP < GetTextLength())
-                    PlaceCaret(nCP);
-                else
-                    PlaceCaret(nCP - 1);
-                //m_nSelStart = m_nCaret;
-                ResetCaretBlink();
-            }
-            else if (pt.y - mTextRegion.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom || (
-                pt.x - mTextRegion.left   > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].right &&
-                pt.y - mTextRegion.bottom < m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].top &&
-                pt.y - mTextRegion.bottom > m_CharBoundingBoxes[m_strRenderBuffer.length() - 1].bottom))
-            {
-                //this is hit if the mouse pos is below the bottom char, OR on the same line of the bottom row, but past the last char
-                PlaceCaret((int)m_strBuffer.length());
-                ResetCaretBlink();
-            }
-            bHandled = true;
-            break;
-        }
-        else
-        {
-            //ReleaseCapture();
-            m_bMouseDrag = false;
-            bHandled = true;
-            break;
-        }
-    case CURSOR_POS:
-        if (m_bMouseDrag)
-        {
-            // Determine the character corresponding to the coordinates.
-            //int nCP, nX1st;
-            //bool bTrail;
-            /*m_Buffer.CPtoX(m_nFirstVisible, false, &nX1st);  // X offset of the 1st visible char
-            if (m_Buffer.XtoCP(pt.x - mTextRegion.left + nX1st, &nCP, &bTrail))
-            {
-            // Cap at the nul character.
-            if (bTrail && nCP < m_Buffer.GetTextSize())
-            PlaceCaret(nCP + 1);
-            else
-            PlaceCaret(nCP);
-            }
-
-            //m_bAnalyseRequired = true;
-        }
-        break;
-    case SCROLL:
-        if (!m_bMultiline)
-            break;
-
-        if (!mHasFocus)
-            mDialog.RequestFocus(shared_from_this());
-
-        mScrollBar->Scroll(-(param2 / WHEEL_DELTA) / 2);
-        m_bAnalyseRequired = true;
-
-        bHandled = true;
-        break;
-    case UNICODE_CHAR:
-
-        //is it within the charset?
-        if (!CharsetContains(param1, m_Charset))
-        {
-            bHandled = true;
-            break;
-        }
-
-        m_bAnalyseRequired = true;
-        //printible chars
-
-        // If there's a selection and the user
-        // starts to type, the selection should
-        // be deleted.
-        if (m_nCaret != m_nSelStart)
-            DeleteSelectionText();
-
-        // If we are in overwrite mode and there is already
-        // a char at the caret's position, simply replace it.
-        // Otherwise, we insert the char as normal.
-        if (!m_bInsertMode && m_nCaret < GetTextLength())
-        {
-            RemoveChar(m_nCaret + 1);
-            InsertChar(m_nCaret + 1, param1);
-            PlaceCaret(m_nCaret + 1);
-            m_nSelStart = m_nCaret;
-        }
-        else
-        {
-            // Insert the char
-            InsertChar(m_nCaret + 1, param1);
-            PlaceCaret(m_nCaret + 1);
-            m_nSelStart = m_nCaret;
-
-        }
-        ResetCaretBlink();
-        mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-
-        bHandled = true;
-        break;
-    case KEY:
-    {
-        m_bAnalyseRequired = true;
-
-        if (param3 == GLFW_PRESS || param3 == GLFW_REPEAT)
-        {
-            switch (param1)
-            {
-            case GLFW_KEY_TAB:
-                // We don't process Tab in case keyboard input is enabled and the user
-                // wishes to Tab to other controls.
-                break;
-
-            case GLFW_KEY_HOME:
-                PlaceCaret(-1);
-                if (!param4 & GLFW_MOD_SHIFT)
-                    // Shift is not down. Update selection
-                    // start along with the caret.
-                    m_nSelStart = m_nCaret;
-                ResetCaretBlink();
-                bHandled = true;
-                break;
-
-            case GLFW_KEY_END:
-                PlaceCaret(GetTextLength() - 1);
-                if (!param4 & GLFW_MOD_SHIFT)
-                    // Shift is not down. Update selection
-                    // start along with the caret.
-                    m_nSelStart = m_nCaret;
-                ResetCaretBlink();
-                bHandled = true;
-                break;
-
-            case GLFW_KEY_INSERT:
-                if (param4 & GLFW_MOD_CONTROL)
-                {
-                    // Control Insert. Copy to clipboard
-                    CopyToClipboard();
-                }
-                else if (param4 & GLFW_MOD_SHIFT)
-                {
-                    // Shift Insert. Paste from clipboard
-                    PasteFromClipboard();
-                }
-                else
-                {
-                    // Toggle caret insert mode
-                    m_bInsertMode = !m_bInsertMode;
-                }
-                break;
-
-            case GLFW_KEY_DELETE:
-                // Check if there is a text selection.
-                if (m_nCaret != m_nSelStart)
-                {
-                    DeleteSelectionText();
-                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-                }
-                else
-                {
-                    // Deleting one character
-                    if (m_nCaret != m_strBuffer.length() - 1)
-                    {
-                        RemoveChar(m_nCaret + 1);
-                        mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-                    }
-                }
-                ResetCaretBlink();
-                bHandled = true;
-                break;
-
-            case GLFW_KEY_LEFT:
-                if (param4 & GLFW_MOD_CONTROL)
-                {
-                    // Control is down. Move the caret to a new item
-                    // instead of a character.
-                    GetPriorItemPos(m_nCaret, m_nCaret);
-                    PlaceCaret(m_nCaret);
-                }
-                else if (m_nCaret >= 0)
-                    PlaceCaret(m_nCaret - 1);
-                if (!param4 & GLFW_MOD_SHIFT)
-                    // Shift is not down. Update selection
-                    // start along with the caret.
-                    m_nSelStart = m_nCaret;
-                ResetCaretBlink();
-                bHandled = true;
-                break;
-
-            case GLFW_KEY_RIGHT:
-                if (param4 & GLFW_MOD_CONTROL)
-                {
-                    // Control is down. Move the caret to a new item
-                    // instead of a character.
-                    GetNextItemPos(m_nCaret, m_nCaret);
-                    PlaceCaret(m_nCaret);
-                }
-                else if (m_nCaret < GetTextLength())
-                    PlaceCaret(m_nCaret + 1);
-                if (!param4 & GLFW_MOD_SHIFT)
-                    // Shift is not down. Update selection
-                    // start along with the caret.
-                    m_nSelStart = m_nCaret;
-                ResetCaretBlink();
-                bHandled = true;
-                break;
-
-            case GLFW_KEY_DOWN:
-            case GLFW_KEY_UP:
-            {
-                bool bIsKeyUp;
-                if (param1 == GLFW_KEY_DOWN)
-                    bIsKeyUp = false;
-                else
-                    bIsKeyUp = true;
-
-                //case GLFW_KEY_DOWN:
-                // Trap up and down arrows so that the dialog
-                // does not switch focus to another control.
-
-                //determine the character that is closest above this
-
-                //if it is the top line, the scroll up one
-                Rect rc = { 0L, 0L, 0L, 0L };
-
-
-                FontNodePtr pFont = mDialog.GetFont(GetElement(0)->mFontIndex);
-
-                do
-                {
-                    int rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
-
-                    if (m_strRenderBuffer.size() > 1 && rndCP == -1)//first character
-                        rndCP = 0;
-
-                    if (rndCP < (int)m_strRenderBuffer.size() - 1)
-                    {
-                        if (m_strRenderBuffer[rndCP] == '\n' && std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCP) != m_strInsertedNewlineLocations.end())
-                            rndCP++;
-
-                        //if we have a situation like this:
-                        /*
-
-                        textextextextext
-                        textextex
-                        textextextextextext
-
-                        
-
-                        //THERE IS NOT CURRENTLY SUPPORT FOR THIS FEATURE
-
-                        /*std::vector<std::wstring> lines = SplitStr(m_strRenderBuffer, '\n', true);
-                        if (m_strRenderBuffer[rndCP + 1] == '\n')//if the newline is coming up, check to see if there is a 'clif' above or below
-                        {
-                        long width = 0;
-                        unsigned int it = 0;
-                        if (bIsKeyUp)
-                        {
-                        //if it is the up key, we need get to the beginning of the previous row
-                        bool foundfirst = false;
-                        bool foundsecond = false;
-                        for (unsigned int i = rndCP; i > 0; --i)
-                        {
-                        if (m_strRenderBuffer[i] == '\n')
-                        {
-                        if (!foundfirst)
-                        foundfirst = true;
-                        else
-                        {
-                        it = i + 1;
-                        break;
-                        }
-                        }
-                        }
-                        }
-                        else
-                        {
-                        it = rndCP + 2;
-                        }
-                        for (; (bIsKeyUp ? it >=  0 : it < m_strRenderBuffer.length()); (bIsKeyUp ? (--it) : (++it)))
-                        {
-                        width += pFont->mFontType->GetCharAdvance(m_strRenderBuffer[it]);
-                        if (m_strRenderBuffer[it] == '\n')
-                        {
-                        --it;
-                        break;
-                        }
-                        }
-
-                        if (width < m_CharBoundingBoxes[rndCP].right)//there is a cliff, so just put it at the end
-                        {
-                        PlaceCaretRndBuffer(it);
-                        }
-
-                        }
-
-                    }
-
-                    if (CPtoRC(rndCP, &rc))
-                    {
-                        //is this the top line?
-                        if ((bIsKeyUp ? rc.top == RectHeight(mTextRegion) : rc.bottom < (long)pFont->mLeading))
-                        {
-                            mScrollBar->Scroll(bIsKeyUp ? -1 : 1);
-                            Analyse();
-                            rndCP = GetStrRenderIndexFromStrIndex(m_nCaret);
-                            if (!CPtoRC(rndCP, &rc))
-                                break;
-                        }
-
-                        //we have scrolled up if necisary, now to determine what is the character above this one
-                        int newCP = 0;
-                        bool trail = false;
-                        if (!PttoCP(Point(rc.right, rc.bottom + long((bIsKeyUp ? 1.5 : -0.5) * (long)pFont->mLeading)), &newCP, &trail))
-                            break;
-
-
-                        if (trail == false)
-                            --newCP;
-                        //we have found something
-                        PlaceCaretRndBuffer(newCP);
-                    }
-                } while (false);//this is nice, because it allows me to use break instead of using 'goto'
-                //if it fails, then either it is less than 0.
-
-
-                bHandled = true;
-                break;
-
-            }
-            case GLFW_KEY_BACKSPACE:
-            {
-                // If there's a selection, treat this
-                // like a delete key.
-                if (m_nCaret != m_nSelStart)
-                {
-                    DeleteSelectionText();
-                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-                }
-                else if (m_nCaret >= 0)
-                {
-                    // Move the caret, then delete the char.
-                    RemoveChar(m_nCaret);
-                    PlaceCaret(m_nCaret - 1);
-                    m_nSelStart = m_nCaret;
-                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-                }
-                ResetCaretBlink();
-                bHandled = true;
-
-                break;
-            }
-
-            case GLFW_KEY_X:        // Ctrl-X Cut
-            case GLFW_KEY_C:		// Ctrl-C Copy
-            {
-                if (param4 & GLFW_MOD_CONTROL)
-                {
-                    CopyToClipboard();
-
-                    // If the key is Ctrl-X, delete the selection too.
-                    if (param1 == GLFW_KEY_X)
-                    {
-                        DeleteSelectionText();
-                        mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-
-                    }
-
-                    bHandled = true;
-                }
-                break;
-            }
-
-            // Ctrl-V Paste
-            case GLFW_KEY_V:
-            {
-                if (param4 & GLFW_MOD_CONTROL)
-                {
-                    PasteFromClipboard();
-                    mDialog.SendEvent(EVENT_EDITBOX_CHANGE, true, this);
-
-                    bHandled = true;
-                }
-                break;
-            }
-
-            // Ctrl-A Select All
-            case GLFW_KEY_A:
-                if (param4 & GLFW_MOD_CONTROL)
-                {
-                    if (m_nSelStart == m_nCaret)
-                    {
-                        m_nSelStart = 0;
-                        PlaceCaret(GetTextLength());
-
-                        bHandled = true;
-                    }
-                }
-                break;
-
-            case GLFW_KEY_ENTER:
-
-                if (!m_bMultiline)
-                    break;
-                // Invoke the callback when the user presses Enter.
-                //mDialog.SendEvent(EVENT_EDITBOX_STRING, true, this);
-                InsertChar(m_nCaret + 1, '\n');//TODO: support "natural" newlines
-                PlaceCaret(m_nCaret + 1);
-                bHandled = true;
-
-                break;
-
-            default:
-                bHandled = param1 != GLFW_KEY_ESCAPE;  // Let the application handle Esc.
-            }
-        }
-    }
-    }
-
-    if (bHandled)
-        return true;
-
-    return false;
 
     NOEXCEPT_REGION_END
-
-    return false;
 }
 
-
 //--------------------------------------------------------------------------------------
-void EditBox::Render( float elapsedTime) noexcept
+void EditBox::CalculateCharRects() noexcept
 {
     NOEXCEPT_REGION_START
 
-    //UpdateRects();
-    if (m_bAnalyseRequired)
-        Analyse();
-
-    //TODO: don't render scrollbar UNLESS there is necessity to scroll, change this on ALL controls
-
-
-
-    if (mVisible == false)
-        return;
-
-
-    //
-    // Blink the caret
-    //
-    if (glfwGetTime() - m_dfLastBlink >= m_dfBlink)
-    {
-        m_bCaretOn = !m_bCaretOn;
-        m_dfLastBlink = glfwGetTime();
-    }
-
-    ElementPtr pElement = GetElement(0);
-
-    // Render the control graphics
-    for (int e = 0; e < 9; ++e)
-    {
-        pElement = mElements[e];
-        pElement->mTextureColor.Blend(STATE_NORMAL, elapsedTime);
-
-        mDialog.DrawSprite(pElement, m_rcRender[e], _FAR_BUTTON_DEPTH);
-    }
-
-    //render the scrollbar
-    if (m_bMultiline)
-        mScrollBar->Render(elapsedTime);
-
-    FontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
-    if (pElement)
-    {
-        if (mHasFocus && m_bCaretOn && !s_bHideCaret)
-        {
-            // Start the rectangle with insert mode caret
-            Rect rcCaret;
-            if (m_nCaret == -1)//if it is -1, then the leading edge of the first character
-            {
-
-                // If we are in overwrite mode, adjust the caret rectangle
-                // to fill the entire character.
-                if (!m_bInsertMode)
-                {
-                    if (m_CharBoundingBoxes.size())
-                        rcCaret = m_CharBoundingBoxes[0];
-                }
-                else
-                    SetRect(rcCaret, 0, RectHeight(mTextRegion), 2, RectHeight(mTextRegion) - pFontNode->mLeading);
-
-                OffsetRect(rcCaret, mTextRegion.left, mTextRegion.bottom);
-                mDialog.DrawRect(rcCaret, m_CaretColor);
-            }
-            else
-            {
-#pragma warning(disable : 4018)
-                int rndCaret = GetStrRenderIndexFromStrIndex(m_nCaret);
-                if (rndCaret != -1 && rndCaret != -2 && !(rndCaret > m_strRenderBuffer.size()))//don't render off-screen
-                {
-                    if (m_strRenderBuffer[rndCaret] == '\n' && (std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), rndCaret) == m_strInsertedNewlineLocations.end() || rndCaret == m_strRenderBuffer.back()))
-                    {
-                        //if it is a newline character, then give the leading edge of the first char of the line
-
-                        SetRect(rcCaret, m_CharBoundingBoxes[0].left - 2, m_CharBoundingBoxes[rndCaret].top, 2, m_CharBoundingBoxes[rndCaret].bottom);
-                    }
-                    else if (m_strRenderBuffer[rndCaret] == '\n')
-                        rndCaret++;
-
-                    if (rndCaret == m_CharBoundingBoxes.size())
-                        rndCaret--;
-                    SetRect(rcCaret,
-                        m_CharBoundingBoxes[rndCaret].right, m_CharBoundingBoxes[rndCaret].top,
-                        m_CharBoundingBoxes[rndCaret].right + 2, m_CharBoundingBoxes[rndCaret].bottom);
-
-                    // If we are in overwrite mode, adjust the caret rectangle
-                    // to fill the entire character.
-                    if (!m_bInsertMode)
-                    {
-                        if (rndCaret >= m_CharBoundingBoxes.size() - 1);
-                        else
-                        {
-                            rcCaret.right = m_CharBoundingBoxes[rndCaret + 1].right;
-                        }
-                    }
-
-                    OffsetRect(rcCaret, mTextRegion.left, mTextRegion.bottom);
-
-                    mDialog.DrawRect(rcCaret, m_CaretColor/*::{0, 0, 0, 255));
-                }
-#pragma warning(default : 4018)
-            }
-        }
-    }
-
-    //debugging
-    /*Color color = {255, 0, 255, 128);
-    for (auto it : m_CharBoundingBoxes)
-    {
-    Rect copy = it;
-    OffsetRect(copy, mTextRegion.left, mTextRegion.bottom);
-    mDialog.DrawRect(copy, color);
-
-    if (color.r == 5)
-    color.g += 10;
-    else
-    color.r -= 10;
-    }
-
-    mElements[0]->mFontColor.SetCurrent(m_TextColor);
-    mDialog.DrawText(m_strRenderBuffer.c_str(), mElements[0], mTextRegion);
-
 
 
     NOEXCEPT_REGION_END
 }
 
-
 //--------------------------------------------------------------------------------------
-void EditBox::ResetCaretBlink()
+void EditBox::WrapText() noexcept
 {
-	m_bCaretOn = true;
-	m_dfLastBlink = glfwGetTime();
+    NOEXCEPT_REGION_START
+
+    NOEXCEPT_REGION_END
 }
-
-//--------------------------------------------------------------------------------------
-
-bool EditBox::CPtoRC(int nCP, Rect *pRc)
-{
-	_ASSERT(pRc);
-	*pRc = { 0L, 0L, 0L, 0L };
-
-	if (nCP > (int)m_strRenderBuffer.length() - 1 || nCP < 0)
-	{
-		return false;
-	}
-
-	if (m_bAnalyseRequired)
-		Analyse();
-
-
-	*pRc = m_CharBoundingBoxes[nCP];
-
-	return true;
-}
-
-
-//--------------------------------------------------------------------------------------
-
-bool EditBox::PttoCP(Point pt, int* pCP, bool* bTrail)
-{
-	_ASSERT(pCP && bTrail);
-	*pCP = 0; *bTrail = false;  // Default
-
-	if (m_bAnalyseRequired)
-		Analyse();
-
-	Rect charRect = { 0L, 0L, 0L, 0L };
-
-	for (auto it : m_CharBoundingBoxes)
-	{
-		charRect = it;
-
-		//this deals with the bounding boxes leaving space between characters
-		if (it != m_CharBoundingBoxes.back())
-			charRect.right = m_CharBoundingBoxes[*pCP + 1].left;
-
-		if (PtInRect(charRect, pt))
-		{
-			if (PtInRect({ charRect.left, charRect.top, charRect.right - RectWidth(it) / 2, charRect.bottom }, pt))
-			{
-				//leading edge
-				*bTrail = false;
-			}
-			else
-			{
-				//trailing edge
-				*bTrail = true;
-			}
-
-			//*pCP = GetStrRenderIndexFromStrIndex(*pCP);
-			return true;
-		}
-
-		++*pCP;
-	}
-	//if it failed, then make this -1
-	*pCP = -1;
-
-	return false;
-}
-
-void EditBox::Analyse()
-{
-	FontNodePtr pFontNode = mDialog.GetManager()->GetFontNode(mElements[0]->mFontIndex);
-	//split the string into words to make line breaks in between words
-
-	//first set the render buffer to the string
-	m_strRenderBuffer = m_strBuffer;
-
-	//take preexisting newlines, and make sure they have a space on either side, so they are their own words
-	//unsigned int addedCharactersCount = 0;
-	m_nAdditionalInsertedCharLocations.clear();
-
-	if (m_bMultiline)
-	{
-		for (unsigned int it = 0; it < m_strBuffer.length(); ++it)
-		{
-			if (m_strBuffer[it] == '\n')
-			{
-
-				if (it == 0) //if it is the first char
-				{
-					if (m_strBuffer[it + 1] != ' ')
-					{
-						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
-						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
-					}
-				}
-				else if (m_strBuffer.length() - 1)//if it is the last char
-				{
-					if (m_strBuffer[it - 1] != ' ')
-					{
-						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
-						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
-					}
-				}
-				else//anything else
-				{
-					if (m_strBuffer[it - 1] != ' ')
-					{
-						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it - 1, 1, ' ');//insert a space before
-						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
-					}
-
-					if (m_strBuffer[it + 1] != ' ')										//AND
-					{
-						m_strRenderBuffer.insert(m_nAdditionalInsertedCharLocations.size() + it + 1, 1, ' ');//insert a space after
-						m_nAdditionalInsertedCharLocations.push_back(it + m_nAdditionalInsertedCharLocations.size());
-					}
-				}
-			}
-		}
-	}
-	else
-	{
-		//single line, DESTROY ALL NEWLINES
-		for (auto it = m_strBuffer.begin(); it != m_strBuffer.end(); ++it)
-		{
-			if (*it == '\n')
-			{
-				m_strBuffer.erase(it);
-			}
-		}
-		m_strRenderBuffer = m_strBuffer;
-	}
-
-	if (m_bMultiline)
-	{//new block just to remove these variables
-		long TextWidth = RectWidth(mTextRegion);
-		long currXValue = 0;
-		int charIndex = 0;
-		int addedCharactersCount = 0;
-
-		std::vector<std::wstring> strings = SplitStr(m_strRenderBuffer, ' ', true);
-		m_strInsertedNewlineLocations.clear();
-		for (auto it : strings)
-		{
-
-
-			long WordWidth = pFontNode->mFontType->GetStringWidth(it);
-
-			//these are natural newlines
-			if (it == L"\n ")
-			{
-				currXValue = WordWidth;
-				charIndex += (int)it.length();
-				continue;
-			}
-
-			//if the current word width is bigger than the whole line, then newline at the box width
-			if (WordWidth > TextWidth)
-			{
-				//float charXPos = 0.0f;
-				int chIndex = 0;
-
-				for (auto itch : it)
-				{
-#pragma warning(disable : 4244)
-					FontSize nCharWidth;
-					nCharWidth = pFontNode->mFontType->GetCharAdvance(itch);
-#pragma warning(default : 4244)
-					currXValue += (int)nCharWidth;
-
-					if (currXValue > TextWidth)
-					{
-						m_strRenderBuffer.insert(charIndex + chIndex + addedCharactersCount, 1, '\n');
-						m_strInsertedNewlineLocations.push_back(charIndex + chIndex);
-						//charXPos = 0.0f;
-						currXValue = (int)nCharWidth;
-						++addedCharactersCount;
-					}
-
-					chIndex++;
-				}
-
-			}
-			else
-			{
-				currXValue += WordWidth;
-			}
-
-			if (currXValue/* + 0.0125f/*a little buffer > TextWidth)
-			{
-
-				//add a "newline" (since there is always a trailing space, hack this a little bit so the space will always be at the end
-
-				//blank strings i.e. double spaces ( or more ) then we just keep those at the end of the line
-				/*if (it == L" ")
-				{
-
-				}
-				
-				{
-					m_strRenderBuffer.insert(charIndex + addedCharactersCount, 1, '\n');
-					m_strInsertedNewlineLocations.push_back(charIndex + addedCharactersCount);
-					currXValue = WordWidth;
-					++addedCharactersCount;
-				}
-			}
-
-			//if (charIndex == 0)
-			//	--charIndex;
-
-			charIndex += (int)it.size();
-		}
-	}
-
-	//recalculate scroll bar (this has to be done in between analyzing steps)
-	if (pFontNode && pFontNode->mFontType->mHeight)
-	{
-		if (m_bMultiline)
-		{
-			mScrollBar->SetPageSize(int(RectHeight(mTextRegion) / pFontNode->mFontType->mHeight));
-			mScrollBar->SetTrackRange(0, GetNumNewlines() + 1);
-		}
-		else
-		{
-			mScrollBar->SetTrackRange(0, (int)m_strBuffer.length()-1);
-
-			FontSize strWidth = 0;
-			unsigned int count = 0;
-			unsigned long textWidth = RectWidth(mTextRegion);
-			for (unsigned int i = mScrollBar->GetTrackPos(); i < m_strBuffer.length(); ++i)
-				if (strWidth < textWidth)
-				{
-					strWidth += pFontNode->mFontType->GetCharAdvance(m_strBuffer[i]);
-					++count;
-				}
-				else
-				{
-					//strWidth -= pFontNode->mFontType->GetCharAdvance(m_strBuffer[i]);
-					--count;
-					break;
-				}
-
-			mScrollBar->SetPageSize(count);
-			mScrollBar->SetTrackPos(m_nCaret);
-		}
-		// The selected item may have been scrolled off the page.
-		// Ensure that it is in page again.
-		//mScrollBar->ShowItem(GetLineNumberFromCharPos(m_nCaret));
-	}
-
-
-	//now get the char bounding boxes (this ALSO culls the characters that would go off screen, as well as offset for the scrollbar)
-
-	m_CharBoundingBoxes.clear();
-	m_strRenderBufferOffset = 0;
-
-	//for each character, get the width, and add that to the width of the previous, also add initial 0
-	//m_CalcXValues.push_back(0);
-	if (m_bMultiline)
-	{
-		int currXValue = 0;
-		int distanceFromBottom = RectHeight(mTextRegion);
-		int   lineNum = 0;
-
-		int thisCharWidth = 0;
-		int fontHeight = pFontNode->mLeading;
-		int scrollbarOffset = mScrollBar->GetTrackPos() * pFontNode->mLeading;
-		Rect rc;
-
-		bool topCulled = false;
-
-		std::wstring strRenderBufferTmp = L"";
-		unsigned int i = 0;
-		for (auto it : m_strRenderBuffer)
-		{
-
-
-
-			//cull the characters that will not fit on the page
-			if (lineNum > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() || lineNum < mScrollBar->GetTrackPos())
-			{
-				if (topCulled)//this is called once the top has been culled, then the body has been added
-					break;
-				else
-				{
-					//if this IS NOT a inserted newline, then we can add it
-					if (it == '\n')
-						if (std::find(m_strInsertedNewlineLocations.begin(), m_strInsertedNewlineLocations.end(), i) == m_strInsertedNewlineLocations.end())
-						{
-							++m_strRenderBufferOffset;
-						}
-						else;
-					else
-						++m_strRenderBufferOffset;
-				}
-			}
-			else
-			{
-				topCulled = true;
-
-#pragma warning(disable : 4244)
-				thisCharWidth = pFontNode->mFontType->GetCharAdvance(it);
-#pragma warning(default : 4244)
-
-				rc = pFontNode->mFontType->GetCharRect(it);
-				if (it == '\n')
-				{
-					rc.top = distanceFromBottom - fontHeight;
-					rc.bottom = rc.top - fontHeight;
-					rc.left = 0;
-					rc.right = 0;
-				}
-				else
-				{
-					rc.top = distanceFromBottom;
-					rc.bottom = distanceFromBottom - fontHeight;
-					rc.right = rc.left + pFontNode->mFontType->GetCharWidth(it);//use the char width for nice carrot position
-					OffsetRect(rc, currXValue, 0);
-					//SetRect(rc, currXValue, distanceFromBottom - pFontNode->mFontType->Get, currXValue + thisCharWidth, distanceFromBottom - fontHeight);
-				}
-
-
-				//offset the whole block by the scroll level
-				OffsetRect(rc, 0, scrollbarOffset);
-
-				//does fit on page
-				strRenderBufferTmp += it;
-				m_CharBoundingBoxes.push_back(rc);
-			}
-
-			currXValue += thisCharWidth;
-			//this MUST go after the culling process, because the new line starts AFTER this character
-			if (it == '\n')
-			{
-				lineNum++;
-				currXValue = 0;
-				distanceFromBottom -= fontHeight;
-				/*m_CharBoundingBoxes.pop_back();
-				SetRect(rc, 0.0f, distanceFromBottom, 0.0f, distanceFromBottom - fontHeight);
-				m_CharBoundingBoxes.push_back();
-			}
-
-			++i;
-		}
-		m_strRenderBuffer = strRenderBufferTmp;
-	}
-	else
-	{
-		//for single line, we do HORIZONTAL culling
-		int currXValue = 0;
-		long top = RectHeight(mTextRegion), bottom = top - pFontNode->mLeading;
-
-		bool leftCulled = false;
-		int thisCharWidth = 0;
-		int scrollbarOffset = mScrollBar->GetTrackPos();
-		Rect rc;
-
-		std::wstring strRenderBufferTmp = L"";
-		int i = 0;
-		for (auto it : m_strRenderBuffer)
-		{
-
-			//cull the characters that will not fit on the page
-			if (i < mScrollBar->GetTrackPos() || i > mScrollBar->GetTrackPos() + mScrollBar->GetPageSize() - 1)
-			{
-				if (!leftCulled)
-					++m_strRenderBufferOffset;
-				else
-					break;
-			}
-			else
-			{
-				leftCulled = true;
-
-#pragma warning(disable : 4244)
-				thisCharWidth = pFontNode->mFontType->GetCharAdvance(it);
-#pragma warning(default : 4244)
-
-				rc = pFontNode->mFontType->GetCharRect(it);
-				rc.top = top;
-				rc.bottom = bottom;
-				rc.right = rc.left + pFontNode->mFontType->GetCharWidth(it);//use the char width for nice carrot position
-				OffsetRect(rc, currXValue, 0);
-
-				//does fit on page
-				strRenderBufferTmp += it;
-				m_CharBoundingBoxes.push_back(rc);
-
-
-				currXValue += thisCharWidth;
-			}
-
-
-			++i;
-		}
-		m_strRenderBuffer = strRenderBufferTmp;
-
-		//for single lines, neither of these will happen
-		m_strInsertedNewlineLocations.clear();
-		m_nAdditionalInsertedCharLocations.clear();
-	}
-
-	m_bAnalyseRequired = false;  // Analysis is up-to-date
-	mScrollBar->ShowItem(m_nCaret);
-
-}*/
-
-
-
-
-
 
 /*
 ======================================================================================================================================================================================================
