@@ -179,7 +179,11 @@ int main(void)
 
 	str.assign((std::istreambuf_iterator<wchar_t>(t)),
 		std::istreambuf_iterator<wchar_t>());
-	dlg->);
+
+    std::shared_ptr<std::shared_ptr<EditBox>> editBox = std::make_shared<std::shared_ptr<EditBox>>();
+    dlg->AddEditBox(0, str, { { 50 }, 500, 550, { 50 } }, Unicode, GT_LEFT | GT_TOP | GT_MULTI_LINE, false, editBox);
+    (*editBox)->SetHorizontalMargin(10);
+    (*editBox)->SetVerticalMargin(10);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
     //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 500, 350, { 480 } });
@@ -552,9 +556,9 @@ int main(void)
 			dlg->OnRender(ellapsedTime);
 			//dlg->DrawRect(rc, ::Color(255, 0, 0, 255));
 
-            textHelper->Begin(0, 20, 15);
+            /*textHelper->Begin(0, 20, 15);
             textHelper->DrawFormattedTextLineBase({ { 500 }, 300, 700, { 280 } }, GT_TOP | GT_LEFT, L"Val1 = %; Val2 = %; Val3 = %", 36, 29.334f, "String");
-            textHelper->End();
+            textHelper->End();*/
 
         //sky box rendering stuff
 		/*SHADERMANAGER.UseProgram(sky);

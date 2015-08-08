@@ -173,9 +173,7 @@ Utility Macros
 #define NOEXCEPT_REGION_START try{
 #define NOEXCEPT_REGION_END }catch(...){}
 #endif
-#define NOX
 #define noexcept throw()
-
 /*
 ======================================================================================================================================================================================================
 Multithreading Macros

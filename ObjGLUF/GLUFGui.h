@@ -2898,6 +2898,9 @@ protected:
     ScrollBarPtr mScrollBar;
     Size mSBWidth = 16;
     Rect mTextRegion;
+
+    Rect mBoarderRegions[8];
+
     double mPreviousBlinkTime = 0;
     bool mMouseDrag = false;
     bool mCaretOn = true;
@@ -2909,7 +2912,7 @@ protected:
     
     */
     std::vector<Rect> mCharacterRects;
-    VertexArray mTextDataBuffer;
+    VertexArrayPtr mTextDataBuffer;
 
     /*
     InvalidateRects
@@ -2936,8 +2939,7 @@ protected:
     Text Formatting Methods
     
     */
-    void CalculateCharRects() noexcept;
-    void WrapText() noexcept;
+    virtual void UpdateCharRects() noexcept;
 
 
 public:

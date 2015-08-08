@@ -23,11 +23,14 @@ Random Text Helping functions
 */
 namespace Text
 {
+    glm::mat4 g_TextOrtho;
+
+
     void BeginText(const glm::mat4& orthoMatrix);
 
 
     void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rect, const Color& color, Bitfield textFlags, bool hardRect = false);
-    void EndText(const FontPtr& font);
+    void EndText(const FontPtr& font, const VertexArrayPtr& data, const Color& textColor, const glm::mat4& projMatrix = g_TextOrtho);
 
 }
 
@@ -1953,7 +1956,7 @@ void Dialog::AddSlider(ControlIndex ID, const Rect& region, long min, long max, 
 //--------------------------------------------------------------------------------------
 void Dialog::AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset, GLbitfield textFlags, bool isDefault, std::shared_ptr<EditBoxPtr> ctrlPtr)
 {
-	auto pEditBox = CreateEditBox(*this, (textFlags & GT_MULTI_LINE));
+	auto pEditBox = CreateEditBox(*this, (textFlags & GT_MULTI_LINE) == GT_MULTI_LINE);
 
 	if (ctrlPtr)
 		*ctrlPtr = pEditBox;
@@ -2805,7 +2808,7 @@ void Dialog::InitDefaultElements()
 
 	//TODO: this
 	// Assign the style
-    SetRect(rcTexture, 0.0546875f, 0.6484375f, 0.94140625f, 0.55859375f);
+    SetRect(rcTexture, 0.0507812f, 0.6484375f, 0.9375f, 0.55859375f);
     Element.mUVRect = rcTexture;
 	SetDefaultElement(CONTROL_EDITBOX, 0, Element);
 
@@ -6413,9 +6416,19 @@ Edit Box Functions
 */
 
 //--------------------------------------------------------------------------------------
-EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog)
+EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true))
 {
+    mType = CONTROL_EDITBOX;
+
     mScrollBar = CreateScrollBar(dialog);
+
+    mTextDataBuffer->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
+    mTextDataBuffer->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12 });
+}
+
+//--------------------------------------------------------------------------------------
+EditBox::~EditBox()
+{
 }
 
 //--------------------------------------------------------------------------------------
@@ -6427,7 +6440,7 @@ void EditBox::InvalidateRects() noexcept
 #pragma region Setters and Getters
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetText(const std::wstring& text) noexcept
+void EditBox::SetText(const std::wstring& text)
 {
     if (!CharsetContains(text, mCharset))
         GLUF_CRITICAL_EXCEPTION(StringContainsInvalidCharacters());
@@ -6542,9 +6555,13 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
     switch (msg)
     {
-
-
+    case MB:
+        break;
+    default:
+        break;
     }
+
+    return false;
 
     NOEXCEPT_REGION_END
 }
@@ -6557,8 +6574,89 @@ void EditBox::UpdateRects() noexcept
     Control::UpdateRects();
 
     mTextRegion = mRegion;
-    InflateRect(mTextRegion, -static_cast<int32_t>(mHorizontalMargin), -static_cast<int32_t>(mVerticalMargin));
+    InflateRect(mTextRegion, -static_cast<int32_t>(2 * mHorizontalMargin), -static_cast<int32_t>(2 * mVerticalMargin));
 
+    SetRect(mBoarderRegions[0], mRegion.left, mRegion.top, mTextRegion.left, mTextRegion.top);
+    SetRect(mBoarderRegions[1], mTextRegion.left, mRegion.top, mTextRegion.right, mTextRegion.top);
+    SetRect(mBoarderRegions[2], mTextRegion.right, mRegion.top, mRegion.right, mTextRegion.top);
+    SetRect(mBoarderRegions[3], mRegion.left, mTextRegion.top, mTextRegion.left, mTextRegion.bottom);
+    SetRect(mBoarderRegions[4], mTextRegion.right, mTextRegion.top, mRegion.right, mTextRegion.bottom);
+    SetRect(mBoarderRegions[5], mRegion.left, mTextRegion.bottom, mTextRegion.left, mRegion.bottom);
+    SetRect(mBoarderRegions[6], mTextRegion.left, mTextRegion.bottom, mTextRegion.right, mRegion.bottom);
+    SetRect(mBoarderRegions[7], mTextRegion.right, mTextRegion.bottom, mRegion.right, mRegion.bottom);
+
+
+    UpdateCharRects();
+    
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::Render(float elapsedTime) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    if (mUpdateRequired)
+        UpdateRects();
+
+    auto state = STATE_NORMAL;
+    if (!mVisible)
+        state = STATE_HIDDEN;
+    else if (!mEnabled)
+        state = STATE_DISABLED;
+    else if (mMouseOver)
+        state = STATE_MOUSEOVER;
+    else if (mHasFocus)
+        state = STATE_FOCUS;
+    
+    unsigned int i = 0;
+    for (auto it : mElements)
+    {
+        it.second.mTextureColor.Blend(state, elapsedTime);
+
+        if (i == 0)
+        {
+            it.second.mFontColor.Blend(state, elapsedTime);
+            mDialog.DrawSprite(it.second, mTextRegion, _NEAR_BUTTON_DEPTH);
+        }
+        else
+        {
+            mDialog.DrawSprite(it.second, mBoarderRegions[i - 1], _NEAR_BUTTON_DEPTH);
+        }
+
+        ++i;
+    }
+
+    //draw the text
+    Text::EndText(mDialog.GetFont(mElements[0].mFontIndex)->mFontType, mTextDataBuffer, mElements[0].mFontColor.GetCurrent());
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::OnFocusIn() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    Control::OnFocusIn();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::OnInit() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    Control::OnInit();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::UpdateCharRects() noexcept
+{
+    NOEXCEPT_REGION_START
 
 
     auto &element = mElements[0];
@@ -6574,14 +6672,15 @@ void EditBox::UpdateRects() noexcept
 
     {
         auto textRegionWidth = RectWidth(mTextRegion);
-        int lineWidth;
+        int lineWidth = 0;
 
         //get each line of text
-        for (auto i = 0; i < mText.size(); ++i)
+        for (unsigned int i = 0; i < mText.size(); ++i)
         {
             auto thisChar = mText[i];
+            auto thisCharWidth = font->mFontType->GetCharAdvance(thisChar);
 
-            int potentialNewLineWidth = lineWidth + font->mFontType->GetCharAdvance(thisChar);
+            int potentialNewLineWidth = lineWidth + thisCharWidth;
 
             if (thisChar == '\n' || potentialNewLineWidth > textRegionWidth)
             {
@@ -6597,18 +6696,15 @@ void EditBox::UpdateRects() noexcept
             }
 
             textLines[textLines.size() - 1] += thisChar;
+            lineWidth += thisCharWidth;
         }
 
         //Get the rects for each line
         unsigned charIndex = 0;
         long currY = mTextRegion.top;
-        for (auto i = 0; i < textLines.size() + 1; ++i)
+        long lineXOffset = 0;
+        for (unsigned int i = 0; i < textLines.size() + 1; ++i)
         {
-            auto thisLine = textLines[i];
-            auto lineWidth = font->mFontType->GetStringWidth(thisLine);
-            long lineXOffset = 0;
-
-
             //do this at the beginning of the loop to put the newline character in the right place for the caret
             if (i != 0 && i < whichLinesCausedByNewlines.size())
             {
@@ -6617,16 +6713,20 @@ void EditBox::UpdateRects() noexcept
                     SetRect(mCharacterRects[charIndex], lineXOffset - mHorizontalMargin, currY, lineXOffset, currY - leading);
                     charIndex++;//add one at the end of each line
                 }
-
-                //this means there is ONLY the newline character on the next line
-                if (i == textLines.size())
-                    break;
             }
+
+            //there is ONLY a newline on the next line, OR text is over
+            if (i == textLines.size())
+                break;
+
+            auto thisLine = textLines[i];
+            auto lineWidth = font->mFontType->GetStringWidth(thisLine);
+            lineXOffset = 0;
 
 
 
             if (textFlags & GT_CENTER)
-                lineXOffset = (static_cast<float>(textRegionWidth) / 2.0f) - (static_cast<float>(lineWidth) / 2.0f);
+                lineXOffset = static_cast<long>((static_cast<float>(textRegionWidth) / 2.0f) - (static_cast<float>(lineWidth) / 2.0f));
             else if (textFlags & GT_RIGHT)
                 lineXOffset = textRegionWidth - lineWidth;
             //else if(textFlags & GT_LEFT)
@@ -6634,10 +6734,13 @@ void EditBox::UpdateRects() noexcept
 
 
             //get the rects for this line
-            for (auto j = 0; j < thisLine.size(); ++j)
+            for (unsigned int j = 0; j < thisLine.size(); ++j)
             {
-                auto thisCharWidth = font->mFontType->GetCharAdvance(thisLine[j]);
-                SetRect(mCharacterRects[charIndex], lineXOffset, currY, lineXOffset + thisCharWidth, currY - leading);
+                auto thisCharRect = font->mFontType->GetCharRect(thisLine[j]);
+                auto thisCharWidth = RectWidth(thisCharRect);
+                OffsetRect(thisCharRect, lineXOffset, currY);
+                //SetRect(mCharacterRects[charIndex], lineXOffset, currY, lineXOffset + thisCharWidth, currY - leading);
+                mCharacterRects[charIndex] = thisCharRect;
                 lineXOffset += thisCharWidth;
                 charIndex++;
             }
@@ -6700,56 +6803,8 @@ void EditBox::UpdateRects() noexcept
         };
     }
 
-    mTextDataBuffer.BufferData(textVertices);
-    mTextDataBuffer.BufferIndices(indices);
-
-    NOEXCEPT_REGION_END
-}
-
-//--------------------------------------------------------------------------------------
-void EditBox::Render(float elapsedTime) noexcept
-{
-    NOEXCEPT_REGION_START
-
-
-
-    NOEXCEPT_REGION_END
-}
-
-//--------------------------------------------------------------------------------------
-void EditBox::OnFocusIn() noexcept
-{
-    NOEXCEPT_REGION_START
-
-
-
-    NOEXCEPT_REGION_END
-}
-
-//--------------------------------------------------------------------------------------
-void EditBox::OnInit() noexcept
-{
-    NOEXCEPT_REGION_START
-
-
-
-    NOEXCEPT_REGION_END
-}
-
-//--------------------------------------------------------------------------------------
-void EditBox::CalculateCharRects() noexcept
-{
-    NOEXCEPT_REGION_START
-
-
-
-    NOEXCEPT_REGION_END
-}
-
-//--------------------------------------------------------------------------------------
-void EditBox::WrapText() noexcept
-{
-    NOEXCEPT_REGION_START
+    mTextDataBuffer->BufferData(textVertices);
+    mTextDataBuffer->BufferIndices(indices);
 
     NOEXCEPT_REGION_END
 }
@@ -6763,10 +6818,9 @@ void EditBox::WrapText() noexcept
 namespace Text
 {
 
-glm::mat4 g_TextOrtho;
-glm::mat4 g_TextModelMatrix;
+//glm::mat4 g_TextModelMatrix;
 //GLVector<TextVertexStruct> g_TextVertices;
-Color4f g_TextColor;
+//Color4f g_TextColor;
 
 //--------------------------------------------------------------------------------------
 void BeginText(const glm::mat4& orthoMatrix)
@@ -6936,7 +6990,7 @@ void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rec
     }
     //glEnd();
 
-    g_TextColor = ColorToFloat(color);
+    //g_TextColor = ColorToFloat(color);
 
     //g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
 
@@ -6946,17 +7000,17 @@ void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rec
     //buffer the indices
     g_TextVertexArray->BufferIndices(indices);
 
-    EndText(font->mFontType);
+    EndText(font->mFontType, g_TextVertexArray, color, g_TextOrtho);
 
 }
 
 
-void EndText(const FontPtr& font)
+void EndText(const FontPtr& font, const VertexArrayPtr& data, const Color& textColor, const glm::mat4& projMatrix)
 {
     SHADERMANAGER.UseProgram(g_TextProgram);
 
     //first uniform: model-view matrix
-    SHADERMANAGER.GLUniformMatrix4f(g_TextShaderLocations.ortho, g_TextOrtho);
+    SHADERMANAGER.GLUniformMatrix4f(g_TextShaderLocations.ortho, projMatrix);
 
     //second, the sampler
     glActiveTexture(GL_TEXTURE0);
@@ -6965,13 +7019,13 @@ void EndText(const FontPtr& font)
 
 
     //third, the color
-    SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, g_TextColor);
+    SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(textColor));
 
     //make sure to enable this with text
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    g_TextVertexArray->Draw();
+    data->Draw();
 
     //g_TextVertices.clear();
 }
