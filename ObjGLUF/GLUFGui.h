@@ -2899,7 +2899,7 @@ protected:
     Size mSBWidth = 16;
     Rect mTextRegion;
 
-    Rect mBoarderRegions[8];
+    Rect mSubRegions[9];
 
     double mPreviousBlinkTime = 0;
     bool mMouseDrag = false;

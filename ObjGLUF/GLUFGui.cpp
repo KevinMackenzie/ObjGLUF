@@ -3039,7 +3039,7 @@ DialogPtr DialogResourceManager::GetDialogPtrFromRef(const Dialog& ref) noexcept
 void DialogResourceManager::ApplyOrtho() noexcept
 {
 	glm::mat4 mat = GetOrthoMatrix();
-	glUniformMatrix4fv(g_UIShaderLocations.ortho, 1, GL_FALSE, &mat[0][0]);
+	SHADERMANAGER.GLUniformMatrix4f(g_UIShaderLocations.ortho, mat);
 }
 
 //--------------------------------------------------------------------------------------
@@ -6576,14 +6576,16 @@ void EditBox::UpdateRects() noexcept
     mTextRegion = mRegion;
     InflateRect(mTextRegion, -static_cast<int32_t>(2 * mHorizontalMargin), -static_cast<int32_t>(2 * mVerticalMargin));
 
-    SetRect(mBoarderRegions[0], mRegion.left, mRegion.top, mTextRegion.left, mTextRegion.top);
-    SetRect(mBoarderRegions[1], mTextRegion.left, mRegion.top, mTextRegion.right, mTextRegion.top);
-    SetRect(mBoarderRegions[2], mTextRegion.right, mRegion.top, mRegion.right, mTextRegion.top);
-    SetRect(mBoarderRegions[3], mRegion.left, mTextRegion.top, mTextRegion.left, mTextRegion.bottom);
-    SetRect(mBoarderRegions[4], mTextRegion.right, mTextRegion.top, mRegion.right, mTextRegion.bottom);
-    SetRect(mBoarderRegions[5], mRegion.left, mTextRegion.bottom, mTextRegion.left, mRegion.bottom);
-    SetRect(mBoarderRegions[6], mTextRegion.left, mTextRegion.bottom, mTextRegion.right, mRegion.bottom);
-    SetRect(mBoarderRegions[7], mTextRegion.right, mTextRegion.bottom, mRegion.right, mRegion.bottom);
+    mSubRegions[0] = mRegion;
+    InflateRect(mSubRegions[0], -14, -14);
+    SetRect(mSubRegions[1], mRegion.left, mRegion.top, mSubRegions[0].left, mSubRegions[0].top);
+    SetRect(mSubRegions[2], mSubRegions[0].left, mRegion.top, mSubRegions[0].right, mSubRegions[0].top);
+    SetRect(mSubRegions[3], mSubRegions[0].right, mRegion.top, mRegion.right, mSubRegions[0].top);
+    SetRect(mSubRegions[4], mRegion.left, mSubRegions[0].top, mSubRegions[0].left, mSubRegions[0].bottom);
+    SetRect(mSubRegions[5], mSubRegions[0].right, mSubRegions[0].top, mRegion.right, mSubRegions[0].bottom);
+    SetRect(mSubRegions[6], mRegion.left, mSubRegions[0].bottom, mSubRegions[0].left, mRegion.bottom);
+    SetRect(mSubRegions[7], mSubRegions[0].left, mSubRegions[0].bottom, mSubRegions[0].right, mRegion.bottom);
+    SetRect(mSubRegions[8], mSubRegions[0].right, mSubRegions[0].bottom, mRegion.right, mRegion.bottom);
 
 
     UpdateCharRects();
@@ -6617,12 +6619,9 @@ void EditBox::Render(float elapsedTime) noexcept
         if (i == 0)
         {
             it.second.mFontColor.Blend(state, elapsedTime);
-            mDialog.DrawSprite(it.second, mTextRegion, _NEAR_BUTTON_DEPTH);
         }
-        else
-        {
-            mDialog.DrawSprite(it.second, mBoarderRegions[i - 1], _NEAR_BUTTON_DEPTH);
-        }
+        
+        mDialog.DrawSprite(it.second, mSubRegions[i], _NEAR_BUTTON_DEPTH);
 
         ++i;
     }
@@ -6658,6 +6657,9 @@ void EditBox::UpdateCharRects() noexcept
 {
     NOEXCEPT_REGION_START
 
+    Rect rcScreen = mTextRegion;
+    auto dlgRect = mDialog.GetRegion();
+    OffsetRect(rcScreen, dlgRect.left - long(g_WndWidth / 2), dlgRect.bottom - long(g_WndHeight / 2));
 
     auto &element = mElements[0];
     auto textFlags = element.mTextFormatFlags;
@@ -6671,7 +6673,7 @@ void EditBox::UpdateCharRects() noexcept
     mCharacterRects.resize(mText.size());
 
     {
-        auto textRegionWidth = RectWidth(mTextRegion);
+        auto textRegionWidth = RectWidth(rcScreen);
         int lineWidth = 0;
 
         //get each line of text
@@ -6701,7 +6703,7 @@ void EditBox::UpdateCharRects() noexcept
 
         //Get the rects for each line
         unsigned charIndex = 0;
-        long currY = mTextRegion.top;
+        long currY = rcScreen.top;
         long lineXOffset = 0;
         for (unsigned int i = 0; i < textLines.size() + 1; ++i)
         {
@@ -6721,14 +6723,14 @@ void EditBox::UpdateCharRects() noexcept
 
             auto thisLine = textLines[i];
             auto lineWidth = font->mFontType->GetStringWidth(thisLine);
-            lineXOffset = 0;
+            lineXOffset = rcScreen.left;
 
 
 
             if (textFlags & GT_CENTER)
-                lineXOffset = static_cast<long>((static_cast<float>(textRegionWidth) / 2.0f) - (static_cast<float>(lineWidth) / 2.0f));
+                lineXOffset += static_cast<long>((static_cast<float>(textRegionWidth) / 2.0f) - (static_cast<float>(lineWidth) / 2.0f));
             else if (textFlags & GT_RIGHT)
-                lineXOffset = textRegionWidth - lineWidth;
+                lineXOffset += textRegionWidth - lineWidth;
             //else if(textFlags & GT_LEFT)
             //  lineXOffset = 0;
 
@@ -6737,11 +6739,11 @@ void EditBox::UpdateCharRects() noexcept
             for (unsigned int j = 0; j < thisLine.size(); ++j)
             {
                 auto thisCharRect = font->mFontType->GetCharRect(thisLine[j]);
-                auto thisCharWidth = RectWidth(thisCharRect);
-                OffsetRect(thisCharRect, lineXOffset, currY);
-                //SetRect(mCharacterRects[charIndex], lineXOffset, currY, lineXOffset + thisCharWidth, currY - leading);
+                OffsetRect(thisCharRect, lineXOffset, currY - fontHeight);
+
                 mCharacterRects[charIndex] = thisCharRect;
-                lineXOffset += thisCharWidth;
+
+                lineXOffset += font->mFontType->GetCharAdvance(thisLine[j]);
                 charIndex++;
             }
 

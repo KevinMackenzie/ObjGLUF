@@ -186,7 +186,7 @@ int main(void)
     (*editBox)->SetVerticalMargin(10);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
-    //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 500, 350, { 480 } });
+    //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 40, 350, { 20 } });
 
     /*dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
     dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 220, { 180 } }, true);
