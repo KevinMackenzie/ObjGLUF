@@ -6422,6 +6422,8 @@ EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataB
 
     mScrollBar = CreateScrollBar(dialog);
 
+    mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar));
+
     mTextDataBuffer->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
     mTextDataBuffer->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12 });
 }
@@ -6553,10 +6555,18 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 {
     NOEXCEPT_REGION_START
 
+    if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM))
+        return true;
+
     switch (msg)
     {
     case MB:
+    {
+        //get the character it hit
+        Value ch = PointToCharPos({ param1, param2 });
+        SetCaretPosition(ch);
         break;
+    }
     default:
         break;
     }
@@ -6575,6 +6585,7 @@ void EditBox::UpdateRects() noexcept
 
     mTextRegion = mRegion;
     InflateRect(mTextRegion, -static_cast<int32_t>(2 * mHorizontalMargin), -static_cast<int32_t>(2 * mVerticalMargin));
+    mTextRegion.right -= mSBWidth;
 
     mSubRegions[0] = mRegion;
     InflateRect(mSubRegions[0], -14, -14);
@@ -6587,6 +6598,11 @@ void EditBox::UpdateRects() noexcept
     SetRect(mSubRegions[7], mSubRegions[0].left, mSubRegions[0].bottom, mSubRegions[0].right, mRegion.bottom);
     SetRect(mSubRegions[8], mSubRegions[0].right, mSubRegions[0].bottom, mRegion.right, mRegion.bottom);
 
+    mScrollBar->SetRegion({ { mTextRegion.right }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
+    mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
+
+    //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
+    mScrollBar->UpdateRects();
 
     UpdateCharRects();
     
@@ -6627,9 +6643,109 @@ void EditBox::Render(float elapsedTime) noexcept
     }
 
     //draw the text
-    Text::EndText(mDialog.GetFont(mElements[0].mFontIndex)->mFontType, mTextDataBuffer, mElements[0].mFontColor.GetCurrent());
+    RenderText(elapsedTime);
+
+    //draw the caret
+    /*if (!mHideCaret)
+    {
+        mCaretColor.Blend(state, elapsedTime);
+
+        if (mCaretOn)
+        {
+            //get the caret rect
+            Rect selectedCharacterRect = 
+            Rect caretRect = { {} }
+            mDialog.DrawSprite(mElements[0], )
+        }
+    }*/
+
+    //TODO: anything for rendering text based on scroll bar position (possibly render everything, then maybe a new shader uniform? a mask rect?     
+
+    mScrollBar->Render(elapsedTime);
 
     NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::RenderText(float elapsedTime) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    auto& elemenet = mElements[0];
+
+    SHADERMANAGER.UseProgram(g_TextProgram);
+
+    //first uniform: model-view matrix
+    SHADERMANAGER.GLUniformMatrix4f(g_TextShaderLocations.ortho, Text::g_TextOrtho);
+
+    //second, the sampler
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mDialog.GetFont(elemenet.mFontIndex)->mFontType->mTexId);
+    SHADERMANAGER.GLUniform1i(g_TextShaderLocations.sampler, 0);
+
+
+    //third, the color
+    SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(elemenet.mFontColor.GetCurrent()));
+
+    //make sure to enable this with text
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+    mTextDataBuffer->DrawRange(mRenderOffset * 6, mRenderCount * 6);
+    //mTextDataBuffer->Draw();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+Value EditBox::PointToCharPos(const Point& pt)
+{
+    //first see if it intersects a character
+    for (unsigned int i = 0; i < mCharacterRects.size(); ++i)
+    {
+        auto thisRect = mCharacterRects[i];
+        if (PtInRect(thisRect, pt))
+        {
+            //see which side of the rect it is on
+            if (pt.x > thisRect.left + RectWidth(thisRect) / 2)
+            {
+                //left side:
+                return i;
+            }
+            else
+            {
+                //right side:
+                return i - 1;
+            }
+        }
+    }
+
+    //if it didn't hit a character, get the nearest character (TODO:)    
+
+    return -1;
+}
+
+//--------------------------------------------------------------------------------------
+Value EditBox::RenderTextToText(Value rndIndex)
+{
+    return -1;
+}
+
+Rect EditBox::CharPosToRect(Value charPos)
+{
+    //if it is the first position
+    /*if (charPos == -1)
+    {
+
+    }*/
+    return{ { 0 }, 0, 0, { 0 } };
+}
+
+//--------------------------------------------------------------------------------------
+Value EditBox::TextToRenderText(Value txtIndex)
+{
+    return -1;
 }
 
 //--------------------------------------------------------------------------------------
@@ -6648,6 +6764,8 @@ void EditBox::OnInit() noexcept
     NOEXCEPT_REGION_START
 
     Control::OnInit();
+
+    mScrollBar->OnInit();
 
     NOEXCEPT_REGION_END
 }
@@ -6676,7 +6794,11 @@ void EditBox::UpdateCharRects() noexcept
         auto textRegionWidth = RectWidth(rcScreen);
         int lineWidth = 0;
 
-        //get each line of text
+        /*
+        
+        Get Each Line of Text
+        
+        */
         for (unsigned int i = 0; i < mText.size(); ++i)
         {
             auto thisChar = mText[i];
@@ -6687,6 +6809,7 @@ void EditBox::UpdateCharRects() noexcept
             if (thisChar == '\n' || potentialNewLineWidth > textRegionWidth)
             {
                 textLines.push_back(L"");
+
                 lineWidth = 0;
 
                 if (thisChar == '\n')
@@ -6701,9 +6824,14 @@ void EditBox::UpdateCharRects() noexcept
             lineWidth += thisCharWidth;
         }
 
-        //Get the rects for each line
+
+        /*
+        
+        Get the Rects for each line
+        
+        */
         unsigned charIndex = 0;
-        long currY = rcScreen.top;
+        long currY = rcScreen.top + mScrollBar->GetTrackPos() * leading;
         long lineXOffset = 0;
         for (unsigned int i = 0; i < textLines.size() + 1; ++i)
         {
@@ -6753,11 +6881,36 @@ void EditBox::UpdateCharRects() noexcept
         }
     }
 
+    mScrollBar->SetTrackRange(0, textLines.size() - 1);
+
+
+    /*
+    
+    Get Rendering offset and count based on scroll bar position
+    
+    */
+    auto sbPos = mScrollBar->GetTrackPos();
+    auto lastLine = mScrollBar->GetPageSize() + sbPos;
+    mRenderOffset = 0;
+    mRenderCount = 0;
+    for (auto it = 0; it < textLines.size(); ++it)
+    {
+        if (it < sbPos)
+            mRenderOffset += textLines[it].size();
+        else if (it < lastLine)
+            mRenderCount += textLines[it].size();
+    }
+
+
+    /*
+    
+    Buffer data into OpenGL
+    
+    */
     GLVector<TextVertexStruct> textVertices = TextVertexStruct::MakeMany(mText.size() * 4);
     std::vector<glm::u32vec3> indices;
     indices.resize(mText.size() * 2);
 
-    //buffer the data into openGL
     float z = _NEAR_BUTTON_DEPTH;
     for (unsigned int i = 0; i < mText.size(); ++i)
     {

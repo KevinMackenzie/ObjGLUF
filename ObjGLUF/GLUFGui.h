@@ -404,7 +404,7 @@ public:
             this is designed to be called every update cycle to provide a smooth blend animation
     
     */
-	void        Blend(ControlState state, float elapsedTime, float rate = 6.0f);
+	void        Blend(ControlState state, float elapsedTime, float rate = 5.0f);
 
     /*
     SetCurrent
@@ -2856,6 +2856,8 @@ EditBox
         'mSBWidth': the width of the scroll bar
         'mUpdateRequired': whether or not an update of the rendering rects needs to be made this frame
         'mCharacterRects': the rects of each character
+        'mRenderOffset': the starting character to render text
+        'mRenderCount': the number of characters to render
         'mTextDataBuffer': the text box's openGL data buffer
 */
 class EditBox : public Control
@@ -2912,6 +2914,8 @@ protected:
     
     */
     std::vector<Rect> mCharacterRects;
+    GLuint mRenderOffset = 0;
+    GLuint mRenderCount = 0;
     VertexArrayPtr mTextDataBuffer;
 
     /*
@@ -2930,6 +2934,7 @@ protected:
 
     */
     Value PointToCharPos(const Point& pt);
+    Rect CharPosToRect(Value charPos);
     Value RenderTextToText(Value rndIndex);
     Value TextToRenderText(Value txtIndex);
 
@@ -2940,6 +2945,8 @@ protected:
     
     */
     virtual void UpdateCharRects() noexcept;
+
+    virtual void RenderText(float elpasedTime) noexcept;
 
 
 public:

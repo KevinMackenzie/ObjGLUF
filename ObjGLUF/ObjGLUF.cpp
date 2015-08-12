@@ -3263,12 +3263,6 @@ VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) 
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 
-		glGenBuffers(1, &mRangedIndexBuffer);
-        if (mRangedIndexBuffer == 0)
-        {
-            GLUF_ERROR("Failed to create ranged index buffer!");
-            GLUF_CRITICAL_EXCEPTION(MakeBufferException());
-        }
 	}
 }
 
@@ -3278,7 +3272,6 @@ VertexArrayBase::~VertexArrayBase()
 	BindVertexArray();
 
 	glDeleteBuffers(1, &mIndexBuffer);
-    glDeleteBuffers(1, &mRangedIndexBuffer);
 
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
@@ -3297,7 +3290,6 @@ VertexArrayBase::VertexArrayBase(VertexArrayBase&& other)
     mPrimitiveType      = other.mPrimitiveType;
     mAttribInfos        = std::move(other.mAttribInfos);
     mIndexBuffer        = other.mIndexBuffer;
-    mRangedIndexBuffer  = other.mRangedIndexBuffer;
     mIndexCount         = other.mIndexCount;
     mTempVAOId          = other.mTempVAOId;//likely will be 0 anyways
 
@@ -3309,7 +3301,6 @@ VertexArrayBase::VertexArrayBase(VertexArrayBase&& other)
     other.mPrimitiveType        = GL_TRIANGLES;
     //other.mAttribInfos.clear();
     other.mIndexBuffer          = 0;
-    other.mRangedIndexBuffer    = 0;
     other.mIndexCount           = 0;
     other.mTempVAOId            = 0;//likely will be 0 anyways
 }
@@ -3324,7 +3315,6 @@ VertexArrayBase& VertexArrayBase::operator=(VertexArrayBase&& other)
     mPrimitiveType = other.mPrimitiveType;
     mAttribInfos = std::move(other.mAttribInfos);
     mIndexBuffer = other.mIndexBuffer;
-    mRangedIndexBuffer = other.mRangedIndexBuffer;
     mIndexCount = other.mIndexCount;
     mTempVAOId = other.mTempVAOId;//likely will be 0 anyways
 
@@ -3336,7 +3326,6 @@ VertexArrayBase& VertexArrayBase::operator=(VertexArrayBase&& other)
     other.mPrimitiveType = GL_TRIANGLES;
     //other.mAttribInfos.clear();
     other.mIndexBuffer = 0;
-    other.mRangedIndexBuffer = 0;
     other.mIndexCount = 0;
     other.mTempVAOId = 0;//likely will be 0 anyways
 
@@ -3459,15 +3448,8 @@ void VertexArrayBase::DrawRange(GLuint start, GLuint count)
 
     if (mIndexBuffer != 0)
     {
-        //copy the range over an draw
-        glBindBuffer(GL_COPY_READ_BUFFER, mIndexBuffer);
-        glBindBuffer(GL_COPY_WRITE_BUFFER, mRangedIndexBuffer);
-
-        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, sizeof(GLuint) * start, 0, sizeof(GLuint) * count);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mRangedIndexBuffer);
-        glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);//reset to the index buffer, because it is more likely to be used than the range index buffer
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+        glDrawElements(mPrimitiveType, count, GL_UNSIGNED_INT, static_cast<GLuint*>(nullptr) + start);
     }
     else
     {

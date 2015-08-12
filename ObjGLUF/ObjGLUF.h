@@ -1443,7 +1443,6 @@ protected:
 	std::map<AttribLoc, VertexAttribInfo> mAttribInfos;
 
 	GLuint mIndexBuffer = 0;
-	GLuint mRangedIndexBuffer = 0;
 	GLuint mIndexCount  = 0;
 
     GLuint mTempVAOId = 0;
