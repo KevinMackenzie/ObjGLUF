@@ -960,7 +960,7 @@ void BlendColor::SetAll(const Color& color)
 {
     for (unsigned int i = STATE_NORMAL; i <= STATE_HIDDEN; ++i)
     {
-        mStates[STATE_NORMAL] = color;
+        mStates[static_cast<ControlState>(i)] = color;
     }
 
 	SetCurrent(color);
@@ -2194,10 +2194,12 @@ void Dialog::RequestFocus(ControlPtr& control)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::DrawRect(const Rect& rect, const Color& color)
+void Dialog::DrawRect(const Rect& rect, const Color& color, bool transform)
 {
 	Rect rcScreen = rect;
-	OffsetRect(rcScreen, mRegion.x - long(g_WndWidth / 2), mCaptionHeight + mRegion.y - long(g_WndHeight / 2));
+
+    if (transform)
+        ScreenSpaceToGLSpace(rcScreen);
 
 	//if (m_bCaption)
 	//	OffsetRect(rcScreen, 0, m_nCaptionHeight);
@@ -2396,6 +2398,17 @@ void Dialog::FocusDefaultControl() noexcept
     }
 
     NOEXCEPT_REGION_END
+}
+
+void Dialog::ScreenSpaceToGLSpace(Rect& rc) noexcept
+{
+    OffsetRect(rc, mRegion.left - long(g_WndWidth / 2), mRegion.bottom - long(g_WndHeight / 2));
+}
+
+void Dialog::ScreenSpaceToGLSpace(Point& pt) noexcept
+{
+    pt.x += mRegion.left - long(g_WndWidth / 2);
+    pt.y += mRegion.bottom - long(g_WndHeight / 2);
 }
 
 
@@ -3244,6 +3257,10 @@ Control::Control(Dialog& dialog) : mDialog(dialog)
     mRegion = { { 0 }, 0, 0, { 0 } };
 }
 
+FontNodePtr Control::GetElementFont(ElementIndex index)
+{
+    return mDialog.GetFont(mElements[index].mFontIndex);
+}
 
 //--------------------------------------------------------------------------------------
 Control::~Control()
@@ -6426,6 +6443,10 @@ EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataB
 
     mTextDataBuffer->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
     mTextDataBuffer->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12 });
+
+    mCaretColor.SetAll({ 0, 0, 0, 255 });
+    mCaretColor.SetState(STATE_DISABLED, { 0, 0, 0, 0 });
+    mCaretColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
 }
 
 //--------------------------------------------------------------------------------------
@@ -6562,9 +6583,14 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     {
     case MB:
     {
-        //get the character it hit
-        Value ch = PointToCharPos({ param1, param2 });
-        SetCaretPosition(ch);
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT && param2 == GLFW_RELEASE)
+        {
+            //get the character it hit
+            auto mousePos = mDialog.GetMousePositionDialogSpace();
+            Value ch = PointToCharPos(mousePos);
+            SetCaretPosition(ch);
+        }
+
         break;
     }
     default:
@@ -6646,17 +6672,32 @@ void EditBox::Render(float elapsedTime) noexcept
     RenderText(elapsedTime);
 
     //draw the caret
-    /*if (!mHideCaret)
+    if (!mHideCaret)
     {
-        mCaretColor.Blend(state, elapsedTime);
 
-        if (mCaretOn)
+        if (mCaretOn && ShouldRenderCaret())
         {
+            mCaretColor.Blend(state, elapsedTime, 100.0f);
+
             //get the caret rect
-            Rect selectedCharacterRect = 
-            Rect caretRect = { {} }
-            mDialog.DrawSprite(mElements[0], )
+            Rect caretRect = CharPosToRect(mCaretPos);
+            mDialog.DrawRect(caretRect, mCaretColor.GetCurrent(), false);
+            //mDialog.DrawRect(mCharacterBBs[mCaretPos == -1 ? 0 : mCaretPos], { 255, 0, 0, 128 }, false);
         }
+
+        if (GetTime() - mPreviousBlinkTime >= mBlinkPeriod)
+        {
+            bFlip(mCaretOn);
+            mPreviousBlinkTime = GetTime();
+        }
+    }
+
+    /*unsigned int color = 0x80000000;
+    for (auto it : mCharacterBBs)
+    {
+        mDialog.DrawRect(it, *reinterpret_cast<Color*>(&color), false);
+
+        color += 0x0000000F;
     }*/
 
     //TODO: anything for rendering text based on scroll bar position (possibly render everything, then maybe a new shader uniform? a mask rect?     
@@ -6699,16 +6740,22 @@ void EditBox::RenderText(float elapsedTime) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-Value EditBox::PointToCharPos(const Point& pt)
+Value EditBox::PointToCharPos(const Point& pt) noexcept
 {
+    NOEXCEPT_REGION_START
+
+    //convert the point into the right space
+    Point newPt = pt;
+    mDialog.ScreenSpaceToGLSpace(newPt);
+
     //first see if it intersects a character
-    for (unsigned int i = 0; i < mCharacterRects.size(); ++i)
+    for (unsigned int i = 0; i < mCharacterBBs.size(); ++i)
     {
-        auto thisRect = mCharacterRects[i];
-        if (PtInRect(thisRect, pt))
+        auto thisRect = mCharacterBBs[i];
+        if (PtInRect(thisRect, newPt))
         {
             //see which side of the rect it is on
-            if (pt.x > thisRect.left + RectWidth(thisRect) / 2)
+            if (newPt.x > thisRect.left + RectWidth(thisRect) / 2)
             {
                 //left side:
                 return i;
@@ -6723,7 +6770,10 @@ Value EditBox::PointToCharPos(const Point& pt)
 
     //if it didn't hit a character, get the nearest character (TODO:)    
 
+    NOEXCEPT_REGION_END
+
     return -1;
+
 }
 
 //--------------------------------------------------------------------------------------
@@ -6732,14 +6782,46 @@ Value EditBox::RenderTextToText(Value rndIndex)
     return -1;
 }
 
-Rect EditBox::CharPosToRect(Value charPos)
+//--------------------------------------------------------------------------------------
+Rect EditBox::CharPosToRect(Value charPos) noexcept
 {
-    //if it is the first position
-    /*if (charPos == -1)
-    {
+    NOEXCEPT_REGION_START
 
-    }*/
-    return{ { 0 }, 0, 0, { 0 } };
+    charPos = glm::clamp(charPos, -1, static_cast<Value>(mCharacterBBs.size() - 1));
+
+    //if it is the first position
+    if (charPos == -1)
+    {
+        auto firstRect = mCharacterBBs[0];
+        return{ { firstRect.left - static_cast<long>(mCaretSize) }, static_cast<long>(mDialog.GetFont(mElements[0].mFontIndex)->mFontType->mHeight) + firstRect.y, firstRect.left, { firstRect.y } };
+    }
+
+    auto thisRect = mCharacterBBs[charPos];
+    thisRect.right = mCharacterRects[charPos].right;
+    return{ { thisRect.right }, static_cast<long>(GetElementFont(0)->mFontType->mHeight) + thisRect.y, thisRect.right + static_cast<long>(mCaretSize), { thisRect.y } };
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+bool EditBox::ShouldRenderCaret() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    auto caretPosRect = CharPosToRect(mCaretPos);
+    auto textRenderRect = mTextRegion;
+    mDialog.ScreenSpaceToGLSpace(textRenderRect);
+
+
+    //is the caret within the visible window
+    if (PtInRect(textRenderRect, { caretPosRect.x, caretPosRect.y }) ||
+        PtInRect(textRenderRect, { caretPosRect.right, caretPosRect.top }))
+        return true;
+
+
+    return false;
+
+    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -6777,7 +6859,7 @@ void EditBox::UpdateCharRects() noexcept
 
     Rect rcScreen = mTextRegion;
     auto dlgRect = mDialog.GetRegion();
-    OffsetRect(rcScreen, dlgRect.left - long(g_WndWidth / 2), dlgRect.bottom - long(g_WndHeight / 2));
+    mDialog.ScreenSpaceToGLSpace(rcScreen);
 
     auto &element = mElements[0];
     auto textFlags = element.mTextFormatFlags;
@@ -6789,6 +6871,7 @@ void EditBox::UpdateCharRects() noexcept
     std::vector<bool> whichLinesCausedByNewlines;
 
     mCharacterRects.resize(mText.size());
+    mCharacterBBs.resize(mText.size());
 
     {
         auto textRegionWidth = RectWidth(rcScreen);
@@ -6841,6 +6924,7 @@ void EditBox::UpdateCharRects() noexcept
                 if (whichLinesCausedByNewlines[i])
                 {
                     SetRect(mCharacterRects[charIndex], lineXOffset - mHorizontalMargin, currY, lineXOffset, currY - leading);
+                    mCharacterBBs[charIndex] = mCharacterRects[charIndex];
                     charIndex++;//add one at the end of each line
                 }
             }
@@ -6870,6 +6954,9 @@ void EditBox::UpdateCharRects() noexcept
                 OffsetRect(thisCharRect, lineXOffset, currY - fontHeight);
 
                 mCharacterRects[charIndex] = thisCharRect;
+
+                long left = j != 0 ? mCharacterBBs[charIndex - 1].right : thisCharRect.left;
+                SetRect(mCharacterBBs[charIndex], left, currY, left + font->mFontType->GetCharAdvance(thisLine[j]), currY - fontHeight);
 
                 lineXOffset += font->mFontType->GetCharAdvance(thisLine[j]);
                 charIndex++;

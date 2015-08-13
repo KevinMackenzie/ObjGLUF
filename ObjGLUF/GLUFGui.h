@@ -878,12 +878,13 @@ public:
             'text': the text to draw
             'shadow': should text have shadow on it
             'hardRect': should the text be bound completely to the rect
+            'transform': should the rect be transformed openGL space from screen space
 
         Throws:
             'std::invalid_argument' if 'elemement' == nullptr in _DEBUG
 
     */
-	void DrawRect(const Rect& rect, const Color& color);
+	void DrawRect(const Rect& rect, const Color& color, bool transform = true);
 	//void DrawPolyLine(Point* apPoints, uint32_t nNumPoints, Color color);
 	void DrawSprite(const Element& element, const Rect& rect, float depth, bool textured = true);
     void DrawText(const std::wstring& text, const Element& element, const Rect& rect, bool shadow = false, bool hardRect = false);
@@ -1094,6 +1095,19 @@ public:
             no-throw guarantee
     */
 	void FocusDefaultControl() noexcept;
+
+    /*
+    ScreenSpaceToGLSpace
+    
+        Note:
+            Converts screen space rect to a openGL space rect
+
+        Parameters:
+            'rc': the rect to convert
+    
+    */
+    void ScreenSpaceToGLSpace(Rect& rc) noexcept;
+    void ScreenSpaceToGLSpace(Point& pt) noexcept;
 
 
 private:
@@ -1609,6 +1623,8 @@ protected:
 
     //use a map, because there may be gaps in indices
     std::map<ElementIndex, Element> mElements;
+
+    FontNodePtr GetElementFont(ElementIndex index);
 
 
 public:
@@ -2855,7 +2871,7 @@ EditBox
         'mScrollBar': the scroll bar, visible in 'multiline', invisible otherwise
         'mSBWidth': the width of the scroll bar
         'mUpdateRequired': whether or not an update of the rendering rects needs to be made this frame
-        'mCharacterRects': the rects of each character
+        'mCharacterBBs': the bounding boxes of each character
         'mRenderOffset': the starting character to render text
         'mRenderCount': the number of characters to render
         'mTextDataBuffer': the text box's openGL data buffer
@@ -2879,6 +2895,7 @@ protected:
 
     double mBlinkPeriod = 0.5;
     bool mHideCaret = false;
+    Size mCaretSize = 2;
     Value mCaretPos = -1;//the space behind the first character
     bool mInsertMode = true;
     Value mSelStart = -1;//symbolizes nothing to be selected
@@ -2913,6 +2930,7 @@ protected:
     Render Data
     
     */
+    std::vector<Rect> mCharacterBBs;
     std::vector<Rect> mCharacterRects;
     GLuint mRenderOffset = 0;
     GLuint mRenderCount = 0;
@@ -2933,10 +2951,11 @@ protected:
     Text Control Methods
 
     */
-    Value PointToCharPos(const Point& pt);
-    Rect CharPosToRect(Value charPos);
+    Value PointToCharPos(const Point& pt) noexcept;
+    Rect CharPosToRect(Value charPos) noexcept;
     Value RenderTextToText(Value rndIndex);
     Value TextToRenderText(Value txtIndex);
+    bool ShouldRenderCaret() noexcept;
 
 
     /*

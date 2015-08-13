@@ -445,6 +445,11 @@ inline bool operator !=(const Rect& rc0, const Rect& rc1)
     return !(rc0 == rc1);
 }
 
+inline void bFlip(bool& b)
+{
+    b = !b;
+}
+
 OBJGLUF_API bool		PtInRect(const Rect& rect, const Point& pt);
 OBJGLUF_API void		SetRectEmpty(Rect& rect);
 OBJGLUF_API void		SetRect(Rect& rect, long left, long top, long right, long bottom);
