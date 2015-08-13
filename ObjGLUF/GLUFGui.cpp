@@ -6682,7 +6682,6 @@ void EditBox::Render(float elapsedTime) noexcept
             //get the caret rect
             Rect caretRect = CharPosToRect(mCaretPos);
             mDialog.DrawRect(caretRect, mCaretColor.GetCurrent(), false);
-            //mDialog.DrawRect(mCharacterBBs[mCaretPos == -1 ? 0 : mCaretPos], { 255, 0, 0, 128 }, false);
         }
 
         if (GetTime() - mPreviousBlinkTime >= mBlinkPeriod)
@@ -6692,15 +6691,14 @@ void EditBox::Render(float elapsedTime) noexcept
         }
     }
 
+    //debug rendering
     /*unsigned int color = 0x80000000;
     for (auto it : mCharacterBBs)
     {
         mDialog.DrawRect(it, *reinterpret_cast<Color*>(&color), false);
 
         color += 0x0000000F;
-    }*/
-
-    //TODO: anything for rendering text based on scroll bar position (possibly render everything, then maybe a new shader uniform? a mask rect?     
+    }*/   
 
     mScrollBar->Render(elapsedTime);
 
@@ -6755,7 +6753,7 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
         if (PtInRect(thisRect, newPt))
         {
             //see which side of the rect it is on
-            if (newPt.x > thisRect.left + RectWidth(thisRect) / 2)
+            if (newPt.x > thisRect.left + RectWidth(thisRect) / 2 || !mInsertMode)
             {
                 //left side:
                 return i;
@@ -6793,12 +6791,25 @@ Rect EditBox::CharPosToRect(Value charPos) noexcept
     if (charPos == -1)
     {
         auto firstRect = mCharacterBBs[0];
-        return{ { firstRect.left - static_cast<long>(mCaretSize) }, static_cast<long>(mDialog.GetFont(mElements[0].mFontIndex)->mFontType->mHeight) + firstRect.y, firstRect.left, { firstRect.y } };
+        
+        if (mInsertMode)
+        {
+            firstRect.right = firstRect.left;
+            firstRect.left -= mCaretSize;
+        }
+
+        return firstRect;
     }
 
     auto thisRect = mCharacterBBs[charPos];
-    thisRect.right = mCharacterRects[charPos].right;
-    return{ { thisRect.right }, static_cast<long>(GetElementFont(0)->mFontType->mHeight) + thisRect.y, thisRect.right + static_cast<long>(mCaretSize), { thisRect.y } };
+
+    if (mInsertMode)
+    {
+        thisRect.right = mCharacterRects[charPos].right + mCaretSize;
+        thisRect.left = thisRect.right - mCaretSize;
+    }
+
+    return thisRect;
 
     NOEXCEPT_REGION_END
 }
