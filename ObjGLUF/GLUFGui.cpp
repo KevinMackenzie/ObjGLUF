@@ -6576,22 +6576,37 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 {
     NOEXCEPT_REGION_START
 
-    if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM))
+    auto mousePos = mDialog.GetMousePositionDialogSpace();
+
+    if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/)
         return true;
 
     switch (msg)
     {
     case MB:
     {
-        if (param1 == GLFW_MOUSE_BUTTON_LEFT && param2 == GLFW_RELEASE)
+        //account for the mouse being pressed first, so this does not get collatoral events from scroll bar when the user presses over the scroll bar, but releases off of it
+        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            //get the character it hit
-            auto mousePos = mDialog.GetMousePositionDialogSpace();
-            Value ch = PointToCharPos(mousePos);
-            SetCaretPosition(ch);
+            if (param2 == GLFW_RELEASE)
+            {
+                //is the scroll bar pressed
+                if (mScrollBar->IsMouseOver())
+                {
+                    break;
+                }
+
+                //get the character it hit
+                Value ch = PointToCharPos(mousePos);
+                SetCaretPosition(ch);
+            }
         }
 
         break;
+    }
+    case CURSOR_POS:
+    {
+
     }
     default:
         break;
@@ -6654,7 +6669,7 @@ void EditBox::Render(float elapsedTime) noexcept
         state = STATE_FOCUS;
     
     unsigned int i = 0;
-    for (auto it : mElements)
+    for (auto& it : mElements)
     {
         it.second.mTextureColor.Blend(state, elapsedTime);
 
@@ -6826,7 +6841,7 @@ bool EditBox::ShouldRenderCaret() noexcept
 
     //is the caret within the visible window
     if (PtInRect(textRenderRect, { caretPosRect.x, caretPosRect.y }) ||
-        PtInRect(textRenderRect, { caretPosRect.right, caretPosRect.top }))
+        PtInRect(textRenderRect, { caretPosRect.right, caretPosRect.y }))
         return true;
 
 
@@ -6847,6 +6862,40 @@ void EditBox::OnFocusIn() noexcept
     NOEXCEPT_REGION_START
 
     Control::OnFocusIn();
+    mScrollBar->OnFocusIn();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::OnFocusOut() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    Control::OnFocusOut();
+    mScrollBar->OnFocusOut();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::OnMouseEnter() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    Control::OnMouseEnter();
+    mScrollBar->OnMouseEnter();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::OnMouseLeave() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    Control::OnMouseLeave();
+    mScrollBar->OnMouseLeave();
 
     NOEXCEPT_REGION_END
 }

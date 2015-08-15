@@ -1702,6 +1702,8 @@ public:
     void			SetHotkey(KeyId hotkey) noexcept		{ mHotkey = hotkey;                         }
     void			SetID(int ID) noexcept					    { mID = ID;                                 }
 
+    bool IsMouseOver()  const noexcept   { return mMouseOver; }
+    bool IsFocused()    const noexcept   { return mHasFocus; }
 
     /*
     EventHandlers
@@ -3028,7 +3030,10 @@ public:
 	virtual void UpdateRects() noexcept override;
 	virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
 	virtual void Render(float elapsedTime) noexcept override;
-	virtual void OnFocusIn() noexcept override;
+    virtual void OnFocusIn() noexcept override;
+    virtual void OnFocusOut() noexcept override;
+    virtual void OnMouseEnter() noexcept override;
+    virtual void OnMouseLeave() noexcept override;
     virtual void OnInit() override;
 
 };

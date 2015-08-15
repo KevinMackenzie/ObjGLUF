@@ -184,7 +184,7 @@ int main(void)
     dlg->AddEditBox(0, str, { { 50 }, 500, 550, { 50 } }, Unicode, GT_LEFT | GT_TOP | GT_MULTI_LINE, false, editBox);
     (*editBox)->SetHorizontalMargin(10);
     (*editBox)->SetVerticalMargin(10);
-    (*editBox)->SetInsertMode(false);
+    //(*editBox)->SetInsertMode(false);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
     //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 40, 350, { 20 } });
