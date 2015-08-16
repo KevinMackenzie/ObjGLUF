@@ -2900,7 +2900,7 @@ protected:
     Size mCaretSize = 2;
     Value mCaretPos = -1;//the space behind the first character
     bool mInsertMode = true;
-    Value mSelStart = -1;//symbolizes nothing to be selected
+    Value mSelStart = -2;//symbolizes nothing to be selected
     Size mHorizontalMargin;
     Size mVerticalMargin;
 

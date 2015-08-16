@@ -6447,6 +6447,12 @@ EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataB
     mCaretColor.SetAll({ 0, 0, 0, 255 });
     mCaretColor.SetState(STATE_DISABLED, { 0, 0, 0, 0 });
     mCaretColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+
+    mSelBkColor.SetAll({ 0, 0, 200, 128 });
+    mSelBkColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+
+    mSelTextColor.SetAll({ 0, 0, 0, 255 });
+    mSelTextColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
 }
 
 //--------------------------------------------------------------------------------------
@@ -6585,20 +6591,27 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     {
     case MB:
     {
-        //account for the mouse being pressed first, so this does not get collatoral events from scroll bar when the user presses over the scroll bar, but releases off of it
         if (param1 == GLFW_MOUSE_BUTTON_LEFT)
         {
-            if (param2 == GLFW_RELEASE)
+            if (param2 == GLFW_PRESS)
+            {
+                mSelStart = -2;
+                SetCaretPosition(PointToCharPos(mousePos));
+                mMouseDrag = true;
+            }
+            else if (param2 == GLFW_RELEASE)
             {
                 //is the scroll bar pressed
-                if (mScrollBar->IsMouseOver())
+                /*if (mScrollBar->IsPressed())
                 {
                     break;
-                }
+                }*/
 
-                //get the character it hit
-                Value ch = PointToCharPos(mousePos);
-                SetCaretPosition(ch);
+                //if they occupy the same index, no sense in rendering a blank selection region
+                if (mSelStart == mCaretPos)
+                    mSelStart = -2;
+
+                mMouseDrag = false;
             }
         }
 
@@ -6606,6 +6619,20 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     }
     case CURSOR_POS:
     {
+        //if there is a selection, make sure to update which parts are selected
+        if (mMouseDrag)
+        {
+            if (mSelStart == -2)
+            {
+                mSelStart = PointToCharPos(mousePos);
+                SetCaretPosition(mSelStart);
+            }
+            else
+            {
+                SetCaretPosition(PointToCharPos(mousePos));
+            }
+
+        }
 
     }
     default:
@@ -6683,8 +6710,42 @@ void EditBox::Render(float elapsedTime) noexcept
         ++i;
     }
 
+    mSelBkColor.Blend(state, elapsedTime);
+    mSelTextColor.Blend(state, elapsedTime);
+    mCaretColor.Blend(state, elapsedTime);
+
     //draw the text
     RenderText(elapsedTime);
+
+    //draw the selected region
+    if (mSelStart != -2 && mCharacterBBs.size() > 0)
+    {
+
+        Value begin = 0;
+        Value end = 0;
+        if (mCaretPos > mSelStart)
+        {
+            begin = mSelStart;
+            end = mCaretPos;
+        }
+        else if (mCaretPos < mSelStart)
+        {
+            begin = mCaretPos;
+            end = mSelStart;
+        }
+
+        begin++;
+
+        begin = glm::clamp(begin, static_cast<Value>(mRenderOffset), static_cast<Value>(mRenderOffset + mRenderCount));
+        end = glm::clamp(end, static_cast<Value>(mRenderOffset), static_cast<Value>(mRenderOffset + mRenderCount));
+
+        //if caret position and selection start are equal, it won't render anything
+
+        for (int32_t i = begin; i <= end; ++i)
+        {
+            mDialog.DrawRect(mCharacterBBs[i], mSelBkColor.GetCurrent(), false);
+        }
+    }
 
     //draw the caret
     if (!mHideCaret)
@@ -6692,8 +6753,6 @@ void EditBox::Render(float elapsedTime) noexcept
 
         if (mCaretOn && ShouldRenderCaret())
         {
-            mCaretColor.Blend(state, elapsedTime, 100.0f);
-
             //get the caret rect
             Rect caretRect = CharPosToRect(mCaretPos);
             mDialog.DrawRect(caretRect, mCaretColor.GetCurrent(), false);
@@ -6725,7 +6784,7 @@ void EditBox::RenderText(float elapsedTime) noexcept
 {
     NOEXCEPT_REGION_START
 
-    auto& elemenet = mElements[0];
+    auto& element = mElements[0];
 
     SHADERMANAGER.UseProgram(g_TextProgram);
 
@@ -6734,20 +6793,80 @@ void EditBox::RenderText(float elapsedTime) noexcept
 
     //second, the sampler
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mDialog.GetFont(elemenet.mFontIndex)->mFontType->mTexId);
+    glBindTexture(GL_TEXTURE_2D, mDialog.GetFont(element.mFontIndex)->mFontType->mTexId);
     SHADERMANAGER.GLUniform1i(g_TextShaderLocations.sampler, 0);
 
 
     //third, the color
-    SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(elemenet.mFontColor.GetCurrent()));
+    SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(element.mFontColor.GetCurrent()));
 
     //make sure to enable this with text
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    if (mSelStart == -2 || mSelStart == mCaretPos)
+    {
+        mTextDataBuffer->DrawRange(mRenderOffset * 6, mRenderCount * 6);
+    }
+    else
+    {
+        //get the begin and end of the selected text region
+        GLuint begin = 6;
+        GLuint end = 6;
+        
+        if (mSelStart > mCaretPos)
+        {
+            begin *= mCaretPos;
+            end *= mSelStart;
+        }
+        else if (mSelStart < mCaretPos)
+        {
+            begin *= mSelStart;
+            end *= mCaretPos;
+        }
 
-    mTextDataBuffer->DrawRange(mRenderOffset * 6, mRenderCount * 6);
-    //mTextDataBuffer->Draw();
+        //account for the one character offset to the left of the 'beginning' of the selection
+        begin += 6;
+
+        //get the values for the start and end of the preselection, the selection, and the postselection regions
+
+        GLuint rndOffsetIndex = mRenderOffset * 6;
+        GLuint rndEndIndex = rndOffsetIndex + mRenderCount * 6;
+
+        GLuint selectionStartIndex = glm::clamp(begin, rndOffsetIndex, rndEndIndex);
+        GLuint selectionSize = glm::clamp(end, rndOffsetIndex, rndEndIndex) - selectionStartIndex;
+
+        GLuint preSelectionStartIndex = rndOffsetIndex;
+        GLuint preSelectionSize = selectionStartIndex - preSelectionStartIndex;
+
+        GLuint postSelectionStartIndex = glm::clamp(selectionStartIndex + selectionSize, rndOffsetIndex, rndEndIndex);
+        GLuint postSelectionSize = rndEndIndex - postSelectionStartIndex;
+
+
+        /*
+        
+        The Pre-selection region
+        
+        */
+        //SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(elemenet.mFontColor.GetCurrent()));
+        mTextDataBuffer->DrawRange(preSelectionStartIndex, preSelectionSize);
+
+        /*
+        
+        The Selection Region
+        
+        */
+        SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(mSelTextColor.GetCurrent()));
+        mTextDataBuffer->DrawRange(selectionStartIndex, selectionSize);
+
+        /*
+        
+        The Post-Selection Region
+        
+        */
+        SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(element.mFontColor.GetCurrent()));
+        mTextDataBuffer->DrawRange(postSelectionStartIndex, postSelectionSize);
+    }
 
     NOEXCEPT_REGION_END
 }
@@ -7016,7 +7135,7 @@ void EditBox::UpdateCharRects() noexcept
                 mCharacterRects[charIndex] = thisCharRect;
 
                 long left = j != 0 ? mCharacterBBs[charIndex - 1].right : thisCharRect.left;
-                SetRect(mCharacterBBs[charIndex], left, currY, left + font->mFontType->GetCharAdvance(thisLine[j]), currY - fontHeight);
+                SetRect(mCharacterBBs[charIndex], left, currY, left + font->mFontType->GetCharAdvance(thisLine[j]), currY - leading);
 
                 lineXOffset += font->mFontType->GetCharAdvance(thisLine[j]);
                 charIndex++;
