@@ -181,7 +181,7 @@ int main(void)
 		std::istreambuf_iterator<wchar_t>());
 
     std::shared_ptr<std::shared_ptr<EditBox>> editBox = std::make_shared<std::shared_ptr<EditBox>>();
-    dlg->AddEditBox(0, str, { { 50 }, 500, 550, { 50 } }, Unicode, GT_LEFT | GT_TOP | GT_MULTI_LINE, false, editBox);
+    dlg->AddEditBox(0, str, { { 50 }, 500, 550, { 50 } }, Unicode, GT_LEFT | GT_TOP/* | GT_MULTI_LINE*/, false, editBox);
     (*editBox)->SetHorizontalMargin(10);
     (*editBox)->SetVerticalMargin(10);
     //(*editBox)->SetInsertMode(false);

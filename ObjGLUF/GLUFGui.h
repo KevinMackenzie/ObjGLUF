@@ -2966,9 +2966,31 @@ protected:
     
     */
     virtual void UpdateCharRects() noexcept;
-
+    virtual void BufferCharRects() noexcept;
     virtual void RenderText(float elpasedTime) noexcept;
 
+
+    /*
+    
+    Private Fields
+    
+    
+    */
+    using UpdateRectsPtr = void(EditBox::*)() noexcept;
+    using UpdateCharRectsPtr = void(EditBox::*)() noexcept;
+    using RenderPtr = void(EditBox::*)(float) noexcept;
+    UpdateRectsPtr mUpdateRectsFunction;
+    UpdateCharRectsPtr mUpdateCharRectsFunction;
+    RenderPtr mRenderFunction;
+
+    virtual void RenderMultiline(float elapsedTime) noexcept;
+    virtual void RenderSingleline(float elapsedTime) noexcept;
+
+    virtual void UpdateRectsMultiline() noexcept;
+    virtual void UpdateRectsSingleline() noexcept;
+
+    virtual void UpdateCharRectsMultiline() noexcept;
+    virtual void UpdateCharRectsSingleline() noexcept;
 
 public:
 	virtual         ~EditBox();

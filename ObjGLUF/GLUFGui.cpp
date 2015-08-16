@@ -6433,7 +6433,7 @@ Edit Box Functions
 */
 
 //--------------------------------------------------------------------------------------
-EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true))
+EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true)), mMultiline(isMultiline)
 {
     mType = CONTROL_EDITBOX;
 
@@ -6453,6 +6453,19 @@ EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataB
 
     mSelTextColor.SetAll({ 0, 0, 0, 255 });
     mSelTextColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+
+    if (isMultiline)
+    {
+        mUpdateRectsFunction = &EditBox::UpdateRectsMultiline;
+        mUpdateCharRectsFunction = &EditBox::UpdateCharRectsMultiline;
+        mRenderFunction = &EditBox::RenderMultiline;
+    }
+    else
+    {
+        mUpdateRectsFunction = &EditBox::UpdateRectsSingleline;
+        mUpdateCharRectsFunction = &EditBox::UpdateCharRectsSingleline;
+        mRenderFunction = &EditBox::RenderSingleline;
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -6633,7 +6646,18 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             }
 
         }
-
+        break;
+    }
+    case SCROLL:
+    {
+        if (mMultiline)
+        {
+            mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        }
+        else
+        {
+            mScrollBar->Scroll(param2 > 0 ? 1 : -1);
+        }
     }
     default:
         break;
@@ -6645,15 +6669,40 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 }
 
 //--------------------------------------------------------------------------------------
+void EditBox::UpdateRectsMultiline() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mTextRegion.right -= mSBWidth;
+
+    mScrollBar->SetRegion({ { mTextRegion.right }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
+    mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
+
+    //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
+    mScrollBar->UpdateRects();
+
+    
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::UpdateRectsSingleline() noexcept
+{
+    NOEXCEPT_REGION_START
+    
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
 void EditBox::UpdateRects() noexcept
 {
     NOEXCEPT_REGION_START
+
 
     Control::UpdateRects();
 
     mTextRegion = mRegion;
     InflateRect(mTextRegion, -static_cast<int32_t>(2 * mHorizontalMargin), -static_cast<int32_t>(2 * mVerticalMargin));
-    mTextRegion.right -= mSBWidth;
 
     mSubRegions[0] = mRegion;
     InflateRect(mSubRegions[0], -14, -14);
@@ -6666,14 +6715,37 @@ void EditBox::UpdateRects() noexcept
     SetRect(mSubRegions[7], mSubRegions[0].left, mSubRegions[0].bottom, mSubRegions[0].right, mRegion.bottom);
     SetRect(mSubRegions[8], mSubRegions[0].right, mSubRegions[0].bottom, mRegion.right, mRegion.bottom);
 
-    mScrollBar->SetRegion({ { mTextRegion.right }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
-    mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
-
-    //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
-    mScrollBar->UpdateRects();
+    (this->*mUpdateRectsFunction)();
 
     UpdateCharRects();
-    
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::RenderMultiline(float elapsedTime) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    //debug rendering
+    /*unsigned int color = 0x80000000;
+    for (auto it : mCharacterBBs)
+    {
+        mDialog.DrawRect(it, *reinterpret_cast<Color*>(&color), false);
+
+        color += 0x0000000F;
+    }*/   
+
+    mScrollBar->Render(elapsedTime);
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::RenderSingleline(float elapsedTime) noexcept
+{
+    NOEXCEPT_REGION_START
+
     NOEXCEPT_REGION_END
 }
 
@@ -6694,7 +6766,7 @@ void EditBox::Render(float elapsedTime) noexcept
         state = STATE_MOUSEOVER;
     else if (mHasFocus)
         state = STATE_FOCUS;
-    
+
     unsigned int i = 0;
     for (auto& it : mElements)
     {
@@ -6704,7 +6776,7 @@ void EditBox::Render(float elapsedTime) noexcept
         {
             it.second.mFontColor.Blend(state, elapsedTime);
         }
-        
+
         mDialog.DrawSprite(it.second, mSubRegions[i], _NEAR_BUTTON_DEPTH);
 
         ++i;
@@ -6718,7 +6790,7 @@ void EditBox::Render(float elapsedTime) noexcept
     RenderText(elapsedTime);
 
     //draw the selected region
-    if (mSelStart != -2 && mCharacterBBs.size() > 0)
+    if (mSelStart != -2 && mCharacterBBs.size() > 0 && mSelStart != mCaretPos)
     {
 
         Value begin = 0;
@@ -6765,16 +6837,7 @@ void EditBox::Render(float elapsedTime) noexcept
         }
     }
 
-    //debug rendering
-    /*unsigned int color = 0x80000000;
-    for (auto it : mCharacterBBs)
-    {
-        mDialog.DrawRect(it, *reinterpret_cast<Color*>(&color), false);
-
-        color += 0x0000000F;
-    }*/   
-
-    mScrollBar->Render(elapsedTime);
+    (this->*mRenderFunction)(elapsedTime);
 
     NOEXCEPT_REGION_END
 }
@@ -7036,6 +7099,18 @@ void EditBox::UpdateCharRects() noexcept
 {
     NOEXCEPT_REGION_START
 
+    (this->*mUpdateCharRectsFunction)();
+
+    BufferCharRects();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::UpdateCharRectsMultiline() noexcept
+{
+    NOEXCEPT_REGION_START
+
     Rect rcScreen = mTextRegion;
     auto dlgRect = mDialog.GetRegion();
     mDialog.ScreenSpaceToGLSpace(rcScreen);
@@ -7167,7 +7242,107 @@ void EditBox::UpdateCharRects() noexcept
             mRenderCount += textLines[it].size();
     }
 
+    NOEXCEPT_REGION_END
+}
 
+//--------------------------------------------------------------------------------------
+void EditBox::UpdateCharRectsSingleline() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    Rect rcScreen = mTextRegion;
+    auto dlgRect = mDialog.GetRegion();
+    mDialog.ScreenSpaceToGLSpace(rcScreen);
+
+    auto &element = mElements[0];
+    auto textFlags = element.mTextFormatFlags;
+    auto font = mDialog.GetFont(element.mFontIndex);
+    auto fontHeight = font->mFontType->mHeight;
+    auto leading = font->mLeading;
+
+    //start by removing ALL newlines
+    {
+        std::wstring::iterator it = std::find(mText.begin(), mText.end(), '\n');
+
+        while (it != mText.end())
+        {
+            mText.erase(it);
+            it = std::find(mText.begin(), mText.end(), '\n');
+        }
+    }
+
+    mCharacterRects.resize(mText.size());
+    mCharacterBBs.resize(mText.size());
+
+    //get the vertical alignment
+    long yPos = rcScreen.top;
+    if (textFlags | GT_VCENTER)
+    {
+        yPos = rcScreen.top - (RectHeight(rcScreen) - fontHeight) / 2;
+    }
+    else if (textFlags | GT_BOTTOM)
+    {
+        yPos = rcScreen.bottom + fontHeight;
+    }
+
+    //update the scroll bar
+    mScrollBar->SetTrackRange(0, mText.size());
+
+    //get the horizontal offset based on the scroll bar position
+    long currX = rcScreen.left;
+    {
+        long offset = 0;
+        for (Value i = 0; i < mScrollBar->GetTrackPos(); ++i)
+        {
+            offset -= font->mFontType->GetCharAdvance(mText[i]);
+        }
+
+        currX += offset;
+    }
+
+    //no horizontal alignment on single-line edit boxes (TODO)
+
+    //get the character rects
+    unsigned int i = 0;
+    for (auto it : mText)
+    {
+        auto thisCharRect = font->mFontType->GetCharRect(it);
+        OffsetRect(thisCharRect, currX, yPos - fontHeight);
+
+        mCharacterRects[i] = thisCharRect;
+
+        long left = i != 0 ? mCharacterBBs[i - 1].right : thisCharRect.left;
+        SetRect(mCharacterBBs[i], left, yPos, left + font->mFontType->GetCharAdvance(it), yPos - leading);
+
+        ++i;
+        currX += font->mFontType->GetCharAdvance(it);
+    }
+
+    //get the rendering offset based on the scroll bar position
+    mRenderOffset = mScrollBar->GetTrackPos();
+    mRenderCount = 0;
+    {
+        long tmpWidth = 0;
+        long textRectWidth = RectWidth(mTextRegion);
+        for (i = mScrollBar->GetTrackPos(); i < mText.size(); ++i)
+        {
+            tmpWidth += font->mFontType->GetCharAdvance(mText[i]);
+            if (tmpWidth > textRectWidth)
+                break;
+
+            ++mRenderCount;
+        }
+    }
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::BufferCharRects() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    auto font = mDialog.GetFont(GetElement(0).mFontIndex);
     /*
     
     Buffer data into OpenGL
