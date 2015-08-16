@@ -187,6 +187,7 @@ int main(void)
     //(*editBox)->SetInsertMode(false);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
+    dlg->AddSlider(1, { { 50 }, 600, 400, { 550 } }, 0, 15, 5);
     //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 40, 350, { 20 } });
 
     /*dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
@@ -194,7 +195,6 @@ int main(void)
     dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 220, { 230 } });
     dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 220, { 280 } });
 
-    //dlg->AddSlider(1, { { 100 }, 100, 400, { 50 } }, 0, 15, 5);
     dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
 
     std::shared_ptr<ListBoxPtr> boxBase = std::make_shared<ListBoxPtr>(nullptr);

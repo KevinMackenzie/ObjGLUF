@@ -2968,6 +2968,7 @@ protected:
     virtual void UpdateCharRects() noexcept;
     virtual void BufferCharRects() noexcept;
     virtual void RenderText(float elpasedTime) noexcept;
+    void RemoveSelectedRegion() noexcept;
 
 
     /*
@@ -3041,6 +3042,13 @@ public:
 #pragma endregion
 
 
+    /*
+    
+    Text Modification Methods
+    
+    */
+    void InsertString(const std::wstring& str, Value pos) noexcept;
+    void InsertChar(wchar_t ch, Value pos) noexcept;
 
 
     /*

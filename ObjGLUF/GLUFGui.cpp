@@ -1372,6 +1372,10 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
 	mDialogManager->MsgProc(_PASS_CALLBACK_PARAM);
 
+    if (msg == UNICODE_CHAR)
+    {
+        int i = 0;
+    }
 
 	//first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
 	double x, y;
@@ -6589,6 +6593,33 @@ void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
 
 #pragma endregion
 
+//--------------------------------------------------------------------------------------
+void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mText.insert(pos, str);
+    InvalidateRects();
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mText.insert(pos, 1, ch);
+
+    if (pos <= mCaretPos + 1)
+        ++mCaretPos;
+
+    mSelStart = -2;
+
+    InvalidateRects();
+
+    NOEXCEPT_REGION_END
+}
 
 //--------------------------------------------------------------------------------------
 bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
@@ -6608,6 +6639,12 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         {
             if (param2 == GLFW_PRESS)
             {
+                if (PtInRect(mRegion, mousePos))
+                {
+                    if (!mHasFocus)
+                        mDialog.RequestFocus(shared_from_this());
+                }
+
                 mSelStart = -2;
                 SetCaretPosition(PointToCharPos(mousePos));
                 mMouseDrag = true;
@@ -6650,14 +6687,35 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     }
     case SCROLL:
     {
-        if (mMultiline)
+        mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        /*if (mMultiline)
         {
             mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
         }
         else
         {
             mScrollBar->Scroll(param2 > 0 ? 1 : -1);
+        }*/
+        break;
+    }
+    case UNICODE_CHAR:
+    {
+
+        //is there a selection?
+        if (mSelStart != -2)
+        {
+            //if so, delete it
+            RemoveSelectedRegion();
         }
+
+        InsertChar(static_cast<wchar_t>(param1), mCaretPos + 1);
+
+        break;
+    }
+    case KEY:
+    {
+
+        break;
     }
     default:
         break;
@@ -6929,6 +6987,25 @@ void EditBox::RenderText(float elapsedTime) noexcept
         */
         SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(element.mFontColor.GetCurrent()));
         mTextDataBuffer->DrawRange(postSelectionStartIndex, postSelectionSize);
+    }
+
+    NOEXCEPT_REGION_END
+}
+
+//--------------------------------------------------------------------------------------
+void EditBox::RemoveSelectedRegion() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    if (mSelStart != -2)
+    {
+        if (mSelStart > mCaretPos)
+            mText.erase(mCaretPos + 1, mSelStart - mCaretPos);
+        else
+            mText.erase(mSelStart + 1, mCaretPos - mSelStart);
+
+        mCaretPos = glm::min(mCaretPos, mSelStart);
+        mSelStart = -2;
     }
 
     NOEXCEPT_REGION_END
