@@ -1542,14 +1542,14 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	{
 		// If a control is in focus, it belongs to this dialog, and it's enabled, then give
 		// it the first chance at handling the message.
-		if (sControlFocus &&
+		/*if (sControlFocus &&
 			&sControlFocus->mDialog == this &&
 			sControlFocus->GetEnabled())
-			//for (auto it : mControls)     --> Not Quite sure what this loop was here for
-			//{
+			for (auto it : mControls)     --> Not Quite sure what this loop was here for
+			{
 			    if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
 				    return true;
-			//}
+			}*/
 
 		// Not yet handled, see if this matches a control's hotkey
 		// Activate the hotkey if the focus doesn't belong to an
@@ -6529,6 +6529,9 @@ void EditBox::SetCaretPosition(Value pos) noexcept
 {
     NOEXCEPT_REGION_START
 
+    if (mIsEmpty)
+        mCaretPos = -1;
+
     mCaretPos = glm::clamp(pos, -1, (int32_t)mText.length());
 
     NOEXCEPT_REGION_END
@@ -6598,7 +6601,22 @@ void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
 {
     NOEXCEPT_REGION_START
 
+    pos = glm::clamp(pos, -1, static_cast<Value>(mText.size()));
+
+    //since a space is used as a placeholder when there is no text, make sure to clear when we get text
+    if (mIsEmpty)
+    {
+        mText.clear();
+        mIsEmpty = false;
+    }
+
     mText.insert(pos, str);
+
+    if (pos <= mCaretPos)
+        mCaretPos += str.size();
+
+    mSelStart = -2;
+
     InvalidateRects();
 
     NOEXCEPT_REGION_END
@@ -6609,12 +6627,35 @@ void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
 {
     NOEXCEPT_REGION_START
 
-    mText.insert(pos, 1, ch);
+    pos = glm::clamp(pos, -1, static_cast<Value>(mText.size()));
 
-    if (pos <= mCaretPos + 1)
+    //since a space is used as a placeholder when there is no text, make sure to clear when we get text
+    if (mIsEmpty)
+    {
+        mText.clear();
+        mIsEmpty = false;
+    }
+
+    mText.insert(pos + 1, 1, ch);
+
+    if (pos <= mCaretPos)
         ++mCaretPos;
 
     mSelStart = -2;
+
+    InvalidateRects();
+
+    NOEXCEPT_REGION_END
+}
+
+void EditBox::DeleteChar(Value pos) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    if (pos < 0 || pos >= mText.size())
+        return;
+
+    mText.erase(pos, 1);
 
     InvalidateRects();
 
@@ -6708,13 +6749,44 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             RemoveSelectedRegion();
         }
 
-        InsertChar(static_cast<wchar_t>(param1), mCaretPos + 1);
+        InsertChar(static_cast<wchar_t>(param1), mCaretPos);
 
         break;
     }
     case KEY:
     {
+        switch(param1)
+        {
+        case GLFW_KEY_BACKSPACE:
+            if (param3 != GLFW_RELEASE)
+            {
+                if (mSelStart != -2)
+                {
+                    RemoveSelectedRegion();
+                }
+                else
+                {
+                    DeleteChar(mCaretPos);
+                    SetCaretPosition(mCaretPos - 1);
+                }
+            }
 
+            break;
+        case GLFW_KEY_DELETE:
+            if (param3 != GLFW_RELEASE)
+            {
+                if (mSelStart != -2)
+                {
+                    RemoveSelectedRegion();
+                }
+                else
+                {
+                    DeleteChar(mCaretPos + 1);
+                }
+            }
+
+            break;
+        }
         break;
     }
     default:
@@ -6756,6 +6828,10 @@ void EditBox::UpdateRects() noexcept
 {
     NOEXCEPT_REGION_START
 
+    if (mText.size() == 0)
+    {
+        mIsEmpty = true;
+    }
 
     Control::UpdateRects();
 
@@ -6776,6 +6852,8 @@ void EditBox::UpdateRects() noexcept
     (this->*mUpdateRectsFunction)();
 
     UpdateCharRects();
+
+    mUpdateRequired = false;
 
     NOEXCEPT_REGION_END
 }
@@ -7008,6 +7086,8 @@ void EditBox::RemoveSelectedRegion() noexcept
         mSelStart = -2;
     }
 
+    InvalidateRects();
+
     NOEXCEPT_REGION_END
 }
 
@@ -7175,6 +7255,11 @@ void EditBox::OnInit() noexcept
 void EditBox::UpdateCharRects() noexcept
 {
     NOEXCEPT_REGION_START
+
+    if (mIsEmpty)
+    {
+        mText = L" ";
+    }
 
     (this->*mUpdateCharRectsFunction)();
 
@@ -7418,6 +7503,10 @@ void EditBox::UpdateCharRectsSingleline() noexcept
 void EditBox::BufferCharRects() noexcept
 {
     NOEXCEPT_REGION_START
+
+    //make sure there are characters to load
+    if (mText.size() == 0)
+        return;
 
     auto font = mDialog.GetFont(GetElement(0).mFontIndex);
     /*

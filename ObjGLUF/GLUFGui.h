@@ -2926,6 +2926,7 @@ protected:
     bool mMouseDrag = false;
     bool mCaretOn = true;
     bool mUpdateRequired;
+    bool mIsEmpty = false;
 
     /*
     
@@ -3049,6 +3050,7 @@ public:
     */
     void InsertString(const std::wstring& str, Value pos) noexcept;
     void InsertChar(wchar_t ch, Value pos) noexcept;
+    void DeleteChar(Value pos) noexcept;
 
 
     /*
