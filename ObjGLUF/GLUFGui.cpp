@@ -6670,7 +6670,10 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     auto mousePos = mDialog.GetMousePositionDialogSpace();
 
     if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/)
+    {
+        InvalidateRects();
         return true;
+    }
 
     switch (msg)
     {
@@ -6729,6 +6732,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     case SCROLL:
     {
         mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        InvalidateRects();
         /*if (mMultiline)
         {
             mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
@@ -7323,6 +7327,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
             lineWidth += thisCharWidth;
         }
 
+        mScrollBar->SetTrackRange(0, textLines.size() - 1);
 
         /*
         
@@ -7384,7 +7389,6 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         }
     }
 
-    mScrollBar->SetTrackRange(0, textLines.size() - 1);
 
 
     /*
