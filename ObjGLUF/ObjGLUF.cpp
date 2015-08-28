@@ -771,6 +771,31 @@ glm::vec2 GetVec2FromRect(const Rectf& rect, bool x, bool y)
 			return glm::vec2(rect.left, rect.bottom);
 }
 
+#pragma warning (disable : 4244)
+std::string WStringToString(const std::wstring& str) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    std::string temp(str.length(), ' ');
+    std::copy(str.begin(), str.end(), temp.begin());
+    return temp;
+
+    NOEXCEPT_REGION_END
+}
+
+std::wstring StringToWString(const std::string& str) noexcept
+{
+    NOEXCEPT_REGION_START
+
+    std::wstring temp(str.length(), L' ');
+    std::copy(str.begin(), str.end(), temp.begin());
+    return temp;
+
+    NOEXCEPT_REGION_END
+}
+
+#pragma warning (default : 4244)
+
 /*
 ======================================================================================================================================================================================================
 Shader API (Alpha)

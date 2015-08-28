@@ -644,6 +644,24 @@ OBJGLUF_API Color4f ColorToFloat(const Color& color);//takes 0-255 to 0.0f - 1.0
 OBJGLUF_API Color3f ColorToFloat3(const Color& color);//takes 0-255 to 0.0f - 1.0f
 
 
+/*
+WStringToString
+
+    Converts std::wstring to std::string
+
+*/
+
+OBJGLUF_API std::string WStringToString(const std::wstring& str) noexcept;
+
+
+/*
+StringToWString
+
+    Converts std::string to std::wstring
+
+*/
+
+OBJGLUF_API std::wstring StringToWString(const std::string& str) noexcept;
 
 
 /*

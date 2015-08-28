@@ -6498,6 +6498,33 @@ void EditBox::InvalidateRects() noexcept
 #pragma region Setters and Getters
 
 //--------------------------------------------------------------------------------------
+std::wstring EditBox::GetSelectedText() noexcept
+{
+    if (mSelStart == -2)
+        return L"";
+
+    std::wstring::iterator begin, end;
+    long len = 0;
+    if (mSelStart < mCaretPos)
+    {
+        begin = std::begin(mText) + (mSelStart + 1);
+        end = std::begin(mText) + (mCaretPos + 1);
+        len = mCaretPos + 1 - (mSelStart + 1);
+    }
+    else
+    {
+        begin = std::begin(mText) + (mCaretPos + 1);
+        end = std::begin(mText) + (mSelStart + 1);
+        len = mSelStart + 1 - (mCaretPos + 1);
+    }
+
+    std::wstring ret(len, L' ');
+    std::copy(begin, end, ret.begin());
+
+    return ret;
+}
+
+//--------------------------------------------------------------------------------------
 void EditBox::SetText(const std::wstring& text)
 {
     if (!CharsetContains(text, mCharset))
@@ -6817,25 +6844,36 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         case GLFW_KEY_C:
             if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
             {
+                //get selected text
+                auto selText = GetSelectedText();
 
+                glfwSetClipboardString(g_pGLFWWindow, WStringToString(selText).c_str());
             }
             break;
         case GLFW_KEY_V:
             if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
             {
+                //insert clipboard
+                std::string clipboardString = glfwGetClipboardString(g_pGLFWWindow);
 
+                InsertString(StringToWString(clipboardString), mCaretPos + 1);
             }
             break;
         case GLFW_KEY_X:
             if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
             {
+                auto selText = GetSelectedText();
 
+                glfwSetClipboardString(g_pGLFWWindow, WStringToString(selText).c_str());
+
+                RemoveSelectedRegion();
             }
             break;
         case GLFW_KEY_A:
             if (param3 == GLFW_PRESS)
             {
-
+                mSelStart = -1;
+                mCaretPos = mText.size() - 1;
             }
             break;
         }

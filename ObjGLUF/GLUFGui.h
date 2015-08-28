@@ -3019,6 +3019,8 @@ public:
     BlendColor& GetCaretBlendColor() noexcept{ return mCaretColor; }
     BlendColor& GetTextBlendColor() noexcept{ return mElements[0].mFontColor; }
 
+    std::wstring GetSelectedText() noexcept;
+
     BlendColor GetSelectedTextCBlendColor() const noexcept{ return mSelTextColor; }
     BlendColor GetSelectedBackgroundCBlendColor() const noexcept{ return mSelBkColor; }
     BlendColor GetCaretCBlendColor() const noexcept{ return mCaretColor; }
