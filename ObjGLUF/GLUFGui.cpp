@@ -7172,7 +7172,47 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
         }
     }
 
-    //if it didn't hit a character, get the nearest character (TODO:)    
+    //if it didn't hit a character, get the nearest character (TODO:) 
+
+    //which line is the cursor on?
+    {
+        bool foundLine = false;
+        bool onCurrentLine = false;
+        Rect regionRndSpace = mRegion;
+        mDialog.ScreenSpaceToGLSpace(regionRndSpace);
+        Rect textRegionRndSpace = mTextRegion; 
+        mDialog.ScreenSpaceToGLSpace(textRegionRndSpace);
+        for (int i = 0; i < mCharacterBBs.size(); ++i)
+        {
+            if (!onCurrentLine && foundLine)
+                return i - 2;
+
+            auto rightOf = mCharacterBBs[i];
+            auto leftOf = mCharacterBBs[i];
+
+            leftOf.left = regionRndSpace.left;
+            leftOf.right = textRegionRndSpace.left;
+
+            //use the left as the left of the text region, because if the cursor is to the left of the text region, we want the FIRST character on the line, not the last
+            rightOf.left = textRegionRndSpace.left;
+            rightOf.right = regionRndSpace.right;
+            if (PtInRect(rightOf, newPt))
+            {
+                foundLine = true;
+                onCurrentLine = true;
+            }
+            else if (PtInRect(leftOf, newPt))
+            {
+                //this can only possibly occur the first time on the line
+                return i;
+            }
+            else
+            {
+                //the first character on the next line is hit, so activate that flag
+                onCurrentLine = false;
+            }
+        }
+    }
 
     NOEXCEPT_REGION_END
 
@@ -7407,7 +7447,8 @@ void EditBox::UpdateCharRectsMultiline() noexcept
             {
                 if (whichLinesCausedByNewlines[i])
                 {
-                    SetRect(mCharacterRects[charIndex], rcScreen.left - mHorizontalMargin / 2, currY, rcScreen.left, currY - leading);
+                    //make the bounding box invalid so the newline character can never truly be 'clicked on'
+                    SetRect(mCharacterRects[charIndex], rcScreen.left, currY, rcScreen.left - 1, currY - leading);
                     mCharacterBBs[charIndex] = mCharacterRects[charIndex];
                     charIndex++;//add one at the end of each line
                 }
