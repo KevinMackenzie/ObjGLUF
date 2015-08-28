@@ -807,7 +807,9 @@ void Font::Init(const std::vector<char>& data, FontSize fontHeight)
 Rect Font::GetCharRect(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
-        throw std::out_of_range("Character Not In Atlas!");
+    {
+        return{ { 0 }, 0, 0, { 0 } };
+    }
 
 	Rect rc = { 0, GetCharHeight(ch), GetCharWidth(ch), 0 };
 
@@ -836,7 +838,9 @@ Rect Font::GetCharRect(wchar_t ch)
 Rectf Font::GetCharTexRect(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
-        throw std::out_of_range("Character Not In Atlas!");
+    {
+        return{ { 0 }, 0, 0, { 0 } };
+    }
 
 	float l = 0, t = 0, r = 0, b = 0;
 
@@ -851,7 +855,9 @@ Rectf Font::GetCharTexRect(wchar_t ch)
 FontSize Font::GetCharAdvance(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
-        throw std::out_of_range("Character Not In Atlas!");
+    {
+        return 0;
+    }
 
 	return mCharAtlas[ch - mCharacterOffset].mAdvance.x;
 }
@@ -859,7 +865,9 @@ FontSize Font::GetCharAdvance(wchar_t ch)
 FontSize Font::GetCharWidth(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
-        throw std::out_of_range("Character Not In Atlas!");
+    {
+        return 0;
+    }
 
 	return mCharAtlas[ch - mCharacterOffset].mBitSize.x;
 }
@@ -867,19 +875,23 @@ FontSize Font::GetCharWidth(wchar_t ch)
 FontSize Font::GetCharHeight(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
-        throw std::out_of_range("Character Not In Atlas!");
+    {
+        return 0;
+    }
 
 	return mCharAtlas[ch - mCharacterOffset].mBitSize.y;
 }
 
 FontSize Font::GetStringWidth(const std::wstring& str)
 {
-    for (auto ch : str)
+    /*for (auto ch : str)
     {
         if (ch < mCharacterOffset || ch >= mCharacterEnd)
-            throw std::out_of_range("Character Not In Atlas!");
+        {
+            GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Character Not In Atlas!"));
+        }
     }
-
+    */
 	FontSize tmp = 0;
 	for (auto it : str)
 	{
@@ -6790,6 +6802,42 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             }
 
             break;
+        case GLFW_KEY_ENTER:
+            if (param3 != GLFW_RELEASE)
+            {
+                if (mSelStart != -2)
+                {
+                    RemoveSelectedRegion();
+                }
+
+                InsertChar(L'\n', mCaretPos);
+
+            }
+            break;
+        case GLFW_KEY_C:
+            if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
+            {
+
+            }
+            break;
+        case GLFW_KEY_V:
+            if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
+            {
+
+            }
+            break;
+        case GLFW_KEY_X:
+            if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
+            {
+
+            }
+            break;
+        case GLFW_KEY_A:
+            if (param3 == GLFW_PRESS)
+            {
+
+            }
+            break;
         }
         break;
     }
@@ -7288,7 +7336,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
     auto leading = font->mLeading;
 
     std::vector<std::wstring> textLines = { L"" };
-    std::vector<bool> whichLinesCausedByNewlines;
+    std::vector<bool> whichLinesCausedByNewlines = { 0 };
 
     mCharacterRects.resize(mText.size());
     mCharacterBBs.resize(mText.size());
@@ -7305,11 +7353,26 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         for (unsigned int i = 0; i < mText.size(); ++i)
         {
             auto thisChar = mText[i];
-            auto thisCharWidth = font->mFontType->GetCharAdvance(thisChar);
+            auto thisCharWidth = 0;
 
-            int potentialNewLineWidth = lineWidth + thisCharWidth;
+            int potentialNewLineWidth = 0;
 
-            if (thisChar == '\n' || potentialNewLineWidth > textRegionWidth)
+            /*
+            
+            this bool is a workaround for newlines not being in the character atlas
+            
+            */
+            bool execNewlineCode = thisChar == '\n';
+            if (!execNewlineCode)
+            {
+                thisCharWidth = font->mFontType->GetCharAdvance(thisChar);
+                potentialNewLineWidth = lineWidth + thisCharWidth;
+                lineWidth += thisCharWidth;
+
+                execNewlineCode = potentialNewLineWidth > textRegionWidth;
+            }
+
+            if (execNewlineCode)
             {
                 textLines.push_back(L"");
 
@@ -7322,9 +7385,9 @@ void EditBox::UpdateCharRectsMultiline() noexcept
                 }
                 whichLinesCausedByNewlines.push_back(false);
             }
+            
 
             textLines[textLines.size() - 1] += thisChar;
-            lineWidth += thisCharWidth;
         }
 
         mScrollBar->SetTrackRange(0, textLines.size() - 1);
@@ -7344,7 +7407,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
             {
                 if (whichLinesCausedByNewlines[i])
                 {
-                    SetRect(mCharacterRects[charIndex], lineXOffset - mHorizontalMargin, currY, lineXOffset, currY - leading);
+                    SetRect(mCharacterRects[charIndex], rcScreen.left - mHorizontalMargin / 2, currY, rcScreen.left, currY - leading);
                     mCharacterBBs[charIndex] = mCharacterRects[charIndex];
                     charIndex++;//add one at the end of each line
                 }
