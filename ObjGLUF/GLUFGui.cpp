@@ -7190,7 +7190,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             }
             break;
         case GLFW_KEY_A:
-            if (param3 == GLFW_PRESS)
+            if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
             {
                 mSelStart = -1;
                 mCaretPos = GetText().size() - 1;
