@@ -539,6 +539,7 @@ struct CharacterInfo
     glm::u32vec2 mBitSize;
     glm::u32vec2 mBitLoc;
     float mTexXOffset;
+    float mTexYOffset;
 };
 
 
@@ -555,9 +556,11 @@ Font
         'mCharAtlas': the character atlas
         'mCharacterOffset': the offset within the charset to start creating the texture, default to 32, because that is where ascii characters start
         'mCharacterEnd': the end of the writable characters
+        'mTexLineBreakIndices': the character codes which caused line breaks within the texture
 */
 class Font
 {	
+    std::vector<uint32_t> mTexLineBreakIndices;
 public:
 
 	FT_Face mFtFont;
@@ -566,7 +569,7 @@ public:
 	GLuint mTexId = 0;
     std::vector<CharacterInfo> mCharAtlas;
 	glm::uint32 mCharacterOffset = 32;
-    glm::uint32 mCharacterEnd = 128;
+    glm::uint32 mCharacterEnd = 0xFFF;
 	
 
     /*
@@ -692,6 +695,14 @@ void Font::Refresh()
 
 	FT_GlyphSlot g = mFtFont->glyph;
 
+    //get maximum texture size, so we don't get opengl complaining
+    GLint maxTexSize = 1024;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
+
+    //add one line of character texture to start
+    uint32_t lineHeightWithSpacing = (4.f / 3.f) * static_cast<float>(mHeight);
+    mAtlasSize.y += lineHeightWithSpacing;
+    uint32_t atlasWidthTmp = 0;
 
 	//load the characters' dimmensions
 	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++)
@@ -702,10 +713,33 @@ void Font::Refresh()
 			continue;
 		}
 
-		mAtlasSize.x += g->bitmap.width + GLYPH_PADDING;
-		mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
+        //on each line, make sure we check if the next texture will go past the max x position
+        glm::uint32 potentialAtlasX = atlasWidthTmp + g->bitmap.width + GLYPH_PADDING;
+        if (potentialAtlasX > maxTexSize)
+        {
+            mAtlasSize.y += lineHeightWithSpacing;
+            if (mAtlasSize.y > maxTexSize)
+            {
+                //if it is too big, actually clamp the characters which can not be loaded (not good, but not catestrophic either)
+                mCharacterEnd = i - 1;
+                break;
+            }
 
-	}
+            mTexLineBreakIndices.push_back(i);
+            atlasWidthTmp = 0;
+        }
+        else
+        {
+            atlasWidthTmp = potentialAtlasX;
+            mAtlasSize.x = glm::max(atlasWidthTmp, mAtlasSize.x);
+        }
+
+		//mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
+
+    }
+
+    //resize after getting the texture size, so if characters were omitted due to insufficient texture size, the atlas is of appropriate size
+    mCharAtlas.resize(mCharacterEnd - mCharacterOffset);
 
 	//generate textures
 	glActiveTexture(GL_TEXTURE0);
@@ -730,13 +764,23 @@ void Font::Refresh()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasSize.x, mAtlasSize.y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
 
 	//load texture data
-	char* dat0 = new char[GLYPH_PADDING * mAtlasSize.y];
-    for (uint32_t i = 0; i < GLYPH_PADDING * mAtlasSize.y; ++i)
-		dat0[i] = 0;
+
+    //the data for the glyph padding
+    std::vector<char> paddingData;
+    paddingData.resize(GLYPH_PADDING * lineHeightWithSpacing, 0);
 
 	int x = 0;
+    int y = 0;
+    unsigned int lineIndex = 0;
 	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
 	{
+        if (std::find(std::begin(mTexLineBreakIndices), std::end(mTexLineBreakIndices), i) != std::end(mTexLineBreakIndices))
+        {
+            y += lineHeightWithSpacing;
+            x = 0;
+            lineIndex = 0;
+        }
+
 		unsigned int p = i - mCharacterOffset;
 
 		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
@@ -758,16 +802,18 @@ void Font::Refresh()
 			mCharAtlas[p].mBitLoc.y = 0L;
 
 			mCharAtlas[p].mTexXOffset = static_cast<float>(mAtlasSize.x - GLYPH_PADDING);
+            mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
 
 			continue;
 		}
 
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING), 0, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING), y, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
 
 		//this adds padding to keep the characters looking clean
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING) + g->bitmap.width, 0, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, dat0);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
 
-		mCharAtlas[p].mTexXOffset = static_cast<float>(x + (p * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
+        mCharAtlas[p].mTexXOffset = static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
+        mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
 
 		x += g->bitmap.width;
 
@@ -780,6 +826,7 @@ void Font::Refresh()
 		mCharAtlas[p].mBitLoc.x = g->bitmap_left;
 		mCharAtlas[p].mBitLoc.y = g->bitmap_top;
 
+        ++lineIndex;
 	}
 
 	//FT_Done_Face(mFtFont);
@@ -789,7 +836,6 @@ void Font::Refresh()
 void Font::Init(const std::vector<char>& data, FontSize fontHeight)
 {
 	mHeight = fontHeight;
-	mCharAtlas.resize(mCharacterEnd - mCharacterOffset);
 
     if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data.data(), (FT_Long)data.size(), 0, &mFtFont))
         throw LoadFontException();
@@ -845,9 +891,9 @@ Rectf Font::GetCharTexRect(wchar_t ch)
 	float l = 0, t = 0, r = 0, b = 0;
 
 	l = mCharAtlas[ch - mCharacterOffset].mTexXOffset;
-	t = 0.0f;
+	t = mCharAtlas[ch - mCharacterOffset].mTexYOffset;
     r = mCharAtlas[ch - mCharacterOffset].mTexXOffset + static_cast<float>(GetCharWidth(ch)) / static_cast<float>(mAtlasSize.x);
-	b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y);
+	b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y) + mCharAtlas[ch - mCharacterOffset].mTexYOffset;
 
 	return{ l, t, r, b };
 };
