@@ -7508,6 +7508,9 @@ void EditBox::RemoveSelectedRegion() noexcept
         else
             mTextHistoryKeeper.PushPartialRemoval(mSelStart + 1, mCaretPos + 1);
 
+        if (mSelStart == -1 && mCaretPos == GetText().size() - 1)
+            mTextHistoryKeeper.PushPartialAddition(L" ", 0);
+
         mCaretPos = glm::min(mCaretPos, mSelStart);
         mSelStart = -2;
     }
