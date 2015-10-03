@@ -120,10 +120,18 @@ struct JustPositions : VertexStruct
     }
 };
 
+void myunexpected()
+{
+    int i = 0;
+}
+
 #define USE_SEPARATE
 
 int main(void)
 {
+
+    std::set_unexpected(myunexpected);
+
     RegisterErrorMethod(MyErrorMethod);
 	Init();
 

@@ -1,3 +1,21 @@
+/*
+
+Copyright (C) 2015  Kevin Mackenzie
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License http://www.gnu.org/licenses/gpl-3.0.en.html 
+for more details.
+
+*/
+
+
 #include "stdafx.h"
 #include "GLUFGui.h"
 //#include "CBFG/BitmapFontClass.h"
@@ -539,6 +557,7 @@ struct CharacterInfo
     glm::u32vec2 mBitSize;
     glm::u32vec2 mBitLoc;
     float mTexXOffset;
+    float mTexYOffset;
 };
 
 
@@ -555,9 +574,11 @@ Font
         'mCharAtlas': the character atlas
         'mCharacterOffset': the offset within the charset to start creating the texture, default to 32, because that is where ascii characters start
         'mCharacterEnd': the end of the writable characters
+        'mTexLineBreakIndices': the character codes which caused line breaks within the texture
 */
 class Font
 {	
+    std::vector<uint32_t> mTexLineBreakIndices;
 public:
 
 	FT_Face mFtFont;
@@ -566,7 +587,7 @@ public:
 	GLuint mTexId = 0;
     std::vector<CharacterInfo> mCharAtlas;
 	glm::uint32 mCharacterOffset = 32;
-    glm::uint32 mCharacterEnd = 128;
+    glm::uint32 mCharacterEnd = 0xFFF;
 	
 
     /*
@@ -692,6 +713,14 @@ void Font::Refresh()
 
 	FT_GlyphSlot g = mFtFont->glyph;
 
+    //get maximum texture size, so we don't get opengl complaining
+    GLint maxTexSize = 1024;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
+
+    //add one line of character texture to start
+    uint32_t lineHeightWithSpacing = static_cast<uint32_t>((4.f / 3.f) * static_cast<float>(mHeight));
+    mAtlasSize.y += lineHeightWithSpacing;
+    uint32_t atlasWidthTmp = 0;
 
 	//load the characters' dimmensions
 	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++)
@@ -702,10 +731,33 @@ void Font::Refresh()
 			continue;
 		}
 
-		mAtlasSize.x += g->bitmap.width + GLYPH_PADDING;
-		mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
+        //on each line, make sure we check if the next texture will go past the max x position
+        glm::uint32 potentialAtlasX = atlasWidthTmp + g->bitmap.width + GLYPH_PADDING;
+        if (potentialAtlasX > maxTexSize)
+        {
+            mAtlasSize.y += lineHeightWithSpacing;
+            if (mAtlasSize.y > maxTexSize)
+            {
+                //if it is too big, actually clamp the characters which can not be loaded (not good, but not catestrophic either)
+                mCharacterEnd = i - 1;
+                break;
+            }
 
-	}
+            mTexLineBreakIndices.push_back(i);
+            atlasWidthTmp = 0;
+        }
+        else
+        {
+            atlasWidthTmp = potentialAtlasX;
+            mAtlasSize.x = glm::max(atlasWidthTmp, mAtlasSize.x);
+        }
+
+		//mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
+
+    }
+
+    //resize after getting the texture size, so if characters were omitted due to insufficient texture size, the atlas is of appropriate size
+    mCharAtlas.resize(mCharacterEnd - mCharacterOffset);
 
 	//generate textures
 	glActiveTexture(GL_TEXTURE0);
@@ -730,13 +782,23 @@ void Font::Refresh()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasSize.x, mAtlasSize.y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
 
 	//load texture data
-	char* dat0 = new char[GLYPH_PADDING * mAtlasSize.y];
-    for (uint32_t i = 0; i < GLYPH_PADDING * mAtlasSize.y; ++i)
-		dat0[i] = 0;
+
+    //the data for the glyph padding
+    std::vector<char> paddingData;
+    paddingData.resize(GLYPH_PADDING * lineHeightWithSpacing, 0);
 
 	int x = 0;
+    int y = 0;
+    unsigned int lineIndex = 0;
 	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
 	{
+        if (std::find(std::begin(mTexLineBreakIndices), std::end(mTexLineBreakIndices), i) != std::end(mTexLineBreakIndices))
+        {
+            y += lineHeightWithSpacing;
+            x = 0;
+            lineIndex = 0;
+        }
+
 		unsigned int p = i - mCharacterOffset;
 
 		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
@@ -758,16 +820,18 @@ void Font::Refresh()
 			mCharAtlas[p].mBitLoc.y = 0L;
 
 			mCharAtlas[p].mTexXOffset = static_cast<float>(mAtlasSize.x - GLYPH_PADDING);
+            mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
 
 			continue;
 		}
 
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING), 0, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING), y, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
 
 		//this adds padding to keep the characters looking clean
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x + (p * GLYPH_PADDING) + g->bitmap.width, 0, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, dat0);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
 
-		mCharAtlas[p].mTexXOffset = static_cast<float>(x + (p * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
+        mCharAtlas[p].mTexXOffset = static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
+        mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
 
 		x += g->bitmap.width;
 
@@ -780,6 +844,7 @@ void Font::Refresh()
 		mCharAtlas[p].mBitLoc.x = g->bitmap_left;
 		mCharAtlas[p].mBitLoc.y = g->bitmap_top;
 
+        ++lineIndex;
 	}
 
 	//FT_Done_Face(mFtFont);
@@ -789,7 +854,6 @@ void Font::Refresh()
 void Font::Init(const std::vector<char>& data, FontSize fontHeight)
 {
 	mHeight = fontHeight;
-	mCharAtlas.resize(mCharacterEnd - mCharacterOffset);
 
     if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data.data(), (FT_Long)data.size(), 0, &mFtFont))
         throw LoadFontException();
@@ -845,9 +909,9 @@ Rectf Font::GetCharTexRect(wchar_t ch)
 	float l = 0, t = 0, r = 0, b = 0;
 
 	l = mCharAtlas[ch - mCharacterOffset].mTexXOffset;
-	t = 0.0f;
+	t = mCharAtlas[ch - mCharacterOffset].mTexYOffset;
     r = mCharAtlas[ch - mCharacterOffset].mTexXOffset + static_cast<float>(GetCharWidth(ch)) / static_cast<float>(mAtlasSize.x);
-	b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y);
+	b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y) + mCharAtlas[ch - mCharacterOffset].mTexYOffset;
 
 	return{ l, t, r, b };
 };
@@ -6436,10 +6500,257 @@ bool CharsetContains(const std::wstring& codepoint, Charset charset)
             if (!CharsetContains(it, charset))
                 return false;
         }
-        return false;
+return false;
     }
 }
 
+/*
+======================================================================================================================================================================================================
+ModificationStack Functions
+
+
+*/
+
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::FlattenRedoStack() noexcept
+{
+    while (!mRedoStack.empty())
+    {
+        mRedoStack.pop();
+    }
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::FlattenUndoStack() noexcept
+{
+    while (!mUndoStack.empty())
+    {
+        mUndoStack.pop();
+    }
+}
+
+//--------------------------------------------------------------------------------------
+ModificationStack::ModificationStack(const std::wstring& initialText) :
+    mText(initialText)
+{
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::PushAddition(const std::wstring& text, uint32_t loc)
+{
+    ModificationStackInternal::ModificationAddition m;
+    m.mInsertLocation = loc;
+    m.mNewText = text;
+    PushGeneric(m);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::PushRemoval(uint32_t start, uint32_t end)
+{
+    ModificationStackInternal::ModificationRemoval m;
+    m.mStartIndex = start;
+    m.mEndIndex = end;
+    PushGeneric(m);
+}
+
+//--------------------------------------------------------------------------------------
+/*void ModificationStack::PushRemovalAndAddition(uint32_t startIndex, uint32_t endIndex, const std::wstring& addition)
+{
+    ModificationStackInternal::ModificationRemovalAndAddition m;
+    m.mStartIndex = startIndex;
+    m.mInsertLocation = startIndex;
+    m.mEndIndex = endIndex;
+    m.mNewText = addition;
+    PushGeneric(m);
+}*/
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::ApplyPartialModifications() noexcept
+{
+    if (mPartialMod.Empty())
+        return;
+
+    PushGeneric(mPartialMod);
+    mPartialMod.ClearParts();
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::PushPartialAddition(const std::wstring& text, uint32_t loc)
+{
+    ModificationStackInternal::ModificationAddition m;
+    m.mInsertLocation = loc;
+    m.mNewText = text;
+    mPartialMod.PushPart(m);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::PushPartialRemoval(uint32_t start, uint32_t end)
+{
+    ModificationStackInternal::ModificationRemoval m;
+    m.mStartIndex = start;
+    m.mEndIndex = end;
+    mPartialMod.PushPart(m);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::UndoNextItem() noexcept
+{
+    if (mUndoStack.empty())
+    return;
+
+    auto top = mUndoStack.top();
+    top->RemoveModificationToString(mText);
+    mUndoStack.pop();
+    mRedoStack.push(top);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::RedoNextItem() noexcept
+{
+    if (mRedoStack.empty())
+    return;
+
+    auto top = mRedoStack.top();
+    top->ApplyModificationToString(mText);
+    mRedoStack.pop();
+    mUndoStack.push(top);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::FlattenStack() noexcept
+{
+    FlattenUndoStack();
+    FlattenRedoStack();
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStack::SetText(const std::wstring& text) noexcept
+{
+    mText = text;
+    FlattenStack();
+}
+
+/*
+
+Subclass functions
+
+*/
+
+//--------------------------------------------------------------------------------------
+ModificationStackInternal::ModificationAddition& ModificationStackInternal::ModificationAddition::operator=(const ModificationAddition& str)
+{
+    mInsertLocation = str.mInsertLocation;
+    mNewText = str.mNewText;
+
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::ModificationAddition::ApplyModificationToString(std::wstring& str) const
+{
+    auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t)0, static_cast<uint32_t>(str.size()));
+    str.insert(begin, std::begin(mNewText), std::end(mNewText));
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::ModificationAddition::RemoveModificationToString(std::wstring& str) const
+{
+    auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t)0, static_cast<uint32_t>(str.size()));
+    auto end = std::begin(str) + std::clamp(mInsertLocation + mNewText.size(), (uint32_t)0, static_cast<uint32_t>(str.size()));
+
+    str.erase(begin, end);
+}
+
+//--------------------------------------------------------------------------------------
+ModificationStackInternal::ModificationRemoval& ModificationStackInternal::ModificationRemoval::operator=(const ModificationRemoval& str)
+{
+    mStartIndex = str.mStartIndex;
+    mEndIndex = str.mEndIndex;
+    mRemovedText = str.mRemovedText;
+
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::ModificationRemoval::ApplyModificationToString(std::wstring& str) const
+{
+    auto begin = std::begin(str) + std::clamp(mStartIndex, (uint32_t)0, static_cast<uint32_t>(str.size()));
+    auto end = std::begin(str) + std::clamp(mEndIndex, (uint32_t)0, static_cast<uint32_t>(str.size()));
+
+    mRemovedText.assign(begin, end);
+    str.erase(begin, end);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::ModificationRemoval::RemoveModificationToString(std::wstring& str) const
+{
+    auto begin = std::begin(str) + std::clamp(mStartIndex, (uint32_t)0, static_cast<uint32_t>(str.size()));
+
+    str.insert(begin, mRemovedText.begin(), mRemovedText.end());
+    mRemovedText.clear();
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::ModificationRemovalAndAddition::ApplyModificationToString(std::wstring& str) const
+{
+    ModificationRemoval::ApplyModificationToString(str);
+    ModificationAddition::ApplyModificationToString(str);
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::ModificationRemovalAndAddition::RemoveModificationToString(std::wstring& str) const
+{
+    ModificationAddition::RemoveModificationToString(str);
+    ModificationRemoval::RemoveModificationToString(str);
+}
+
+ModificationStackInternal::ModificationRemovalAndAddition& ModificationStackInternal::ModificationRemovalAndAddition::operator=(const ModificationRemovalAndAddition& str)
+{
+    mStartIndex = str.mStartIndex;
+    mEndIndex = str.mEndIndex;
+    mInsertLocation = str.mInsertLocation;
+    mNewText = str.mNewText;
+    mRemovedText = str.mRemovedText;
+
+    return *this;
+}
+
+//--------------------------------------------------------------------------------------
+ModificationStackInternal::ModificationRemovalAndAddition::ModificationRemovalAndAddition(const ModificationRemovalAndAddition& other) : ModificationRemoval(other), ModificationAddition(other)
+{
+}
+
+//--------------------------------------------------------------------------------------
+ModificationStackInternal::ModificationRemovalAndAddition::ModificationRemovalAndAddition() : ModificationRemoval(), ModificationAddition()
+{
+}
+
+
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::GenericCompositeModification::ApplyModificationToString(std::wstring& str) const
+{
+    for (auto& it : mParts)
+    {
+        it->ApplyModificationToString(str);
+    }
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::GenericCompositeModification::RemoveModificationToString(std::wstring& str) const
+{
+    for (auto it = mParts.crbegin(); it != mParts.crend(); ++it)
+    {
+        (*it)->RemoveModificationToString(str);
+    }
+}
+
+//--------------------------------------------------------------------------------------
+void ModificationStackInternal::GenericCompositeModification::ClearParts()
+{
+    mParts.clear();
+}
 
 /*
 ======================================================================================================================================================================================================
@@ -6449,7 +6760,7 @@ Edit Box Functions
 */
 
 //--------------------------------------------------------------------------------------
-EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true)), mMultiline(isMultiline)
+EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true)), mMultiline(isMultiline), mTextHistoryKeeper(L"")
 {
     mType = CONTROL_EDITBOX;
 
@@ -6503,18 +6814,19 @@ std::wstring EditBox::GetSelectedText() noexcept
     if (mSelStart == -2)
         return L"";
 
+    std::wstring text = GetText();
     std::wstring::iterator begin, end;
     long len = 0;
     if (mSelStart < mCaretPos)
     {
-        begin = std::begin(mText) + (mSelStart + 1);
-        end = std::begin(mText) + (mCaretPos + 1);
+        begin = std::begin(text) + (mSelStart + 1);
+        end = std::begin(text) + (mCaretPos + 1);
         len = mCaretPos + 1 - (mSelStart + 1);
     }
     else
     {
-        begin = std::begin(mText) + (mCaretPos + 1);
-        end = std::begin(mText) + (mSelStart + 1);
+        begin = std::begin(text) + (mCaretPos + 1);
+        end = std::begin(text) + (mSelStart + 1);
         len = mSelStart + 1 - (mCaretPos + 1);
     }
 
@@ -6530,7 +6842,7 @@ void EditBox::SetText(const std::wstring& text)
     if (!CharsetContains(text, mCharset))
         GLUF_CRITICAL_EXCEPTION(StringContainsInvalidCharacters());
 
-    mText = text;
+    mTextHistoryKeeper.SetText(text);
     InvalidateRects();
 }
 
@@ -6540,13 +6852,16 @@ void EditBox::SetCharset(Charset chSet) noexcept
     NOEXCEPT_REGION_START
 
     mCharset = chSet;
+    std::wstring text = GetText();
 
     //remove all characters from the string that are not in 'chSet'
-    for (auto it = mText.begin(); it != mText.end(); ++it)
+    for (auto it = text.begin(); it != text.end(); ++it)
     {
         if (!CharsetContains(*it, chSet))
-            mText.erase(it);
+            text.erase(it);
     }
+
+    mTextHistoryKeeper.SetText(text);
 
     NOEXCEPT_REGION_END
 }
@@ -6571,7 +6886,7 @@ void EditBox::SetCaretPosition(Value pos) noexcept
     if (mIsEmpty)
         mCaretPos = -1;
 
-    mCaretPos = glm::clamp(pos, -1, (int32_t)mText.length());
+    mCaretPos = glm::clamp(pos, -1, (int32_t)GetText().length());
 
     NOEXCEPT_REGION_END
 }
@@ -6640,19 +6955,31 @@ void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
 {
     NOEXCEPT_REGION_START
 
-    pos = glm::clamp(pos, -1, static_cast<Value>(mText.size()));
+
+    //start by removing ALL newlines
+    std::wstring newStr = str;
+    {
+        std::wstring::iterator it = std::find(newStr.begin(), newStr.end(), '\n');
+
+        while (it != newStr.end())
+        {
+            newStr.erase(it);
+            it = std::find(newStr.begin(), newStr.end(), '\n');
+        }
+    }
+
+    pos = glm::clamp(pos, -1, static_cast<Value>(GetText().size()));
 
     //since a space is used as a placeholder when there is no text, make sure to clear when we get text
     if (mIsEmpty)
     {
-        mText.clear();
+        mTextHistoryKeeper.PushPartialRemoval(0, 1);
         mIsEmpty = false;
     }
-
-    mText.insert(pos, str);
+    mTextHistoryKeeper.PushPartialAddition(newStr, pos);
 
     if (pos <= mCaretPos)
-        mCaretPos += str.size();
+        mCaretPos += newStr.size();
 
     mSelStart = -2;
 
@@ -6666,16 +6993,15 @@ void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
 {
     NOEXCEPT_REGION_START
 
-    pos = glm::clamp(pos, -1, static_cast<Value>(mText.size()));
+    pos = glm::clamp(pos, -1, static_cast<Value>(GetText().size()));
 
     //since a space is used as a placeholder when there is no text, make sure to clear when we get text
     if (mIsEmpty)
     {
-        mText.clear();
+        mTextHistoryKeeper.PushPartialRemoval(0, 1);
         mIsEmpty = false;
     }
-
-    mText.insert(pos + 1, 1, ch);
+    mTextHistoryKeeper.PushPartialAddition(std::wstring() + ch, pos + 1);
 
     if (pos <= mCaretPos)
         ++mCaretPos;
@@ -6691,10 +7017,22 @@ void EditBox::DeleteChar(Value pos) noexcept
 {
     NOEXCEPT_REGION_START
 
-    if (pos < 0 || pos >= mText.size())
+    if (pos < 0 || pos >= GetText().size())
         return;
 
-    mText.erase(pos, 1);
+    if (GetText().size() == 1)
+    {
+        if (!mIsEmpty)
+        {
+            mTextHistoryKeeper.PushPartialRemoval(0, 1);
+            mTextHistoryKeeper.PushPartialAddition(L" ", 0);
+            mIsEmpty = true;
+        }
+    }
+    else
+    {
+        mTextHistoryKeeper.PushPartialRemoval(pos, pos + 1);
+    }
 
     InvalidateRects();
 
@@ -6870,10 +7208,24 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             }
             break;
         case GLFW_KEY_A:
-            if (param3 == GLFW_PRESS)
+            if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
             {
                 mSelStart = -1;
-                mCaretPos = mText.size() - 1;
+                mCaretPos = GetText().size() - 1;
+            }
+            break;
+        case GLFW_KEY_Z:
+            if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
+            {
+                mTextHistoryKeeper.UndoNextItem();
+                InvalidateRects();
+            }
+            break;
+        case GLFW_KEY_Y:
+            if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
+            {
+                mTextHistoryKeeper.RedoNextItem();
+                InvalidateRects();
             }
             break;
         }
@@ -6882,6 +7234,8 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     default:
         break;
     }
+
+    ApplyCompositeModifications();
 
     return false;
 
@@ -6918,7 +7272,7 @@ void EditBox::UpdateRects() noexcept
 {
     NOEXCEPT_REGION_START
 
-    if (mText.size() == 0)
+    if (GetText().size() == 0)
     {
         mIsEmpty = true;
     }
@@ -7168,9 +7522,12 @@ void EditBox::RemoveSelectedRegion() noexcept
     if (mSelStart != -2)
     {
         if (mSelStart > mCaretPos)
-            mText.erase(mCaretPos + 1, mSelStart - mCaretPos);
+            mTextHistoryKeeper.PushPartialRemoval(mCaretPos + 1, mSelStart + 1);
         else
-            mText.erase(mSelStart + 1, mCaretPos - mSelStart);
+            mTextHistoryKeeper.PushPartialRemoval(mSelStart + 1, mCaretPos + 1);
+
+        if (mSelStart == -1 && mCaretPos == GetText().size() - 1)
+            mTextHistoryKeeper.PushPartialAddition(L" ", 0);
 
         mCaretPos = glm::min(mCaretPos, mSelStart);
         mSelStart = -2;
@@ -7319,6 +7676,15 @@ bool EditBox::ShouldRenderCaret() noexcept
     NOEXCEPT_REGION_END
 }
 
+void EditBox::ApplyCompositeModifications() noexcept
+{
+    NOEXCEPT_REGION_START
+
+    mTextHistoryKeeper.ApplyPartialModifications();
+
+    NOEXCEPT_REGION_END
+}
+
 //--------------------------------------------------------------------------------------
 Value EditBox::TextToRenderText(Value txtIndex)
 {
@@ -7388,7 +7754,7 @@ void EditBox::UpdateCharRects() noexcept
 
     if (mIsEmpty)
     {
-        mText = L" ";
+        //mText = L" ";
     }
 
     (this->*mUpdateCharRectsFunction)();
@@ -7403,6 +7769,8 @@ void EditBox::UpdateCharRectsMultiline() noexcept
 {
     NOEXCEPT_REGION_START
 
+    std::wstring text = GetText();
+
     Rect rcScreen = mTextRegion;
     auto dlgRect = mDialog.GetRegion();
     mDialog.ScreenSpaceToGLSpace(rcScreen);
@@ -7416,8 +7784,8 @@ void EditBox::UpdateCharRectsMultiline() noexcept
     std::vector<std::wstring> textLines = { L"" };
     std::vector<bool> whichLinesCausedByNewlines = { 0 };
 
-    mCharacterRects.resize(mText.size());
-    mCharacterBBs.resize(mText.size());
+    mCharacterRects.resize(text.size());
+    mCharacterBBs.resize(text.size());
 
     {
         auto textRegionWidth = RectWidth(rcScreen);
@@ -7428,9 +7796,9 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         Get Each Line of Text
         
         */
-        for (unsigned int i = 0; i < mText.size(); ++i)
+        for (unsigned int i = 0; i < text.size(); ++i)
         {
-            auto thisChar = mText[i];
+            auto thisChar = text[i];
             auto thisCharWidth = 0;
 
             int potentialNewLineWidth = 0;
@@ -7568,19 +7936,10 @@ void EditBox::UpdateCharRectsSingleline() noexcept
     auto fontHeight = font->mFontType->mHeight;
     auto leading = font->mLeading;
 
-    //start by removing ALL newlines
-    {
-        std::wstring::iterator it = std::find(mText.begin(), mText.end(), '\n');
+    std::wstring str = GetText();
 
-        while (it != mText.end())
-        {
-            mText.erase(it);
-            it = std::find(mText.begin(), mText.end(), '\n');
-        }
-    }
-
-    mCharacterRects.resize(mText.size());
-    mCharacterBBs.resize(mText.size());
+    mCharacterRects.resize(str.size());
+    mCharacterBBs.resize(str.size());
 
     //get the vertical alignment
     long yPos = rcScreen.top;
@@ -7594,7 +7953,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
     }
 
     //update the scroll bar
-    mScrollBar->SetTrackRange(0, mText.size());
+    mScrollBar->SetTrackRange(0, str.size());
 
     //get the horizontal offset based on the scroll bar position
     long currX = rcScreen.left;
@@ -7602,7 +7961,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
         long offset = 0;
         for (Value i = 0; i < mScrollBar->GetTrackPos(); ++i)
         {
-            offset -= font->mFontType->GetCharAdvance(mText[i]);
+            offset -= font->mFontType->GetCharAdvance(str[i]);
         }
 
         currX += offset;
@@ -7612,7 +7971,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
 
     //get the character rects
     unsigned int i = 0;
-    for (auto it : mText)
+    for (auto it : str)
     {
         auto thisCharRect = font->mFontType->GetCharRect(it);
         OffsetRect(thisCharRect, currX, yPos - fontHeight);
@@ -7632,9 +7991,9 @@ void EditBox::UpdateCharRectsSingleline() noexcept
     {
         long tmpWidth = 0;
         long textRectWidth = RectWidth(mTextRegion);
-        for (i = mScrollBar->GetTrackPos(); i < mText.size(); ++i)
+        for (i = mScrollBar->GetTrackPos(); i < str.size(); ++i)
         {
-            tmpWidth += font->mFontType->GetCharAdvance(mText[i]);
+            tmpWidth += font->mFontType->GetCharAdvance(str[i]);
             if (tmpWidth > textRectWidth)
                 break;
 
@@ -7650,8 +8009,10 @@ void EditBox::BufferCharRects() noexcept
 {
     NOEXCEPT_REGION_START
 
+    auto str = GetText();
+
     //make sure there are characters to load
-    if (mText.size() == 0)
+    if (str.size() == 0)
         return;
 
     auto font = mDialog.GetFont(GetElement(0).mFontIndex);
@@ -7660,15 +8021,15 @@ void EditBox::BufferCharRects() noexcept
     Buffer data into OpenGL
     
     */
-    GLVector<TextVertexStruct> textVertices = TextVertexStruct::MakeMany(mText.size() * 4);
+    GLVector<TextVertexStruct> textVertices = TextVertexStruct::MakeMany(str.size() * 4);
     std::vector<glm::u32vec3> indices;
-    indices.resize(mText.size() * 2);
+    indices.resize(str.size() * 2);
 
     float z = _NEAR_BUTTON_DEPTH;
-    for (unsigned int i = 0; i < mText.size(); ++i)
+    for (unsigned int i = 0; i < str.size(); ++i)
     {
         auto &glyph = mCharacterRects[i];
-        auto ch = mText[i];
+        auto ch = str[i];
 
 
         auto UV = font->mFontType->GetCharTexRect(ch);
