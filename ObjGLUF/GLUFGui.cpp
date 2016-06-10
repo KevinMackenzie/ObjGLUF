@@ -3004,7 +3004,7 @@ DialogResourceManager::DialogResourceManager() :
 
     mSpriteBuffer.AddVertexAttrib({ 4, 3, g_UIShaderLocations.position, GL_FLOAT, 0 }, 0);
     mSpriteBuffer.AddVertexAttrib({ 4, 4, g_UIShaderLocations.color, GL_FLOAT, 0 }, 12);
-    mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.sampler, GL_FLOAT, 0 }, 28);
+    mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.uv, GL_FLOAT, 0 }, 28);
 
 	//this is static
 	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
