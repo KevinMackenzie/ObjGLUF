@@ -6904,6 +6904,13 @@ void EditBox::SetSelectionStart(Value pos) noexcept
 }
 
 //--------------------------------------------------------------------------------------
+void EditBox::SetSelectionEmpty() noexcept
+{
+	SetSelectionStart(-2);
+	SetCaretPosition(-1);
+}
+
+//--------------------------------------------------------------------------------------
 void EditBox::SetHorizontalMargin(Size marg) noexcept
 {
     mHorizontalMargin = marg;
@@ -7064,11 +7071,11 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 {
                     if (!mHasFocus)
                         mDialog.RequestFocus(shared_from_this());
-                }
 
-                mSelStart = -2;
-                SetCaretPosition(PointToCharPos(mousePos));
-                mMouseDrag = true;
+					mSelStart = -2;
+					SetCaretPosition(PointToCharPos(mousePos));
+					mMouseDrag = true;
+                }
             }
             else if (param2 == GLFW_RELEASE)
             {
@@ -7231,6 +7238,12 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         }
         break;
     }
+	case FOCUS:
+		if (param1 == GL_TRUE)
+		{
+			SetSelectionEmpty();
+		}
+		break;
     default:
         break;
     }
@@ -7699,6 +7712,8 @@ void EditBox::OnFocusIn() noexcept
     Control::OnFocusIn();
     mScrollBar->OnFocusIn();
 
+	MsgProc(FOCUS, GL_TRUE, 0, 0, 0);
+
     NOEXCEPT_REGION_END
 }
 
@@ -7709,6 +7724,8 @@ void EditBox::OnFocusOut() noexcept
 
     Control::OnFocusOut();
     mScrollBar->OnFocusOut();
+
+	MsgProc(FOCUS, GL_FALSE, 0, 0, 0);
 
     NOEXCEPT_REGION_END
 }

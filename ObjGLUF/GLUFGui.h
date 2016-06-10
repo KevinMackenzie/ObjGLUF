@@ -3156,6 +3156,7 @@ public:
     void SetCaretPosition(Value pos) noexcept;
     void SetInsertMode(bool insertMode) noexcept;
     void SetSelectionStart(Value pos) noexcept;
+	void SetSelectionEmpty() noexcept;
     void SetVerticalMargin(Size marg) noexcept;
     void SetHorizontalMargin(Size marg) noexcept;
     void SetSelectedTextBlendColor(const BlendColor& col) noexcept;
