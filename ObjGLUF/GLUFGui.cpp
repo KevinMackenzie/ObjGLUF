@@ -831,7 +831,7 @@ void Font::Refresh()
         glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
 
         mCharAtlas[p].mTexXOffset = static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
-        mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
+        mCharAtlas[p].mTexYOffset = (static_cast<float>(y)+0.5f) / static_cast<float>(mAtlasSize.y);
 
 		x += g->bitmap.width;
 
@@ -7117,7 +7117,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     {
         mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
         InvalidateRects();
-		MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);
+		MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);//this doesn't 100% work
         /*if (mMultiline)
         {
             mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
