@@ -34,35 +34,17 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void TextHelper::DrawFormattedTextLine(const std::wstring& format, const Types&... args) noexcept
+    void TextRenderer::DrawFormattedText(const Rect& rect, const FontNodePtr& fontNode, const Color& color, Bitfield flags, const glm::mat4& ortho, bool hardRect, const std::wstring& format, const Types&... args)
     {
-        NOEXCEPT_REGION_START
-
         std::wstring outString;
         RenderText(format, outString, args...);
 
-        DrawTextLine(outString);
-
-        NOEXCEPT_REGION_END
+        DrawText(rect, fontNode, color, flags, ortho, hardRect, outString);
     }
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
-    void TextHelper::DrawFormattedTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& format, const Types&... args) noexcept
-    {
-        NOEXCEPT_REGION_START
-
-        std::wstring outString;
-        RenderText(format, outString, args...);
-
-        DrawTextLineBase(rc, flags, outString);
-
-        NOEXCEPT_REGION_END
-    }
-
-    //--------------------------------------------------------------------------------------
-    template<class... Types>
-    void TextHelper::RenderText(const std::wstring& format, std::wstring& outString, const Types&... args) noexcept
+    void TextRenderer::RenderText(const std::wstring& format, std::wstring& outString, const Types&... args) noexcept
     {
         NOEXCEPT_REGION_START
 
@@ -78,7 +60,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T1, typename... Types>
-    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outStringStream, const T1& arg1, const Types&... args)
+    void TextRenderer::RenderText(std::wstringstream& formatStream, std::wstringstream& outStringStream, const T1& arg1, const Types&... args)
     {
         wchar_t ch;
         while (formatStream.get(ch))
@@ -97,7 +79,7 @@ namespace GLUF
 
     //--------------------------------------------------------------------------------------
     template<typename T1>
-    void TextHelper::RenderText(std::wstringstream& formatStream, std::wstringstream& outStringStream, const T1& arg)
+    void TextRenderer::RenderText(std::wstringstream& formatStream, std::wstringstream& outStringStream, const T1& arg)
     {
         wchar_t ch;
         bool usedArg = false;
@@ -181,12 +163,6 @@ namespace GLUF
     std::shared_ptr<EditBox> CreateEditBox(Dialog& dialog, bool isMultiline)
     {
         return std::shared_ptr<EditBox>(new EditBox(dialog, isMultiline));
-    }
-
-    //--------------------------------------------------------------------------------------
-    std::shared_ptr<TextHelper> CreateTextHelper(DialogResourceManagerPtr& drm)
-    {
-        return std::shared_ptr<TextHelper>(new TextHelper(drm));
     }
 
 
