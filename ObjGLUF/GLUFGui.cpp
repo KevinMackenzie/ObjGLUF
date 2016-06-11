@@ -7117,6 +7117,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     {
         mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
         InvalidateRects();
+		MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);
         /*if (mMultiline)
         {
             mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
