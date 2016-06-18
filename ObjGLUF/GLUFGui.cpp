@@ -6632,7 +6632,7 @@ void ModificationStackInternal::ModificationAddition::ApplyModificationToString(
 void ModificationStackInternal::ModificationAddition::RemoveModificationToString(std::wstring& str) const
 {
     auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t)0, static_cast<uint32_t>(str.size()));
-    auto end = std::begin(str) + std::clamp(mInsertLocation + mNewText.size(), (uint32_t)0, static_cast<uint32_t>(str.size()));
+	auto end = std::begin(str) + std::clamp(mInsertLocation + static_cast<uint32_t>(mNewText.size()), (uint32_t)0, static_cast<uint32_t>(str.size()));
 
     str.erase(begin, end);
 }

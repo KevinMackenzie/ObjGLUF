@@ -177,14 +177,17 @@ Utility Macros
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
 
 //in debug mode, don't catch exceptions, because they may be helpful in debugging situations
+#ifdef _WIN32
 #ifdef _DEBUG
 #define NOEXCEPT_REGION_START
 #define NOEXCEPT_REGION_END
+#define noexcept
 #else
 #define NOEXCEPT_REGION_START try{
 #define NOEXCEPT_REGION_END }catch(...){}
-#endif
 #define noexcept throw()
+#endif
+#endif
 /*
 ======================================================================================================================================================================================================
 Multithreading Macros
