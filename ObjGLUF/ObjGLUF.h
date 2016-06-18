@@ -1719,6 +1719,7 @@ public:
     Default Constructor
     */
     GLVector(){}
+	~GLVector();
 
     /*
 

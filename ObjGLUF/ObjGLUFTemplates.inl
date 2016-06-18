@@ -56,6 +56,16 @@ namespace GLUF
     
     */
 
+	template<typename T>
+	GLVector<T>::~GLVector()
+	{
+		if (nullptr != mGLData)
+		{
+			delete[] mGLData;
+			mGLData = 0;
+		}
+	}
+
     template<typename T>
     GLVector<T>::GLVector(GLVector<T>&& other) : std::vector<T>(std::move(other))
     {
