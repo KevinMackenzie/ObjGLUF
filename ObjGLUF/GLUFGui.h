@@ -101,18 +101,18 @@ Enumerations and Type Aliases
 enum MessageType
 {
 	MB = 0,
-	CURSOR_POS,
-	CURSOR_ENTER,
-	SCROLL, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
-	KEY,//don't' support joysticks yet
-	UNICODE_CHAR,
-	RESIZE,
-	POS,
-	CLOSE,
-	REFRESH,
-	FOCUS,
-	ICONIFY,
-	FRAMEBUFFER_SIZE
+	CURSOR_POS = 1,
+	CURSOR_ENTER = 2,
+	SCROLL = 3, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
+	KEY = 4,//don't' support joysticks yet
+	UNICODE_CHAR = 5,
+	RESIZE = 6,
+	POS = 7,
+	CLOSE = 8,
+	REFRESH = 9,
+	FOCUS = 10,
+	ICONIFY = 11,
+	FRAMEBUFFER_SIZE = 12
 };
 
 //WIP
