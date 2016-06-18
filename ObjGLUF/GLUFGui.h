@@ -87,7 +87,7 @@ class OBJGLUF_API ScrollBar;
 class OBJGLUF_API Element;
 class OBJGLUF_API Font;
 class OBJGLUF_API Dialog;
-class OBJGLUF_API TextHelper;
+class OBJGLUF_API TextRenderer;
 struct ElementHolder;
 struct TextureNode;
 struct FontNode;
@@ -206,7 +206,7 @@ using RadioButtonPtr            = std::shared_ptr < RadioButton > ;
 using ScrollBarPtr              = std::shared_ptr < ScrollBar > ;
 using SliderPtr                 = std::shared_ptr < Slider > ;
 using StaticPtr                 = std::shared_ptr < Static > ;
-using TextHelperPtr             = std::shared_ptr < TextHelper > ;
+using TextRendererPtr           = std::shared_ptr < TextRenderer > ;
 using ElementHolderPtr          = std::shared_ptr < ElementHolder > ;
 using FontNodePtr               = std::shared_ptr < FontNode > ;
 using TextureNodePtr            = std::shared_ptr < TextureNode > ;
@@ -572,6 +572,7 @@ Dialog
         'mMousePosition': the mouse position of the window; cached at the beginning of the message procedure
         'mMousePositionDialogSpace': the mouse position relative to the dialog origin
         'mMousePositionOld': the mouse position cached when the mouse is pressed down to detect whether it is a drag or a minimize/maximize event
+		'mTextRenderer': the method for the dialog to render text
 
 */
 class Dialog : public std::enable_shared_from_this<Dialog>
@@ -631,6 +632,8 @@ class Dialog : public std::enable_shared_from_this<Dialog>
     Point mMousePosition;
     Point mMousePositionDialogSpace;
     Point mMousePositionOld;
+
+	TextRendererPtr mTextRenderer;
 
     /*
     Constructor/Destructor
@@ -3204,29 +3207,24 @@ Text Controls Below
 
 
 /*
-TextHelper
+TextRenderer
 
     Note:
-        This class's purpose is to provide a way to draw text outside of a dialog
+        -This class's purpose is to provide a way to draw text inside and outside of a dialog
 
     Data Members:
         'mColor': the text color
-        'mPoint': where to start drawing the text
-        'mManager': a reference to the dialog resource manager
-        'mFontIndex': the index of the font within the DRM
+        'mRect': the region which text is drawn in
+        'mFont': a pointer to the font
         'mFontSize': the font size in points
         'mLeading': the leading of the text
+
+	Multithreading:
+		Each instance of this class should be only accessed on one thread at a time
 */
-class OBJGLUF_API TextHelper
+class OBJGLUF_API TextRenderer
 {
 protected:
-
-    TextHelper() = delete;
-    TextHelper(DialogResourceManagerPtr& drm);
-    friend std::shared_ptr<TextHelper> CreateTextHelper(DialogResourceManagerPtr& drm);
-
-
-    DialogResourceManagerPtr& mManager;
 
     /*
     Helper overloads for RenderString
@@ -3239,31 +3237,36 @@ protected:
     template<typename T1>
     static void RenderText(std::wstringstream& formatStream, std::wstringstream& outString, const T1& arg);
 
-    FontIndex mFontIndex;
-    FontSize mFontSize;
-    FontSize mLeading;
+	VertexArrayPtr mTextVertexArray;
 
 public:
-    Color mColor;
-    Point mPoint;
 
+	TextRenderer();
+	~TextRenderer() {};
 
-	~TextHelper(){};
+	/*
+	PresetOpenGLState
 
-    /*
-    Begin
-
-        Note:
-            Call this before calling any text drawing calls
-
-        Parameters:
-            'drmFont': the index of the font to use
-            'size': the size of font to draw
+		Note:
+			all this does is setup some useful preset openGL state settings for drawing text
 
         Throws:
-            'std::out_of_range': if 'drmFont': is out of the range within the DRM
-    */
-	void Begin(FontIndex drmFont, FontSize leading, FontSize size);
+            no-throw guarantee
+	
+	*/
+	static void PresetOpenGLState() noexcept;
+
+	/*
+	ResetOpenGLState
+		
+		Note:
+			This changes back some of the strange openGL settings back to their defaults 
+
+		Throws:
+			no-throw guarantee
+	
+	*/
+	static void ResetOpenGLState() noexcept;
 
     /*
     DrawFormattedTextLine
@@ -3272,48 +3275,33 @@ public:
             this replaces each % with a the next argument, more features will come in the future
 
         Parameters:
+            'rc': the rect to render the text within
+			'fontNode': the information about the font to render
+            'flags': the flags for drawing
+            'hardRect': should the text be bound completely to the rect
             'format': the format and text
             'args': the data to put in 'format'
-            'rc': the rect to render the text within
-            'flags': the flags for drawing
 
         Throws:
-            no-throw guarantee
+			TODO: throw something for conflicting 'flags'
     */
     template<class... Types>
-    void DrawFormattedTextLine(const std::wstring& format, const Types&... args) noexcept;
-
-    template<class... Types>
-    void DrawFormattedTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& format, const Types&... args) noexcept;
+	void DrawFormattedText(const Rect& rect, const FontNodePtr& fontNode, const Color& color, Bitfield flags, const glm::mat4& ortho, bool hardRect, const std::wstring& format, const Types&... args);
 
     /*
     DrawTextLine
 
-        Note:
-            The first will automatically bring down the next line to draw, the second will not
-
         Parameters:
-            'text': the text to draw
             'rc': the rect to render the text within
-            'flags': the flags for drawing within the rect (i.e. GT_CENTER)
+			'fontNode': the information about the font to render
+            'flags': the flags for drawing
+            'hardRect': should the text be bound completely to the rect
+            'text': the text to draw
 
         Throws:
-            no-throw guarantee
+			TODO: throw something for conflicting 'flags'
     */
-	void DrawTextLine(const std::wstring& text) noexcept;
-    void DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept;
-
-    /*
-    End
-
-        Note:
-            This actually renders the text; the previous functions just buffer it
-
-        Throws:
-            no-throw guarantee
-    
-    */
-	void End() noexcept;
+	void DrawText(const Rect& rect, const FontNodePtr& fontNode, const Color& color, Bitfield flags, const glm::mat4& ortho, bool hardRect, const std::wstring& text);
 
     /*
     RenderText
