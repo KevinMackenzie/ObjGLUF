@@ -19,14 +19,15 @@ for more details.
 #include "stdafx.h"
 #include "GLUFGui.h"
 //#include "CBFG/BitmapFontClass.h"
-#include <ft2build.h> 
-#include FT_FREETYPE_H
-
-#include <algorithm>
+//#include <algorithm>
 
 #ifdef WIN32
 #pragma warning( disable : 4715 )
 #endif
+
+#include <ft2build.h> 
+#include FT_FREETYPE_H
+
 
 namespace GLUF
 {
@@ -1466,6 +1467,16 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	//	m_MousePositionDialogSpace.y -= m_nCaptionHeight;
 
 	bool bHandled = false;
+
+
+	//if it is a resize method, refresh ALL components
+	if (msg == RESIZE || msg == FRAMEBUFFER_SIZE)
+	{
+		for (auto it = mControls.begin(); it != mControls.end(); ++it)
+		{
+			it->second->MsgProc(msg, param1, param2, param3, param4);
+		}
+	}
 
 	// For invisible dialog, do not handle anything.
 	if (!mVisible)
@@ -7043,7 +7054,7 @@ void EditBox::DeleteChar(Value pos) noexcept
 bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
     NOEXCEPT_REGION_START
-
+		
     auto mousePos = mDialog.GetMousePositionDialogSpace();
 
     if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/)
@@ -7231,6 +7242,10 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         }
         break;
     }
+	case FRAMEBUFFER_SIZE:
+		//if the window resizes, we must reset our text 
+		InvalidateRects();
+		break;
     default:
         break;
     }
