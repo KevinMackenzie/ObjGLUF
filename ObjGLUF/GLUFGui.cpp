@@ -832,7 +832,7 @@ void Font::Refresh()
         glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
 
         mCharAtlas[p].mTexXOffset = static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
-        mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
+        mCharAtlas[p].mTexYOffset = (static_cast<float>(y)+0.5f) / static_cast<float>(mAtlasSize.y);
 
 		x += g->bitmap.width;
 
@@ -3015,7 +3015,7 @@ DialogResourceManager::DialogResourceManager() :
 
     mSpriteBuffer.AddVertexAttrib({ 4, 3, g_UIShaderLocations.position, GL_FLOAT, 0 }, 0);
     mSpriteBuffer.AddVertexAttrib({ 4, 4, g_UIShaderLocations.color, GL_FLOAT, 0 }, 12);
-    mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.sampler, GL_FLOAT, 0 }, 28);
+    mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.uv, GL_FLOAT, 0 }, 28);
 
 	//this is static
 	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
@@ -6668,7 +6668,7 @@ void ModificationStackInternal::ModificationAddition::ApplyModificationToString(
 void ModificationStackInternal::ModificationAddition::RemoveModificationToString(std::wstring& str) const
 {
     auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t)0, static_cast<uint32_t>(str.size()));
-    auto end = std::begin(str) + std::clamp(mInsertLocation + mNewText.size(), (uint32_t)0, static_cast<uint32_t>(str.size()));
+    auto end = std::begin(str) + std::clamp(mInsertLocation + static_cast<uint32_t>(mNewText.size()), (uint32_t)0, static_cast<uint32_t>(str.size()));
 
     str.erase(begin, end);
 }
@@ -6915,6 +6915,13 @@ void EditBox::SetSelectionStart(Value pos) noexcept
 }
 
 //--------------------------------------------------------------------------------------
+void EditBox::SetSelectionEmpty() noexcept
+{
+	SetSelectionStart(-2);
+	SetCaretPosition(-1);
+}
+
+//--------------------------------------------------------------------------------------
 void EditBox::SetHorizontalMargin(Size marg) noexcept
 {
     mHorizontalMargin = marg;
@@ -7075,11 +7082,11 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 {
                     if (!mHasFocus)
                         mDialog.RequestFocus(shared_from_this());
-                }
 
-                mSelStart = -2;
-                SetCaretPosition(PointToCharPos(mousePos));
-                mMouseDrag = true;
+					mSelStart = -2;
+					SetCaretPosition(PointToCharPos(mousePos));
+					mMouseDrag = true;
+                }
             }
             else if (param2 == GLFW_RELEASE)
             {
@@ -7121,6 +7128,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     {
         mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
         InvalidateRects();
+		MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);//this doesn't 100% work
         /*if (mMultiline)
         {
             mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
@@ -7245,6 +7253,12 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 	case FRAMEBUFFER_SIZE:
 		//if the window resizes, we must reset our text 
 		InvalidateRects();
+		break;
+	case FOCUS:
+		if (param1 == GL_TRUE)
+		{
+			SetSelectionEmpty();
+		}
 		break;
     default:
         break;
@@ -7714,6 +7728,8 @@ void EditBox::OnFocusIn() noexcept
     Control::OnFocusIn();
     mScrollBar->OnFocusIn();
 
+	MsgProc(FOCUS, GL_TRUE, 0, 0, 0);
+
     NOEXCEPT_REGION_END
 }
 
@@ -7724,6 +7740,8 @@ void EditBox::OnFocusOut() noexcept
 
     Control::OnFocusOut();
     mScrollBar->OnFocusOut();
+
+	MsgProc(FOCUS, GL_FALSE, 0, 0, 0);
 
     NOEXCEPT_REGION_END
 }
