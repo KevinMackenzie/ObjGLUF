@@ -63,6 +63,13 @@ namespace GLUF
         other.mGLData = 0;
     }
 
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	GLVector<T>::~GLVector()
+	{
+		this->gl_delete_data();
+	}
+
     //--------------------------------------------------------------------------------------
     template<typename T>
     GLVector<T>& GLVector<T>::operator=(GLVector&& other)

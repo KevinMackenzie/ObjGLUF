@@ -53,6 +53,7 @@ for more details.
 #include <assimp/postprocess.h>
 #endif
 
+#include <algorithm>
 #include <vector>
 #include <memory>
 #include <map>
