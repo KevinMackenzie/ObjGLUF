@@ -75,25 +75,25 @@
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)/Bin/$(Platform)/$(Configuration)/</OutDir>
-    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/</IntDir>
+    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration);$(SolutionDir)/packages/freetype.2.4.2.1/build/native/bin/$(Platform)/v110/dynamic/$(Configuration)/;$(LibraryPath);$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration)</LibraryPath>
     <OutDir>$(SolutionDir)/Bin/$(Platform)/$(Configuration)/</OutDir>
-    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/</IntDir>
+    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration);$(SolutionDir)/packages/freetype.2.4.2.1/build/native/bin/$(Platform)/v110/dynamic/$(Configuration)/;$(LibraryPath);$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration)</LibraryPath>
     <OutDir>$(SolutionDir)/Bin/$(Platform)/$(Configuration)/</OutDir>
-    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/</IntDir>
+    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration);$(SolutionDir)/packages/freetype.2.4.2.1/build/native/bin/$(Platform)/v110/dynamic/$(Configuration)/;$(LibraryPath);$(SolutionDir)\packages\freetype.2.4.2.1\build\native\lib\$(Platform)\v110\static\$(Configuration)</LibraryPath>
     <OutDir>$(SolutionDir)/Bin/$(Platform)/$(Configuration)/</OutDir>
-    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/</IntDir>
+    <IntDir>$(SolutionDir)/Tmp/$(Platform)/$(Configuration)/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -176,14 +176,12 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CExport.h" />
     <ClInclude Include="GLUFGui.h" />
     <ClInclude Include="ObjGLUF.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CExport.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>
