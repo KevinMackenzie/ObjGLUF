@@ -7276,10 +7276,11 @@ void EditBox::UpdateRectsMultiline() noexcept
 {
     NOEXCEPT_REGION_START
 
-    mTextRegion.right -= mSBWidth;
 
-    mScrollBar->SetRegion({ { mTextRegion.right }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
+    mScrollBar->SetRegion({ { mTextRegion.right - mSBWidth }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
     mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
+
+    mTextRegion.right -= 2 * mSBWidth;
 
     //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
     mScrollBar->UpdateRects();
