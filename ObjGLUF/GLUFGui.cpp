@@ -5052,6 +5052,9 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                                 pItem->bSelected = true;
                                 */
                                 mSelected.push_back(i);
+
+								if (i == 0)
+									break;
                             }
                         }
                         /*else
