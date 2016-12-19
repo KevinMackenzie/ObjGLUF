@@ -140,7 +140,7 @@ int main(void)
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
-	window = glfwCreateWindow(800, 800, "Simple example", NULL, NULL);
+	window = glfwCreateWindow(1000, 1000, "Simple example", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -171,9 +171,9 @@ int main(void)
 	dlg->EnableGrabAnywhere();
 	dlg->SetMinimized(false);
 	//dlg->EnableCaption(false);
-	dlg->SetSize(600, 600);
+	dlg->SetSize(800, 800);
 	dlg->SetLocation(50, 50);
-	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
+	dlg->SetBackgroundColor(Color(0, 192, 0, 128));
 	dlg->EnableKeyboardInput(true);
 	Rect rc = { 0, 200, 200, 0 };
 
@@ -189,24 +189,24 @@ int main(void)
 		std::istreambuf_iterator<wchar_t>());
 
     std::shared_ptr<std::shared_ptr<EditBox>> editBox = std::make_shared<std::shared_ptr<EditBox>>();
-    dlg->AddEditBox(0, str, { { 50 }, 500, 550, { 50 } }, Unicode, GT_LEFT | GT_TOP | GT_MULTI_LINE, false, editBox);
+    dlg->AddEditBox(0, str, { { 50 }, 750, 550, { 250 } }, Unicode, GT_LEFT | GT_TOP | GT_MULTI_LINE, false, editBox);
     (*editBox)->SetHorizontalMargin(10);
     (*editBox)->SetVerticalMargin(10);
     //(*editBox)->SetInsertMode(false);
 	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
 
-    dlg->AddSlider(1, { { 50 }, 600, 400, { 550 } }, 0, 15, 5);
-    //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 40, 350, { 20 } });
+    dlg->AddSlider(1, { { 50 }, 200, 400, { 150 } }, 0, 15, 5);
+    dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 40, 350, { 20 } });
 
-    /*dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
-    dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 220, { 180 } }, true);
-    dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 220, { 230 } });
-    dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 220, { 280 } });
+    dlg->AddCheckBox(2, L"Check Box", { { 600 }, 50, 620, { 20 } });
+    dlg->AddRadioButton(3, 0, L"Button 1", { { 600 }, 700, 620, { 680 } }, true);
+    dlg->AddRadioButton(4, 0, L"Button 2", { { 600 }, 650, 620, { 630 } });
+    dlg->AddRadioButton(5, 0, L"Button 3", { { 600 }, 600, 620, { 580 } });
 
-    dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
+    dlg->AddButton(8, L"Button", { { 25 }, 20, 75, { 10 } });
 
     std::shared_ptr<ListBoxPtr> boxBase = std::make_shared<ListBoxPtr>(nullptr);
-    dlg->AddListBox(7, { { 0 }, 500, 180, { 200 } }, ListBox::MULTISELECTION, boxBase);
+    dlg->AddListBox(7, { { 600 }, 500, 750, { 200 } }, ListBox::MULTISELECTION, boxBase);
 
     auto box = *boxBase;
 	box->AddItem(L"Item 0");
@@ -240,7 +240,7 @@ int main(void)
 	box->AddItem(L"Item 28");
 	box->AddItem(L"Item 29");
 
-    TextHelperPtr textHelper = CreateTextHelper(resMan);*/
+    TextHelperPtr textHelper = CreateTextHelper(resMan);
 
 	//load shaders
 	//ProgramPtr frag, vert;
