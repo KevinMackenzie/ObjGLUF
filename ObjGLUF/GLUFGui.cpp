@@ -4975,6 +4975,12 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                 //the easy way
                 for (unsigned int it = 0; it < mItems.size(); ++it)
                 {
+                    if (it != 0 && mItems[it]->mTextRegion.top <= pt.y && mItems[it - 1]->mTextRegion.bottom >= pt.y)
+                    {
+                        long halfDistance = (mItems[it - 1]->mTextRegion.bottom - mItems[it]->mTextRegion.top) / 2;
+                        long relative = pt.y - mItems[it - 1]->mTextRegion.bottom;
+                        currSelectedIndex = (relative > halfDistance) ? it : it - 1;
+                    }
                     if (PtInRect(mItems[it]->mTextRegion, pt))
                     {
                         currSelectedIndex = it;
