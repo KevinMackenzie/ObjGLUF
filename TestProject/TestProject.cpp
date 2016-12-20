@@ -44,6 +44,38 @@ bool MsgProc(_GUI_CALLBACK_PARAM)
 		//return true;
 	}
 
+    //write to console
+    switch (msg)
+    {
+    case GLUF::MB:
+        std::cout << ((param1 == 1) ? "Left Button " : "Right Button ") << ((param2 == GLFW_PRESS) ? "Pressed" : "Released") << std::endl;
+        break;
+    case GLUF::SCROLL:
+        std::cout << "Scroll " << ((param2 > 0) ? "Up" : "Down") << std::endl;
+        break;
+    case GLUF::KEY:
+        if (param3 == GLFW_PRESS && param1 < 127 && param1 >= 32)
+        {
+            if (param4 & GLFW_MOD_CONTROL)
+            {
+                std::cout << "Ctrl-" << (char)param1 << std::endl;
+            }
+            else
+            {
+                std::cout <<(char)param1 << std::endl;
+            }
+        }
+        else if (param1 == GLFW_KEY_LEFT_CONTROL && param3 == GLFW_PRESS)
+        {
+            std::cout << "Ctrl" << std::endl;
+        }
+        else if (param1 == GLFW_KEY_LEFT_SHIFT && param3 == GLFW_PRESS)
+        {
+            std::cout << "Shift" << std::endl;
+        }
+        break;
+    }
+
     /*if (msg != MessageType::CURSOR_ENTER || msg != MessageType::CURSOR_POS || msg != MessageType::FOCUS)
     {
         
@@ -59,7 +91,7 @@ void ControlEventCallback(Event evt, ControlPtr&, const EventCallbackReceivableP
 {
 	if (evt == EVENT_BUTTON_CLICKED)
 	{
-		printf("HORRAY\n");
+		printf("Button Pressed\n");
 	}
 }
 
@@ -387,7 +419,7 @@ int main(void)
 	float currTime = 0.0f;
 
 
-	printf("%i.%i", GetGLVersionMajor(), GetGLVersionMinor);
+	printf("OpenGL Context Version: %i.%i \n", GetGLVersionMajor(), GetGLVersionMinor());
 
 	// Cull triangles which normal is not towards the camera
 	//glEnable(GL_CULL_FACE);

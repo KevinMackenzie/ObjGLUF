@@ -1110,7 +1110,7 @@ Dialog::Dialog()
 #ifdef _DEBUG
     //TODO: get a more graceful way to test this
     //This is to make sure all dialogs are being destroyed
-    printf("Dialog Created");
+    printf("Dialog Created\n");
 #endif
 }
 
@@ -1124,7 +1124,7 @@ Dialog::~Dialog()
 #ifdef _DEBUG
     //TODO: get a more graceful way to test this
     //This is to make sure all dialogs are being destroyed
-    printf("Dialog Destroyed");
+    printf("Dialog Destroyed\n");
 #endif
 
 	RemoveAllControls();
