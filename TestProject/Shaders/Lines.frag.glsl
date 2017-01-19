@@ -8,13 +8,14 @@ uniform float TimeRange;
 
 void main()
 {
+	gl_FragColor.a = 1;
 	gl_FragColor.rgb = Color;
 	if(Time < FragTime)
 	{
-		gl_FragColor.a = 0;
+		gl_FragColor.rgba = vec4(0,0,0,0);
 	}
 	else
 	{
-		gl_FragColor.a = mix(1, 0, (Time - FragTime)/TimeRange);
+		gl_FragColor.rgb = mix(Color, vec3(0,0,0), (Time - FragTime)/TimeRange);
 	}
 }

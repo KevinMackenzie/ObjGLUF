@@ -175,7 +175,7 @@ int main(void)
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
 	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
-	window = glfwCreateWindow(800, 800, "Simple example", NULL, NULL);
+	window = glfwCreateWindow(800, 400, "Simple example", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -313,6 +313,8 @@ int main(void)
 	//::TextHelper *textHelper = new ::TextHelper(resMan);
 	//textHelper->Init(20);
 
+	//glEnable(GL_LINE_SMOOTH);
+	glLineWidth(4);
 
 	/*GLuint skycubemap = ::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
 
@@ -415,7 +417,7 @@ int main(void)
 		// Enable depth test
 		//glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
-		//glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LESS);
 
 		// Cull triangles which normal is not towards the camera
 		//glEnable(GL_CULL_FACE);
@@ -435,7 +437,7 @@ int main(void)
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
-		SHADERMANAGER.GLUniform1f(TimeRangeID, 10);
+		SHADERMANAGER.GLUniform1f(TimeRangeID, 7);
 		SHADERMANAGER.GLUniform3f(ColorID, glm::vec3(1,1,0));
 		SHADERMANAGER.GLUniform1f(TimeID, currTime - timeStart);
 		
