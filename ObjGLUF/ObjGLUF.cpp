@@ -400,6 +400,89 @@ IO and Stream Utilities
 */
 
 //--------------------------------------------------------------------------------------
+void LoadFileIntoMemory(const std::wstring& path, std::string& textMemory)
+{
+	//try to open file
+	std::ifstream inFile;
+	inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+	try
+	{
+		inFile.open(path, std::ios_base::in);
+	}
+	catch (std::ios_base::failure e)
+	{
+		GLUF_ERROR_LONG("Failed to Open File: " << e.what());
+		RETHROW;
+	}
+
+	//delete anything already in here
+	textMemory.clear();
+
+	//get file length
+	inFile.seekg(0, std::ios::end);
+	unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
+	inFile.seekg(0, std::ios::beg);
+
+	//resize the vector
+	textMemory.reserve(rawSize);//is this line needed?
+	textMemory.resize(rawSize);
+
+	//try reading the memory
+	try
+	{
+		inFile.read(&textMemory[0], rawSize);
+		inFile.close();
+	}
+	catch (std::ios_base::failure e)
+	{
+		if (inFile.is_open())
+			inFile.close();
+		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+		RETHROW;
+	}
+}
+
+//--------------------------------------------------------------------------------------
+void LoadFileIntoMemory(const std::string& path, std::string& textMemory)
+{
+	//try to open file
+	std::ifstream inFile;
+	inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+	try
+	{
+		inFile.open(path, std::ios_base::in);
+	}
+	catch (std::ios_base::failure e)
+	{
+		GLUF_ERROR_LONG("Failed to Open File: " << e.what());
+		RETHROW;
+	}
+
+	//delete anything already in here
+	textMemory.clear();
+
+	inFile.seekg(0, std::ios::end);
+	size_t size = inFile.tellg();
+	inFile.seekg(0, std::ios::beg);
+
+	textMemory.resize(size + 1);
+
+	//try reading the memory
+	try
+	{
+		inFile.read(&textMemory[0], size);
+		inFile.close();
+	}
+	catch (std::ios_base::failure e)
+	{
+		if(inFile.is_open())
+			inFile.close();
+		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+		RETHROW;
+	}
+}
+
+//--------------------------------------------------------------------------------------
 void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
 {
     //try to open file
@@ -407,7 +490,7 @@ void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
     inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
     try
     {
-        inFile.open(path, std::ios::binary);
+        inFile.open(path, std::ios::binary | std::ios_base::in);
     }
     catch (std::ios_base::failure e)
     {
@@ -431,11 +514,14 @@ void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
     try
 	{
         inFile.read(&binMemory[0], rawSize);
+		inFile.close();
 	}
-    catch (std::ios_base::failure e)
+	catch (std::ios_base::failure e)
 	{
+		if (inFile.is_open())
+			inFile.close();
 		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-        RETHROW;
+		RETHROW;
 	}
 }
 
@@ -447,7 +533,7 @@ void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
     inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
     try
     {
-        inFile.open(path, std::ios::binary);
+        inFile.open(path, std::ios::binary | std::ios_base::in);
     }
     catch (std::ios_base::failure e)
     {
@@ -471,12 +557,15 @@ void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
     try
     {
         inFile.read(&binMemory[0], rawSize);
-    }
-    catch (std::ios_base::failure e)
-    {
-        GLUF_ERROR_LONG("Failed to load file into memory: " << e.what());
-        RETHROW;
-    }
+		inFile.close();
+	}
+	catch (std::ios_base::failure e)
+	{
+		if (inFile.is_open())
+			inFile.close();
+		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+		RETHROW;
+	}
 }
 
 //--------------------------------------------------------------------------------------

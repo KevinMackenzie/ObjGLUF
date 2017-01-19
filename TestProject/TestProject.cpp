@@ -30,8 +30,8 @@ void MyErrorMethod(const std::string& message, const char* func, const char* fil
 {
     std::cout << "(" << func << " | " << line << "): " << message << std::endl;
 	//pause
-    char c;
-    std::cin >> c;
+    //char c;
+    //std::cin >> c;
 }
 
 bool MsgProc(_GUI_CALLBACK_PARAM)
@@ -71,7 +71,9 @@ struct JustPositions : VertexStruct
 
     virtual void* operator&() const override
     {
-        return (void*)&pos;
+		char* copy = new char[sizeof(glm::vec3)];
+		memcpy(copy, &pos[0], sizeof(glm::vec3));
+		return (void*)&copy[0];
     }
 
     virtual size_t size() const override
@@ -125,7 +127,40 @@ void myunexpected()
     int i = 0;
 }
 
-#define USE_SEPARATE
+std::string RemoveChar(std::string str, char ch)
+{
+	std::stringstream ss;
+	for (auto s : str)
+	{
+		if (s == ch)
+			continue;
+		ss << s;
+	}
+
+	return ss.str();
+}
+
+GLUF::GLVector<JustPositions> csvToArray(std::string text)
+{
+	auto lines = GLUF::SplitStr(text, '\n', false, true);
+	auto ret = JustPositions::MakeMany(lines.size());
+	int j = 0;
+	for (auto it : lines)
+	{
+		auto columns = GLUF::SplitStr(it, ',');
+		glm::vec3 row;
+		for (int i = 0; i < columns.size(); ++i)
+		{
+			columns[i] = RemoveChar(columns[i], ' ');
+			row[i] = (atof(columns[i].c_str()));
+		}
+		ret[j] = row;
+		j++;
+	}
+	return ret;
+}
+
+//#define USE_SEPARATE
 
 int main(void)
 {
@@ -156,118 +191,7 @@ int main(void)
     gGLVersionMinor = 0;
     gGLVersion2Digit = 20;*/
 
-	GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
-    InitGui(window, MsgProc, ctrlTex);
-
-    resMan = std::make_shared<DialogResourceManager>();
-    dlg = CreateDialog();
-	dlg->Init(resMan);
-    dlg->SetCallback(ControlEventCallback);//TODO: fix caption
-	//dlg->SetCaptionText(L"Caption");
-    //dlg->SetCaptionHeight(50);
-    //dlg->EnableCaption(false);
-	dlg->Lock(false);
-	dlg->EnableAutoClamp();
-	dlg->EnableGrabAnywhere();
-	dlg->SetMinimized(false);
-	//dlg->EnableCaption(false);
-	dlg->SetSize(600, 600);
-	dlg->SetLocation(50, 50);
-	dlg->SetBackgroundColor(Color(0, 128, 0, 128));
-	dlg->EnableKeyboardInput(true);
-	Rect rc = { 0, 200, 200, 0 };
-
-
-	std::wifstream t("text.txt");
-	std::wstring str;
-
-	t.seekg(0, std::ios::end);
-	str.reserve(static_cast<uint32_t>(t.tellg()));
-	t.seekg(0, std::ios::beg);
-
-	str.assign((std::istreambuf_iterator<wchar_t>(t)),
-		std::istreambuf_iterator<wchar_t>());
-
-    std::shared_ptr<std::shared_ptr<EditBox>> editBox = std::make_shared<std::shared_ptr<EditBox>>();
-    dlg->AddEditBox(0, str, { { 50 }, 500, 550, { 50 } }, Unicode, GT_LEFT | GT_TOP | GT_MULTI_LINE, false, editBox);
-    (*editBox)->SetHorizontalMargin(10);
-    (*editBox)->SetVerticalMargin(10);
-    //(*editBox)->SetInsertMode(false);
-	//dlg->AddEditBox(10, L"EditBoxEditBoxEditBoxEditBoxEditBox", 100, 100, 400, 35, Charset::Unicode, GT_LEFT | GT_TOP);
-
-    dlg->AddSlider(1, { { 50 }, 600, 400, { 550 } }, 0, 15, 5);
-    //dlg->AddStatic(6, L"The Quick Brown Fox Jumped Over The Lazy Dog", { { 50 }, 40, 350, { 20 } });
-
-    /*dlg->AddCheckBox(2, L"Check Box", { { 150 }, 50, 170, { 20 } });
-    dlg->AddRadioButton(3, 0, L"Button 1", { { 200 }, 200, 220, { 180 } }, true);
-    dlg->AddRadioButton(4, 0, L"Button 2", { { 200 }, 250, 220, { 230 } });
-    dlg->AddRadioButton(5, 0, L"Button 3", { { 200 }, 300, 220, { 280 } });
-
-    dlg->AddButton(0, L"Button", { { 25 }, 20, 75, { 10 } });
-
-    std::shared_ptr<ListBoxPtr> boxBase = std::make_shared<ListBoxPtr>(nullptr);
-    dlg->AddListBox(7, { { 0 }, 500, 180, { 200 } }, ListBox::MULTISELECTION, boxBase);
-
-    auto box = *boxBase;
-	box->AddItem(L"Item 0");
-	box->AddItem(L"Item 1");
-	box->AddItem(L"Item 2");
-	box->AddItem(L"Item 3");
-	box->AddItem(L"Item 4");
-	box->AddItem(L"Item 5");
-	box->AddItem(L"Item 6");
-	box->AddItem(L"Item 7");
-	box->AddItem(L"Item 8");
-	box->AddItem(L"Item 9");
-	box->AddItem(L"Item 10");
-	box->AddItem(L"Item 11");
-	box->AddItem(L"Item 12");
-	box->AddItem(L"Item 13");
-	box->AddItem(L"Item 14");
-	box->AddItem(L"Item 15");
-	box->AddItem(L"Item 16");
-	box->AddItem(L"Item 17");
-	box->AddItem(L"Item 18");
-	box->AddItem(L"Item 19");
-	box->AddItem(L"Item 20");
-	box->AddItem(L"Item 21");
-	box->AddItem(L"Item 22");
-	box->AddItem(L"Item 23");
-	box->AddItem(L"Item 24");
-	box->AddItem(L"Item 25");
-	box->AddItem(L"Item 26");
-	box->AddItem(L"Item 27");
-	box->AddItem(L"Item 28");
-	box->AddItem(L"Item 29");
-
-    TextHelperPtr textHelper = CreateTextHelper(resMan);*/
-
-	//load shaders
-	//ProgramPtr frag, vert;
-	/*ProgramPtr Prog;
-
-	//ShaderPathList paths;
-	//paths.insert(std::pair<ShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
-	//paths.insert(std::pair<ShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
 	
-	ShaderSourceList sources;
-	unsigned long len = 0;
-
-    std::string text;
-    std::vector<char> rawMem;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
-    LoadBinaryArrayIntoString(rawMem, text);
-
-	text += '\n';
-	sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
-
-    std::string text1;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
-    LoadBinaryArrayIntoString(rawMem, text1);
-	text1 += '\n';
-	sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
-
-	SHADERMANAGER.CreateProgram(Prog, sources);*/
 
 #ifdef USE_SEPARATE
     ProgramPtrList Progs;
@@ -319,14 +243,14 @@ int main(void)
 
     std::string text;
     std::vector<char> rawMem;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadFileIntoMemory(L"Shaders/Lines.vert.glsl", rawMem);
     LoadBinaryArrayIntoString(rawMem, text);
 
     text += '\n';
     Sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
     std::string text1;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadFileIntoMemory(L"Shaders/Lines.frag.glsl", rawMem);
     LoadBinaryArrayIntoString(rawMem, text1);
     text1 += '\n';
     Sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
@@ -341,45 +265,39 @@ int main(void)
 
 	// Get a handle for our "MVP" uniform
 	GLuint MatrixID = uniforms["MVP"];
-	GLuint ViewMatrixID = uniforms["V"];
-	GLuint ModelMatrixID = uniforms["M"];
-
-	GLuint TextureID = uniforms["myTextureSampler"];
-	GLuint LightID = uniforms["LightPosition_worldspace"];
+	GLuint TimeID = uniforms["Time"];
+	GLuint ColorID = uniforms["Color"];
+	GLuint TimeRangeID = uniforms["TimeRange"];
 
 	// Get a handle for our buffers
 	GLuint vertexPosition_modelspaceID = attribs["vertexPosition_modelspace"];
-	GLuint vertexUVID = attribs["vertexUV"];
-	GLuint vertexNormal_modelspaceID = attribs["vertexNormal_modelspace"];
 
-	VertexAttribMap attributes;
-	attributes.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_POSITION, VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT)));
-	attributes.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_UV0, VertAttrib(vertexUVID, 4, 2, GL_FLOAT)));
-	attributes.insert(VertexAttribPair(GLUF_VERTEX_ATTRIB_NORMAL, VertAttrib(vertexNormal_modelspaceID, 4, 3, GL_FLOAT)));
-
-	std::string path = "suzanne.obj.model";
+	GLUF::VertexArrayAoS lines(GL_LINES, GL_DYNAMIC_DRAW);
+	lines.AddVertexAttrib(VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT));
 	
-	//load from assimp
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path,
-		aiProcess_CalcTangentSpace |
-		aiProcess_Triangulate |
-		aiProcess_JoinIdenticalVertices |
-		aiProcess_SortByPType);
+	std::string csvText;
+	try
+	{
+		GLUF::LoadFileIntoMemory("lines.csv", csvText);
+	}
+	catch (...) {}
+	auto data = csvToArray(csvText);
+
+	std::vector<GLuint> indices;
+	for (int i = 1; i < data.size(); ++i)
+	{
+		indices.push_back(i - 1);
+		indices.push_back(i);
+	}
+
+	lines.BufferData(data);
+	lines.BufferIndices(indices);
 
 	//load up the locations
 
 	/*std::shared_ptr<VertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData)
 		EXIT_FAILURE;*/
-
-	std::shared_ptr<VertexArray> vertexData2 = LoadVertexArrayFromScene(scene, attributes);
-	if (!vertexData2)
-		EXIT_FAILURE;
-
-
-	//load texture
-	GLuint texture = LoadTextureFromFile(L"uvmap.dds", TFF_DDS);
 
 
 	float ellapsedTime = 0.0f;
@@ -473,7 +391,10 @@ int main(void)
 	m_pVertexArray.BufferData(verts);
 	m_pVertexArray.BufferIndices(mTriangles);*/
 
+	float timeStart = -1;
 	do{
+		if (timeStart == -1)
+			timeStart = (float)glfwGetTime();
 
 		currTime = (float)glfwGetTime();
 		ellapsedTime = currTime - prevTime;
@@ -492,45 +413,35 @@ int main(void)
 		
 		
 		// Enable depth test
-		glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
-		glDepthFunc(GL_LESS);
+		//glDepthFunc(GL_LESS);
 
 		// Cull triangles which normal is not towards the camera
-		glEnable(GL_CULL_FACE);
+		//glEnable(GL_CULL_FACE);
 
 		//SHADERMANAGER.UseProgram(Prog); 
-		glm::vec3 pos(3, 5, 6);
-		glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(70), ratio, 0.1f, 1000.f);
-		glm::mat4 ViewMatrix = glm::translate(glm::mat4(), -pos);
-		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), pos) * glm::toMat4(glm::quat(glm::vec3(0, DEG_TO_RAD_F(30) * currTime, 0)));// glm::translate(glm::mat4(), glm::vec3(-1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(_PI_F / 2, 2.0f * currTime, 0.0f)));
-		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+		float dataSpaceHeight = height / 5;
+		glm::vec3 pos(0, 0, 80);
+		glm::mat4 ProjectionMatrix = glm::ortho<float>(0, dataSpaceHeight *ratio, 0, dataSpaceHeight);
+		glm::mat4 MVP = ProjectionMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		SHADERMANAGER.UseProgram(Prog);
 
 #ifndef USE_SEPARATE
-
-		glm::vec3 lightPos = glm::vec3(4, 4, 4);
-		SHADERMANAGER.GLUniform3f(LightID, lightPos);
-
-		// Bind our texture in Texture Unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		// Set our "myTextureSampler" sampler to user Texture Unit 0
-		SHADERMANAGER.GLUniform1i(TextureID, 0);
-
-		ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
-		MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
+		
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
-        SHADERMANAGER.GLUniformMatrix4f(ModelMatrixID, ModelMatrix);
-        SHADERMANAGER.GLUniformMatrix4f(ViewMatrixID, ViewMatrix);
+		SHADERMANAGER.GLUniform1f(TimeRangeID, 10);
+		SHADERMANAGER.GLUniform3f(ColorID, glm::vec3(1,1,0));
+		SHADERMANAGER.GLUniform1f(TimeID, currTime - timeStart);
 		
-		vertexData2->Draw();
+		lines.Draw();
+
+		//vertexData2->Draw();
 
 #else
 
@@ -562,7 +473,7 @@ int main(void)
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
-			dlg->OnRender(ellapsedTime);
+			//dlg->OnRender(ellapsedTime);
 			//dlg->DrawRect(rc, ::Color(255, 0, 0, 255));
 
             /*textHelper->Begin(0, 20, 15);
