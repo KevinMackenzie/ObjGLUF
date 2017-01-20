@@ -314,7 +314,7 @@ int main(void)
 	//textHelper->Init(20);
 
 	//glEnable(GL_LINE_SMOOTH);
-	glLineWidth(4);
+	glLineWidth(1);
 
 	/*GLuint skycubemap = ::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
 
@@ -415,7 +415,7 @@ int main(void)
 		
 		
 		// Enable depth test
-		//glEnable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
 		glDepthFunc(GL_LESS);
 
@@ -437,7 +437,7 @@ int main(void)
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
-		SHADERMANAGER.GLUniform1f(TimeRangeID, 7);
+		SHADERMANAGER.GLUniform1f(TimeRangeID, 5);
 		SHADERMANAGER.GLUniform3f(ColorID, glm::vec3(1,1,0));
 		SHADERMANAGER.GLUniform1f(TimeID, currTime - timeStart);
 		

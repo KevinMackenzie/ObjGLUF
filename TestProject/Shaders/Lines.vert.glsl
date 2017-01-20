@@ -2,12 +2,15 @@
 
 attribute vec3 vertexPosition_modelspace;
 
-varying float FragTime;
+varying float Depth;
 
 uniform mat4 MVP;
+uniform float Time;
+uniform float TimeRange;
 
 void main()
 {
-	gl_Position = MVP * vec4(vertexPosition_modelspace.yz, -1, 1);
-	FragTime = vertexPosition_modelspace.x;
+	vec4 pos = vec4(vertexPosition_modelspace.yz, 0, 1);
+	pos.z = Depth = 1+(vertexPosition_modelspace.x - Time)/TimeRange;
+	gl_Position = MVP * pos;
 }
