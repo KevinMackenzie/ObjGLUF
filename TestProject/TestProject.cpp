@@ -160,6 +160,27 @@ GLUF::GLVector<JustPositions> csvToArray(std::string text)
 	return ret;
 }
 
+void MakeLinesArray(std::string csvFilePath, GLUF::VertexArrayAoS& vao)
+{
+	std::string csvText;
+	try
+	{
+		GLUF::LoadFileIntoMemory(csvFilePath, csvText);
+	}
+	catch (...) {}
+	auto data = csvToArray(csvText);
+
+	std::vector<GLuint> indices;
+	for (int i = 1; i < data.size(); ++i)
+	{
+		indices.push_back(i - 1);
+		indices.push_back(i);
+	}
+
+	vao.BufferData(data);
+	vao.BufferIndices(indices);
+}
+
 //#define USE_SEPARATE
 
 int main(void)
@@ -191,7 +212,18 @@ int main(void)
     gGLVersionMinor = 0;
     gGLVersion2Digit = 20;*/
 
-	
+	GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
+	GLUF::InitGui(window, MsgProc, ctrlTex);
+
+	resMan = std::make_shared<GLUF::DialogResourceManager>();
+
+	FontPtr _font;
+	std::vector<char> fontMem;
+	LoadFileIntoMemory("arial.ttf", fontMem);
+	LoadFont(_font, fontMem, 12);
+	resMan->AddFont(_font, 16, GLUF::FontWeight::FONT_WEIGHT_NORMAL);
+	dlg = CreateDialog();
+	resMan->RegisterDialog(dlg);
 
 #ifdef USE_SEPARATE
     ProgramPtrList Progs;
@@ -272,26 +304,37 @@ int main(void)
 	// Get a handle for our buffers
 	GLuint vertexPosition_modelspaceID = attribs["vertexPosition_modelspace"];
 
-	GLUF::VertexArrayAoS lines(GL_LINES, GL_DYNAMIC_DRAW);
-	lines.AddVertexAttrib(VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT));
-	
-	std::string csvText;
-	try
+	std::vector<VertexArrayAoS> linesVector;
+	for (int i = 0; i < 10; ++i)
 	{
-		GLUF::LoadFileIntoMemory("lines.csv", csvText);
-	}
-	catch (...) {}
-	auto data = csvToArray(csvText);
-
-	std::vector<GLuint> indices;
-	for (int i = 1; i < data.size(); ++i)
-	{
-		indices.push_back(i - 1);
-		indices.push_back(i);
+		linesVector.push_back(VertexArrayAoS(GL_LINES, GL_DYNAMIC_DRAW));
+		linesVector[i].AddVertexAttrib(VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT));
 	}
 
-	lines.BufferData(data);
-	lines.BufferIndices(indices);
+	MakeLinesArray("lines/Step1.csv", linesVector[0]);
+	MakeLinesArray("lines/Step.9.csv", linesVector[1]);
+	MakeLinesArray("lines/Step.8.csv", linesVector[2]);
+	MakeLinesArray("lines/Step.7.csv", linesVector[3]);
+	MakeLinesArray("lines/Step.6.csv", linesVector[4]);
+	MakeLinesArray("lines/Step.5.csv", linesVector[5]);
+	MakeLinesArray("lines/Step.4.csv", linesVector[6]);
+	MakeLinesArray("lines/Step.3.csv", linesVector[7]);
+	MakeLinesArray("lines/Step.2.csv", linesVector[8]);
+	MakeLinesArray("lines/Step.1.csv", linesVector[9]);
+
+	std::vector<glm::vec3> colors;
+	colors.push_back({ 0,0,1 });
+	colors.push_back({ 0,1,0 });
+	colors.push_back({ 0,1,1 });
+	colors.push_back({ 1,0,0 });
+	colors.push_back({ 1,0,1 });
+	colors.push_back({ 1,1,0 });
+	colors.push_back({ 1,1,1 });
+	colors.push_back({ .5,0,0 });
+	colors.push_back({ 1,.5,.5 });
+	colors.push_back({ .5,.5,1 });
+
+	auto tHelper = CreateTextHelper(resMan);
 
 	//load up the locations
 
@@ -425,7 +468,7 @@ int main(void)
 		//SHADERMANAGER.UseProgram(Prog); 
 		float dataSpaceHeight = height / 5;
 		glm::vec3 pos(0, 0, 80);
-		glm::mat4 ProjectionMatrix = glm::ortho<float>(0, dataSpaceHeight *ratio, 0, dataSpaceHeight);
+		glm::mat4 ProjectionMatrix = glm::ortho<float>(0, /*dataSpaceHeight *ratio*/200, 0, /*dataSpaceHeight*/50);
 		glm::mat4 MVP = ProjectionMatrix;
 
 		// Send our transformation to the currently bound shader, 
@@ -437,11 +480,15 @@ int main(void)
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
 		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
-		SHADERMANAGER.GLUniform1f(TimeRangeID, 5);
-		SHADERMANAGER.GLUniform3f(ColorID, glm::vec3(1,1,0));
+		SHADERMANAGER.GLUniform1f(TimeRangeID, 2);
 		SHADERMANAGER.GLUniform1f(TimeID, currTime - timeStart);
 		
-		lines.Draw();
+		for (int i = 0; i < linesVector.size(); ++i)
+		{
+			SHADERMANAGER.GLUniform3f(ColorID, colors[i]);
+
+			linesVector[i].Draw();
+		}
 
 		//vertexData2->Draw();
 
@@ -472,6 +519,12 @@ int main(void)
         vertexData2->Draw();
 
 #endif
+
+		/*tHelper->mColor = Color(255,0,0,255);
+		tHelper->mPoint = Point(50, 15);
+		tHelper->Begin(0, 16, 12);
+		tHelper->DrawTextLine(L"Hare Population");
+		tHelper->End();*/
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
