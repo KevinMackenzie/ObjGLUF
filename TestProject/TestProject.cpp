@@ -13,6 +13,9 @@
 #include <iostream>
 #include <vector>
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm\gtx\transform.hpp>
+
 using namespace GLUF;
 
 GLFWwindow* window;
@@ -223,6 +226,7 @@ int main(void)
 	LoadFont(_font, fontMem, 12);
 	resMan->AddFont(_font, 16, GLUF::FontWeight::FONT_WEIGHT_NORMAL);
 	dlg = CreateDialog();
+	dlg->Init(resMan);
 	resMan->RegisterDialog(dlg);
 
 #ifdef USE_SEPARATE
@@ -463,13 +467,17 @@ int main(void)
 		glDepthFunc(GL_LESS);
 
 		// Cull triangles which normal is not towards the camera
-		//glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
+
+		//make sure to only draw what is in view
+		glDisable(GL_DEPTH_CLAMP);
 
 		//SHADERMANAGER.UseProgram(Prog); 
 		float dataSpaceHeight = height / 5;
 		glm::vec3 pos(0, 0, 80);
-		glm::mat4 ProjectionMatrix = glm::ortho<float>(0, /*dataSpaceHeight *ratio*/200, 0, /*dataSpaceHeight*/50);
-		glm::mat4 MVP = ProjectionMatrix;
+		glm::mat4 ProjectionMatrix = glm::ortho<float>(-20, width - 20, -20, height - 20);
+		glm::mat4 ScaleMatrix = glm::scale(glm::vec3(8.0f, 16.0f, 1.0));
+		glm::mat4 MVP = ProjectionMatrix * ScaleMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
@@ -520,11 +528,11 @@ int main(void)
 
 #endif
 
-		/*tHelper->mColor = Color(255,0,0,255);
-		tHelper->mPoint = Point(50, 15);
-		tHelper->Begin(0, 16, 12);
-		tHelper->DrawTextLine(L"Hare Population");
-		tHelper->End();*/
+		tHelper->mColor = Color(255, 0, 0, 255);
+		tHelper->Begin(0, 14, 12);
+		tHelper->DrawTextLineBase({ {50},20,500,{5} }, GT_TOP | GT_LEFT, L"Hare Population");
+		tHelper->DrawTextLineBase({ { 5 },250,6,{ 5 } }, GT_TOP | GT_LEFT, L"Lynx Population");
+		tHelper->End();
 
 		//render dialog last(overlay)
 		//if ((int)currTime % 2)
