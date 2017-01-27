@@ -184,6 +184,11 @@ void MakeLinesArray(std::string csvFilePath, GLUF::VertexArrayAoS& vao)
 	vao.BufferIndices(indices);
 }
 
+void MakeAxesArray(glm::vec2 axisMins, glm::vec2 axisMaxs, float tallyWidth, GLUF::VertexArrayAoS& vao)
+{
+	auto ret = JustPositions::MakeMany(int(axisMaxs.x - axisMins.x) + int(axisMaxs.y - axisMins.y));
+}
+
 //#define USE_SEPARATE
 
 int main(void)
@@ -362,6 +367,11 @@ int main(void)
 
 	//glEnable(GL_LINE_SMOOTH);
 	glLineWidth(1);
+
+
+	glm::vec2 axisMins(0,0);
+	glm::vec2 axisMaxs(150,50);
+	float tallyMarkWidth = 10;
 
 	/*GLuint skycubemap = ::LoadTextureFromFile(L"afternoon_sky.cubemap.dds", TTF_DDS_CUBEMAP);
 
