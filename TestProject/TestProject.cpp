@@ -163,31 +163,182 @@ GLUF::GLVector<JustPositions> csvToArray(std::string text)
 	return ret;
 }
 
-void MakeLinesArray(std::string csvFilePath, GLUF::VertexArrayAoS& vao)
+
+
+class DataGrapher
 {
-	std::string csvText;
-	try
+	void MakeLinesArray(std::string csvFilePath, GLUF::VertexArrayAoS& vao)
 	{
-		GLUF::LoadFileIntoMemory(csvFilePath, csvText);
-	}
-	catch (...) {}
-	auto data = csvToArray(csvText);
+		std::string csvText;
+		try
+		{
+			GLUF::LoadFileIntoMemory(csvFilePath, csvText);
+		}
+		catch (...) {}
+		auto data = csvToArray(csvText);
 
-	std::vector<GLuint> indices;
-	for (int i = 1; i < data.size(); ++i)
+		std::vector<GLuint> indices;
+		for (int i = 1; i < data.size(); ++i)
+		{
+			indices.push_back(i - 1);
+			indices.push_back(i);
+		}
+
+		vao.BufferData(data);
+		vao.BufferIndices(indices);
+	}
+	
+	void MakeAxesArray(glm::vec2 axisMins, glm::vec2 axisMaxs, float tallyWidth, float tallyHeight, GLUF::VertexArrayAoS& vao)
 	{
-		indices.push_back(i - 1);
-		indices.push_back(i);
+		int xTallyCountx2 = ((axisMaxs.x - axisMins.x) / tallyWidth) * 2;
+		int yTallyCountx2 = ((axisMaxs.y - axisMins.y) / tallyWidth) * 2;
+		auto ret = JustPositions::MakeMany(xTallyCountx2 + yTallyCountx2 + 3);
+
+		std::vector<GLuint> indices;
+		indices.resize(xTallyCountx2 + yTallyCountx2 + 4);
+
+		//the first three vertices are the axes points
+		ret[0] = glm::vec3(0, axisMins.x, axisMins.y);
+		ret[1] = glm::vec3(0, axisMins.x, axisMaxs.y);
+		ret[2] = glm::vec3(0, axisMaxs.x, axisMins.y);
+
+		indices[0] = 0;
+		indices[1] = 1;
+		indices[2] = 0;
+		indices[3] = 2;
+
+		for (int i = 0; i < xTallyCountx2; i += 2)
+		{
+			int j = i / 2;
+			ret[i + 3] = glm::vec3(0, axisMins.x + j*tallyWidth, axisMins.y + tallyHeight / 2);
+			ret[i + 4] = glm::vec3(0, axisMins.x + j*tallyWidth, axisMins.y - tallyHeight / 2);
+
+			indices[i + 4] = i + 3;
+			indices[i + 5] = i + 4;
+		}
+
+		for (int i = 0; i < yTallyCountx2; i += 2)
+		{
+			int j = i / 2;
+			ret[i + 3 + xTallyCountx2] = glm::vec3(0, axisMins.x + tallyHeight / 2, axisMins.y + j*tallyWidth);
+			ret[i + 4 + xTallyCountx2] = glm::vec3(0, axisMins.x - tallyHeight / 2, axisMins.y + j*tallyWidth);
+
+			indices[i + 4 + xTallyCountx2] = i + 3 + xTallyCountx2;
+			indices[i + 5 + xTallyCountx2] = i + 4 + xTallyCountx2;
+		}
+
+		vao.BufferData(ret);
+		vao.BufferIndices(indices);
+	}
+	
+	std::vector<GLUF::VertexArrayAoS> dataVAOs;
+	GLUF::VertexArrayAoS axesVAO;
+
+
+	std::vector<glm::vec3> colors;
+	ProgramPtr prog;
+
+
+	// Get a handle for our "MVP" uniform
+	GLuint MatrixID = 0;
+	GLuint TimeID = 0;
+	GLuint ColorID = 0;
+	GLuint TimeRangeID = 0;
+
+public:
+	DataGrapher(const std::vector<std::string>& dataFilePaths, const std::string& vertShader, const std::string& fragShader)
+	{
+		//TODO: automate this better
+		colors.push_back({ 0,0,1 });
+		colors.push_back({ 0,1,0 });
+		colors.push_back({ 0,1,1 });
+		colors.push_back({ 1,0,0 });
+		colors.push_back({ 1,0,1 });
+		colors.push_back({ 1,1,0 });
+		colors.push_back({ 1,1,1 });
+		colors.push_back({ .5,0,0 });
+		colors.push_back({ 1,.5,.5 });
+		colors.push_back({ .5,.5,1 });
+
+
+		ShaderSourceList Sources;
+		unsigned long len = 0;
+
+		std::string text;
+		std::vector<char> rawMem;
+		LoadFileIntoMemory(vertShader, rawMem);
+		LoadBinaryArrayIntoString(rawMem, text);
+
+		text += '\n';
+		Sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
+
+		std::string text1;
+		LoadFileIntoMemory(fragShader, rawMem);
+		LoadBinaryArrayIntoString(rawMem, text1);
+		text1 += '\n';
+		Sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
+
+		SHADERMANAGER.CreateProgram(prog, Sources);
+
+		VariableLocMap attribs, uniforms;
+		attribs = SHADERMANAGER.GetShaderAttribLocations(prog);
+		uniforms = SHADERMANAGER.GetShaderUniformLocations(prog);
+
+		// Get a handle for our "MVP" uniform
+		MatrixID = uniforms["MVP"];
+		TimeID = uniforms["Time"];
+		ColorID = uniforms["Color"];
+		TimeRangeID = uniforms["TimeRange"];
+
+		// Get a handle for our buffers
+		GLuint vertexPosition_modelspaceID = attribs["vertexPosition_modelspace"];
+
+		VertexAttribInfo info = VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT);
+
+		for (int i = 0; i < dataFilePaths.size(); ++i)
+		{
+			dataVAOs.push_back(VertexArrayAoS(GL_LINES, GL_DYNAMIC_DRAW));
+			dataVAOs[i].AddVertexAttrib(info);
+			MakeLinesArray(dataFilePaths[i], dataVAOs[i]);
+		}
+
+		axesVAO = VertexArrayAoS(GL_LINES, GL_DYNAMIC_DRAW);
+		axesVAO.AddVertexAttrib(info);
+		MakeAxesArray(glm::vec2(0, 0), glm::vec2(200, 200), 10, 10, axesVAO);
 	}
 
-	vao.BufferData(data);
-	vao.BufferIndices(indices);
-}
+	void Draw(int width, int height, float time)
+	{
+		glm::mat4 ProjectionMatrix = glm::ortho<float>(-20, width / 2 - 20, -20, height / 2 - 20);
+		glm::mat4 DataModelMatrix;// = glm::translate(glm::vec3(20, 20, 0));
+		glm::mat4 ScaleMatrix;// = glm::scale(glm::vec3(4.0f, 4.0f, 1.0));
 
-void MakeAxesArray(glm::vec2 axisMins, glm::vec2 axisMaxs, float tallyWidth, GLUF::VertexArrayAoS& vao)
-{
-	auto ret = JustPositions::MakeMany(int(axisMaxs.x - axisMins.x) + int(axisMaxs.y - axisMins.y));
-}
+		glm::mat4 DataMVP = ProjectionMatrix * DataModelMatrix * ScaleMatrix;
+		glm::mat4 AxesMVP = ProjectionMatrix * ScaleMatrix;
+
+		// Send our transformation to the currently bound shader, 
+		// in the "MVP" uniform
+		SHADERMANAGER.UseProgram(prog);
+
+		// Send our transformation to the currently bound shader, 
+		// in the "MVP" uniform
+		SHADERMANAGER.GLUniformMatrix4f(MatrixID, DataMVP);
+		SHADERMANAGER.GLUniform1f(TimeRangeID, 2);
+		SHADERMANAGER.GLUniform1f(TimeID, time);
+
+		for (int i = 0; i < dataVAOs.size(); ++i)
+		{
+			SHADERMANAGER.GLUniform3f(ColorID, colors[i]);
+
+			dataVAOs[i].Draw();
+		}
+
+		SHADERMANAGER.GLUniformMatrix4f(MatrixID, AxesMVP);
+		SHADERMANAGER.GLUniform1f(TimeID, 1);
+		SHADERMANAGER.GLUniform3f(ColorID, glm::vec3(1, 1, 1));
+		axesVAO.Draw();
+	}
+};
 
 //#define USE_SEPARATE
 
@@ -277,7 +428,7 @@ int main(void)
     //paths.insert(std::pair<ShaderType, std::wstring>(SH_VERTEX_SHADER, L"Shaders/BasicLighting120.vert.glsl"));
     //paths.insert(std::pair<ShaderType, std::wstring>(SH_FRAGMENT_SHADER, L"Shaders/BasicLighting120.frag.glsl"));
 
-    ProgramPtr Prog;
+    /*ProgramPtr Prog;
 
     ShaderSourceList Sources;
     unsigned long len = 0;
@@ -296,11 +447,11 @@ int main(void)
     text1 += '\n';
     Sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
 
-    SHADERMANAGER.CreateProgram(Prog, Sources);
+    SHADERMANAGER.CreateProgram(Prog, Sources);*/
 #endif
 
 
-	VariableLocMap attribs, uniforms;
+	/*VariableLocMap attribs, uniforms;
 	attribs = SHADERMANAGER.GetShaderAttribLocations(Prog);
 	uniforms = SHADERMANAGER.GetShaderUniformLocations(Prog);
 
@@ -312,6 +463,10 @@ int main(void)
 
 	// Get a handle for our buffers
 	GLuint vertexPosition_modelspaceID = attribs["vertexPosition_modelspace"];
+
+	auto axes = VertexArrayAoS(GL_LINES, GL_DYNAMIC_DRAW);
+	axes.AddVertexAttrib(VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT));
+	MakeAxesArray(glm::vec2(20, 20), glm::vec2(200, 200), 10, 10, axes);
 
 	std::vector<VertexArrayAoS> linesVector;
 	for (int i = 0; i < 10; ++i)
@@ -341,7 +496,7 @@ int main(void)
 	colors.push_back({ 1,1,1 });
 	colors.push_back({ .5,0,0 });
 	colors.push_back({ 1,.5,.5 });
-	colors.push_back({ .5,.5,1 });
+	colors.push_back({ .5,.5,1 });*/
 
 	auto tHelper = CreateTextHelper(resMan);
 
@@ -350,6 +505,20 @@ int main(void)
 	/*std::shared_ptr<VertexArray> vertexData = LoadVertexArrayFromScene(scene, attributes);
 	if (!vertexData)
 		EXIT_FAILURE;*/
+
+	std::vector<std::string> paths;
+	paths.push_back("lines/Step1.csv");
+	paths.push_back("lines/Step.9.csv");
+	paths.push_back("lines/Step.8.csv");
+	paths.push_back("lines/Step.7.csv");
+	paths.push_back("lines/Step.6.csv");
+	paths.push_back("lines/Step.5.csv");
+	paths.push_back("lines/Step.4.csv");
+	paths.push_back("lines/Step.3.csv");
+	paths.push_back("lines/Step.2.csv");
+	paths.push_back("lines/Step.1.csv");
+
+	auto dataHelper = DataGrapher(paths, "Shaders/Lines.vert.glsl", "Shaders/Lines.frag.glsl");
 
 
 	float ellapsedTime = 0.0f;
@@ -482,22 +651,27 @@ int main(void)
 		//make sure to only draw what is in view
 		glDisable(GL_DEPTH_CLAMP);
 
+		dataHelper.Draw(width, height, currTime - timeStart);
+
 		//SHADERMANAGER.UseProgram(Prog); 
-		float dataSpaceHeight = height / 5;
+		/*float dataSpaceHeight = height / 5;
 		glm::vec3 pos(0, 0, 80);
-		glm::mat4 ProjectionMatrix = glm::ortho<float>(-20, width - 20, -20, height - 20);
-		glm::mat4 ScaleMatrix = glm::scale(glm::vec3(8.0f, 16.0f, 1.0));
-		glm::mat4 MVP = ProjectionMatrix * ScaleMatrix;
+		glm::mat4 ProjectionMatrix = glm::ortho<float>(-20, width/2 - 20, -20, height/2 - 20);
+		glm::mat4 DataModelMatrix = glm::translate(glm::vec3(20, 20, 0));
+		glm::mat4 ScaleMatrix;// = glm::scale(glm::vec3(4.0f, 4.0f, 1.0));
+
+		glm::mat4 DataMVP = ProjectionMatrix * DataModelMatrix*ScaleMatrix;
+		glm::mat4 AxesMVP = ProjectionMatrix * ScaleMatrix;
 
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		SHADERMANAGER.UseProgram(Prog);
+		SHADERMANAGER.UseProgram(Prog);*/
 
 #ifndef USE_SEPARATE
 		
 		// Send our transformation to the currently bound shader, 
 		// in the "MVP" uniform
-		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
+		/*SHADERMANAGER.GLUniformMatrix4f(MatrixID, DataMVP);
 		SHADERMANAGER.GLUniform1f(TimeRangeID, 2);
 		SHADERMANAGER.GLUniform1f(TimeID, currTime - timeStart);
 		
@@ -507,6 +681,11 @@ int main(void)
 
 			linesVector[i].Draw();
 		}
+
+		SHADERMANAGER.GLUniformMatrix4f(MatrixID, AxesMVP);
+		SHADERMANAGER.GLUniform1f(TimeID, 1);
+		SHADERMANAGER.GLUniform3f(ColorID, glm::vec3(1, 1, 1));
+		axes.Draw();*/
 
 		//vertexData2->Draw();
 
