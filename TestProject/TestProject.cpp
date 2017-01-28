@@ -246,19 +246,9 @@ class DataGrapher
 	GLuint TimeRangeID = 0;
 
 public:
-	DataGrapher(const std::vector<std::string>& dataFilePaths, const std::string& vertShader, const std::string& fragShader)
+	DataGrapher(const std::map<std::string, glm::vec3>& dataFilePathsAndColors, const std::string& vertShader, const std::string& fragShader)
 	{
 		//TODO: automate this better
-		colors.push_back({ 0,0,1 });
-		colors.push_back({ 0,1,0 });
-		colors.push_back({ 0,1,1 });
-		colors.push_back({ 1,0,0 });
-		colors.push_back({ 1,0,1 });
-		colors.push_back({ 1,1,0 });
-		colors.push_back({ 1,1,1 });
-		colors.push_back({ .5,0,0 });
-		colors.push_back({ 1,.5,.5 });
-		colors.push_back({ .5,.5,1 });
 
 
 		ShaderSourceList Sources;
@@ -295,11 +285,15 @@ public:
 
 		VertexAttribInfo info = VertAttrib(vertexPosition_modelspaceID, 4, 3, GL_FLOAT);
 
-		for (int i = 0; i < dataFilePaths.size(); ++i)
+		int i = 0;
+		for (std::pair<std::string, glm::vec3> it : dataFilePathsAndColors)
 		{
 			dataVAOs.push_back(VertexArrayAoS(GL_LINES, GL_DYNAMIC_DRAW));
 			dataVAOs[i].AddVertexAttrib(info);
-			MakeLinesArray(dataFilePaths[i], dataVAOs[i]);
+			MakeLinesArray(it.first, dataVAOs[i]);
+			colors.push_back(it.second);
+
+			++i;
 		}
 
 		axesVAO = VertexArrayAoS(GL_LINES, GL_DYNAMIC_DRAW);
@@ -506,17 +500,17 @@ int main(void)
 	if (!vertexData)
 		EXIT_FAILURE;*/
 
-	std::vector<std::string> paths;
-	paths.push_back("lines/Step1.csv");
-	paths.push_back("lines/Step.9.csv");
-	paths.push_back("lines/Step.8.csv");
-	paths.push_back("lines/Step.7.csv");
-	paths.push_back("lines/Step.6.csv");
-	paths.push_back("lines/Step.5.csv");
-	paths.push_back("lines/Step.4.csv");
-	paths.push_back("lines/Step.3.csv");
-	paths.push_back("lines/Step.2.csv");
-	paths.push_back("lines/Step.1.csv");
+	std::map<std::string, glm::vec3> paths;
+	paths["lines/Step1.csv"] = { 0,0,1 };
+	paths["lines/Step.9.csv"] = { 0,1,0 };
+	paths["lines/Step.8.csv"] = { 0,1,1 };
+	paths["lines/Step.7.csv"] = { 1,0,0 };
+	paths["lines/Step.6.csv"] = { 1,0,1 };
+	paths["lines/Step.5.csv"] = { 1,1,0 };
+	paths["lines/Step.4.csv"] = { 1,1,1 };
+	paths["lines/Step.3.csv"] = { .5,0,0 };
+	paths["lines/Step.2.csv"] = { 1,.5,.5 };
+	paths["lines/Step.1.csv"] = { .5,.5,1 };
 
 	auto dataHelper = DataGrapher(paths, "Shaders/Lines.vert.glsl", "Shaders/Lines.frag.glsl");
 
