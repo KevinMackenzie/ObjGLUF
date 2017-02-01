@@ -488,7 +488,7 @@ public:
 
 		dataVAO = VertexArrayAoS(GL_POINTS, GL_STATIC_DRAW, false);
 		dataVAO.AddVertexAttrib(info);
-		MakeDirectionFieldArray(dataVAO, { 1,1 }, { 101,101 }, { 3, 3.0/4.0 }, { 1,4 }, N, k, b, d, c);
+		MakeDirectionFieldArray(dataVAO, { 1,1 }, { 101,101 }, { 4, 1 }, { 1,4 }, N, k, b, d, c);
 
 	}
 
