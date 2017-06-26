@@ -382,6 +382,8 @@ LoadFileIntoMemory
 */
 OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory);
 OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory);
+OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::string& memory);
+OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::string& memory);
 
 /*
 LoadBinaryArrayIntoString
@@ -547,7 +549,7 @@ SplitStr
         'elems'
 */
 
-inline std::vector<std::wstring> &SplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false)
+inline std::vector<std::wstring> &SplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false, bool removeBlank = false)
 {
 	std::wstringstream ss(s);
 	std::wstring item;
@@ -555,19 +557,21 @@ inline std::vector<std::wstring> &SplitStr(const std::wstring &s, wchar_t delim,
 	{
 		if (keepDelim)//OOPS forgot this earlier
 			item += delim;
-		elems.push_back(item);
+		if(removeBlank && item != L"")
+			if(item[0] != '\0')
+				elems.push_back(item);
 	}
 	return elems;
 }
 
-inline std::vector<std::wstring> SplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false)
+inline std::vector<std::wstring> SplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false, bool removeBlank = false)
 {
 	std::vector<std::wstring> elems;
-	SplitStr(s, delim, elems, keepDelim);
+	SplitStr(s, delim, elems, keepDelim, removeBlank);
 	return elems;
 }
 
-inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false)
+inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false, bool removeBlank = false)
 {
 	std::stringstream ss(s);
 	std::string item;
@@ -575,15 +579,17 @@ inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std:
 	{
 		if (keepDelim)//OOPS forgot this earlier
 			item += delim;
-		elems.push_back(item);
+		if (removeBlank && item != "")
+			if (item[0] != '\0')
+				elems.push_back(item);
 	}
 	return elems;
 }
 
-inline std::vector<std::string> SplitStr(const std::string &s, char delim, bool keepDelim = false)
+inline std::vector<std::string> SplitStr(const std::string &s, char delim, bool keepDelim = false, bool removeBlank = false)
 {
 	std::vector<std::string> elems;
-	SplitStr(s, delim, elems, keepDelim);
+	SplitStr(s, delim, elems, keepDelim, removeBlank);
 	return elems;
 }
 
