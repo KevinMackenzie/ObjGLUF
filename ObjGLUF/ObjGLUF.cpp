@@ -1204,13 +1204,6 @@ public:
 
 using ShaderP = std::pair<ShaderType, ShaderPtr>;
 
-//this is a special instance
-class ComputeShader
-{
-	friend ShaderManager;
-	//TODO: low priority
-};
-
 
 /*
 Program
