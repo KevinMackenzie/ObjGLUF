@@ -20,7 +20,7 @@ for more details.
 
 #pragma warning (disable : 4251)
 
-#ifdef _WIN32
+#ifdef __F__
 #ifdef OBJGLUF_EXPORTS
 #define OBJGLUF_API __declspec(dllexport)
 #else
@@ -43,7 +43,6 @@ for more details.
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -557,9 +556,10 @@ inline std::vector<std::wstring> &SplitStr(const std::wstring &s, wchar_t delim,
 	{
 		if (keepDelim)//OOPS forgot this earlier
 			item += delim;
-		if(removeBlank && item != L"")
-			if(item[0] != '\0')
-				elems.push_back(item);
+        if (removeBlank && item == L"")
+            continue;
+		if(item[0] != '\0')
+			elems.push_back(item);
 	}
 	return elems;
 }
@@ -579,9 +579,10 @@ inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std:
 	{
 		if (keepDelim)//OOPS forgot this earlier
 			item += delim;
-		if (removeBlank && item != "")
-			if (item[0] != '\0')
-				elems.push_back(item);
+        if (removeBlank && item == "")
+            continue;
+		if (item[0] != '\0')
+			elems.push_back(item);
 	}
 	return elems;
 }

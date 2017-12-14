@@ -31,7 +31,7 @@ for more details.
 Internal Macros
 
 */
-#define RETHROW throw;
+#define RETHROW throw
 
 namespace GLUF
 {
@@ -268,10 +268,10 @@ bool Init()
 //--------------------------------------------------------------------------------------
 bool InitOpenGLExtensions()
 {
-    GLenum err = glewInit();
-    if (err != GLEW_OK)
+	int err = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    if (err == 0)
     {
-        GLUF_ERROR("Failed to initialize OpenGL Extensions using GLEW");
+        GLUF_ERROR("Failed to initialize OpenGL Extensions using GLAD");
         return false;
     }
 
@@ -284,7 +284,7 @@ bool InitOpenGLExtensions()
     const char* version = (const char*)glGetString(GL_VERSION);
 
     std::vector<std::string> vsVec;
-    vsVec = SplitStr((const char*)version, L'.');//TODO: global openGL version
+    vsVec = SplitStr((const char*)version, '.');//TODO: global openGL version
     gGLVersionMajor = std::stoi(vsVec[0]);
     gGLVersionMinor = std::stoi(vsVec[1]);
     gGLVersion2Digit = gGLVersionMajor * 10 + gGLVersionMinor;

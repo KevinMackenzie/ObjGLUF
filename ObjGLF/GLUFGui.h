@@ -640,7 +640,7 @@ class Dialog : public std::enable_shared_from_this<Dialog>
 
     */
     Dialog();
-    friend std::shared_ptr<Dialog> CreateDialog();
+    friend std::shared_ptr<Dialog> CreateDialog_();
 
 public:
 	~Dialog();

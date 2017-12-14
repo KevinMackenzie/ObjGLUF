@@ -65,7 +65,8 @@ namespace Text
 #define _FAR_BUTTON_DEPTH -0.8f
 
 #define _MAX_GUI_SPRITES 500
-#define WHEEL_DELTA 400//TODO:
+
+#define _WHEEL_DELTA 400//TODO:
 
 //this is just a constant to be a little bit less windows api dependent (TODO: make this a setting)
 unsigned int GetCaretBlinkTime()
@@ -5213,7 +5214,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
         //	uLines = 0;
         //int nScrollAmount = int((short)HIWORD(wParam)) / WHEEL_DELTA * uLines;
-        mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        mScrollBar->Scroll(-(param2 / _WHEEL_DELTA));
         return true;
     }
 
@@ -5651,7 +5652,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
     case SCROLL:
     {
-        int zDelta = (param2) / WHEEL_DELTA;
+        int zDelta = (param2) / _WHEEL_DELTA;
         if (mOpened)
         {
             //UINT uLines = 0;
@@ -6336,7 +6337,7 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     case SCROLL:
     {
-        int nScrollAmount = param2 / WHEEL_DELTA;
+        int nScrollAmount = param2 / _WHEEL_DELTA;
         SetValueInternal(mValue - nScrollAmount, true);
         return true;
     }
@@ -7133,7 +7134,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     }
     case SCROLL:
     {
-        mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        mScrollBar->Scroll(-(param2 / _WHEEL_DELTA));
         InvalidateRects();
 		MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);//this doesn't 100% work
         /*if (mMultiline)

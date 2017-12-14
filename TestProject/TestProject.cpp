@@ -6,12 +6,15 @@
 #define GLUF_DEBUG
 #define SUPPRESS_RADIAN_ERROR
 #define SUPPRESS_UTF8_ERROR
-#include "../ObjGLUF/GLUFGui.h"
+#include "../ObjGLF/GLUFGui.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 using namespace GLUF;
 
@@ -99,6 +102,8 @@ struct JustPositions : VertexStruct
 {
     glm::vec3 pos;
 
+	JustPositions(const JustPositions& other) : pos(other.pos) {}
+
     JustPositions(){};
 
     virtual void* operator&() const override
@@ -157,7 +162,7 @@ void myunexpected()
     int i = 0;
 }
 
-#define USE_SEPARATE
+//#define USE_SEPARATE
 
 int main(void)
 {
@@ -192,7 +197,7 @@ int main(void)
     InitGui(window, MsgProc, ctrlTex);
 
     resMan = std::make_shared<DialogResourceManager>();
-    dlg = CreateDialog();
+    dlg = CreateDialog_();
 	dlg->Init(resMan);
     dlg->SetCallback(ControlEventCallback);//TODO: fix caption
 	//dlg->SetCaptionText(L"Caption");
