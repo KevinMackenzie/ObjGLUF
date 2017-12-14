@@ -15,8 +15,6 @@ for more details.
 
 */
 
-
-#include "stdafx.h"
 #include "GLUFGui.h"
 //#include "CBFG/BitmapFontClass.h"
 //#include <algorithm>
@@ -7286,10 +7284,10 @@ void EditBox::UpdateRectsMultiline() noexcept
     NOEXCEPT_REGION_START
 
 
-    mScrollBar->SetRegion({ { mTextRegion.right - mSBWidth }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
+    mScrollBar->SetRegion({ { mTextRegion.right - static_cast<long>(mSBWidth) }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
     mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
 
-    mTextRegion.right -= 2 * mSBWidth;
+	mTextRegion.right -= static_cast<long>(2 * mSBWidth);
 
     //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
     mScrollBar->UpdateRects();
