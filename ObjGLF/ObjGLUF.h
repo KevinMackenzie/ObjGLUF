@@ -20,11 +20,15 @@ for more details.
 
 #pragma warning (disable : 4251)
 
-#ifdef __F__
+#ifdef _WIN32
+#ifdef OBJGLF_DLL
 #ifdef OBJGLUF_EXPORTS
 #define OBJGLUF_API __declspec(dllexport)
 #else
 #define OBJGLUF_API __declspec(dllimport)
+#endif
+#else
+#define OBJGLUF_API
 #endif
 #else
 #define OBJGLUF_API
