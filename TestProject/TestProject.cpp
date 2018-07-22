@@ -105,9 +105,9 @@ struct JustPositions : VertexStruct
 
     JustPositions(){};
 
-    virtual void* operator&() const override
+    virtual char* get_data() const override
     {
-        return (void*)&pos;
+        return (char*)&pos;
     }
 
     virtual size_t size() const override

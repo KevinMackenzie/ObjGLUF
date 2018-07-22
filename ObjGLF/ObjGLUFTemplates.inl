@@ -116,7 +116,7 @@ namespace GLUF
         {
             // TODO: just make this a virtual function... what was I thinking
             //this doesn't actually take the memory location of the element, because the '&' operator is overloaded to return a contiguous array of bytes containing each element's data
-            char* mem = (char*)&(*this)[i];
+            char* mem = (*this)[i].get_data();
 
             //may be unsafe, but that's a later problem
             std::memcpy(mGLData + i * stride, mem, stride);

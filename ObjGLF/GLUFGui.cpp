@@ -221,7 +221,7 @@ struct TextVertexStruct : public VertexStruct
         mPos(pos), mTexCoords(texCoords)
     {}
 
-    virtual void* operator&() const override
+    virtual char* get_data() const override
     {
         char* ret = new char[size()];
 

@@ -1271,7 +1271,7 @@ struct SpriteVertexStruct : public VertexStruct
         mPos(pos), mColor(color), mTexCoords(texCoords)
     {}
 
-    virtual void* operator&() const override
+    virtual char* get_data() const override
     {
         char* ret = new char[size()];
 

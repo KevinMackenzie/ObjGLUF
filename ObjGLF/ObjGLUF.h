@@ -1689,7 +1689,7 @@ VertexStruct
 
 struct VertexStruct
 {
-    virtual void* operator&() const = 0;
+    virtual char* get_data() const = 0;
     virtual size_t size() const = 0;
     virtual size_t n_elem_size(size_t element) = 0;
     virtual void buffer_element(void* data, size_t element) = 0;

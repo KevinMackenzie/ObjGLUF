@@ -3374,7 +3374,7 @@ void VertexArrayBase::BindVertexArray() noexcept
 {
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
-    {
+{
         //store the old one before binding this one
         GLint tmpVAOId = 0;
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &tmpVAOId);
@@ -3757,7 +3757,7 @@ void VertexArrayAoS::EnableVertexAttributes() const noexcept
     for (auto it : mAttribInfos)
     {
         glEnableVertexAttribArray(it.second.mVertexAttribLocation);
-        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(it.second.mOffset)));
+        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<const GLvoid*>(it.second.mOffset));
     }
 
 }
@@ -4056,7 +4056,7 @@ struct AssimpVertexStruct : public VertexStruct
 
     AssimpVertexStruct(){};
 
-    virtual void* operator&() const override
+    virtual char* get_data() const override
     {
         char* ret = new char[size()];
 
