@@ -579,7 +579,7 @@ inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std:
 	{
 		if (keepDelim)//OOPS forgot this earlier
 			item += delim;
-		if (removeBlank && item != "")
+		if (removeBlank || !item.empty())
 			if (item[0] != '\0')
 				elems.push_back(item);
 	}
