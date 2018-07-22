@@ -99,7 +99,12 @@ struct JustPositions : VertexStruct
 {
     glm::vec3 pos;
 
-    JustPositions(){};
+    JustPositions() = default;
+
+    JustPositions(const JustPositions& other)
+    {
+        this->operator=(other);
+    }
 
     virtual void* operator&() const override
     {
