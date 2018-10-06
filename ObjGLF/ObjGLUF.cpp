@@ -156,27 +156,27 @@ Premade Attribute Info's which comply with Assimp capibilities, but are not excl
 */
 
 //initialize the standard vertex attributes
-//							Name				bytes,	count,	location,				    type,     offset
-const VertexAttribInfo	g_attribPOS		= { 4,		3,		GLUF_VERTEX_ATTRIB_POSITION,GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribNORM	= { 4,		3,		GLUF_VERTEX_ATTRIB_NORMAL,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV0		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV0,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV1		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV1,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV2		= { 4,		2,      GLUF_VERTEX_ATTRIB_UV2,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV3		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV3,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV4		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV4,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV5		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV5,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV6		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV6,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribUV7		= { 4,		2,		GLUF_VERTEX_ATTRIB_UV7,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR0	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR0,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR1	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR1,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR2	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR2,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR3	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR3,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR4	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR4,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR5	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR5,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR6	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR6,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribCOLOR7	= { 4,		4,		GLUF_VERTEX_ATTRIB_COLOR7,	GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribTAN		= { 4,		3,		GLUF_VERTEX_ATTRIB_TAN,		GL_FLOAT, 0 };
-const VertexAttribInfo	g_attribBITAN	= { 4,		3,		GLUF_VERTEX_ATTRIB_BITAN,	GL_FLOAT, 0 };
+//                            Name                bytes,    count,    location,                    type,     offset
+const VertexAttribInfo    g_attribPOS        = { 4,        3,        GLUF_VERTEX_ATTRIB_POSITION,GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribNORM    = { 4,        3,        GLUF_VERTEX_ATTRIB_NORMAL,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV0        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV0,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV1        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV1,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV2        = { 4,        2,      GLUF_VERTEX_ATTRIB_UV2,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV3        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV3,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV4        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV4,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV5        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV5,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV6        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV6,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV7        = { 4,        2,        GLUF_VERTEX_ATTRIB_UV7,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR0    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR0,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR1    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR1,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR2    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR2,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR3    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR3,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR4    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR4,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR5    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR5,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR6    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR6,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR7    = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR7,    GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribTAN        = { 4,        3,        GLUF_VERTEX_ATTRIB_TAN,        GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribBITAN    = { 4,        3,        GLUF_VERTEX_ATTRIB_BITAN,    GL_FLOAT, 0 };
 
 
 VertexAttribMap g_stdAttrib;
@@ -219,31 +219,31 @@ Debugging Macros and Setup Functions
 //--------------------------------------------------------------------------------------
 void RegisterErrorMethod(ErrorMethod method)
 {
-	g_ErrorMethod = method;
+    g_ErrorMethod = method;
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWErrorMethod(int error, const char* description)
 {
-	std::stringstream ss;
-	ss << "GLFW ERROR: Error Code:" << error << "; " << description << std::endl;
-	GLUF_ERROR(ss.str());
+    std::stringstream ss;
+    ss << "GLFW ERROR: Error Code:" << error << "; " << description << std::endl;
+    GLUF_ERROR(ss.str());
 }
 
 
 //--------------------------------------------------------------------------------------
 ErrorMethod GetErrorMethod()
 {
-	return g_ErrorMethod;
+    return g_ErrorMethod;
 }
 
-	/*
-	const char* StandardVertexShader =
-	"#version 430 core	layout(std140, binding = 0) uniform MatrixTransformations	{	mat4 m;	mat4 v; mat4 p; mat4 mv; mat4 mvp;};	out VS_OUT	{	vec2 uvCoord;	} vs_out; ";
+    /*
+    const char* StandardVertexShader =
+    "#version 430 core    layout(std140, binding = 0) uniform MatrixTransformations    {    mat4 m;    mat4 v; mat4 p; mat4 mv; mat4 mvp;};    out VS_OUT    {    vec2 uvCoord;    } vs_out; ";
 
-	const char* StandardFragmentShader =
-	"#version 430 core	layout(std140, binding = 0) uniform MatrixTransformations	{	mat4 m;	mat4 v; mat4 p; mat4 mv; mat4 mvp;};	in VS_OUT	{	vec2 uvCoord;	} fs_in; layout(location = 0) out vec4 color; layout(location = 5) uniform sampler2D TextureSampler;";
-	*/
+    const char* StandardFragmentShader =
+    "#version 430 core    layout(std140, binding = 0) uniform MatrixTransformations    {    mat4 m;    mat4 v; mat4 p; mat4 mv; mat4 mvp;};    in VS_OUT    {    vec2 uvCoord;    } fs_in; layout(location = 0) out vec4 color; layout(location = 5) uniform sampler2D TextureSampler;";
+    */
 
 
 /*
@@ -254,21 +254,21 @@ ErrorMethod GetErrorMethod()
 //--------------------------------------------------------------------------------------
 bool Init()
 {
-	glfwSetErrorCallback(GLFWErrorMethod);
-	if (!glfwInit())
-	{
-		GLUF_ERROR("GLFW Initialization Failed!");
-		return false;
-	}
+    glfwSetErrorCallback(GLFWErrorMethod);
+    if (!glfwInit())
+    {
+        GLUF_ERROR("GLFW Initialization Failed!");
+        return false;
+    }
 
 
-	return true;
+    return true;
 }
 
 //--------------------------------------------------------------------------------------
 bool InitOpenGLExtensions()
 {
-	int err = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    int err = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     if (err == 0)
     {
         GLUF_ERROR("Failed to initialize OpenGL Extensions using GLAD");
@@ -353,9 +353,9 @@ void Stats_func()
 
     ++g_StatsData.mFrameCount;
 
-	double thisFrame = GetTime();
+    double thisFrame = GetTime();
     if (thisFrame - g_StatsData.mPreviousFrame < g_StatsData.mUpdateInterval)
-		return;//don't update statistics
+        return;//don't update statistics
 
     double deltaTime = thisFrame - g_StatsData.mPreviousFrame;
 
@@ -367,8 +367,8 @@ void Stats_func()
     //for now, only use whole FPS's
     wss << (unsigned int)g_StatsData.mCurrFPS << " fps";
 
-	//update device statistics
-	//TODO:
+    //update device statistics
+    //TODO:
 
     g_StatsData.mPreviousFrame = thisFrame;
 }
@@ -401,84 +401,84 @@ IO and Stream Utilities
 //--------------------------------------------------------------------------------------
 void LoadFileIntoMemory(const std::wstring& path, std::string& textMemory)
 {
-	//try to open file
-	std::ifstream inFile;
-	inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
-	try
-	{
-		inFile.open(path, std::ios_base::in);
-	}
-	catch (std::ios_base::failure e)
-	{
-		GLUF_ERROR_LONG("Failed to Open File: " << e.what());
-		RETHROW;
-	}
+    //try to open file
+    std::ifstream inFile;
+    inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+    try
+    {
+        inFile.open(path, std::ios_base::in);
+    }
+    catch (std::ios_base::failure e)
+    {
+        GLUF_ERROR_LONG("Failed to Open File: " << e.what());
+        RETHROW;
+    }
 
-	//delete anything already in here
-	textMemory.clear();
+    //delete anything already in here
+    textMemory.clear();
 
-	//get file length
-	inFile.seekg(0, std::ios::end);
-	unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
-	inFile.seekg(0, std::ios::beg);
+    //get file length
+    inFile.seekg(0, std::ios::end);
+    unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
+    inFile.seekg(0, std::ios::beg);
 
-	//resize the vector
-	textMemory.reserve(rawSize);//is this line needed?
-	textMemory.resize(rawSize);
+    //resize the vector
+    textMemory.reserve(rawSize);//is this line needed?
+    textMemory.resize(rawSize);
 
-	//try reading the memory
-	try
-	{
-		inFile.read(&textMemory[0], rawSize);
-		inFile.close();
-	}
-	catch (std::ios_base::failure e)
-	{
-		if (inFile.is_open())
-			inFile.close();
-		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-		RETHROW;
-	}
+    //try reading the memory
+    try
+    {
+        inFile.read(&textMemory[0], rawSize);
+        inFile.close();
+    }
+    catch (std::ios_base::failure e)
+    {
+        if (inFile.is_open())
+            inFile.close();
+        GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+        RETHROW;
+    }
 }
 
 //--------------------------------------------------------------------------------------
 void LoadFileIntoMemory(const std::string& path, std::string& textMemory)
 {
-	//try to open file
-	std::ifstream inFile;
-	inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
-	try
-	{
-		inFile.open(path, std::ios_base::in);
-	}
-	catch (std::ios_base::failure e)
-	{
-		GLUF_ERROR_LONG("Failed to Open File: " << e.what());
-		RETHROW;
-	}
+    //try to open file
+    std::ifstream inFile;
+    inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
+    try
+    {
+        inFile.open(path, std::ios_base::in);
+    }
+    catch (std::ios_base::failure e)
+    {
+        GLUF_ERROR_LONG("Failed to Open File: " << e.what());
+        RETHROW;
+    }
 
-	//delete anything already in here
-	textMemory.clear();
+    //delete anything already in here
+    textMemory.clear();
 
-	inFile.seekg(0, std::ios::end);
-	size_t size = inFile.tellg();
-	inFile.seekg(0, std::ios::beg);
+    inFile.seekg(0, std::ios::end);
+    size_t size = inFile.tellg();
+    inFile.seekg(0, std::ios::beg);
 
-	textMemory.resize(size + 1);
+    textMemory.resize(size + 1);
 
-	//try reading the memory
-	try
-	{
-		inFile.read(&textMemory[0], size);
-		inFile.close();
-	}
-	catch (std::ios_base::failure e)
-	{
-		if (inFile.is_open())
-			inFile.close();
-		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-		RETHROW;
-	}
+    //try reading the memory
+    try
+    {
+        inFile.read(&textMemory[0], size);
+        inFile.close();
+    }
+    catch (std::ios_base::failure e)
+    {
+        if (inFile.is_open())
+            inFile.close();
+        GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+        RETHROW;
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -501,9 +501,9 @@ void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
     binMemory.clear();
 
     //get file length
-	inFile.seekg(0, std::ios::end);
-	unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
-	inFile.seekg(0, std::ios::beg);
+    inFile.seekg(0, std::ios::end);
+    unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
+    inFile.seekg(0, std::ios::beg);
 
     //resize the vector
     binMemory.reserve(rawSize);//is this line needed?
@@ -511,17 +511,17 @@ void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
 
     //try reading the memory
     try
-	{
+    {
         inFile.read(&binMemory[0], rawSize);
-		inFile.close();
-	}
+        inFile.close();
+    }
     catch (std::ios_base::failure e)
-	{
-		if (inFile.is_open())
-			inFile.close();
-		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+    {
+        if (inFile.is_open())
+            inFile.close();
+        GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
         RETHROW;
-	}
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -532,7 +532,7 @@ void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
     inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
     try
     {
-		inFile.open(path, std::ios::binary | std::ios_base::in);
+        inFile.open(path, std::ios::binary | std::ios_base::in);
     }
     catch (std::ios_base::failure e)
     {
@@ -556,15 +556,15 @@ void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
     try
     {
         inFile.read(&binMemory[0], rawSize); 
-		inFile.close();
-	}
-	catch (std::ios_base::failure e)
-	{
-		if (inFile.is_open())
-			inFile.close();
-		GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-		RETHROW;
-	}
+        inFile.close();
+    }
+    catch (std::ios_base::failure e)
+    {
+        if (inFile.is_open())
+            inFile.close();
+        GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
+        RETHROW;
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -581,7 +581,7 @@ void LoadBinaryArrayIntoString(char* rawMemory, std::size_t size, std::string& o
    
     std::istream indata(streamBuf.get());
     indata.exceptions(std::ifstream::badbit);
-	char ch = ' ';
+    char ch = ' ';
 
     try
     {
@@ -617,46 +617,46 @@ glm::mat4 MatrixStack::mIdentity = glm::mat4();
 //--------------------------------------------------------------------------------------
 void MatrixStack::Push(const glm::mat4& matrix)
 {
-	if (mStack.size() != 0)
-	{
-		//if there are already things on the stack, instead of multiplying through EVERY TIME TOP IS CALLED, make it more efficient 
-		//so the top is ALWAYS a concatenation
-		glm::mat4 transformed = matrix * Top();
+    if (mStack.size() != 0)
+    {
+        //if there are already things on the stack, instead of multiplying through EVERY TIME TOP IS CALLED, make it more efficient 
+        //so the top is ALWAYS a concatenation
+        glm::mat4 transformed = matrix * Top();
 
-		mStack.push(transformed);
-	}
-	else
-	{
-		mStack.push(matrix);
-	}
+        mStack.push(transformed);
+    }
+    else
+    {
+        mStack.push(matrix);
+    }
 }
 
 //--------------------------------------------------------------------------------------
 void MatrixStack::Pop(void)
 {
-	mStack.pop();
+    mStack.pop();
 }
 
 //--------------------------------------------------------------------------------------
 const glm::mat4& MatrixStack::Top(void) const
 {
-	//if it is empty, then we want to return the identity
-	if (mStack.size() == 0)
-		return mIdentity;
+    //if it is empty, then we want to return the identity
+    if (mStack.size() == 0)
+        return mIdentity;
 
-	return mStack.top();
+    return mStack.top();
 }
 
 //--------------------------------------------------------------------------------------
 size_t MatrixStack::Size(void) const
 {
-	return mStack.size();
+    return mStack.size();
 }
 
 //--------------------------------------------------------------------------------------
 bool MatrixStack::Empty(void) const
 {
-	return mStack.empty();
+    return mStack.empty();
 }
 
 
@@ -669,43 +669,43 @@ OpenGL Basic Data Structures and Operators
 //--------------------------------------------------------------------------------------
 bool PtInRect(const Rect& rect, const Point& pt)
 {
-	//for the first comparison, it is impossible for both statements to be false, 
-	//because if the y is greater than the top, it is automatically greater than the bottom, and vise versa
-	return	(pt.y >= rect.bottom && pt.y <= rect.top) &&
-		(pt.x <= rect.right && pt.x >= rect.left);
+    //for the first comparison, it is impossible for both statements to be false, 
+    //because if the y is greater than the top, it is automatically greater than the bottom, and vise versa
+    return    (pt.y >= rect.bottom && pt.y <= rect.top) &&
+        (pt.x <= rect.right && pt.x >= rect.left);
 }
 
 //--------------------------------------------------------------------------------------
 void SetRectEmpty(Rect& rect)
 {
-	rect.top = rect.bottom = rect.left = rect.right = 0;
+    rect.top = rect.bottom = rect.left = rect.right = 0;
 }
 
 //--------------------------------------------------------------------------------------
 void SetRect(Rect& rect, long left, long top, long right, long bottom)
 {
-	rect.top = top;
-	rect.bottom = bottom;
-	rect.left = left;
-	rect.right = right;
+    rect.top = top;
+    rect.bottom = bottom;
+    rect.left = left;
+    rect.right = right;
 }
 
 //--------------------------------------------------------------------------------------
 void SetRect(Rectf& rect, float left, float top, float right, float bottom)
 {
-	rect.top = top;
-	rect.bottom = bottom;
-	rect.left = left;
-	rect.right = right;
+    rect.top = top;
+    rect.bottom = bottom;
+    rect.left = left;
+    rect.right = right;
 }
 
 //--------------------------------------------------------------------------------------
 void OffsetRect(Rect& rect, long x, long y)
 {
-	rect.top += y;
-	rect.bottom += y;
-	rect.left += x;
-	rect.right += x;
+    rect.top += y;
+    rect.bottom += y;
+    rect.left += x;
+    rect.right += x;
 }
 
 //--------------------------------------------------------------------------------------
@@ -723,26 +723,26 @@ void RepositionRect(Rect& rect, long newX, long newY)
 //--------------------------------------------------------------------------------------
 long RectHeight(const Rect& rect)
 {
-	return rect.top - rect.bottom;
+    return rect.top - rect.bottom;
 }
 
 //--------------------------------------------------------------------------------------
 long RectWidth(const Rect& rect)
 {
-	return rect.right - rect.left;
+    return rect.right - rect.left;
 }
 
 
 //--------------------------------------------------------------------------------------
 void InflateRect(Rect& rect, long dx, long dy)
 {
-	long dx2 = dx / 2;
-	long dy2 = dy / 2;
-	rect.left -= dx2;
-	rect.right += dx2;//remember to have opposites
+    long dx2 = dx / 2;
+    long dy2 = dy / 2;
+    rect.left -= dx2;
+    rect.right += dx2;//remember to have opposites
 
-	rect.top += dy2;
-	rect.bottom -= dy2;
+    rect.top += dy2;
+    rect.bottom -= dy2;
 }
 
 //--------------------------------------------------------------------------------------
@@ -756,55 +756,55 @@ void ResizeRect(Rect& rect, long newWidth, long newHeight)
 bool IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect)
 {
 
-	//Left
-	if (rect0.left > rect1.left)
-	{
-		rectIntersect.left = rect0.left;
-	}
-	else
-	{
-		rectIntersect.left = rect1.left;
-	}
+    //Left
+    if (rect0.left > rect1.left)
+    {
+        rectIntersect.left = rect0.left;
+    }
+    else
+    {
+        rectIntersect.left = rect1.left;
+    }
 
-	//Right
-	if (rect0.right < rect1.right)
-	{
-		rectIntersect.right = rect0.right;
-	}
-	else
-	{
-		rectIntersect.right = rect1.right;
-	}
+    //Right
+    if (rect0.right < rect1.right)
+    {
+        rectIntersect.right = rect0.right;
+    }
+    else
+    {
+        rectIntersect.right = rect1.right;
+    }
 
 
-	//Top
-	if (rect0.top < rect1.top)
-	{
-		rectIntersect.top = rect0.top;
-	}
-	else
-	{
-		rectIntersect.top = rect1.top;
-	}
+    //Top
+    if (rect0.top < rect1.top)
+    {
+        rectIntersect.top = rect0.top;
+    }
+    else
+    {
+        rectIntersect.top = rect1.top;
+    }
 
-	//Bottom
-	if (rect0.bottom > rect1.bottom)
-	{
-		rectIntersect.bottom = rect0.bottom;
-	}
-	else
-	{
-		rectIntersect.bottom = rect1.bottom;
-	}
+    //Bottom
+    if (rect0.bottom > rect1.bottom)
+    {
+        rectIntersect.bottom = rect0.bottom;
+    }
+    else
+    {
+        rectIntersect.bottom = rect1.bottom;
+    }
 
-	//this will ONLY happen if the do NOT intersect
-	if (rectIntersect.left > rectIntersect.right || rectIntersect.top < rectIntersect.bottom)
-	{
-		SetRectEmpty(rectIntersect);
-		return false;
-	}
+    //this will ONLY happen if the do NOT intersect
+    if (rectIntersect.left > rectIntersect.right || rectIntersect.top < rectIntersect.bottom)
+    {
+        SetRectEmpty(rectIntersect);
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
 
@@ -817,22 +817,22 @@ Datatype Conversion Functions
 //--------------------------------------------------------------------------------------
 Color4f ColorToFloat(const Color& color)
 {
-	Color4f col;
-	col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
-	col.y = glm::clamp((float)color.y / 255.0f, 0.0f, 1.0f);
-	col.z = glm::clamp((float)color.z / 255.0f, 0.0f, 1.0f);
-	col.w = glm::clamp((float)color.w / 255.0f, 0.0f, 1.0f);
-	return col;
+    Color4f col;
+    col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
+    col.y = glm::clamp((float)color.y / 255.0f, 0.0f, 1.0f);
+    col.z = glm::clamp((float)color.z / 255.0f, 0.0f, 1.0f);
+    col.w = glm::clamp((float)color.w / 255.0f, 0.0f, 1.0f);
+    return col;
 }
 
 //--------------------------------------------------------------------------------------
 Color3f ColorToFloat3(const Color& color)
 {
-	Color3f col;
-	col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
-	col.y = glm::clamp((float)color.y / 255.0f, 0.0f, 1.0f);
-	col.z = glm::clamp((float)color.z / 255.0f, 0.0f, 1.0f);
-	return col;
+    Color3f col;
+    col.x = glm::clamp((float)color.x / 255.0f, 0.0f, 1.0f);
+    col.y = glm::clamp((float)color.y / 255.0f, 0.0f, 1.0f);
+    col.z = glm::clamp((float)color.z / 255.0f, 0.0f, 1.0f);
+    return col;
 }
 
 //--------------------------------------------------------------------------------------
@@ -849,54 +849,46 @@ Point MultPoints(const Point& pt0, const Point& pt1)
 //--------------------------------------------------------------------------------------
 glm::vec2 GetVec2FromRect(const Rect& rect, bool x, bool y)
 {
-	if (x)
-		if (y)
-			return glm::vec2(rect.right, rect.top);
-		else
-			return glm::vec2(rect.right, rect.bottom);
-	else
-		if (y)
-			return glm::vec2(rect.left, rect.top);
-		else
-			return glm::vec2(rect.left, rect.bottom);
+    if (x)
+        if (y)
+            return glm::vec2(rect.right, rect.top);
+        else
+            return glm::vec2(rect.right, rect.bottom);
+    else
+        if (y)
+            return glm::vec2(rect.left, rect.top);
+        else
+            return glm::vec2(rect.left, rect.bottom);
 }
 
 //--------------------------------------------------------------------------------------
 glm::vec2 GetVec2FromRect(const Rectf& rect, bool x, bool y)
 {
-	if (x)
-		if (y)
-			return glm::vec2(rect.right, rect.top);
-		else
-			return glm::vec2(rect.right, rect.bottom);
-	else
-		if (y)
-			return glm::vec2(rect.left, rect.top);
-		else
-			return glm::vec2(rect.left, rect.bottom);
+    if (x)
+        if (y)
+            return glm::vec2(rect.right, rect.top);
+        else
+            return glm::vec2(rect.right, rect.bottom);
+    else
+        if (y)
+            return glm::vec2(rect.left, rect.top);
+        else
+            return glm::vec2(rect.left, rect.bottom);
 }
 
 #pragma warning (disable : 4244)
 std::string WStringToString(const std::wstring& str) noexcept
 {
-    NOEXCEPT_REGION_START
-
     std::string temp(str.length(), ' ');
     std::copy(str.begin(), str.end(), temp.begin());
     return temp;
-
-    NOEXCEPT_REGION_END
 }
 
 std::wstring StringToWString(const std::string& str) noexcept
 {
-    NOEXCEPT_REGION_START
-
     std::wstring temp(str.length(), L' ');
     std::copy(str.begin(), str.end(), temp.begin());
     return temp;
-
-    NOEXCEPT_REGION_END
 }
 
 #pragma warning (default : 4244)
@@ -1006,14 +998,14 @@ Shader
 */
 class Shader
 {
-	friend ShaderManager;
-	friend Program;
+    friend ShaderManager;
+    friend Program;
 
-	GLuint mShaderId;
+    GLuint mShaderId;
 
-	std::string mTmpShaderText;
+    std::string mTmpShaderText;
 
-	ShaderType mShaderType;
+    ShaderType mShaderType;
 
     //disallow copy and assign, because these must always be refered to by pointers
     Shader(const Shader& other) = delete;
@@ -1026,11 +1018,11 @@ public:
             no-throw guarantee
     
     */
-	Shader() noexcept;
-	~Shader() noexcept;
+    Shader() noexcept;
+    ~Shader() noexcept;
 
-	//common shader is if the shader will not be deleted after building into a program
-	//this is used for things like lighting functions
+    //common shader is if the shader will not be deleted after building into a program
+    //this is used for things like lighting functions
 
     /*
     Init
@@ -1054,7 +1046,7 @@ public:
         Throws:
             may throw 'std::bad_alloc' if string allocation fails
     */
-	void Load(const std::string& shaderText, bool append = false);
+    void Load(const std::string& shaderText, bool append = false);
 
     /*
     LoadFromMemory
@@ -1066,7 +1058,7 @@ public:
         Throws:
             may throw 'std::bad_alloc' if string allocation fails            
     */
-	//void LoadFromMemory(const std::vector<char>& shaderData, bool append = false);
+    //void LoadFromMemory(const std::vector<char>& shaderData, bool append = false);
 
     /*
     LoadFromFile
@@ -1079,7 +1071,7 @@ public:
             'std::ios_base::failure': if file fails to open or read
     
     */
-	//bool LoadFromFile(const std::wstring& filePath, bool append = false);
+    //bool LoadFromFile(const std::wstring& filePath, bool append = false);
 
     /*
     FlushText
@@ -1103,7 +1095,7 @@ public:
             'CreateGLShaderException': if shader creaetion failes (because shader creation is stalled until compilation)
     
     */
-	void Compile(ShaderInfoStruct& retStruct);
+    void Compile(ShaderInfoStruct& retStruct);
 
 
     /*
@@ -1135,13 +1127,13 @@ Program
 */
 class Program
 {
-	friend ShaderManager;
+    friend ShaderManager;
 
-	//GLuint mUniformBuffId;
-	GLuint mProgramId;
-	std::map<ShaderType, ShaderPtr > mShaderBuff;
-	VariableLocMap mAttributeLocations;
-	VariableLocMap mUniformLocations;
+    //GLuint mUniformBuffId;
+    GLuint mProgramId;
+    std::map<ShaderType, ShaderPtr > mShaderBuff;
+    VariableLocMap mAttributeLocations;
+    VariableLocMap mUniformLocations;
     GLbitfield mStages;
 
 public:
@@ -1160,7 +1152,7 @@ public:
         Throws:
             'CreateGLProgramException': OpenGL failed to create program using glCreateProgram
     */
-	void Init();
+    void Init();
 
     /*
     AttachShader
@@ -1174,7 +1166,7 @@ public:
         Throws:
             'std::invalid_argument': if 'shader == nullptr' or 'shader' is invalid
     */
-	void AttachShader(ShaderPtr shader);
+    void AttachShader(ShaderPtr shader);
 
     /*
     FlushShaders
@@ -1197,7 +1189,7 @@ public:
         Throws:
             'LinkProgramException': if program linking fails
     */
-	void Build(ShaderInfoStruct& retStruct, bool separate);
+    void Build(ShaderInfoStruct& retStruct, bool separate);
 
     /*
     GetId
@@ -1205,7 +1197,7 @@ public:
         Returns:
             OpenGL Id of the program
     */
-	GLuint GetId(){ return mProgramId; }
+    GLuint GetId(){ return mProgramId; }
 
 
     /*
@@ -1240,16 +1232,16 @@ SeparateProgram
 */
 class SeparateProgram
 {
-	friend ShaderManager;
-	GLuint mPPOId;
+    friend ShaderManager;
+    GLuint mPPOId;
 
-	ProgramPtrList mPrograms;//so the programs don't go deleting themselves until the PPO is destroyed
+    ProgramPtrList mPrograms;//so the programs don't go deleting themselves until the PPO is destroyed
 
     ProgramPtr mActiveProgram;//this is used as the 'active program' when assigning uniforms
 
 public:
     SeparateProgram();
-	~SeparateProgram();
+    ~SeparateProgram();
 
     /*
     Init
@@ -1257,8 +1249,8 @@ public:
         Throws:
             'CreateGLPPOException': if opengl creation of PPO failed
     */
-	void Init();
-	
+    void Init();
+    
     /*
     AttachProgram
 
@@ -1269,7 +1261,7 @@ public:
             no-throw guarantee
 
     */
-	void AttachProgram(const ProgramPtr& program);
+    void AttachProgram(const ProgramPtr& program);
 
     /*
     ClearStages
@@ -1340,17 +1332,13 @@ SeparateProgram::SeparateProgram()
 //--------------------------------------------------------------------------------------
 SeparateProgram::~SeparateProgram()
 {
-    NOEXCEPT_REGION_START
-
-	glDeleteProgramPipelines(1, &mPPOId); 
-
-    NOEXCEPT_REGION_END
+    glDeleteProgramPipelines(1, &mPPOId); 
 }
 
 //--------------------------------------------------------------------------------------
 void SeparateProgram::Init()
 {
-	glGenProgramPipelines(1, &mPPOId);
+    glGenProgramPipelines(1, &mPPOId);
 
     if (mPPOId == 0)
     {
@@ -1361,20 +1349,14 @@ void SeparateProgram::Init()
 //--------------------------------------------------------------------------------------
 void SeparateProgram::AttachProgram(const ProgramPtr& program)
 {
-    NOEXCEPT_REGION_START
-
     glBindProgramPipeline(mPPOId);
-	mPrograms.push_back(program); 
-	glUseProgramStages(mPPOId, program->GetBitfield(), program->GetId());
-
-    NOEXCEPT_REGION_END
+    mPrograms.push_back(program); 
+    glUseProgramStages(mPPOId, program->GetBitfield(), program->GetId());
 }
 
 //--------------------------------------------------------------------------------------
 void SeparateProgram::ClearStages(GLbitfield stages)
 {
-    NOEXCEPT_REGION_START
-
     glUseProgramStages(mPPOId, stages, 0);
 
     //remove the programs that are affected by this clear
@@ -1384,15 +1366,11 @@ void SeparateProgram::ClearStages(GLbitfield stages)
         if (((*it)->GetBitfield() & stages) != 0)
             mPrograms.erase(it);
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void SeparateProgram::SetActiveShaderProgram(ProgramStage stage)
 {
-    NOEXCEPT_REGION_START
-
     glBindProgramPipeline(mPPOId);
 
     //does the currently bound program have this stage?
@@ -1423,8 +1401,6 @@ void SeparateProgram::SetActiveShaderProgram(ProgramStage stage)
     {
         glActiveShaderProgram(mPPOId, mActiveProgram->GetId());
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -1450,55 +1426,51 @@ Shader Methods
 //--------------------------------------------------------------------------------------
 Shader::Shader() noexcept 
 {
-	mShaderId = 0;
+    mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
 Shader::~Shader() noexcept 
 {
-	if (mShaderId != 0)
-	{
-		glDeleteShader(mShaderId);
-	}
-	mTmpShaderText.clear();
+    if (mShaderId != 0)
+    {
+        glDeleteShader(mShaderId);
+    }
+    mTmpShaderText.clear();
 }
 
 //--------------------------------------------------------------------------------------
 void Shader::Init(ShaderType shaderType) noexcept 
 {
-	mShaderType = shaderType;
-	mShaderId = 0;
+    mShaderType = shaderType;
+    mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
 void Shader::Load(const std::string& shaderText, bool append)
 {
-	if (!append)
-		mTmpShaderText.clear();
+    if (!append)
+        mTmpShaderText.clear();
 
-	mTmpShaderText.append(shaderText);
+    mTmpShaderText.append(shaderText);
 }
 
 //--------------------------------------------------------------------------------------
 void Shader::Destroy() noexcept 
 {
-    NOEXCEPT_REGION_START
-
     if (mShaderId != 0)
     {
         glDeleteShader(mShaderId);
         mShaderId = 0;
     }
     mTmpShaderText.clear();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 /*void Shader::LoadFromMemory(const std::vector<char>& shaderData, bool append)
 {
-	if (!append)
-		mTmpShaderText.clear();
+    if (!append)
+        mTmpShaderText.clear();
 
     std::string loadedText;
 
@@ -1556,58 +1528,58 @@ void Shader::Destroy() noexcept
 void Shader::Compile(ShaderInfoStruct& returnStruct)
 {
     //if the shader id is not 0, this means the previous compile attempt was successful, because if it was not, the program is deleted and reset to 0
-	if (mShaderId != 0)
-	{
-		returnStruct.mSuccess = false;
-		returnStruct.mLog = "F";
-		return;
-	}
+    if (mShaderId != 0)
+    {
+        returnStruct.mSuccess = false;
+        returnStruct.mLog = "F";
+        return;
+    }
 
     //create the shader
-	mShaderId = glCreateShader(mShaderType);
+    mShaderId = glCreateShader(mShaderType);
 
     //if shader creation failed, throw an exception
     if (mShaderId == 0)
         GLUF_CRITICAL_EXCEPTION(CreateGLShaderException());
 
-	//start by adding the strings to glShader Source.  This is done right before the compile
-	//process becuase it is hard to remove it if there is any reason to flush the text
+    //start by adding the strings to glShader Source.  This is done right before the compile
+    //process becuase it is hard to remove it if there is any reason to flush the text
 
-	std::string tmpText = mTmpShaderText;
+    std::string tmpText = mTmpShaderText;
 
-	GLint tmpSize = (GLuint)mTmpShaderText.length();
-	tmpSize--; /*BECAUSE OF NULL TERMINATED STRINGS*/
+    GLint tmpSize = (GLuint)mTmpShaderText.length();
+    tmpSize--; /*BECAUSE OF NULL TERMINATED STRINGS*/
 
-	const GLchar* text = tmpText.c_str();
-	glShaderSource(mShaderId, 1, &text, &tmpSize);
+    const GLchar* text = tmpText.c_str();
+    glShaderSource(mShaderId, 1, &text, &tmpSize);
 
     //flush text upon compile no matter what (if compile failed, why would we want to keep the error-ridden code)
-	FlushText();
+    FlushText();
 
-	glCompileShader(mShaderId);
+    glCompileShader(mShaderId);
 
-	GLint isCompiled = 0;
-	glGetShaderiv(mShaderId, GL_COMPILE_STATUS, &isCompiled);
-	returnStruct.mSuccess = (isCompiled == GL_FALSE) ? false : true;
+    GLint isCompiled = 0;
+    glGetShaderiv(mShaderId, GL_COMPILE_STATUS, &isCompiled);
+    returnStruct.mSuccess = (isCompiled == GL_FALSE) ? false : true;
 
-	GLint maxLength = 0;
-	glGetShaderiv(mShaderId, GL_INFO_LOG_LENGTH, &maxLength);
+    GLint maxLength = 0;
+    glGetShaderiv(mShaderId, GL_INFO_LOG_LENGTH, &maxLength);
 
-	//The maxLength includes the NULL character
-	returnStruct.mLog.resize(maxLength);
-	glGetShaderInfoLog(mShaderId, maxLength, &maxLength, &returnStruct.mLog[0]);
+    //The maxLength includes the NULL character
+    returnStruct.mLog.resize(maxLength);
+    glGetShaderInfoLog(mShaderId, maxLength, &maxLength, &returnStruct.mLog[0]);
 
-	//Provide the infolog in whatever manor you deem best.
-	//Exit with failure.
+    //Provide the infolog in whatever manor you deem best.
+    //Exit with failure.
 
-	//if it failed, delete the shader, to have a universal way of determining failure
-	if (returnStruct.mSuccess == false)
-	{
-		glDeleteShader(mShaderId);
-		mShaderId = 0;
+    //if it failed, delete the shader, to have a universal way of determining failure
+    if (returnStruct.mSuccess == false)
+    {
+        glDeleteShader(mShaderId);
+        mShaderId = 0;
         GLUF_CRITICAL_EXCEPTION(CompileShaderException());
-	}
-	return;
+    }
+    return;
 }
 
 
@@ -1624,20 +1596,20 @@ Program Methods
 //--------------------------------------------------------------------------------------
 Program::Program() noexcept 
 {
-	mProgramId = 0;
+    mProgramId = 0;
 }
 
 //--------------------------------------------------------------------------------------
 Program::~Program() noexcept 
 {
-	glDeleteProgram(mProgramId);
+    glDeleteProgram(mProgramId);
 }
 
 //--------------------------------------------------------------------------------------
 void Program::Init()
 {
-	//unlike with the shader, this will be created during initialization
-	mProgramId = glCreateProgram();
+    //unlike with the shader, this will be created during initialization
+    mProgramId = glCreateProgram();
 
     if (mProgramId == 0)
         GLUF_CRITICAL_EXCEPTION(CreateGLProgramException());
@@ -1660,25 +1632,25 @@ void Program::AttachShader(ShaderPtr shader)
     mShaderBuff.insert(toInsert);
 
     //and add it to OpenGL
-	glAttachShader(mProgramId, shader->mShaderId);
+    glAttachShader(mProgramId, shader->mShaderId);
 }
 
 //--------------------------------------------------------------------------------------
 void Program::FlushShaders(void) noexcept 
 {
     //simply go through all of the shaders, remove them, and clear the shader buffer
-	for (auto it : mShaderBuff)
-	{
-		glDetachShader(mProgramId, it.second->mShaderId);
-	}
-	mShaderBuff.clear();
+    for (auto it : mShaderBuff)
+    {
+        glDetachShader(mProgramId, it.second->mShaderId);
+    }
+    mShaderBuff.clear();
 }
 
 //--------------------------------------------------------------------------------------
 void Program::Build(ShaderInfoStruct& retStruct, bool separate)
 {
-	//make sure we enable separate shading
-	if (separate)
+    //make sure we enable separate shading
+    if (separate)
     { 
         mStages = 0;
 
@@ -1693,47 +1665,47 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
         }
     }
 
-	//Link our program
-	glLinkProgram(mProgramId);
+    //Link our program
+    glLinkProgram(mProgramId);
 
-	//Note the different functions here: glGetProgram* instead of glGetShader*.
-	GLint isLinked = 0;
-	glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
-	retStruct.mSuccess = (isLinked == GL_FALSE) ? false : true;
+    //Note the different functions here: glGetProgram* instead of glGetShader*.
+    GLint isLinked = 0;
+    glGetProgramiv(mProgramId, GL_LINK_STATUS, &isLinked);
+    retStruct.mSuccess = (isLinked == GL_FALSE) ? false : true;
 
-	GLint maxLength = 0;
-	glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
+    GLint maxLength = 0;
+    glGetProgramiv(mProgramId, GL_INFO_LOG_LENGTH, &maxLength);
 
-	//The maxLength includes the NULL character
-	retStruct.mLog.resize(maxLength);
-	glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &retStruct.mLog[0]);
+    //The maxLength includes the NULL character
+    retStruct.mLog.resize(maxLength);
+    glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &retStruct.mLog[0]);
 
-	if (!retStruct.mSuccess)
-	{
-		//in the case of failure, DO NOT DELETE ANYTHING, but do throw an error
+    if (!retStruct.mSuccess)
+    {
+        //in the case of failure, DO NOT DELETE ANYTHING, but do throw an error
         GLUF_CRITICAL_EXCEPTION(LinkProgramException());
-	}
-	else
-	{
-		FlushShaders();//this removes the references to them from the program, but they will still exist unless this is the last reference to them
-		
+    }
+    else
+    {
+        FlushShaders();//this removes the references to them from the program, but they will still exist unless this is the last reference to them
+        
         /*
         
         This region loads uniform and attribute locations
 
         */
-		
+        
         
         //Load the variable names
-		GLint attribCount = 0;
-		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTES, &attribCount);
+        GLint attribCount = 0;
+        glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTES, &attribCount);
 
-		GLint maxLength;
-		glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLength);
+        GLint maxLength;
+        glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLength);
 
         //TODO: right now, these are just placeholders, but perhaps a more in depth variable information structure is needed
-		GLenum type;
-		GLint written, size;
+        GLenum type;
+        GLint written, size;
 
         //this is used to trim the null charactors from the end of the string
         const auto TrimString = [](std::string& toTrim)
@@ -1763,28 +1735,26 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
             data.clear();
         }
 
-		GLint uniformCount = 0;
-		glGetProgramiv(mProgramId, GL_ACTIVE_UNIFORMS, &uniformCount);
+        GLint uniformCount = 0;
+        glGetProgramiv(mProgramId, GL_ACTIVE_UNIFORMS, &uniformCount);
 
-		for (int i = 0; i < uniformCount; ++i)
+        for (int i = 0; i < uniformCount; ++i)
         {
             //resize and clear every time is a bit messy, but is the only way to make sure the string is the right length
             data.resize(maxLength);
 
             glGetActiveUniform(mProgramId, i, maxLength, &written, &size, &type, &data[0]);
             TrimString(data);
-			mUniformLocations.insert(VariableLocPair(data, glGetUniformLocation(mProgramId, &data[0])));
+            mUniformLocations.insert(VariableLocPair(data, glGetUniformLocation(mProgramId, &data[0])));
 
             data.clear();
-		}
-	}
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------
 void Program::Destroy() noexcept 
 { 
-    NOEXCEPT_REGION_START
-
     if (mProgramId != 0)
     {
         glDeleteProgram(mProgramId);
@@ -1793,18 +1763,12 @@ void Program::Destroy() noexcept
     mShaderBuff.clear();
     mAttributeLocations.clear();
     mUniformLocations.clear();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 GLbitfield Program::GetBitfield() const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return mStages;
-
-    NOEXCEPT_REGION_END
 
     return 0;
 }
@@ -1821,24 +1785,24 @@ ShaderManager Methods
 //--------------------------------------------------------------------------------------
 ShaderPtr ShaderManager::CreateShader(std::wstring shad, ShaderType type, bool file, bool separate)
 {
-	ShaderPtr shader(new Shader());
-	shader->Init(type);
+    ShaderPtr shader(new Shader());
+    shader->Init(type);
 
-	(file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
+    (file) ? shader->LoadFromFile(shad.c_str()) : shader->Load(shad.c_str());
 
-	ShaderInfoStruct output;
-	shader->Compile(output);
-	mCompileLogs.insert(std::pair<ShaderPtr, ShaderInfoStruct>(shader, output));
+    ShaderInfoStruct output;
+    shader->Compile(output);
+    mCompileLogs.insert(std::pair<ShaderPtr, ShaderInfoStruct>(shader, output));
 
-	//log it if it failed
-	if (!output)
-	{
-		std::wstringstream ss;
-		ss << "Shader Compilation Failed: \n" << output.mLog;
-		GLUF_ERROR(ss.str().c_str());
-	}
+    //log it if it failed
+    if (!output)
+    {
+        std::wstringstream ss;
+        ss << "Shader Compilation Failed: \n" << output.mLog;
+        GLUF_ERROR(ss.str().c_str());
+    }
 
-	return shader;
+    return shader;
 }
 */
 
@@ -2030,18 +1994,18 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders,
 //--------------------------------------------------------------------------------------
 void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderSourceList shaderSources, bool separate)
 {
-	ShaderPtrList shaders;
-	for (auto it : shaderSources)
-	{
+    ShaderPtrList shaders;
+    for (auto it : shaderSources)
+    {
         //create the shader from the text
         std::shared_ptr<Shader> nowShader;
         CreateShaderFromText(nowShader, it.second, it.first);
 
         //add the shader to the list
-		shaders.push_back(nowShader);
+        shaders.push_back(nowShader);
 
         //the exception hierarchy handles all errors for this method
-	}
+    }
 
     CreateProgram(outProgram, shaders, separate);
 }
@@ -2050,9 +2014,9 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderSourceList shade
 //--------------------------------------------------------------------------------------
 void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate)
 {
-	ShaderPtrList shaders;
-	for (auto it : shaderPaths)
-	{
+    ShaderPtrList shaders;
+    for (auto it : shaderPaths)
+    {
         //create the shader from the text
         auto nowShader = std::make_shared<Shader>();
         CreateShaderFromFile(nowShader, it.second, it.first);
@@ -2061,9 +2025,9 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderP
         shaders.push_back(nowShader);
 
         //the exception hierarchy handles all errors for this method
-	}
+    }
 
-	CreateProgram(outProgram, shaders, separate);
+    CreateProgram(outProgram, shaders, separate);
 }
 
 //for removing things
@@ -2087,8 +2051,8 @@ void ShaderManager::DeleteProgram(ProgramPtr& program) noexcept
 //--------------------------------------------------------------------------------------
 void ShaderManager::FlushLogs() 
 {
-	mLinklogs.clear();
-	mCompileLogs.clear();
+    mLinklogs.clear();
+    mCompileLogs.clear();
 }
 
 
@@ -2099,7 +2063,7 @@ const GLuint ShaderManager::GetShaderId(const ShaderPtr& shader) const
 {
     GLUF_NULLPTR_CHECK(shader);
 
-	return shader->mShaderId;
+    return shader->mShaderId;
 }
 
 
@@ -2108,7 +2072,7 @@ const ShaderType ShaderManager::GetShaderType(const ShaderPtr& shader) const
 {
     GLUF_NULLPTR_CHECK(shader);
 
-	return shader->mShaderType;
+    return shader->mShaderType;
 }
 
 
@@ -2117,7 +2081,7 @@ const GLuint ShaderManager::GetProgramId(const ProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
 
-	return program->mProgramId;
+    return program->mProgramId;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2126,7 +2090,7 @@ const CompileOutputStruct ShaderManager::GetShaderLog(const ShaderPtr& shaderPtr
     GLUF_NULLPTR_CHECK(shaderPtr);
     _TSAFE_SCOPE(mCompLogMutex);
 
-	return mCompileLogs.find(shaderPtr)->second;
+    return mCompileLogs.find(shaderPtr)->second;
 }
 
 
@@ -2136,7 +2100,7 @@ const LinkOutputStruct ShaderManager::GetProgramLog(const ProgramPtr& programPtr
     GLUF_NULLPTR_CHECK(programPtr);
     _TSAFE_SCOPE(mLinkLogMutex);
 
-	return mLinklogs.find(programPtr)->second;
+    return mLinklogs.find(programPtr)->second;
 }
 
 //for using things
@@ -2153,14 +2117,14 @@ void ShaderManager::UseProgram(const ProgramPtr& program) const
     //make sure this is not bound when using a program
     glBindProgramPipeline(0);
 
-	glUseProgram(program->mProgramId);
+    glUseProgram(program->mProgramId);
 }
 
 //--------------------------------------------------------------------------------------
 void ShaderManager::UseProgramNull() const noexcept
 {
-	glUseProgram(0);
-	glBindProgramPipeline(0);//juse in case we are using pipelines
+    glUseProgram(0);
+    glBindProgramPipeline(0);//juse in case we are using pipelines
 }
 
 //--------------------------------------------------------------------------------------
@@ -2199,10 +2163,10 @@ const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr& program,
 {
     GLUF_NULLPTR_CHECK(program);
 
-	VariableLocMap::iterator it;
+    VariableLocMap::iterator it;
 
-	if (locType == GLT_ATTRIB)
-	{
+    if (locType == GLT_ATTRIB)
+    {
         it = program->mAttributeLocations.find(varName);
 
         if (it == program->mAttributeLocations.end())
@@ -2210,9 +2174,9 @@ const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr& program,
             GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program attributes!"));
             return 0;
         }
-	}
-	else
-	{
+    }
+    else
+    {
         it = program->mUniformLocations.find(varName);
 
         if (it == program->mUniformLocations.end())
@@ -2220,9 +2184,9 @@ const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr& program,
             GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program uniforms!"));
             return 0;
         }
-	}
+    }
 
-	return it->second;
+    return it->second;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2243,14 +2207,14 @@ const VariableLocMap& ShaderManager::GetShaderUniformLocations(const ProgramPtr&
 const VariableLocMap ShaderManager::GetShaderAttribLocations(const SepProgramPtr& program) const
 {
     GLUF_NULLPTR_CHECK(program);
-	VariableLocMap ret;
+    VariableLocMap ret;
 
     for (auto it : program->mPrograms)
-	{
-		ret.insert(it->mAttributeLocations.begin(), it->mAttributeLocations.end());
-	}
+    {
+        ret.insert(it->mAttributeLocations.begin(), it->mAttributeLocations.end());
+    }
 
-	return ret;
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2258,14 +2222,14 @@ const VariableLocMap ShaderManager::GetShaderUniformLocations(const SepProgramPt
 {
     GLUF_NULLPTR_CHECK(program);
 
-	VariableLocMap ret;
+    VariableLocMap ret;
 
     for (auto it : program->mPrograms)
-	{
-		ret.insert(it->mUniformLocations.begin(), it->mUniformLocations.end());
-	}
+    {
+        ret.insert(it->mUniformLocations.begin(), it->mUniformLocations.end());
+    }
 
-	return ret;
+    return ret;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2277,7 +2241,7 @@ void ShaderManager::AttachProgram(SepProgramPtr& ppo, const ProgramPtr& program)
     if (program->GetId() == 0)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
 
-	ppo->AttachProgram(program);
+    ppo->AttachProgram(program);
 }
 
 //--------------------------------------------------------------------------------------
@@ -2285,14 +2249,14 @@ void ShaderManager::AttachPrograms(SepProgramPtr& ppo, const ProgramPtrList& pro
 {
     GLUF_NULLPTR_CHECK(ppo);
 
-	for (auto it : programs)
+    for (auto it : programs)
     {
         GLUF_NULLPTR_CHECK(it);
         if (it->GetId() == 0)
             GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
 
-		ppo->AttachProgram(it);
-	}
+        ppo->AttachProgram(it);
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -2306,8 +2270,8 @@ void ShaderManager::ClearPrograms(SepProgramPtr& ppo, GLbitfield stages) const
 void ShaderManager::UseProgram(const SepProgramPtr& ppo) const
 {
     GLUF_NULLPTR_CHECK(ppo);
-	glUseProgram(0);
-	glBindProgramPipeline(ppo->GetId());
+    glUseProgram(0);
+    glBindProgramPipeline(ppo->GetId());
 }
 
 //--------------------------------------------------------------------------------------
@@ -3375,9 +3339,9 @@ VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) 
 
     }
 
-	if (index)
-	{
-		glGenBuffers(1, &mIndexBuffer);
+    if (index)
+    {
+        glGenBuffers(1, &mIndexBuffer);
         if (mIndexBuffer == 0)
         {
             GLUF_ERROR("Failed to create index buffer!");
@@ -3386,19 +3350,19 @@ VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) 
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 
-	}
+    }
 }
 
 //--------------------------------------------------------------------------------------
 VertexArrayBase::~VertexArrayBase() noexcept
 {
-	BindVertexArray();
+    BindVertexArray();
 
-	glDeleteBuffers(1, &mIndexBuffer);
+    glDeleteBuffers(1, &mIndexBuffer);
 
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
-	    glDeleteVertexArrays(1, &mVertexArrayId);
+        glDeleteVertexArrays(1, &mVertexArrayId);
 
     UnBindVertexArray();
 }
@@ -3491,8 +3455,6 @@ void VertexArrayBase::RemoveVertexAttrib(AttribLoc loc)
 //--------------------------------------------------------------------------------------
 void VertexArrayBase::BindVertexArray() noexcept
 {
-    NOEXCEPT_REGION_START
-
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
     {
@@ -3503,30 +3465,22 @@ void VertexArrayBase::BindVertexArray() noexcept
 
         glBindVertexArray(mVertexArrayId);
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArrayBase::UnBindVertexArray() noexcept
 {    
-    NOEXCEPT_REGION_START
-
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
     {
         glBindVertexArray(mTempVAOId);
         mTempVAOId = 0;
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArrayBase::Draw() noexcept
 {
-    NOEXCEPT_REGION_START
-
     BindVertexArray();
 
     SWITCH_GL_VERSION
@@ -3552,15 +3506,11 @@ void VertexArrayBase::Draw() noexcept
     }
 
     UnBindVertexArray();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArrayBase::DrawRange(GLuint start, GLuint count) noexcept
 {
-    NOEXCEPT_REGION_START
-
     BindVertexArray();
 
     SWITCH_GL_VERSION
@@ -3586,15 +3536,11 @@ void VertexArrayBase::DrawRange(GLuint start, GLuint count) noexcept
     }
 
     UnBindVertexArray();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArrayBase::DrawInstanced(GLuint instances) noexcept
 {
-    NOEXCEPT_REGION_START
-
     BindVertexArray();
 
     SWITCH_GL_VERSION
@@ -3620,23 +3566,18 @@ void VertexArrayBase::DrawInstanced(GLuint instances) noexcept
     }
 
     UnBindVertexArray();
-
-    NOEXCEPT_REGION_END
 }
 
 //helper function
 //--------------------------------------------------------------------------------------
 void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept
 {
-    NOEXCEPT_REGION_START
-
     BindVertexArray();
     mIndexCount = indexCount;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mIndexCount, data, mUsageType);
 
     UnBindVertexArray();
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -3713,23 +3654,21 @@ int RoundNearestMultiple(unsigned int num, unsigned int multiple)
         return 0;//if the multiple is 0, still needs to return something in release mode
     }
 
-	unsigned int nearestMultiple = 0;
+    unsigned int nearestMultiple = 0;
 
     //loop up to the 
-	for (unsigned int i = 0; i < num; i += multiple)
-	{
-		nearestMultiple = i;
-	}
+    for (unsigned int i = 0; i < num; i += multiple)
+    {
+        nearestMultiple = i;
+    }
 
-	nearestMultiple += multiple;
-	return nearestMultiple;
+    nearestMultiple += multiple;
+    return nearestMultiple;
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArrayAoS::RefreshDataBufferAttribute() noexcept
 {
-    NOEXCEPT_REGION_START
-
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)//this is done at draw time in opengl less than 3.0
     {
@@ -3747,16 +3686,14 @@ void VertexArrayAoS::RefreshDataBufferAttribute() noexcept
 
         UnBindVertexArray();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage, indexed)
 {
-	//the VAO is already bound
+    //the VAO is already bound
 
-	glGenBuffers(1, &mDataBuffer);
+    glGenBuffers(1, &mDataBuffer);
     glGenBuffers(1, &mCopyBuffer);
 
     if (mDataBuffer == 0 || mCopyBuffer == 0)
@@ -3766,9 +3703,9 @@ VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) 
 //--------------------------------------------------------------------------------------
 VertexArrayAoS::~VertexArrayAoS() noexcept
 {
-	BindVertexArray();
+    BindVertexArray();
 
-	glDeleteBuffers(1, &mDataBuffer);
+    glDeleteBuffers(1, &mDataBuffer);
 
     UnBindVertexArray();
 }
@@ -3776,7 +3713,7 @@ VertexArrayAoS::~VertexArrayAoS() noexcept
 //--------------------------------------------------------------------------------------
 VertexArrayAoS::VertexArrayAoS(VertexArrayAoS&& other) : VertexArrayBase(std::move(other))
 {
-	mDataBuffer = other.mDataBuffer;
+    mDataBuffer = other.mDataBuffer;
 
     other.mDataBuffer = 0;
 }
@@ -3798,19 +3735,15 @@ VertexArrayAoS& VertexArrayAoS::operator=(VertexArrayAoS&& other)
 //--------------------------------------------------------------------------------------
 GLuint VertexArrayAoS::GetVertexSize() const noexcept
 {
-	GLuint stride = 0;
-    NOEXCEPT_REGION_START
-
+    GLuint stride = 0;
     //WOW: this before was allocating memory to find the size of the memory, then didn't even delete it
-	for (auto it : mAttribInfos)
-	{
-		//round to the 4 bytes bounderies
-		stride += it.second.mElementsPerValue * RoundNearestMultiple(it.second.mBytesPerElement, 4);
-	}
+    for (auto it : mAttribInfos)
+    {
+        //round to the 4 bytes bounderies
+        stride += it.second.mElementsPerValue * RoundNearestMultiple(it.second.mBytesPerElement, 4);
+    }
 
-    NOEXCEPT_REGION_END
-
-	return stride;
+    return stride;
 }
 
 //--------------------------------------------------------------------------------------
@@ -3901,8 +3834,6 @@ void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei
 //--------------------------------------------------------------------------------------
 void VertexArrayAoS::EnableVertexAttributes() const noexcept
 {
-    NOEXCEPT_REGION_START
-
     glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
 
     GLuint stride = GetVertexSize();
@@ -3912,23 +3843,17 @@ void VertexArrayAoS::EnableVertexAttributes() const noexcept
         glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(it.second.mOffset)));
     }
 
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArrayAoS::DisableVertexAttributes() const noexcept
 {
-    NOEXCEPT_REGION_START
-
     glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
 
     for(auto it : mAttribInfos)
     {
         glDisableVertexAttribArray(it.second.mVertexAttribLocation);
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3968,8 +3893,8 @@ VertexArraySoA::VertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) 
 //--------------------------------------------------------------------------------------
 VertexArraySoA::~VertexArraySoA() noexcept
 {
-	BindVertexArray();
-	for (auto it : mDataBuffers)
+    BindVertexArray();
+    for (auto it : mDataBuffers)
         glDeleteBuffers(1, &it.second);
     UnBindVertexArray();
 }
@@ -3996,23 +3921,23 @@ VertexArraySoA& VertexArraySoA::operator=(VertexArraySoA&& other)
 //--------------------------------------------------------------------------------------
 void VertexArraySoA::GetBarebonesMesh(MeshBarebones& inData)
 {
-	BindVertexArray();
+    BindVertexArray();
 
-	std::map<AttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
-	if (mIndexBuffer == 0 || it == mDataBuffers.end())
-	{
+    std::map<AttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
+    if (mIndexBuffer == 0 || it == mDataBuffers.end())
+    {
         GLUF_CRITICAL_EXCEPTION(InvalidAttrubuteLocationException());
-	}
-	
-	glBindBuffer(GL_ARRAY_BUFFER, it->second);
-	glm::vec3* pVerts = (glm::vec3*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, it->second);
+    glm::vec3* pVerts = (glm::vec3*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 
     inData.mVertices = ArrToVec(pVerts, mVertexCount);
-	glUnmapBuffer(GL_ARRAY_BUFFER);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
 
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-	GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+    GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
 
     inData.mIndices = ArrToVec(pIndices, mIndexCount);
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -4023,47 +3948,37 @@ void VertexArraySoA::GetBarebonesMesh(MeshBarebones& inData)
 //--------------------------------------------------------------------------------------
 void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info) noexcept
 {
-    NOEXCEPT_REGION_START
-
-	BindVertexArray();
+    BindVertexArray();
 
     mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, info));
 
-	GLuint newBuff = 0;
-	glGenBuffers(1, &newBuff);
-	mDataBuffers.insert(std::pair<AttribLoc, GLuint>(info.mVertexAttribLocation, newBuff));
-	
-	RefreshDataBufferAttribute();
+    GLuint newBuff = 0;
+    glGenBuffers(1, &newBuff);
+    mDataBuffers.insert(std::pair<AttribLoc, GLuint>(info.mVertexAttribLocation, newBuff));
+    
+    RefreshDataBufferAttribute();
 
     UnBindVertexArray();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc) noexcept
 {
-    NOEXCEPT_REGION_START
+    BindVertexArray();
 
-	BindVertexArray();
+    auto it = mDataBuffers.find(loc);
 
-	auto it = mDataBuffers.find(loc);
-
-	glDeleteBuffers(1, &(it->second));
-	mDataBuffers.erase(it);
+    glDeleteBuffers(1, &(it->second));
+    mDataBuffers.erase(it);
 
     VertexArrayBase::RemoveVertexAttrib(loc);
 
     UnBindVertexArray();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArraySoA::EnableVertexAttributes() const noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto it = mDataBuffers.begin();
     for (auto itAttrib : mAttribInfos)
     {
@@ -4072,21 +3987,15 @@ void VertexArraySoA::EnableVertexAttributes() const noexcept
         glVertexAttribPointer(itAttrib.second.mVertexAttribLocation, itAttrib.second.mElementsPerValue, itAttrib.second.mType, GL_FALSE, 0, nullptr);
         ++it;
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void VertexArraySoA::DisableVertexAttributes() const noexcept
 {
-    NOEXCEPT_REGION_START
-
     for (auto it : mAttribInfos)
     {
         glDisableVertexAttribArray(it.second.mVertexAttribLocation);
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4103,55 +4012,55 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLui
     if (meshNum > scene->mNumMeshes)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than number of meshes in \"scene\""));
 
-	//const aiMesh* mesh = scene->mMeshes[meshNum];
+    //const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	std::shared_ptr<VertexArray> arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
+    std::shared_ptr<VertexArray> arr = LoadVertexArrayFromScene(scene, g_stdAttrib, meshNum);
 
-	/*if (mesh->HasPositions())
-		vertexData->AddVertexAttrib(g_attribPOS);
-	if (mesh->HasNormals())
-		vertexData->AddVertexAttrib(g_attribNORM);
-	if (mesh->HasTextureCoords(0))
-		vertexData->AddVertexAttrib(g_attribUV0);
-	if (mesh->HasTextureCoords(1))
-		vertexData->AddVertexAttrib(g_attribUV1);
-	if (mesh->HasTextureCoords(2))
-		vertexData->AddVertexAttrib(g_attribUV2);
-	if (mesh->HasTextureCoords(3))
-		vertexData->AddVertexAttrib(g_attribUV3);
-	if (mesh->HasTextureCoords(4))
-		vertexData->AddVertexAttrib(g_attribUV4);
-	if (mesh->HasTextureCoords(5))
-		vertexData->AddVertexAttrib(g_attribUV5);
-	if (mesh->HasTextureCoords(6))
-		vertexData->AddVertexAttrib(g_attribUV6);
-	if (mesh->HasTextureCoords(7))
-		vertexData->AddVertexAttrib(g_attribUV7);
+    /*if (mesh->HasPositions())
+        vertexData->AddVertexAttrib(g_attribPOS);
+    if (mesh->HasNormals())
+        vertexData->AddVertexAttrib(g_attribNORM);
+    if (mesh->HasTextureCoords(0))
+        vertexData->AddVertexAttrib(g_attribUV0);
+    if (mesh->HasTextureCoords(1))
+        vertexData->AddVertexAttrib(g_attribUV1);
+    if (mesh->HasTextureCoords(2))
+        vertexData->AddVertexAttrib(g_attribUV2);
+    if (mesh->HasTextureCoords(3))
+        vertexData->AddVertexAttrib(g_attribUV3);
+    if (mesh->HasTextureCoords(4))
+        vertexData->AddVertexAttrib(g_attribUV4);
+    if (mesh->HasTextureCoords(5))
+        vertexData->AddVertexAttrib(g_attribUV5);
+    if (mesh->HasTextureCoords(6))
+        vertexData->AddVertexAttrib(g_attribUV6);
+    if (mesh->HasTextureCoords(7))
+        vertexData->AddVertexAttrib(g_attribUV7);
 
-	if (mesh->HasVertexColors(0))
-		vertexData->AddVertexAttrib(g_attribCOLOR0);
-	if (mesh->HasVertexColors(1))
-		vertexData->AddVertexAttrib(g_attribCOLOR1);
-	if (mesh->HasVertexColors(2))
-		vertexData->AddVertexAttrib(g_attribCOLOR2);
-	if (mesh->HasVertexColors(3))
-		vertexData->AddVertexAttrib(g_attribCOLOR3);
-	if (mesh->HasVertexColors(4))
-		vertexData->AddVertexAttrib(g_attribCOLOR4);
-	if (mesh->HasVertexColors(5))
-		vertexData->AddVertexAttrib(g_attribCOLOR5);
-	if (mesh->HasVertexColors(6))
-		vertexData->AddVertexAttrib(g_attribCOLOR6);
-	if (mesh->HasVertexColors(7))
-		vertexData->AddVertexAttrib(g_attribCOLOR7);
-	if (mesh->HasTangentsAndBitangents())
-	{
-		vertexData->AddVertexAttrib(g_attribTAN);
-		vertexData->AddVertexAttrib(g_attribBITAN);
-	}
+    if (mesh->HasVertexColors(0))
+        vertexData->AddVertexAttrib(g_attribCOLOR0);
+    if (mesh->HasVertexColors(1))
+        vertexData->AddVertexAttrib(g_attribCOLOR1);
+    if (mesh->HasVertexColors(2))
+        vertexData->AddVertexAttrib(g_attribCOLOR2);
+    if (mesh->HasVertexColors(3))
+        vertexData->AddVertexAttrib(g_attribCOLOR3);
+    if (mesh->HasVertexColors(4))
+        vertexData->AddVertexAttrib(g_attribCOLOR4);
+    if (mesh->HasVertexColors(5))
+        vertexData->AddVertexAttrib(g_attribCOLOR5);
+    if (mesh->HasVertexColors(6))
+        vertexData->AddVertexAttrib(g_attribCOLOR6);
+    if (mesh->HasVertexColors(7))
+        vertexData->AddVertexAttrib(g_attribCOLOR7);
+    if (mesh->HasTangentsAndBitangents())
+    {
+        vertexData->AddVertexAttrib(g_attribTAN);
+        vertexData->AddVertexAttrib(g_attribBITAN);
+    }
 
 
-	if (mesh->HasPositions())
+    if (mesh->HasPositions())
     vertexData->BufferData(GLUF_VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
     if (mesh->HasNormals())
     vertexData->BufferData(GLUF_VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
@@ -4317,9 +4226,9 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
     if (meshNum > scene->mNumMeshes)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than the number of meshes in \"scene\""));
 
-	const aiMesh* mesh = scene->mMeshes[meshNum];
+    const aiMesh* mesh = scene->mMeshes[meshNum];
 
-	auto vertexData = std::make_shared<VertexArray>(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+    auto vertexData = std::make_shared<VertexArray>(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
     //which vertex attributes go where in assimp loading vertex struct
     std::map<AttribLoc, int> vertexAttribLoc;
@@ -4485,7 +4394,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4] = numVec4 + runningTotal;
         ++numVec4;
     }
-	
+    
     auto itCol5 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR5);
     it = itCol5;
     if (mesh->HasVertexColors(5) && it != inputs.end())
@@ -4627,113 +4536,113 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
     {
         vertexBuffer.buffer_element(mesh->mColors[7], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7]);
     }
-	if (mesh->HasTangentsAndBitangents() && itBitan != inputs.end() && itTan != inputs.end())
+    if (mesh->HasTangentsAndBitangents() && itBitan != inputs.end() && itTan != inputs.end())
     {
         vertexBuffer.buffer_element(mesh->mTangents, vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN]);
         vertexBuffer.buffer_element(mesh->mBitangents, vertexAttribLoc[GLUF_VERTEX_ATTRIB_BITAN]);
-	}
+    }
 
     //don't forget to buffer the actual data :) (i actually forgot this part at first)
     vertexData->BufferData(vertexBuffer);
 
 
-	std::vector<glm::u32vec3> indices;
-	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
-	{
-		aiFace curr = mesh->mFaces[i];
+    std::vector<glm::u32vec3> indices;
+    for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+    {
+        aiFace curr = mesh->mFaces[i];
         indices.push_back({ curr.mIndices[0], curr.mIndices[1], curr.mIndices[2] });
-	}
-	vertexData->BufferIndices(indices);
+    }
+    vertexData->BufferIndices(indices);
 
-	return vertexData;
+    return vertexData;
 }
 
 
 //--------------------------------------------------------------------------------------
 std::vector<std::shared_ptr<VertexArray>> LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset, GLuint numMeshes)
 {
-	std::vector<std::shared_ptr<VertexArray>> arrays;
+    std::vector<std::shared_ptr<VertexArray>> arrays;
 
-	if (numMeshes > scene->mNumMeshes)
-	{
-		arrays.push_back(nullptr);
-		return arrays;
-	}
+    if (numMeshes > scene->mNumMeshes)
+    {
+        arrays.push_back(nullptr);
+        return arrays;
+    }
 
-	for(unsigned int cnt = 0; cnt < numMeshes; ++cnt)
-	{
-		arrays.push_back(LoadVertexArrayFromScene(scene, cnt));//new VertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
-	}
-	return arrays;
+    for(unsigned int cnt = 0; cnt < numMeshes; ++cnt)
+    {
+        arrays.push_back(LoadVertexArrayFromScene(scene, cnt));//new VertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+    }
+    return arrays;
 }
 
 /*
 VertexArray* LoadVertexArrayFromFile(std::string path)
 {
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(path,
-		aiProcess_CalcTangentSpace |
-		aiProcess_Triangulate |
-		aiProcess_JoinIdenticalVertices |
-		aiProcess_SortByPType);
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_CalcTangentSpace |
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_SortByPType);
 
-	const aiMesh* mesh = scene->mMeshes[0];
+    const aiMesh* mesh = scene->mMeshes[0];
 
-	VertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+    VertexArray vertexData(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
-	if (mesh->HasPositions())
-		vertexData.AddVertexAttrib(g_attribPOS);
-	if (mesh->HasNormals())
-		vertexData.AddVertexAttrib(g_attribNORM);
-	if (mesh->HasTextureCoords(0))
-		vertexData.AddVertexAttrib(g_attribUV);
-	if (mesh->HasTangentsAndBitangents())
-	{
-		vertexData.AddVertexAttrib(g_attribTAN);
-		vertexData.AddVertexAttrib(g_attribBITAN);
-	}
-	if (mesh->HasVertexColors(0))
-		vertexData.AddVertexAttrib(g_attribCOLOR);
+    if (mesh->HasPositions())
+        vertexData.AddVertexAttrib(g_attribPOS);
+    if (mesh->HasNormals())
+        vertexData.AddVertexAttrib(g_attribNORM);
+    if (mesh->HasTextureCoords(0))
+        vertexData.AddVertexAttrib(g_attribUV);
+    if (mesh->HasTangentsAndBitangents())
+    {
+        vertexData.AddVertexAttrib(g_attribTAN);
+        vertexData.AddVertexAttrib(g_attribBITAN);
+    }
+    if (mesh->HasVertexColors(0))
+        vertexData.AddVertexAttrib(g_attribCOLOR);
 
 
-	if (mesh->HasPositions())
-		vertexData.BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
-	if (mesh->HasNormals())
-		vertexData.BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
-	if (mesh->HasTextureCoords(0))
-		vertexData.BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
-	if (mesh->HasTangentsAndBitangents())
-	{
-		vertexData.BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
-		vertexData.BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
-	}
-	if (mesh->HasVertexColors(0))
-		vertexData.BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
+    if (mesh->HasPositions())
+        vertexData.BufferData(VERTEX_ATTRIB_POSITION, mesh->mNumVertices, mesh->mVertices);
+    if (mesh->HasNormals())
+        vertexData.BufferData(VERTEX_ATTRIB_NORMAL, mesh->mNumVertices, mesh->mNormals);
+    if (mesh->HasTextureCoords(0))
+        vertexData.BufferData(VERTEX_ATTRIB_UV, mesh->mNumVertices, AssimpToGlm3_2(mesh->mTextureCoords[0], mesh->mNumVertices));
+    if (mesh->HasTangentsAndBitangents())
+    {
+        vertexData.BufferData(VERTEX_ATTRIB_BITAN, mesh->mNumVertices, mesh->mBitangents);
+        vertexData.BufferData(VERTEX_ATTRIB_TAN, mesh->mNumVertices, mesh->mTangents);
+    }
+    if (mesh->HasVertexColors(0))
+        vertexData.BufferData(VERTEX_ATTRIB_COLOR, mesh->mNumVertices, mesh->mColors[0]);
 
-	std::vector<GLuint> indices;
-	for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
-	{
-		aiFace curr = mesh->mFaces[i];
-		indices.push_back(curr.mIndices[0]);
-		indices.push_back(curr.mIndices[1]);
-		indices.push_back(curr.mIndices[2]);
-	}
-	vertexData.BufferIndices(&indices[0], indices.size());
+    std::vector<GLuint> indices;
+    for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+    {
+        aiFace curr = mesh->mFaces[i];
+        indices.push_back(curr.mIndices[0]);
+        indices.push_back(curr.mIndices[1]);
+        indices.push_back(curr.mIndices[2]);
+    }
+    vertexData.BufferIndices(&indices[0], indices.size());
 
-	return vertexData;
-	return LoadVertexArray(scene);
+    return vertexData;
+    return LoadVertexArray(scene);
 }
 
 VertexArray *LoadVertexArrayFromFile(unsigned int size, void* data)
 {
-	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFileFromMemory(data, size,
-		aiProcess_CalcTangentSpace |
-		aiProcess_Triangulate |
-		aiProcess_JoinIdenticalVertices |
-		aiProcess_SortByPType);
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFileFromMemory(data, size,
+        aiProcess_CalcTangentSpace |
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_SortByPType);
 
-	return LoadVertexArray(scene);
+    return LoadVertexArray(scene);
 }*/
 
 }
