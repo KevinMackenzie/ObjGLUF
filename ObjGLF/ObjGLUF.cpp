@@ -23,7 +23,6 @@ for more details.
 #include <fstream>
 #include <sstream>
 #include <GLFW/glfw3.h>
-#include <vadefs.h>
 
 
 /*
