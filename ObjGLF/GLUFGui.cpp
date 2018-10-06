@@ -1173,7 +1173,6 @@ void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog, Textur
 //--------------------------------------------------------------------------------------
 void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext) noexcept
 {
-    NOEXCEPT_REGION_START
 	// If this assert triggers, you need to call Dialog::Init() first.  This change
 	// was made so that the 's GUI could become separate and optional from 's core.  The 
 	// creation and interfacing with DialogResourceManager is now the responsibility 
@@ -1182,16 +1181,12 @@ void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivableP
 
     mCallbackEvent = callback;
 	mCallbackContext = userContext;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::RemoveControl(ControlIndex ID)
 {
-    NOEXCEPT_REGION_START
-
     auto it = mControls.find(ID);
 
     if (it != mControls.end())
@@ -1210,16 +1205,12 @@ void Dialog::RemoveControl(ControlIndex ID)
         mControls.erase(it);
 
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::RemoveAllControls() noexcept
 {
-    NOEXCEPT_REGION_START
-
 	if (sControlFocus && &sControlFocus->mDialog == this)
 		sControlFocus = nullptr;
 	if (sControlPressed && &sControlPressed->mDialog == this)
@@ -1227,16 +1218,12 @@ void Dialog::RemoveAllControls() noexcept
 	mControlMouseOver = nullptr;
 
 	mControls.clear();
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::Refresh() noexcept
 {
-    NOEXCEPT_REGION_START
-
 	if (sControlFocus)
 		sControlFocus->OnFocusOut();
 
@@ -1254,8 +1241,6 @@ void Dialog::Refresh() noexcept
 
 	if (mKeyboardInput)
 		FocusDefaultControl();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -1267,8 +1252,6 @@ void Dialog::OnRender(float elapsedTime) noexcept
 	//_ASSERT(m_pManager->GetD3D11Device() &&
 	//	L"To fix hook up DialogResourceManager to device callbacks.  See comments for details");
 	//no need for "devices", this is all handled by GLFW
-
-    NOEXCEPT_REGION_START
 
 	// See if the dialog needs to be refreshed
 	if (mTimePrevRefresh < sTimeRefresh)
@@ -1360,16 +1343,12 @@ void Dialog::OnRender(float elapsedTime) noexcept
 
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept
 {
-    NOEXCEPT_REGION_START
-
 	// If no callback has been registered there's nowhere to send the event to
 	if (!mCallbackEvent)
 		return;
@@ -1380,8 +1359,6 @@ void Dialog::SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control
 		return;
 
 	mCallbackEvent(ctrlEvent, control, mCallbackContext);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -1439,8 +1416,6 @@ TextureNodePtr Dialog::GetTexture(TextureIndex index) const
 //--------------------------------------------------------------------------------------
 bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
 	if (mFirstTime)
         mFirstTime = false;
 	else
@@ -1777,8 +1752,6 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 	}
 	}
 
-    NOEXCEPT_REGION_END
-
 	return false;
 }
 
@@ -1786,12 +1759,8 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 //--------------------------------------------------------------------------------------
 void Dialog::ClampToScreen() noexcept
 {
-    NOEXCEPT_REGION_START
-
 	mRegion.x = std::clamp(mRegion.x, 0L, static_cast<long>(g_WndWidth) - RectWidth(mRegion));
 	mRegion.y = std::clamp(mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -1845,22 +1814,16 @@ void Dialog::SetControlEnabled(ControlIndex ID, bool bEnabled)
 //--------------------------------------------------------------------------------------
 void Dialog::OnMouseUp(const Point& pt) noexcept
 {
-    NOEXCEPT_REGION_START
-
     //TODO: do something here?
     GLUF_UNREFERENCED_PARAMETER(pt);
     sControlPressed = nullptr;
     mControlMouseOver = nullptr;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::OnMouseMove(const Point& pt) noexcept
 {
-    NOEXCEPT_REGION_START
-
 	// Figure out which control the mouse is over now
 	ControlPtr pControl = GetControlAtPoint(pt);
 
@@ -1881,8 +1844,6 @@ void Dialog::OnMouseMove(const Point& pt) noexcept
     {
         mControlMouseOver->OnMouseEnter();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -2438,8 +2399,6 @@ void Dialog::CalcTextRect(const std::wstring& text, const Element& element, Rect
 //--------------------------------------------------------------------------------------
 void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!nextDialog)
         mNextDialog = shared_from_this();
     else
@@ -2447,31 +2406,23 @@ void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept
         mNextDialog = nextDialog;
         nextDialog->mPrevDialog = shared_from_this();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::ClearFocus() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (sControlFocus)
     {
         sControlFocus->OnFocusOut();
         sControlFocus = nullptr;
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::FocusDefaultControl() noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Check for default control in this dialog
     for (auto it : mControls)
     {
@@ -2486,8 +2437,6 @@ void Dialog::FocusDefaultControl() noexcept
             return;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 void Dialog::ScreenSpaceToGLSpace(Rect& rc) noexcept
@@ -2505,8 +2454,6 @@ void Dialog::ScreenSpaceToGLSpace(Point& pt) noexcept
 //--------------------------------------------------------------------------------------
 bool Dialog::OnCycleFocus(bool forward) noexcept
 {
-    NOEXCEPT_REGION_START
-
     ControlPtr pControl = nullptr;
     DialogPtr pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
     DialogPtr pLastDialog;    // focus from first control to last or vice versa.
@@ -2640,10 +2587,6 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
 
     // If we reached this point, the chain of dialogs didn't form a complete loop
     GLUF_ERROR("Dialog: Multiple dialogs are improperly chained together");
-    return false;
-
-    NOEXCEPT_REGION_END
-
     return false;
 }
 
@@ -3059,8 +3002,6 @@ DialogResourceManager::~DialogResourceManager()
 //--------------------------------------------------------------------------------------
 bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     GLUF_UNREFERENCED_PARAMETER(msg);
     //GLUF_UNREFERENCED_PARAMETER(param1);
     //GLUF_UNREFERENCED_PARAMETER(param2);
@@ -3081,17 +3022,11 @@ bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t par
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::ApplyRenderUI() noexcept
 {
-    NOEXCEPT_REGION_START
-
         // Shaders
         /*glEnableVertexAttribArray(g_UIShaderLocations.position);
         glEnableVertexAttribArray(g_UIShaderLocations.color);
@@ -3099,23 +3034,17 @@ void DialogResourceManager::ApplyRenderUI() noexcept
     SHADERMANAGER.UseProgram(g_UIProgram);
 
     ApplyOrtho();
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::ApplyRenderUIUntex() noexcept
 {
-    NOEXCEPT_REGION_START
-
     /*glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
     glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);*/
     SHADERMANAGER.UseProgram(g_UIProgramUntex);
 
     ApplyOrtho();
-
-    NOEXCEPT_REGION_END
 }
 
 glm::mat4 DialogResourceManager::GetOrthoMatrix() noexcept
@@ -3188,8 +3117,6 @@ void DialogResourceManager::EndSprites(const Element* element, bool textured)
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::RegisterDialog(const DialogPtr& dialog) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!dialog)
         return;
 
@@ -3207,8 +3134,6 @@ void DialogResourceManager::RegisterDialog(const DialogPtr& dialog) noexcept
     if (mDialogs.size() > 1)
         mDialogs[mDialogs.size() - 2]->SetNextDialog(dialog);
     mDialogs[mDialogs.size() - 1]->SetNextDialog(mDialogs[0]);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3246,13 +3171,9 @@ void DialogResourceManager::UnregisterDialog(const DialogPtr& pDialog)
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::EnableKeyboardInputForAllDialogs() noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Enable keyboard input for all registered dialogs
     for (auto it : mDialogs)
         it->EnableKeyboardInput(true);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -3273,8 +3194,6 @@ Point DialogResourceManager::GetWindowSize()
 //--------------------------------------------------------------------------------------
 FontIndex DialogResourceManager::AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // See if this font already exists (this is simple)
     for (size_t i = 0; i < mFontCache.size(); ++i)
     {
@@ -3294,16 +3213,12 @@ FontIndex DialogResourceManager::AddFont(const FontPtr& font, FontSize leading, 
     mFontCache.push_back(newFontNode);
 
     return mFontCache.size() - 1;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // See if this texture already exists
     for (size_t i = 0; i < mTextureCache.size(); ++i)
     {
@@ -3319,8 +3234,6 @@ TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept
     mTextureCache.push_back(newTextureNode);
 
     return mTextureCache.size() - 1;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3367,24 +3280,16 @@ Element& Control::GetElement(ElementIndex element)
 //--------------------------------------------------------------------------------------
 void Control::SetTextColor(const Color& color) noexcept
 {
-    NOEXCEPT_REGION_START
-
     Element& element = mElements[0];
 
     element.mFontColor.mStates[STATE_NORMAL] = color;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Control::SetElement(ElementIndex elementId, const Element& element) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mElements[elementId] = element;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3418,8 +3323,6 @@ Static::Static(const Bitfield& textFlags, Dialog& dialog) : Control(dialog), mTe
 //--------------------------------------------------------------------------------------
 void Static::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mVisible)
         return;
 
@@ -3434,8 +3337,6 @@ void Static::Render(float elapsedTime) noexcept
     element.mFontColor.Blend(state, elapsedTime);
 
     mDialog.DrawText(mText, element, mRegion, false, false);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3456,22 +3357,16 @@ Button::Button(Dialog& dialog) : Static(GT_CENTER | GT_VCENTER, dialog)
 //--------------------------------------------------------------------------------------
 void Button::OnHotkey() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mDialog.IsKeyboardInputEnabled())
     {
         mDialog.RequestFocus(shared_from_this());
         mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -3560,16 +3455,12 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     return false;
 
-    NOEXCEPT_REGION_END
-
     return false;
 }
 
 //--------------------------------------------------------------------------------------
 void Button::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
 	int nOffsetX = 0;
 	int nOffsetY = 0;
 
@@ -3629,8 +3520,6 @@ void Button::Render(float elapsedTime) noexcept
 
 	mDialog.DrawSprite(*pElement, rcWindow, _NEAR_BUTTON_DEPTH);
 	mDialog.DrawText(mText, *pElement, rcWindow, false, true);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3652,8 +3541,6 @@ CheckBox::CheckBox(bool checked, Dialog& dialog) : Button(dialog)
 
 bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -3747,10 +3634,6 @@ bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
     };
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 
@@ -3766,21 +3649,15 @@ void CheckBox::SetCheckedInternal(bool checked, bool fromInput)
 //--------------------------------------------------------------------------------------
 bool CheckBox::ContainsPoint(const Point& pt) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return (PtInRect(mRegion, pt) ||
     PtInRect(mButtonRegion, pt) ||
     PtInRect(mTextRegion, pt));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void CheckBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Button::UpdateRects();
 
     mButtonRegion = mRegion;
@@ -3791,15 +3668,12 @@ void CheckBox::UpdateRects() noexcept
 
     //resize the text rect based on the length of the string
     mTextRegion.right = mTextRegion.left + mDialog.GetFont(mElements[0].mFontIndex)->mFontType->GetStringWidth(mText);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void CheckBox::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
 	ControlState iState = STATE_NORMAL;
 
 	if (mVisible == false)
@@ -3830,21 +3704,15 @@ void CheckBox::Render(float elapsedTime) noexcept
 		pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
 		mDialog.DrawSprite(*pElement, mButtonRegion, _NEAR_BUTTON_DEPTH);
 	}
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void CheckBox::OnHotkey() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mDialog.IsKeyboardInputEnabled())
         mDialog.RequestFocus(shared_from_this());
     SetCheckedInternal(!mChecked, true);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3863,8 +3731,6 @@ RadioButton::RadioButton(Dialog& dialog) : CheckBox(false, dialog)
 //--------------------------------------------------------------------------------------
 bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -3953,10 +3819,6 @@ bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32
     };
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
@@ -3972,21 +3834,15 @@ void RadioButton::SetCheckedInternal(bool checked, bool clearGroup, bool fromInp
 //--------------------------------------------------------------------------------------
 void RadioButton::OnHotkey() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mDialog.IsKeyboardInputEnabled())
         mDialog.RequestFocus(shared_from_this());
 
     SetCheckedInternal(true, true, true);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseEnter() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = true;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -3994,15 +3850,11 @@ void RadioButton::OnMouseEnter() noexcept
     {
         it->OnMouseEnterNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseLeave() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = false;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -4010,35 +3862,23 @@ void RadioButton::OnMouseLeave() noexcept
     {
         it->OnMouseLeaveNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseEnterNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = true;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseLeaveNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = false;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusIn() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = true;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -4046,15 +3886,11 @@ void RadioButton::OnFocusIn() noexcept
     {
         it->OnFocusInNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusOut() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = false;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -4062,28 +3898,18 @@ void RadioButton::OnFocusOut() noexcept
     {
         it->OnFocusOutNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusInNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = true;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusOutNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = false;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4123,8 +3949,6 @@ ScrollBar::~ScrollBar()
 //--------------------------------------------------------------------------------------
 void ScrollBar::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::UpdateRects();
 
     // Make the buttons square
@@ -4145,8 +3969,6 @@ void ScrollBar::UpdateRects() noexcept
     mThumbRegion.right = mUpButtonRegion.right;
 
     UpdateThumbRect();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4213,8 +4035,6 @@ void ScrollBar::ShowItem(int nIndex)
 bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
     //UNREFERENCED_PARAMETER(wParam);
-
-    NOEXCEPT_REGION_START
 
     if (FOCUS == msg && param1 == GL_FALSE)
     {
@@ -4343,18 +4163,12 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 
 //--------------------------------------------------------------------------------------
 void ScrollBar::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
 
@@ -4461,21 +4275,15 @@ void ScrollBar::Render(float elapsedTime) noexcept
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
     mDialog.DrawSprite(*pElement, mThumbRegion, _NEAR_BUTTON_DEPTH);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void ScrollBar::SetTrackRange(int nStart, int nEnd) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mStart = nStart; mEnd = nEnd;
     Cap();
     UpdateThumbRect();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4537,8 +4345,6 @@ GenericData& ListBox::GetItemData(Index index) const
 //--------------------------------------------------------------------------------------
 void ListBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::UpdateRects();
 
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
@@ -4568,8 +4374,6 @@ void ListBox::UpdateRects() noexcept
 
     mScrollBar->UpdateRects();
     UpdateItemRects();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4585,8 +4389,6 @@ void ListBox::AddItem(const std::wstring& text, GenericData& data) noexcept
 
 void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto newItem = std::make_shared<ListBoxItem>(data);
 
     //clear the selection vector
@@ -4606,8 +4408,6 @@ void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& dat
 
     mItems[index] = newItem;
     mScrollBar->SetTrackRange(0, (int)mItems.size());
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4633,14 +4433,10 @@ void ListBox::RemoveItem(Index index)
 //--------------------------------------------------------------------------------------
 void ListBox::RemoveAllItems() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
     mSelected.clear();
     //mSelected.push_back(-1);  
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4745,19 +4541,13 @@ void ListBox::SelectItem(const std::wstring& text, Index start)
 //--------------------------------------------------------------------------------------
 void ListBox::ClearSelected() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mSelected.clear();
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 bool ListBox::ContainsItem(const std::wstring& text, Index start) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     for (auto it : mItems)
     {
         if (it->mText == text)
@@ -4765,8 +4555,6 @@ bool ListBox::ContainsItem(const std::wstring& text, Index start) const noexcept
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4804,8 +4592,6 @@ Index ListBox::FindItemIndex(const std::wstring& text, Index start) const
 //--------------------------------------------------------------------------------------
 bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     if (FOCUS == msg && param1 == GL_FALSE)
     {
@@ -5219,17 +5005,11 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
 void ListBox::UpdateItemRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
     if (pFont)
     {
@@ -5262,15 +5042,11 @@ void ListBox::UpdateItemRects() noexcept
             curY -= pFont->mLeading;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void ListBox::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
 
@@ -5356,8 +5132,6 @@ void ListBox::Render(float elapsedTime) noexcept
     // Render the scroll bar
 
     mScrollBar->Render(elapsedTime);
-
-    NOEXCEPT_REGION_END
 }
 
 /*
@@ -5390,8 +5164,6 @@ ComboBox::~ComboBox()
 //--------------------------------------------------------------------------------------
 void ComboBox::SetTextColor(const Color& Color) noexcept
 {
-    NOEXCEPT_REGION_START
-
     Element* pElement = &mElements[0];
 
     pElement->mFontColor.mStates[STATE_NORMAL] = Color;
@@ -5400,16 +5172,12 @@ void ComboBox::SetTextColor(const Color& Color) noexcept
 
     if (pElement)
         pElement->mFontColor.mStates[STATE_NORMAL] = Color;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void ComboBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     Button::UpdateRects();
 
@@ -5451,8 +5219,6 @@ void ComboBox::UpdateRects() noexcept
     mScrollBar->UpdateRects();
     mRegion.right = mButtonRegion.left;
 
-    NOEXCEPT_REGION_END
-
 }
 
 
@@ -5467,8 +5233,6 @@ void ComboBox::OnInit()
 //--------------------------------------------------------------------------------------
 void ComboBox::UpdateItemRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     FontNodePtr pFont = mDialog.GetFont(GetElement(2).mFontIndex);
     if (pFont)
     {
@@ -5494,20 +5258,14 @@ void ComboBox::UpdateItemRects() noexcept
             curY -= pFont->mLeading;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void ComboBox::OnFocusOut() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Button::OnFocusOut();
 
     mOpened = false;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -5515,8 +5273,6 @@ void ComboBox::OnFocusOut() noexcept
 //--------------------------------------------------------------------------------------
 bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -5783,10 +5539,6 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
     };
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
@@ -5812,19 +5564,13 @@ void ComboBox::OnHotkey()
 
 bool ComboBox::ContainsPoint(const Point& pt) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return (PtInRect(mRegion, pt) || PtInRect(mButtonRegion, pt));// || (PtInRect(mDropdownRegion, pt) && mOpened));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void ComboBox::Render( float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
     ControlState iState = STATE_NORMAL;
@@ -5985,8 +5731,6 @@ void ComboBox::Render( float elapsedTime) noexcept
         }
     }
 
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -5994,8 +5738,6 @@ void ComboBox::Render( float elapsedTime) noexcept
 
 void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Create a new item and set the data
     auto pItem = std::make_shared<ComboBoxItem>(data);
 
@@ -6014,8 +5756,6 @@ void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
         mFocused = 0;
         mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6049,24 +5789,16 @@ void ComboBox::RemoveItem(Index index)
 //--------------------------------------------------------------------------------------
 void ComboBox::RemoveAllItems() noexcept
 {
-    NOEXCEPT_REGION_START
-    
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
     mFocused = mSelected = -1;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 bool ComboBox::ContainsItem(const std::wstring& text, Index start) const noexcept
 { 
-    NOEXCEPT_REGION_START
-
     return (-1 != FindItemIndex(text, start));
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6191,11 +5923,7 @@ void ComboBox::SelectItem(const GenericData& data)
         return;
     }
 
-    NOEXCEPT_REGION_START
-
     SelectItem(itemIndex);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6220,20 +5948,14 @@ Slider::Slider(Dialog& dialog) : Control(dialog)
 //--------------------------------------------------------------------------------------
 bool Slider::ContainsPoint(const Point& pt) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return (PtInRect(mRegion, pt) ||
     PtInRect(mButtonRegion, pt));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Slider::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::UpdateRects();
 
     mButtonRegion = mRegion;
@@ -6242,29 +5964,21 @@ void Slider::UpdateRects() noexcept
 
     mButtonX = (int)((float(mValue - mMin) / float(mMax - mMin)) * RectWidth(mRegion));
     OffsetRect(mButtonRegion, mButtonX, 0);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 Value Slider::ValueFromXPos(Value x) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     float fValuePerPixel = (float)(mMax - mMin) / RectWidth(mRegion);
     float fPixelPerValue2 = 1.0f / (2.0f * fValuePerPixel);//use this to get it to change locations at the half way mark instead of using truncate int methods
     return int(((x - mRegion.x + fPixelPerValue2) * fValuePerPixel) + mMin);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -6382,30 +6096,22 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     return false;
 
-    NOEXCEPT_REGION_END
-
     return false;
 }
 
 //--------------------------------------------------------------------------------------
 void Slider::SetRange(int nMin, int nMax) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMin = nMin;
     mMax = nMax;
 
     SetValueInternal(mValue, false);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Slider::SetValueInternal(int nValue, bool bFromInput) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Clamp to range
     nValue = std::clamp(nValue, mMin, mMax);
 
@@ -6418,16 +6124,12 @@ void Slider::SetValueInternal(int nValue, bool bFromInput) noexcept
     UpdateRects();
 
     mDialog.SendEvent(EVENT_SLIDER_VALUE_CHANGED, bFromInput, shared_from_this());
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Slider::Render( float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
 
@@ -6476,8 +6178,6 @@ void Slider::Render( float elapsedTime) noexcept
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
     mDialog.DrawSprite(*pElement, mButtonRegion, _NEAR_BUTTON_DEPTH);
-
-    NOEXCEPT_REGION_END
 }
 
 const std::wstring g_Charsets[] = 
@@ -6868,8 +6568,6 @@ void EditBox::SetText(const std::wstring& text)
 //--------------------------------------------------------------------------------------
 void EditBox::SetCharset(Charset chSet) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mCharset = chSet;
     std::wstring text = GetText();
 
@@ -6881,8 +6579,6 @@ void EditBox::SetCharset(Charset chSet) noexcept
     }
 
     mTextHistoryKeeper.SetText(text);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -6900,14 +6596,10 @@ void EditBox::SetCaretState(bool state) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::SetCaretPosition(Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mIsEmpty)
         mCaretPos = -1;
 
     mCaretPos = glm::clamp(pos, -1, (int32_t)GetText().length());
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -6966,11 +6658,7 @@ void EditBox::SetCaretBlendColor(const BlendColor& col) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
 { 
-    NOEXCEPT_REGION_START
-    
     mElements[0].mFontColor = col;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6979,8 +6667,6 @@ void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     //start by removing ALL newlines
     std::wstring newStr = str;
@@ -7010,15 +6696,11 @@ void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
     mSelStart = -2;
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     pos = glm::clamp(pos, -1, static_cast<Value>(GetText().size()));
 
     //since a space is used as a placeholder when there is no text, make sure to clear when we get text
@@ -7035,14 +6717,10 @@ void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
     mSelStart = -2;
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 void EditBox::DeleteChar(Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (pos < 0 || pos >= GetText().size())
         return;
 
@@ -7061,15 +6739,11 @@ void EditBox::DeleteChar(Value pos) noexcept
     }
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-		
     auto mousePos = mDialog.GetMousePositionDialogSpace();
 
     if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/)
@@ -7275,15 +6949,11 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     ApplyCompositeModifications();
 
     return false;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRectsMultiline() noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     mScrollBar->SetRegion({ { mTextRegion.right - static_cast<long>(mSBWidth) }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
     mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
@@ -7292,24 +6962,16 @@ void EditBox::UpdateRectsMultiline() noexcept
 
     //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
     mScrollBar->UpdateRects();
-
-    
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRectsSingleline() noexcept
 {
-    NOEXCEPT_REGION_START
-    
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (GetText().size() == 0)
     {
         mIsEmpty = true;
@@ -7336,15 +6998,11 @@ void EditBox::UpdateRects() noexcept
     UpdateCharRects();
 
     mUpdateRequired = false;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RenderMultiline(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     //debug rendering
     /*unsigned int color = 0x80000000;
     for (auto it : mCharacterBBs)
@@ -7355,23 +7013,16 @@ void EditBox::RenderMultiline(float elapsedTime) noexcept
     }*/   
 
     mScrollBar->Render(elapsedTime);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RenderSingleline(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mUpdateRequired)
         UpdateRects();
 
@@ -7456,15 +7107,11 @@ void EditBox::Render(float elapsedTime) noexcept
     }
 
     (this->*mRenderFunction)(elapsedTime);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RenderText(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto& element = mElements[0];
 
     SHADERMANAGER.UseProgram(g_TextProgram);
@@ -7548,15 +7195,11 @@ void EditBox::RenderText(float elapsedTime) noexcept
         SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(element.mFontColor.GetCurrent()));
         mTextDataBuffer->DrawRange(postSelectionStartIndex, postSelectionSize);
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RemoveSelectedRegion() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mSelStart != -2)
     {
         if (mSelStart > mCaretPos)
@@ -7572,15 +7215,11 @@ void EditBox::RemoveSelectedRegion() noexcept
     }
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 Value EditBox::PointToCharPos(const Point& pt) noexcept
 {
-    NOEXCEPT_REGION_START
-
     //convert the point into the right space
     Point newPt = pt;
     mDialog.ScreenSpaceToGLSpace(newPt);
@@ -7647,10 +7286,7 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
         }
     }
 
-    NOEXCEPT_REGION_END
-
     return -1;
-
 }
 
 //--------------------------------------------------------------------------------------
@@ -7662,8 +7298,6 @@ Value EditBox::RenderTextToText(Value rndIndex)
 //--------------------------------------------------------------------------------------
 Rect EditBox::CharPosToRect(Value charPos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     charPos = glm::clamp(charPos, -1, static_cast<Value>(mCharacterBBs.size() - 1));
 
     //if it is the first position
@@ -7689,15 +7323,11 @@ Rect EditBox::CharPosToRect(Value charPos) noexcept
     }
 
     return thisRect;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 bool EditBox::ShouldRenderCaret() noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto caretPosRect = CharPosToRect(mCaretPos);
     auto textRenderRect = mTextRegion;
     mDialog.ScreenSpaceToGLSpace(textRenderRect);
@@ -7710,17 +7340,11 @@ bool EditBox::ShouldRenderCaret() noexcept
 
 
     return false;
-
-    NOEXCEPT_REGION_END
 }
 
 void EditBox::ApplyCompositeModifications() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mTextHistoryKeeper.ApplyPartialModifications();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -7732,68 +7356,46 @@ Value EditBox::TextToRenderText(Value txtIndex)
 //--------------------------------------------------------------------------------------
 void EditBox::OnFocusIn() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnFocusIn();
     mScrollBar->OnFocusIn();
 
 	MsgProc(FOCUS, GL_TRUE, 0, 0, 0);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnFocusOut() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnFocusOut();
     mScrollBar->OnFocusOut();
 
 	MsgProc(FOCUS, GL_FALSE, 0, 0, 0);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnMouseEnter() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnMouseEnter();
     mScrollBar->OnMouseEnter();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnMouseLeave() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnMouseLeave();
     mScrollBar->OnMouseLeave();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnInit() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnInit();
 
     mScrollBar->OnInit();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateCharRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mIsEmpty)
     {
         //mText = L" ";
@@ -7802,15 +7404,11 @@ void EditBox::UpdateCharRects() noexcept
     (this->*mUpdateCharRectsFunction)();
 
     BufferCharRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateCharRectsMultiline() noexcept
 {
-    NOEXCEPT_REGION_START
-
     std::wstring text = GetText();
 
     Rect rcScreen = mTextRegion;
@@ -7959,15 +7557,11 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         else if (it < lastLine)
             mRenderCount += textLines[it].size();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateCharRectsSingleline() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Rect rcScreen = mTextRegion;
     auto dlgRect = mDialog.GetRegion();
     mDialog.ScreenSpaceToGLSpace(rcScreen);
@@ -8042,15 +7636,11 @@ void EditBox::UpdateCharRectsSingleline() noexcept
             ++mRenderCount;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::BufferCharRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto str = GetText();
 
     //make sure there are characters to load
@@ -8116,8 +7706,6 @@ void EditBox::BufferCharRects() noexcept
 
     mTextDataBuffer->BufferData(textVertices);
     mTextDataBuffer->BufferIndices(indices);
-
-    NOEXCEPT_REGION_END
 }
 
 /*

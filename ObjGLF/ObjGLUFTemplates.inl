@@ -27,12 +27,9 @@ namespace GLUF
     inline std::vector<T> AdoptArray(T*& arr, unsigned long len) noexcept
     {
         if (arr == nullptr)
-        throw std::invalid_argument("AdoptArray: \'arr\' == nullptr");
-
-        NOEXCEPT_REGION_START
-
-            //the return data;
-            std::vector<T> ret;
+            throw std::invalid_argument("AdoptArray: \'arr\' == nullptr");
+        //the return data;
+        std::vector<T> ret;
 
         //the (hidden) internal vector member variables which contain the vector's memory internals
         ret._Myfirst = arr;
@@ -43,10 +40,6 @@ namespace GLUF
         arr = nullptr;
 
         return ret;
-
-        NOEXCEPT_REGION_END
-
-            return std::vector <T>();//to keep the compiler from complaining
     }
 
 
@@ -63,12 +56,12 @@ namespace GLUF
         other.mGLData = 0;
     }
 
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	GLVector<T>::~GLVector()
-	{
-		this->gl_delete_data();
-	}
+    //--------------------------------------------------------------------------------------
+    template<typename T>
+    GLVector<T>::~GLVector()
+    {
+        this->gl_delete_data();
+    }
 
     //--------------------------------------------------------------------------------------
     template<typename T>
@@ -138,12 +131,8 @@ namespace GLUF
     template<typename T>
     void* GLVector<T>::gl_delete_data() const
     {
-        NOEXCEPT_REGION_START
-
-            delete[] mGLData;
+        delete[] mGLData;
         return nullptr;
-
-        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
