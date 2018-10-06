@@ -108,7 +108,7 @@ class UnsupportedExtensionException : public Exception
 {
     const std::string mExt;
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         std::stringstream ss;
         ss << "Unsupported Extension: \"" << mExt << "\"";
@@ -914,7 +914,7 @@ Note:
 class CompileShaderException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Failed to Compile Shader!";
     }
@@ -925,7 +925,7 @@ public:
 class CreateGLShaderException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "OpenGL Failed to Create Shader Instance!";
     }
@@ -936,7 +936,7 @@ public:
 class LinkProgramException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Failed to Link Program!";
     }
@@ -947,7 +947,7 @@ public:
 class CreateGLProgramException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "OpenGL Failed to Create Program Instance!";
     }
@@ -958,7 +958,7 @@ public:
 class CreateGLPPOException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "OpenGL Failed to Create PPO Instance!";
     }
@@ -1448,13 +1448,13 @@ Shader Methods
 
 
 //--------------------------------------------------------------------------------------
-Shader::Shader()
+Shader::Shader() noexcept 
 {
 	mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-Shader::~Shader()
+Shader::~Shader() noexcept 
 {
 	if (mShaderId != 0)
 	{
@@ -1464,7 +1464,7 @@ Shader::~Shader()
 }
 
 //--------------------------------------------------------------------------------------
-void Shader::Init(ShaderType shaderType)
+void Shader::Init(ShaderType shaderType) noexcept 
 {
 	mShaderType = shaderType;
 	mShaderId = 0;
@@ -1480,7 +1480,7 @@ void Shader::Load(const std::string& shaderText, bool append)
 }
 
 //--------------------------------------------------------------------------------------
-void Shader::Destroy()
+void Shader::Destroy() noexcept 
 {
     NOEXCEPT_REGION_START
 
@@ -1622,13 +1622,13 @@ Program Methods
 */
 
 //--------------------------------------------------------------------------------------
-Program::Program()
+Program::Program() noexcept 
 {
 	mProgramId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-Program::~Program()
+Program::~Program() noexcept 
 {
 	glDeleteProgram(mProgramId);
 }
@@ -1664,7 +1664,7 @@ void Program::AttachShader(ShaderPtr shader)
 }
 
 //--------------------------------------------------------------------------------------
-void Program::FlushShaders(void)
+void Program::FlushShaders(void) noexcept 
 {
     //simply go through all of the shaders, remove them, and clear the shader buffer
 	for (auto it : mShaderBuff)
@@ -1781,7 +1781,7 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
 }
 
 //--------------------------------------------------------------------------------------
-void Program::Destroy()
+void Program::Destroy() noexcept 
 { 
     NOEXCEPT_REGION_START
 
@@ -1798,7 +1798,7 @@ void Program::Destroy()
 }
 
 //--------------------------------------------------------------------------------------
-GLbitfield Program::GetBitfield() const
+GLbitfield Program::GetBitfield() const noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -2069,7 +2069,7 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderP
 //for removing things
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::DeleteShader(ShaderPtr& shader)
+void ShaderManager::DeleteShader(ShaderPtr& shader) noexcept
 {
     //make sure it exists
     if (shader)
@@ -2077,7 +2077,7 @@ void ShaderManager::DeleteShader(ShaderPtr& shader)
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::DeleteProgram(ProgramPtr& program)
+void ShaderManager::DeleteProgram(ProgramPtr& program) noexcept
 {
     //make sure it exists
     if (program)
@@ -2085,7 +2085,7 @@ void ShaderManager::DeleteProgram(ProgramPtr& program)
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::FlushLogs()
+void ShaderManager::FlushLogs() 
 {
 	mLinklogs.clear();
 	mCompileLogs.clear();
@@ -2157,7 +2157,7 @@ void ShaderManager::UseProgram(const ProgramPtr& program) const
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::UseProgramNull() const
+void ShaderManager::UseProgramNull() const noexcept
 {
 	glUseProgram(0);
 	glBindProgramPipeline(0);//juse in case we are using pipelines
@@ -2330,37 +2330,37 @@ float's
 
 */
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1f(GLuint loc, const GLfloat& value) const
+void ShaderManager::GLUniform1f(GLuint loc, const GLfloat& value) const noexcept
 {
     glUniform1f(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2f(GLuint loc, const glm::vec2& value) const
+void ShaderManager::GLUniform2f(GLuint loc, const glm::vec2& value) const noexcept
 {
     glUniform2fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3f(GLuint loc, const glm::vec3& value) const
+void ShaderManager::GLUniform3f(GLuint loc, const glm::vec3& value) const noexcept
 {
     glUniform3fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4f(GLuint loc, const glm::vec4& value) const
+void ShaderManager::GLUniform4f(GLuint loc, const glm::vec4& value) const noexcept
 {
     glUniform4fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1f(const ProgramPtr& prog, const std::string& name, const GLfloat& value) const
+void ShaderManager::GLUniform1f(const ProgramPtr& prog, const std::string& name, const GLfloat& value) const 
 {    
     glUniform1f(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2f(const ProgramPtr& prog, const std::string& name, const glm::vec2& value) const
+void ShaderManager::GLUniform2f(const ProgramPtr& prog, const std::string& name, const glm::vec2& value) const 
 {
     glUniform2fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2372,7 +2372,7 @@ void ShaderManager::GLUniform3f(const ProgramPtr& prog, const std::string& name,
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4f(const ProgramPtr& prog, const std::string& name, const glm::vec4& value) const
+void ShaderManager::GLUniform4f(const ProgramPtr& prog, const std::string& name, const glm::vec4& value) const 
 {
     glUniform4fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2384,37 +2384,37 @@ int's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1i(GLuint loc, const GLint& value) const
+void ShaderManager::GLUniform1i(GLuint loc, const GLint& value) const noexcept
 {
     glUniform1i(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2i(GLuint loc, const glm::i32vec2& value) const
+void ShaderManager::GLUniform2i(GLuint loc, const glm::i32vec2& value) const noexcept
 {
     glUniform2iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3i(GLuint loc, const glm::i32vec3& value) const
+void ShaderManager::GLUniform3i(GLuint loc, const glm::i32vec3& value) const noexcept
 {
     glUniform3iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4i(GLuint loc, const glm::i32vec4& value) const
+void ShaderManager::GLUniform4i(GLuint loc, const glm::i32vec4& value) const noexcept
 {
     glUniform4iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1i(const ProgramPtr& prog, const std::string& name, const GLint& value) const
+void ShaderManager::GLUniform1i(const ProgramPtr& prog, const std::string& name, const GLint& value) const 
 {
     glUniform1i(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2i(const ProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const
+void ShaderManager::GLUniform2i(const ProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const 
 {
     glUniform2iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2426,7 +2426,7 @@ void ShaderManager::GLUniform3i(const ProgramPtr& prog, const std::string& name,
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4i(const ProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const
+void ShaderManager::GLUniform4i(const ProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const 
 {
     glUniform4iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2439,43 +2439,43 @@ uint's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1ui(GLuint loc, const GLuint& value) const
+void ShaderManager::GLUniform1ui(GLuint loc, const GLuint& value) const noexcept
 {
     glUniform1ui(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2ui(GLuint loc, const glm::u32vec2& value) const
+void ShaderManager::GLUniform2ui(GLuint loc, const glm::u32vec2& value) const noexcept
 {
     glUniform2uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3ui(GLuint loc, const glm::u32vec3& value) const
+void ShaderManager::GLUniform3ui(GLuint loc, const glm::u32vec3& value) const noexcept
 {
     glUniform3uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4ui(GLuint loc, const glm::u32vec4& value) const
+void ShaderManager::GLUniform4ui(GLuint loc, const glm::u32vec4& value) const noexcept
 {
     glUniform4uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1ui(const ProgramPtr& prog, const std::string& name, const GLuint& value) const
+void ShaderManager::GLUniform1ui(const ProgramPtr& prog, const std::string& name, const GLuint& value) const 
 {
     glUniform1ui(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const
+void ShaderManager::GLUniform2ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const 
 {
     glUniform2uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const
+void ShaderManager::GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const t
 {
     glUniform3uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -2493,55 +2493,55 @@ matrices
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2f(GLuint loc, const glm::mat2& value) const
+void ShaderManager::GLUniformMatrix2f(GLuint loc, const glm::mat2& value) const noexcept
 {
     glUniformMatrix2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3f(GLuint loc, const glm::mat3& value) const
+void ShaderManager::GLUniformMatrix3f(GLuint loc, const glm::mat3& value) const noexcept
 {
     glUniformMatrix3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4f(GLuint loc, const glm::mat4& value) const
+void ShaderManager::GLUniformMatrix4f(GLuint loc, const glm::mat4& value) const noexcept
 {
     glUniformMatrix4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3& value) const
+void ShaderManager::GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3& value) const noexcept
 {
     glUniformMatrix2x3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2& value) const
+void ShaderManager::GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2& value) const noexcept
 {
     glUniformMatrix3x2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4& value) const
+void ShaderManager::GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4& value) const noexcept
 {
     glUniformMatrix2x4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2& value) const
+void ShaderManager::GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2& value) const noexcept
 {
     glUniformMatrix4x2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4& value) const
+void ShaderManager::GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4& value) const noexcept
 {
     glUniformMatrix3x4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3& value) const
+void ShaderManager::GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3& value) const noexcept
 {
     //warning here can be IGNORED
     glUniformMatrix4x3fv(loc, 1, 0, &value[0][0]);
@@ -3390,7 +3390,7 @@ VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) 
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayBase::~VertexArrayBase()
+VertexArrayBase::~VertexArrayBase() noexcept
 {
 	BindVertexArray();
 
@@ -3489,7 +3489,7 @@ void VertexArrayBase::RemoveVertexAttrib(AttribLoc loc)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BindVertexArray()
+void VertexArrayBase::BindVertexArray() noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3508,7 +3508,7 @@ void VertexArrayBase::BindVertexArray()
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::UnBindVertexArray()
+void VertexArrayBase::UnBindVertexArray() noexcept
 {    
     NOEXCEPT_REGION_START
 
@@ -3523,7 +3523,7 @@ void VertexArrayBase::UnBindVertexArray()
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::Draw()
+void VertexArrayBase::Draw() noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3557,7 +3557,7 @@ void VertexArrayBase::Draw()
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::DrawRange(GLuint start, GLuint count)
+void VertexArrayBase::DrawRange(GLuint start, GLuint count) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3591,7 +3591,7 @@ void VertexArrayBase::DrawRange(GLuint start, GLuint count)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::DrawInstanced(GLuint instances)
+void VertexArrayBase::DrawInstanced(GLuint instances) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3626,7 +3626,7 @@ void VertexArrayBase::DrawInstanced(GLuint instances)
 
 //helper function
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data)
+void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3640,25 +3640,25 @@ void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<GLuint>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<GLuint>& indices) noexcept
 {
     BufferIndicesBase(indices.size(), &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec2>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec2>& indices) noexcept
 {
     BufferIndicesBase(indices.size() * 2, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec3>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec3>& indices) noexcept
 {
     BufferIndicesBase(indices.size() * 3, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices)
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices) noexcept
 {
     BufferIndicesBase(indices.size() * 4, &indices[0]);
 }
@@ -3726,7 +3726,7 @@ int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::RefreshDataBufferAttribute()
+void VertexArrayAoS::RefreshDataBufferAttribute() noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3764,7 +3764,7 @@ VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) 
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayAoS::~VertexArrayAoS()
+VertexArrayAoS::~VertexArrayAoS() noexcept
 {
 	BindVertexArray();
 
@@ -3899,7 +3899,7 @@ void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::EnableVertexAttributes() const
+void VertexArrayAoS::EnableVertexAttributes() const noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3917,7 +3917,7 @@ void VertexArrayAoS::EnableVertexAttributes() const
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::DisableVertexAttributes() const
+void VertexArrayAoS::DisableVertexAttributes() const noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -3934,7 +3934,7 @@ void VertexArrayAoS::DisableVertexAttributes() const
 
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::RefreshDataBufferAttribute()
+void VertexArraySoA::RefreshDataBufferAttribute() noexcept
 {
     //this is done at draw time less than opengl 3.0
     SWITCH_GL_VERSION
@@ -3966,7 +3966,7 @@ VertexArraySoA::VertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) 
 }
 
 //--------------------------------------------------------------------------------------
-VertexArraySoA::~VertexArraySoA()
+VertexArraySoA::~VertexArraySoA() noexcept
 {
 	BindVertexArray();
 	for (auto it : mDataBuffers)
@@ -4021,7 +4021,7 @@ void VertexArraySoA::GetBarebonesMesh(MeshBarebones& inData)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info)
+void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -4041,7 +4041,7 @@ void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc)
+void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc) noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -4060,7 +4060,7 @@ void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::EnableVertexAttributes() const
+void VertexArraySoA::EnableVertexAttributes() const noexcept
 {
     NOEXCEPT_REGION_START
 
@@ -4077,7 +4077,7 @@ void VertexArraySoA::EnableVertexAttributes() const
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::DisableVertexAttributes() const
+void VertexArraySoA::DisableVertexAttributes() const noexcept
 {
     NOEXCEPT_REGION_START
 

@@ -818,13 +818,13 @@ class Exception : public std::exception
 { 
 public:
     
-    const char* what() const = 0;
+    const char* what() const noexcept = 0;
 };
 
 class UseProgramException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Failed to Use Program!";
     }
@@ -835,7 +835,7 @@ public:
 class MakeShaderException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Shading Creation Failed!";
     }
@@ -846,7 +846,7 @@ public:
 class MakeProgramException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Program Creation Failed!";
     }
@@ -857,7 +857,7 @@ public:
 class MakePPOException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "PPO Creation Failed!";
     }
@@ -868,7 +868,7 @@ public:
 class NoActiveProgramUniformException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Attempt to Buffer Uniform to PPO with no Active Program!";
     }
@@ -1337,7 +1337,7 @@ Texture Utilities:
 class TextureCreationException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Failed to Create Texture!";
     }
@@ -1423,7 +1423,7 @@ Vertex Array Exceptions
 class MakeVOAException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "VAO Creation Failed!";
     }
@@ -1434,7 +1434,7 @@ public:
 class InvalidSoABufferLenException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Buffer Passed Has Length Inconsistent With the Vertex Attributes!";
     }
@@ -1445,7 +1445,7 @@ public:
 class MakeBufferException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Buffer Creation Failed!";
     }
@@ -1456,7 +1456,7 @@ public:
 class InvalidAttrubuteLocationException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Attribute Location Not Found in This Buffer!";
     }
@@ -1818,7 +1818,7 @@ class OBJGLUF_API VertexArrayAoS : public VertexArrayBase
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void RemoveVertexAttrib(AttribLoc loc) sealed {}
+    virtual void RemoveVertexAttrib(AttribLoc loc) final {}
 
 protected:
 	GLuint mDataBuffer = 0;
@@ -1827,7 +1827,7 @@ protected:
 
 
     //see 'VertexArrayBase' Docs
-	virtual void RefreshDataBufferAttribute();
+	virtual void RefreshDataBufferAttribute() noexcept;
 
 public:
 
@@ -1977,7 +1977,7 @@ protected:
 	std::map<AttribLoc, GLuint> mDataBuffers;
 
     //see parent docs
-	virtual void RefreshDataBufferAttribute();
+	virtual void RefreshDataBufferAttribute() noexcept;
 
     /*
     GetBufferIdFromAttribLoc
