@@ -287,7 +287,7 @@ EventCallbackFuncPtr
         the final parameter must be derived from 'EventCallbackReceivable'
         
 */
-using EventCallbackFuncPtr = void(__cdecl*)(Event, ControlPtr&, const EventCallbackReceivablePtr&);
+using EventCallbackFuncPtr = void(*)(Event, ControlPtr&, const EventCallbackReceivablePtr&);
 
 /*
 
@@ -339,7 +339,7 @@ OBJGLUF_API void SetDefaultFont(FontPtr& pDefFont);
 class LoadFontException : public Exception
 {
 public:
-    virtual const char* what() const
+    virtual const char* what() const noexcept
     {
         return "Error Loading Freetype Font";
     }
@@ -518,7 +518,7 @@ Dialog Class
 class ControlCreationException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Control Falied to be Created!";
     }
@@ -1574,7 +1574,7 @@ Note:
 
 class ControlInitException
 {
-    virtual const char* what() const
+    virtual const char* what() const noexcept
     {
         return "Control or child failed to initialized correctly!";
     }
@@ -1838,7 +1838,7 @@ public:
             This always returns false, because this control never should receive message
     
     */
-	virtual bool ContainsPoint(const Point& pt) const override { return false; }
+	virtual bool ContainsPoint(const Point& pt) const noexcept override { return false; }
 
     /*
     Getters and Setters
@@ -1938,7 +1938,7 @@ public:
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
 	virtual void Render(float elapsedTime) noexcept override;
     virtual void OnHotkey() noexcept override;
-    virtual bool ContainsPoint(const Point& pt) const override;
+    virtual bool ContainsPoint(const Point& pt) const noexcept override;
     virtual void UpdateRects() noexcept override;
 
 protected:
@@ -2197,7 +2197,7 @@ using ComboBoxItemPtr = std::shared_ptr < ComboBoxItem > ;
 class NoItemSelectedException : Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "No Item Selected In List Box or Combo Box!";
     }
@@ -2957,7 +2957,7 @@ public:
 class StringContainsInvalidCharacters : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "String Contained Characters Not In Charset";
     }
