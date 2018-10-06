@@ -371,9 +371,7 @@ LoadFileIntoMemory
     Note:
         If 'binMemory' is not empty, the data will be overwritten
 */
-OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory);
 OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory);
-OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::string& memory);
 OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::string& memory);
 
 /*
@@ -767,11 +765,11 @@ using SepProgramPtr     = std::shared_ptr<SeparateProgram>;
 using SepProgramPtrWeak = std::weak_ptr<SeparateProgram>;
 
 using ShaderSourceList      = std::map<ShaderType, std::string>;
-using ShaderPathList        = std::map<ShaderType, std::wstring>;//use wstring, because paths may have unicode characters, but the source shall not
+using ShaderPathList        = std::map<ShaderType, std::string>;
 using ShaderIdList          = std::vector<GLuint>;
 using ProgramIdList         = std::vector<GLuint>;
-using ShaderNameList        = std::vector<std::wstring>;
-using ProgramNameList       = std::vector<std::wstring>;
+using ShaderNameList        = std::vector<std::string>;
+using ProgramNameList       = std::vector<std::string>;
 using ShaderPtrList         = std::vector<ShaderPtr>;
 using ProgramPtrList        = std::vector<ProgramPtr>;
 using ProgramPtrMap         = std::map<ShaderType, ProgramPtr>;
@@ -958,7 +956,7 @@ public:
     
     */
 
-	void CreateShaderFromFile(ShaderPtr& outShader, const std::wstring& filePath, ShaderType type);
+	void CreateShaderFromFile(ShaderPtr& outShader, const std::string& filePath, ShaderType type);
     void CreateShaderFromText(ShaderPtr& outShader, const std::string& text, ShaderType type);
     void CreateShaderFromMemory(ShaderPtr& outShader, const std::vector<char>& memory, ShaderType type);
 
@@ -982,7 +980,7 @@ public:
 
 	void CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders, bool separate = false);
     void CreateProgram(ProgramPtr& outProgram, ShaderSourceList shaderSources, bool separate = false);
-    void CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate = false);
+    void CreateProgramFromFiles(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate = false);
 
 
     /*
@@ -1361,7 +1359,7 @@ LoadTextureFrom*
         If formats other than ABGR are supported, ABGR will likely be faster at loading
 
 */
-GLuint OBJGLUF_API LoadTextureFromFile(const std::wstring& filePath, TextureFileFormat format);
+GLuint OBJGLUF_API LoadTextureFromFile(const std::string& filePath, TextureFileFormat format);
 GLuint OBJGLUF_API LoadTextureFromMemory(const std::vector<char>& data, TextureFileFormat format);//this is broken, WHY
 
 
@@ -1700,6 +1698,7 @@ struct VertexStruct
 /*
 
 GLVector
+    TODO: Re-evaluate this class
     
     -a small excention to the std::vector class;
     -use this just like you would std::vector, except T MUST be derived from 'VertexStruct'

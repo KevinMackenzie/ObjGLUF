@@ -398,7 +398,7 @@ IO and Stream Utilities
 */
 
 //--------------------------------------------------------------------------------------
-void LoadFileIntoMemory(const std::wstring& path, std::string& textMemory)
+void LoadFileIntoMemory(const std::string& path, std::string& textMemory)
 {
     //try to open file
     std::ifstream inFile;
@@ -441,89 +441,6 @@ void LoadFileIntoMemory(const std::wstring& path, std::string& textMemory)
 }
 
 //--------------------------------------------------------------------------------------
-void LoadFileIntoMemory(const std::string& path, std::string& textMemory)
-{
-    //try to open file
-    std::ifstream inFile;
-    inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
-    try
-    {
-        inFile.open(path, std::ios_base::in);
-    }
-    catch (std::ios_base::failure e)
-    {
-        GLUF_ERROR_LONG("Failed to Open File: " << e.what());
-        RETHROW;
-    }
-
-    //delete anything already in here
-    textMemory.clear();
-
-    inFile.seekg(0, std::ios::end);
-    size_t size = inFile.tellg();
-    inFile.seekg(0, std::ios::beg);
-
-    textMemory.resize(size + 1);
-
-    //try reading the memory
-    try
-    {
-        inFile.read(&textMemory[0], size);
-        inFile.close();
-    }
-    catch (std::ios_base::failure e)
-    {
-        if (inFile.is_open())
-            inFile.close();
-        GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-        RETHROW;
-    }
-}
-
-//--------------------------------------------------------------------------------------
-void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory)
-{
-    //try to open file
-    std::ifstream inFile;
-    inFile.exceptions(std::ios_base::failbit | std::ifstream::badbit);
-    try
-    {
-        inFile.open(path, std::ios::binary | std::ios_base::in);
-    }
-    catch (std::ios_base::failure e)
-    {
-        GLUF_ERROR_LONG("Failed to Open File: " << e.what());
-        RETHROW;
-    }
-
-    //delete anything already in here
-    binMemory.clear();
-
-    //get file length
-    inFile.seekg(0, std::ios::end);
-    unsigned int rawSize = static_cast<unsigned int>(inFile.tellg());
-    inFile.seekg(0, std::ios::beg);
-
-    //resize the vector
-    binMemory.reserve(rawSize);//is this line needed?
-    binMemory.resize(rawSize);
-
-    //try reading the memory
-    try
-    {
-        inFile.read(&binMemory[0], rawSize);
-        inFile.close();
-    }
-    catch (std::ios_base::failure e)
-    {
-        if (inFile.is_open())
-            inFile.close();
-        GLUF_ERROR_LONG("Failed to load file into memory:" << e.what());
-        RETHROW;
-    }
-}
-
-//--------------------------------------------------------------------------------------
 void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
 {
     //try to open file
@@ -554,7 +471,7 @@ void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
     //try reading the memory
     try
     {
-        inFile.read(&binMemory[0], rawSize); 
+        inFile.read(&binMemory[0], rawSize);
         inFile.close();
     }
     catch (std::ios_base::failure e)
@@ -1851,7 +1768,7 @@ GLuint ShaderManager::GetUniformIdFromName(const ProgramPtr& prog, const std::st
 
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::wstring& filePath, ShaderType type)
+void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::string& filePath, ShaderType type)
 {
     //create the shader
     outShader = std::make_shared<Shader>();
@@ -2011,7 +1928,7 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderSourceList shade
 
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate)
+void ShaderManager::CreateProgramFromFiles(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate)
 {
     ShaderPtrList shaders;
     for (auto it : shaderPaths)
@@ -2438,7 +2355,7 @@ void ShaderManager::GLUniform2ui(const ProgramPtr& prog, const std::string& name
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const t
+void ShaderManager::GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const
 {
     glUniform3uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
@@ -3218,37 +3135,37 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
             0, GL_RGBA, 
             pertexSize, pertexSize, 
             0, GL_RGBA, GL_UNSIGNED_BYTE, 
-            (const GLvoid*)&(rawData.begin() + offset));
+            (const GLvoid*)(rawData.data() + offset));
         offset += mipSize;
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 
             0, GL_RGBA, 
             pertexSize, pertexSize, 
             0, GL_RGBA, GL_UNSIGNED_BYTE, 
-            (const GLvoid*)&(rawData.begin() + offset));
+            (const GLvoid*)(rawData.data() + offset));
         offset += mipSize;
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 
             0, GL_RGBA, 
             pertexSize, pertexSize, 
             0, GL_RGBA, GL_UNSIGNED_BYTE, 
-            (const GLvoid*)&(rawData.begin() + offset));
+            (const GLvoid*)(rawData.data() + offset));
         offset += mipSize;
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 
             0, GL_RGBA, 
             pertexSize, pertexSize, 
             0, GL_RGBA, GL_UNSIGNED_BYTE, 
-            (const GLvoid*)&(rawData.begin() + offset));
+            (const GLvoid*)(rawData.data() + offset));
         offset += mipSize;
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 
             0, GL_RGBA, 
             pertexSize, pertexSize, 
-            0, GL_RGBA, GL_UNSIGNED_BYTE, 
-            (const GLvoid*)&(rawData.begin() + offset));
+            0, GL_RGBA, GL_UNSIGNED_BYTE,
+            (const GLvoid*)(rawData.data() + offset));
         offset += mipSize;
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 
             0, GL_RGBA, 
             pertexSize, pertexSize, 
             0, GL_RGBA, GL_UNSIGNED_BYTE, 
-            (const GLvoid*)&(rawData.begin() + offset));
+            (const GLvoid*)(rawData.data() + offset));
     }
 
 
@@ -3258,7 +3175,7 @@ GLuint LoadTextureCubemapDDS(const std::vector<char>& rawData)
 
 
 //--------------------------------------------------------------------------------------
-GLuint LoadTextureFromFile(const std::wstring& filePath, TextureFileFormat format)
+GLuint LoadTextureFromFile(const std::string& filePath, TextureFileFormat format)
 {
     std::vector<char> memory;
 
