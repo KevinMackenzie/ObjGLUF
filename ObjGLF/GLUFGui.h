@@ -2292,7 +2292,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GenericData& data = GenericData()) noexcept;
+    void AddItem(const std::wstring& text, GenericData& data) noexcept;
 
     /*
     InsertItem
