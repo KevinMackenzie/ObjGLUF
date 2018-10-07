@@ -36,44 +36,32 @@ namespace GLUF
     template<class... Types>
     void TextHelper::DrawFormattedTextLine(const std::wstring& format, const Types&... args) noexcept
     {
-        NOEXCEPT_REGION_START
-
         std::wstring outString;
         RenderText(format, outString, args...);
 
         DrawTextLine(outString);
-
-        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
     void TextHelper::DrawFormattedTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& format, const Types&... args) noexcept
     {
-        NOEXCEPT_REGION_START
-
         std::wstring outString;
         RenderText(format, outString, args...);
 
         DrawTextLineBase(rc, flags, outString);
-
-        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
     template<class... Types>
     void TextHelper::RenderText(const std::wstring& format, std::wstring& outString, const Types&... args) noexcept
     {
-        NOEXCEPT_REGION_START
-
         std::wstringstream formatStream;
         formatStream << format;
 
         std::wstringstream outStringStream;
         RenderText(formatStream, outStringStream, args...);
         outString = outStringStream.str();
-
-        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------

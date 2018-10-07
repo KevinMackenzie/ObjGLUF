@@ -725,7 +725,7 @@ public:
             'ControlCreationException': if control initialization failed
     
     */
-	void AddControl(ControlPtr& control);
+	void AddControl(ControlPtr control);
 
     /*
     InitControl
@@ -737,7 +737,7 @@ public:
             'ControlCreationException': if control initialization failed
 
     */
-	void InitControl(ControlPtr& control);
+	void InitControl(ControlPtr control);
 
 
     /*
@@ -878,7 +878,7 @@ public:
             'std::invalid_argument': if 'control' == nullptr, in _DEBUG mode
     
     */
-	void RequestFocus(ControlPtr& control);
+	void RequestFocus(ControlPtr control);
 
     /*
     Draw*
@@ -1546,7 +1546,7 @@ public:
             'ref': a reference to a dialog
     
     */
-    DialogPtr GetDialogPtrFromRef(const Dialog& ref);
+    DialogPtr GetDialogPtrFromRef(const Dialog& ref) noexcept;
 protected:
     /*
     ApplyOrtho
@@ -2584,7 +2584,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GenericData& data = GenericData()) noexcept;
+    void AddItem(const std::wstring& text, GenericData& data) noexcept;
 
     /*
     InsertItem
@@ -2745,7 +2745,7 @@ protected:
             no-throw guarantee
     
     */
-	void UpdateItemRects();
+	void UpdateItemRects() noexcept;
 };
 
 

@@ -18,6 +18,7 @@ for more details.
 #include "GLUFGui.h"
 //#include "CBFG/BitmapFontClass.h"
 //#include <algorithm>
+#include <cassert>
 
 #ifdef WIN32
 #pragma warning( disable : 4715 )
@@ -695,7 +696,7 @@ FontSize GetFontHeight(FontPtr font)
 	return font->mHeight;
 }
 
-void Font::Refresh()
+void Font::Refresh() noexcept
 {
 
 	//reset variables
@@ -903,7 +904,7 @@ Rectf Font::GetCharTexRect(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
     {
-        return{ { 0 }, 0, 0, { 0 } };
+        return{ 0, 0, 0, 0 };
     }
 
 	float l = 0, t = 0, r = 0, b = 0;
@@ -1177,7 +1178,7 @@ void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivableP
 	// was made so that the 's GUI could become separate and optional from 's core.  The 
 	// creation and interfacing with DialogResourceManager is now the responsibility 
 	// of the application if it wishes to use 's GUI.
-	_ASSERT(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
+	assert(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
 
     mCallbackEvent = callback;
 	mCallbackContext = userContext;
@@ -1249,7 +1250,7 @@ void Dialog::OnRender(float elapsedTime) noexcept
 {
 	// If this assert triggers, you need to call DialogResourceManager::On*Device() from inside
 	// the application's device callbacks.  See the SDK samples for an example of how to do this.
-	//_ASSERT(m_pManager->GetD3D11Device() &&
+	//assert(m_pManager->GetD3D11Device() &&
 	//	L"To fix hook up DialogResourceManager to device callbacks.  See comments for details");
 	//no need for "devices", this is all handled by GLFW
 
@@ -1369,7 +1370,7 @@ void Dialog::SetFont(FontIndex index, FontIndex resManFontIndex)
 	// was made so that the 's GUI could become separate and optional from 's core.  The 
 	// creation and interfacing with DialogResourceManager is now the responsibility 
 	// of the application if it wishes to use 's GUI.
-	_ASSERT(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
+	assert(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
 	//_Analysis_assume_(m_pManager);
 
 
@@ -1396,7 +1397,7 @@ void Dialog::SetTexture(TextureIndex index, TextureIndex resManTexIndex)
 	// was made so that the 's GUI could become separate and optional from 's core.  The 
 	// creation and interfacing with DialogResourceManager is now the responsibility 
 	// of the application if it wishes to use 's GUI.
-	_ASSERT(mDialogManager && L"To fix this, call Dialog::Init() first.  See comments for details.");
+	assert(mDialogManager && L"To fix this, call Dialog::Init() first.  See comments for details.");
 	//_Analysis_assume_(m_pManager);
     
     //call this to trigger an exception if the texture index does not exist
@@ -1764,7 +1765,7 @@ void Dialog::ClampToScreen() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-ControlPtr Dialog::GetControlAtPoint(const Point& pt) const
+ControlPtr Dialog::GetControlAtPoint(const Point& pt) const noexcept
 {
 	// Search through all child controls for the first one which
 	// contains the mouse point
@@ -2043,7 +2044,7 @@ void Dialog::AddListBox(ControlIndex ID, const Rect& region, Bitfield style, std
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddControl(ControlPtr& pControl)
+void Dialog::AddControl(ControlPtr pControl)
 {
 	InitControl(pControl);
 
@@ -2056,7 +2057,7 @@ void Dialog::AddControl(ControlPtr& pControl)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::InitControl(ControlPtr& pControl)
+void Dialog::InitControl(ControlPtr pControl)
 {
 	//Result hr;
 
@@ -2117,13 +2118,13 @@ ControlPtr Dialog::GetNextControl(ControlPtr control)
     if (!nextDlg)
         return control;
 
-    auto* nextDialogIndexIt = &nextDlg->mControls.begin();
+    auto nextDialogIndexIt = nextDlg->mControls.begin();
 
     //keep going through dialogs until one with a control is found, but prevent looping back through
-    while (*nextDialogIndexIt == nextDlg->mControls.end())
+    while (nextDialogIndexIt == nextDlg->mControls.end())
     {
         nextDlg = nextDlg->mNextDialog;
-        nextDialogIndexIt = &nextDlg->mControls.begin();
+        nextDialogIndexIt = nextDlg->mControls.begin();
 
         //if the same dialog is looped back through, return the current control
         if (nextDlg.get() == &dialog)
@@ -2133,7 +2134,7 @@ ControlPtr Dialog::GetNextControl(ControlPtr control)
     }
 
     //a control was found before the dialog chain was looped through
-    return (*nextDialogIndexIt)->second;
+    return nextDialogIndexIt->second;
 }
 
 
@@ -2158,13 +2159,13 @@ ControlPtr Dialog::GetPrevControl(ControlPtr control)
     if (!prevDlg)
         return control;
 
-    auto* prevDialogIndexIt = &prevDlg->mControls.rbegin();
+    auto prevDialogIndexIt = prevDlg->mControls.rbegin();
 
     //keep going through the dialogs until one with a control is found, but prevent looping back through
-    while (*prevDialogIndexIt == prevDlg->mControls.rend())
+    while (prevDialogIndexIt == prevDlg->mControls.rend())
     {
         prevDlg = prevDlg->mPrevDialog;
-        prevDialogIndexIt = &prevDlg->mControls.rbegin();
+        prevDialogIndexIt = prevDlg->mControls.rbegin();
 
         //if the same dialog is looped back through, return the current control
         if (prevDlg.get() == &dialog)
@@ -2174,7 +2175,7 @@ ControlPtr Dialog::GetPrevControl(ControlPtr control)
     }
 
     //a control was found before the dialog chain was looped through
-    return (*prevDialogIndexIt)->second;
+    return prevDialogIndexIt->second;
 }
 
 
@@ -2228,7 +2229,7 @@ void Dialog::ClearComboBox(ControlIndex ID)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::RequestFocus(ControlPtr& control)
+void Dialog::RequestFocus(ControlPtr control)
 {
     if (sControlFocus == control)
 		return;
@@ -2518,7 +2519,7 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
     {
         // Focused control belongs to this dialog. Cycle to the
         // next/previous control.
-        _ASSERT(pControl != 0);
+        assert(pControl != 0);
 
         //this is safe to assume that the dialog is 'this' because of the line 'else if (&sControlFocus->mDialog != this)'
         pLastDialog = shared_from_this();
@@ -2530,7 +2531,7 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
             pDialog = shared_from_this();//not sure if this is what to do if the dialog is not found, but its the best thing I could think of
     }
 
-    _ASSERT(pControl != 0);
+    assert(pControl != 0);
 
     // If we just wrapped from last control to first or vice versa,
     // set the focused control to nullptr. This state, where no control
@@ -2602,7 +2603,7 @@ void Dialog::InitDefaultElements()
 		{
 
             std::vector<char> rawData;
-            LoadFileIntoMemory(L"Arial.ttf", rawData);
+            LoadFileIntoMemory("Arial.ttf", rawData);
 			LoadFont(g_ArialDefault, rawData, 15L);
 		}
 
@@ -3294,7 +3295,7 @@ void Control::SetElement(ElementIndex elementId, const Element& element) noexcep
 
 
 //--------------------------------------------------------------------------------------
-void Control::Refresh()
+void Control::Refresh() noexcept
 {
 	mMouseOver = false;
 	mHasFocus = false;
@@ -5542,7 +5543,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 }
 
 //--------------------------------------------------------------------------------------
-void ComboBox::OnHotkey()
+void ComboBox::OnHotkey() noexcept
 {
 	if (mOpened)
 		return;
@@ -6183,7 +6184,7 @@ void Slider::Render( float elapsedTime) noexcept
 const std::wstring g_Charsets[] = 
 { 
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
-	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~€‚ƒ„…†‡ˆ‰Š‹Œ‘’“”•–—˜™š›œŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ",
+	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
 	L"0123456789",
 	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
 	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -7386,7 +7387,7 @@ void EditBox::OnMouseLeave() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnInit() noexcept
+void EditBox::OnInit()
 {
     Control::OnInit();
 
@@ -7955,7 +7956,7 @@ void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
     Text::BeginText(mManager->GetOrthoMatrix());
 }
 
-void TextHelper::DrawTextLine(const std::wstring& text)
+void TextHelper::DrawTextLine(const std::wstring& text) noexcept
 {
     DrawTextLineBase({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
 
@@ -7968,7 +7969,7 @@ void TextHelper::DrawTextLine(const std::wstring& text)
     mPoint.y -= mLeading;//once no matter what because we are drawing a LINE of text
 }
 
-void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text)
+void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept
 {
     mManager->GetFontNode(mFontIndex)->mLeading = mLeading;
     Text::DrawText(mManager->GetFontNode(mFontIndex), text, rc, mColor, flags, true);
