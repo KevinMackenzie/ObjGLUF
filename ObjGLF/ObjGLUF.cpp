@@ -456,6 +456,7 @@ void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory)
         RETHROW;
     }
 
+    // TODO: we don't need to delete it if we're going to resize it below
     //delete anything already in here
     binMemory.clear();
 

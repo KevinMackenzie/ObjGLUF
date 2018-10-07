@@ -1,7 +1,6 @@
 // TestProject.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
 #define USING_ASSIMP
 #define GLUF_DEBUG
 #define SUPPRESS_RADIAN_ERROR
@@ -193,7 +192,7 @@ int main(void)
     gGLVersionMinor = 0;
     gGLVersion2Digit = 20;*/
 
-	GLuint ctrlTex = LoadTextureFromFile(L"dxutcontrolstest.dds", TFF_DDS);
+	GLuint ctrlTex = LoadTextureFromFile("dxutcontrolstest.dds", TFF_DDS);
     InitGui(window, MsgProc, ctrlTex);
 
     resMan = std::make_shared<DialogResourceManager>();
@@ -245,37 +244,38 @@ int main(void)
     std::shared_ptr<ListBoxPtr> boxBase = std::make_shared<ListBoxPtr>(nullptr);
     dlg->AddListBox(7, { { 600 }, 500, 750, { 200 } }, ListBox::MULTISELECTION, boxBase);
 
+    auto blankData = GenericData();
     auto box = *boxBase;
-	box->AddItem(L"Item 0");
-	box->AddItem(L"Item 1");
-	box->AddItem(L"Item 2");
-	box->AddItem(L"Item 3");
-	box->AddItem(L"Item 4");
-	box->AddItem(L"Item 5");
-	box->AddItem(L"Item 6");
-	box->AddItem(L"Item 7");
-	box->AddItem(L"Item 8");
-	box->AddItem(L"Item 9");
-	box->AddItem(L"Item 10");
-	box->AddItem(L"Item 11");
-	box->AddItem(L"Item 12");
-	box->AddItem(L"Item 13");
-	box->AddItem(L"Item 14");
-	box->AddItem(L"Item 15");
-	box->AddItem(L"Item 16");
-	box->AddItem(L"Item 17");
-	box->AddItem(L"Item 18");
-	box->AddItem(L"Item 19");
-	box->AddItem(L"Item 20");
-	box->AddItem(L"Item 21");
-	box->AddItem(L"Item 22");
-	box->AddItem(L"Item 23");
-	box->AddItem(L"Item 24");
-	box->AddItem(L"Item 25");
-	box->AddItem(L"Item 26");
-	box->AddItem(L"Item 27");
-	box->AddItem(L"Item 28");
-	box->AddItem(L"Item 29");
+	box->AddItem(L"Item 0", blankData);
+	box->AddItem(L"Item 1", blankData);
+	box->AddItem(L"Item 2", blankData);
+	box->AddItem(L"Item 3", blankData);
+	box->AddItem(L"Item 4", blankData);
+	box->AddItem(L"Item 5", blankData);
+	box->AddItem(L"Item 6", blankData);
+	box->AddItem(L"Item 7", blankData);
+	box->AddItem(L"Item 8", blankData);
+	box->AddItem(L"Item 9", blankData);
+	box->AddItem(L"Item 10", blankData);
+	box->AddItem(L"Item 11", blankData);
+	box->AddItem(L"Item 12", blankData);
+	box->AddItem(L"Item 13", blankData);
+	box->AddItem(L"Item 14", blankData);
+	box->AddItem(L"Item 15", blankData);
+	box->AddItem(L"Item 16", blankData);
+	box->AddItem(L"Item 17", blankData);
+	box->AddItem(L"Item 18", blankData);
+	box->AddItem(L"Item 19", blankData);
+	box->AddItem(L"Item 20", blankData);
+	box->AddItem(L"Item 21", blankData);
+	box->AddItem(L"Item 22", blankData);
+	box->AddItem(L"Item 23", blankData);
+	box->AddItem(L"Item 24", blankData);
+	box->AddItem(L"Item 25", blankData);
+	box->AddItem(L"Item 26", blankData);
+	box->AddItem(L"Item 27", blankData);
+	box->AddItem(L"Item 28", blankData);
+	box->AddItem(L"Item 29", blankData);
 
     TextHelperPtr textHelper = CreateTextHelper(resMan);
 
@@ -318,7 +318,7 @@ int main(void)
 
     std::string text;
     std::vector<char> rawMem;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadFileIntoMemory("Shaders/BasicLighting120.vert.glsl", rawMem);
     LoadBinaryArrayIntoString(rawMem, text);
 
     text += '\n';
@@ -328,7 +328,7 @@ int main(void)
     SHADERMANAGER.CreateProgram(Vert, VertSources, true);
 
     std::string text1;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadFileIntoMemory("Shaders/BasicLighting120.frag.glsl", rawMem);
     LoadBinaryArrayIntoString(rawMem, text1);
     text1 += '\n';
     FragSources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
@@ -356,14 +356,14 @@ int main(void)
 
     std::string text;
     std::vector<char> rawMem;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.vert.glsl", rawMem);
+    LoadFileIntoMemory("Shaders/BasicLighting120.vert.glsl", rawMem);
     LoadBinaryArrayIntoString(rawMem, text);
 
     text += '\n';
     Sources.insert(std::pair<ShaderType, const char*>(SH_VERTEX_SHADER, text.c_str()));
 
     std::string text1;
-    LoadFileIntoMemory(L"Shaders/BasicLighting120.frag.glsl", rawMem);
+    LoadFileIntoMemory("Shaders/BasicLighting120.frag.glsl", rawMem);
     LoadBinaryArrayIntoString(rawMem, text1);
     text1 += '\n';
     Sources.insert(std::pair<ShaderType, const char*>(SH_FRAGMENT_SHADER, text1.c_str()));
@@ -400,7 +400,7 @@ int main(void)
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(path,
 		aiProcess_CalcTangentSpace |
-		aiProcess_Triangulate |
+		aiProcess_Triangulate |arial
 		aiProcess_JoinIdenticalVertices |
 		aiProcess_SortByPType);
 
@@ -416,7 +416,7 @@ int main(void)
 
 
 	//load texture
-	GLuint texture = LoadTextureFromFile(L"uvmap.dds", TFF_DDS);
+	GLuint texture = LoadTextureFromFile("uvmap.dds", TFF_DDS);
 
 
 	float ellapsedTime = 0.0f;
