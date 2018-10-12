@@ -163,6 +163,7 @@ void myunexpected()
 
 //#define USE_SEPARATE
 
+
 int main(void)
 {
 
@@ -510,64 +511,64 @@ int main(void)
 	m_pVertexArray.BufferData(verts);
 	m_pVertexArray.BufferIndices(mTriangles);*/
 
-	do{
+	do {
+        float ratio;
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        ratio = width / (float) height;
+        glViewport(0, 0, width, height);
+        static const GLfloat black[] = {0.0f, 0.0f, 0.0f, 1.0f};
+        static const GLfloat one = 1.0f;
 
-		currTime = (float)glfwGetTime();
-		ellapsedTime = currTime - prevTime;
+        glClearBufferfv(GL_COLOR, 0, black);
 
-		// Clear the screen
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		float ratio;
-		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
-		ratio = width / (float)height;
-		glViewport(0, 0, width, height);
-		static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		static const GLfloat one = 1.0f;
+        // Clear the screen
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glClearBufferfv(GL_COLOR, 0, black);
-		
-		
-		// Enable depth test
-		glEnable(GL_DEPTH_TEST);
-		// Accept fragment if it closer to the camera than the former one
-		glDepthFunc(GL_LESS);
+        // Enable depth test
+        glEnable(GL_DEPTH_TEST);
+        // Accept fragment if it closer to the camera than the former one
+        glDepthFunc(GL_LESS);
 
-		// Cull triangles which normal is not towards the camera
-		glEnable(GL_CULL_FACE);
+        // Cull triangles which normal is not towards the camera
+        glEnable(GL_CULL_FACE);
 
-		//SHADERMANAGER.UseProgram(Prog); 
-		glm::vec3 pos(3, 5, 6);
-		glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(70), ratio, 0.1f, 1000.f);
-		glm::mat4 ViewMatrix = glm::translate(glm::mat4(), -pos);
-		glm::mat4 ModelMatrix = glm::translate(glm::mat4(), pos) * glm::toMat4(glm::quat(glm::vec3(0, DEG_TO_RAD_F(30) * currTime, 0)));// glm::translate(glm::mat4(), glm::vec3(-1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(_PI_F / 2, 2.0f * currTime, 0.0f)));
-		glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+        currTime = (float) glfwGetTime();
+        ellapsedTime = currTime - prevTime;
 
-		// Send our transformation to the currently bound shader, 
-		// in the "MVP" uniform
-		SHADERMANAGER.UseProgram(Prog);
+        //SHADERMANAGER.UseProgram(Prog);
+        glm::vec3 pos(3, 5, 6);
+        glm::mat4 ProjectionMatrix = glm::perspective(DEG_TO_RAD_F(70), ratio, 0.1f, 1000.f);
+        glm::mat4 ViewMatrix = glm::translate(glm::mat4(1), glm::vec3{0.0, 0.0, -5.0});
+
+        // Send our transformation to the currently bound shader,
+        // in the "MVP" uniform
+        SHADERMANAGER.UseProgram(Prog);
 
 #ifndef USE_SEPARATE
 
-		glm::vec3 lightPos = glm::vec3(4, 4, 4);
-		SHADERMANAGER.GLUniform3f(LightID, lightPos);
+        glm::vec3 lightPos = glm::vec3(4, 4, 4);
+        SHADERMANAGER.GLUniform3f(LightID, lightPos);
 
-		// Bind our texture in Texture Unit 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		// Set our "myTextureSampler" sampler to user Texture Unit 0
-		SHADERMANAGER.GLUniform1i(TextureID, 0);
+        // Bind our texture in Texture Unit 0
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        // Set our "myTextureSampler" sampler to user Texture Unit 0
+        SHADERMANAGER.GLUniform1i(TextureID, 0);
 
-		ModelMatrix = glm::translate(glm::mat4(), glm::vec3(1.5f, 0.0f, -5.0f)) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
-		MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+        glm::mat4 ModelMatrix =
+                glm::translate(glm::mat4(1), -pos) * glm::toMat4(glm::quat(glm::vec3(0.0f, 2.0f * currTime, 0.0f)));
+        glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-		// Send our transformation to the currently bound shader, 
-		// in the "MVP" uniform
-		SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
+        // Send our transformation to the currently bound shader,
+        // in the "MVP" uniform
+        SHADERMANAGER.GLUniformMatrix4f(MatrixID, MVP);
         SHADERMANAGER.GLUniformMatrix4f(ModelMatrixID, ModelMatrix);
         SHADERMANAGER.GLUniformMatrix4f(ViewMatrixID, ViewMatrix);
-		
-		vertexData2->Draw();
+
+//            print_mat4(MVP);
+
+        vertexData2->Draw();
 
 #else
 
@@ -584,7 +585,7 @@ int main(void)
 
         SHADERMANAGER.GLActiveShaderProgram(Prog, SH_VERTEX_SHADER);
 
-        // Send our transformation to the currently bound shader, 
+        // Send our transformation to the currently bound shader,
         // in the "MVP" uniform
         SHADERMANAGER.GLProgramUniformMatrix4f(Prog, MatrixID, MVP);
         SHADERMANAGER.GLProgramUniformMatrix4f(Prog, ModelMatrixID, ModelMatrix);
@@ -597,46 +598,46 @@ int main(void)
 
 #endif
 
-		//render dialog last(overlay)
-		//if ((int)currTime % 2)
-			dlg->OnRender(ellapsedTime);
-			//dlg->DrawRect(rc, ::Color(255, 0, 0, 255));
+        //render dialog last(overlay)
+        //if ((int)currTime % 2)
+        dlg->OnRender(ellapsedTime);
+        //dlg->DrawRect(rc, ::Color(255, 0, 0, 255));
 
-            /*textHelper->Begin(0, 20, 15);
-            textHelper->DrawFormattedTextLineBase({ { 500 }, 300, 700, { 280 } }, GT_TOP | GT_LEFT, L"Val1 = %; Val2 = %; Val3 = %", 36, 29.334f, "String");
-            textHelper->End();*/
+        /*textHelper->Begin(0, 20, 15);
+        textHelper->DrawFormattedTextLineBase({ { 500 }, 300, 700, { 280 } }, GT_TOP | GT_LEFT, L"Val1 = %; Val2 = %; Val3 = %", 36, 29.334f, "String");
+        textHelper->End();*/
 
         //sky box rendering stuff
-		/*SHADERMANAGER.UseProgram(sky);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, skycubemap);
-		glUniform1i(sampLoc, 0);
-		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &MVP[0][0]);
-		glDisable(GL_DEPTH_CLAMP);
-		glDepthMask(GL_FALSE);
-		glDisable(GL_CULL_FACE);
-		m_pVertexArray.Draw();
-		glEnable(GL_CULL_FACE);
-		glDepthMask(GL_TRUE);
-		glEnable(GL_DEPTH_CLAMP);*/
+        /*SHADERMANAGER.UseProgram(sky);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skycubemap);
+        glUniform1i(sampLoc, 0);
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &MVP[0][0]);
+        glDisable(GL_DEPTH_CLAMP);
+        glDepthMask(GL_FALSE);
+        glDisable(GL_CULL_FACE);
+        m_pVertexArray.Draw();
+        glEnable(GL_CULL_FACE);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_CLAMP);*/
 
-		//glEnable(GL_BLEND);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		/*textHelper->Begin(0);
-		textHelper->SetInsertionPos(Point(100, 100));
-		textHelper->DrawTextLine(L"TESTING");
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        /*textHelper->Begin(0);
+        textHelper->SetInsertionPos(Point(100, 100));
+        textHelper->DrawTextLine(L"TESTING");
 
-		SHADERMANAGER.UseProgram(linesprog);
-		glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
-		m_Squares.Draw();*/
+        SHADERMANAGER.UseProgram(linesprog);
+        glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
+        m_Squares.Draw();*/
 
-		// Swap buffers
+        // Swap buffers
         glfwSwapBuffers(window);
-		glfwPollEvents();
+        glfwPollEvents();
 
-		//prevTime = currTime;
+        //prevTime = currTime;
 
-	} // Check if the ESC key was pressed or the window was closed
+    } // Check if the ESC key was pressed or the window was closed
 	while (glfwWindowShouldClose(window) == 0);
 
 
