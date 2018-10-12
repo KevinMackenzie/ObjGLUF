@@ -1,4 +1,0 @@
-break /home/donald/CLionProjects/ObjGLUF/TestProject/TestProject.cpp:33
-break /home/donald/CLionProjects/ObjGLUF/ObjGLF/ObjGLUF.cpp:455
-
-set exec-wrapper The wrapper for running programs is \
