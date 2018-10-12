@@ -1,5 +1,5 @@
-# ObjGLF
-Object-Oriented OpenGL Framework
+# ObjGLUF
+Object-Oriented OpenGL Utility Framework
 
 
 #
