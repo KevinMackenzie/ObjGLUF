@@ -57,11 +57,11 @@ Positioning and Controls Macros
 
 */
 
-#define GT_CENTER	(1<<0)
-#define GT_LEFT		(1<<1)
+#define GT_CENTER    (1<<0)
+#define GT_LEFT        (1<<1)
 #define GT_RIGHT    (1<<2)
 
-#define GT_VCENTER	(1<<3)//WARNING: this looks kind of funny with hard rect off
+#define GT_VCENTER    (1<<3)//WARNING: this looks kind of funny with hard rect off
 #define GT_TOP      (1<<4)
 #define GT_BOTTOM   (1<<5)//WARNING: this looks kind of funny with hard rect off
 
@@ -100,19 +100,19 @@ Enumerations and Type Aliases
 
 enum MessageType
 {
-	MB = 0,
-	CURSOR_POS = 1,
-	CURSOR_ENTER = 2,
-	SCROLL = 3, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
-	KEY = 4,//don't' support joysticks yet
-	UNICODE_CHAR = 5,
-	RESIZE = 6,
-	POS = 7,
-	CLOSE = 8,
-	REFRESH = 9,
-	FOCUS = 10,
-	ICONIFY = 11,
-	FRAMEBUFFER_SIZE = 12
+    MB = 0,
+    CURSOR_POS = 1,
+    CURSOR_ENTER = 2,
+    SCROLL = 3, //since i am using 32 bit integers as input, this value will be multiplied by 1000 to preserver any relevant decimal points
+    KEY = 4,//don't' support joysticks yet
+    UNICODE_CHAR = 5,
+    RESIZE = 6,
+    POS = 7,
+    CLOSE = 8,
+    REFRESH = 9,
+    FOCUS = 10,
+    ICONIFY = 11,
+    FRAMEBUFFER_SIZE = 12
 };
 
 //WIP
@@ -421,7 +421,7 @@ public:
             this is designed to be called every update cycle to provide a smooth blend animation
     
     */
-	void        Blend(ControlState state, float elapsedTime, float rate = 5.0f);
+    void        Blend(ControlState state, float elapsedTime, float rate = 5.0f);
 
     /*
     SetCurrent
@@ -431,8 +431,8 @@ public:
             'state': the state to set the current state to
     
     */
-	void		SetCurrent(const Color& current);
-	void		SetCurrent(ControlState state);
+    void        SetCurrent(const Color& current);
+    void        SetCurrent(ControlState state);
 
     /*
     SetAll
@@ -441,7 +441,7 @@ public:
             'color': the color to set all of the states to; used for static elements
     
     */
-	void		SetAll(const Color& color);
+    void        SetAll(const Color& color);
 
     Color GetState(ControlState state) const noexcept;
     void        SetState(ControlState state, const Color& col) noexcept;
@@ -466,7 +466,7 @@ class Element
 {
 public:
 
-	TextureIndex mTextureIndex;
+    TextureIndex mTextureIndex;
     FontIndex mFontIndex;
     Bitfield mTextFormatFlags;
 
@@ -503,7 +503,7 @@ public:
         Note:
             This function sets the current blend states to the 'hidden' state
     */
-	void    Refresh();
+    void    Refresh();
 };
 
 
@@ -576,7 +576,7 @@ Dialog
 */
 class Dialog : public std::enable_shared_from_this<Dialog>
 {
-	friend class DialogResourceManager;
+    friend class DialogResourceManager;
 
     bool mFirstTime = true;
 
@@ -643,9 +643,9 @@ class Dialog : public std::enable_shared_from_this<Dialog>
     friend std::shared_ptr<Dialog> CreateDialog_();
 
 public:
-	~Dialog();
+    ~Dialog();
 
-	
+    
     /*
     Init
 
@@ -658,8 +658,8 @@ public:
             'std::invalid_argument': if 'manager == nullptr'
 
     */
-	void Init(DialogResourceManagerPtr& manager, bool registerDialog = true);
-	void Init(DialogResourceManagerPtr& manager, bool registerDialog, TextureIndexResMan textureIndex);
+    void Init(DialogResourceManagerPtr& manager, bool registerDialog = true);
+    void Init(DialogResourceManagerPtr& manager, bool registerDialog, TextureIndexResMan textureIndex);
 
     /*
     MsgProc
@@ -674,7 +674,7 @@ public:
             no-throw guarantee
     
     */
-	bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
+    bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
 
     /*
     Add*
@@ -725,7 +725,7 @@ public:
             'ControlCreationException': if control initialization failed
     
     */
-	void AddControl(ControlPtr control);
+    void AddControl(ControlPtr control);
 
     /*
     InitControl
@@ -737,7 +737,7 @@ public:
             'ControlCreationException': if control initialization failed
 
     */
-	void InitControl(ControlPtr control);
+    void InitControl(ControlPtr control);
 
 
     /*
@@ -757,7 +757,7 @@ public:
     */
     template<typename T>
     std::shared_ptr<T>  GetControl(ControlIndex ID) const;
-    ControlPtr      GetControl(ControlIndex ID, ControlType controlType) const;
+    ControlPtr          GetControl(ControlIndex ID, ControlType controlType) const;
 
 
     /*
@@ -773,7 +773,7 @@ public:
             no-throw guarantee
     
     */
-	ControlPtr GetControlAtPoint(const Point& pt) const noexcept;
+    ControlPtr GetControlAtPoint(const Point& pt) const noexcept;
 
     /*
     Set/Get Control Enabled
@@ -829,7 +829,7 @@ public:
             'std::invalid_argument': if 'ID' does not exist, or is not a combo box, in _DEBUG mode only
     
     */
-	void ClearComboBox(ControlIndex ID);
+    void ClearComboBox(ControlIndex ID);
 
     /*
     Set/Get DefaultElement
@@ -846,7 +846,7 @@ public:
             'std::invalid_argument': if 'elementIndex' is not found within 'controlType', but only in _DEBUG; or if 'element' == nullptr
     
     */
-    void            SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element& element);
+    void        SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element& element);
     Element     GetDefaultElement(ControlType controlType, ElementIndex elementIndex) const;
 
 
@@ -865,7 +865,7 @@ public:
             no-throw guarantee
     
     */
-	void SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept;
+    void SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept;
 
 
     /*
@@ -878,7 +878,7 @@ public:
             'std::invalid_argument': if 'control' == nullptr, in _DEBUG mode
     
     */
-	void RequestFocus(ControlPtr control);
+    void RequestFocus(ControlPtr control);
 
     /*
     Draw*
@@ -901,9 +901,9 @@ public:
             'std::invalid_argument' if 'elemement' == nullptr in _DEBUG
 
     */
-	void DrawRect(const Rect& rect, const Color& color, bool transform = true);
-	//void DrawPolyLine(Point* apPoints, uint32_t nNumPoints, Color color);
-	void DrawSprite(const Element& element, const Rect& rect, float depth, bool textured = true);
+    void DrawRect(const Rect& rect, const Color& color, bool transform = true);
+    //void DrawPolyLine(Point* apPoints, uint32_t nNumPoints, Color color);
+    void DrawSprite(const Element& element, const Rect& rect, float depth, bool textured = true);
     void DrawText(const std::wstring& text, const Element& element, const Rect& rect, bool shadow = false, bool hardRect = false);
 
     /*
@@ -923,7 +923,7 @@ public:
             'std::invalid_argument': if 'element' == nullptr, in _DEBUG
     
     */
-	void CalcTextRect(const std::wstring& text, const Element& element, Rect& rect) const;
+    void CalcTextRect(const std::wstring& text, const Element& element, Rect& rect) const;
 
 
     /*
@@ -936,31 +936,31 @@ public:
             no-throw guarantee
     
     */
-	bool        GetVisible() const noexcept							    { return mVisible;						    }
+    bool        GetVisible() const noexcept                             { return mVisible;                          }
     bool        GetMinimized() const noexcept                           { return mMinimized;                        }
     long        GetCaptionHeight() const noexcept                       { return mCaptionHeight;                    }
-    Point   GetLocation() const noexcept                            { return{ mRegion.bottom, mRegion.left };   } 
-    Rect    GetRegion() const noexcept                              { return mRegion;                           }
-    long        GetWidth() const noexcept                               { return RectWidth(mRegion);            }
-    long        GetHeight()	const noexcept                              { return RectHeight(mRegion);           } 
+    Point       GetLocation() const noexcept                            { return{ mRegion.bottom, mRegion.left };   }
+    Rect        GetRegion() const noexcept                              { return mRegion;                           }
+    long        GetWidth() const noexcept                               { return RectWidth(mRegion);                }
+    long        GetHeight()    const noexcept                           { return RectHeight(mRegion);               }
 
-    Point   GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;         }
+    Point       GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;         }
 
-    DialogResourceManagerPtr GetManager() const noexcept            { return mDialogManager;                    }
+    DialogResourceManagerPtr GetManager() const noexcept                { return mDialogManager;                    }
 
     void        SetVisible(bool visible) noexcept                       { mVisible = visible;                       }
     void        SetMinimized(bool minimized) noexcept                   { mMinimized = minimized;                   }
-    void        SetBackgroundColor(const Color& color) noexcept   { mDlgElement.mTextureColor.SetAll(color); }
+    void        SetBackgroundColor(const Color& color) noexcept         { mDlgElement.mTextureColor.SetAll(color);  }
     void        SetCaptionHeight(long height) noexcept                  { mCaptionHeight = height;                  }
     void        SetCaptionText(const std::wstring& text) noexcept       { mCaptionText = text;                      }
-    void        SetLocation(long x, long y) noexcept                    { RepositionRect(mRegion, x, y);        }
-    void        SetSize(long width, long height) noexcept               { ResizeRect(mRegion, width, height);   }
-    static void	SetRefreshTime(float time) noexcept                     { sTimeRefresh = time;                      }
+    void        SetLocation(long x, long y) noexcept                    { RepositionRect(mRegion, x, y);            }
+    void        SetSize(long width, long height) noexcept               { ResizeRect(mRegion, width, height);       }
+    static void SetRefreshTime(float time) noexcept                     { sTimeRefresh = time;                      }
 
-    void		Lock(bool lock = true) noexcept                         { mLocked = lock;                           }
-    void		EnableGrabAnywhere(bool enable = true) noexcept         { mGrabAnywhere = enable;                   }
+    void        Lock(bool lock = true) noexcept                         { mLocked = lock;                           }
+    void        EnableGrabAnywhere(bool enable = true) noexcept         { mGrabAnywhere = enable;                   }
     void        EnableCaption(bool enable) noexcept                     { mCaptionEnabled = enable;                 }
-    void		EnableAutoClamp(bool enable = true) noexcept            { mAutoClamp = enable;                      }
+    void        EnableAutoClamp(bool enable = true) noexcept            { mAutoClamp = enable;                      }
     void        EnableNonUserEvents(bool bEnable) noexcept              { mNonUserEvents = bEnable;                 }
     void        EnableKeyboardInput(bool bEnable) noexcept              { mKeyboardInput = bEnable;                 }
     void        EnableMouseInput(bool bEnable) noexcept                 { mMouseInput = bEnable;                    }
@@ -986,10 +986,10 @@ public:
             'std::out_of_range': if index/resManFontIndex/resManTexIndex do not exist in their respective locations
 
     */
-    void                SetFont(FontIndex fontIndex, FontIndexResMan resManFontIndex);
-    void                SetTexture(TextureIndex texIndex, TextureIndexResMan resManTexIndex);
-    FontNodePtr	    GetFont(FontIndex index) const;
-    TextureNodePtr	GetTexture(TextureIndex index) const;
+    void           SetFont(FontIndex fontIndex, FontIndexResMan resManFontIndex);
+    void           SetTexture(TextureIndex texIndex, TextureIndexResMan resManTexIndex);
+    FontNodePtr    GetFont(FontIndex index) const;
+    TextureNodePtr GetTexture(TextureIndex index) const;
 
 
     /*
@@ -1008,8 +1008,8 @@ public:
             TODO:
     
     */
-	static ControlPtr GetNextControl(ControlPtr control);
-	static ControlPtr GetPrevControl(ControlPtr control);
+    static ControlPtr GetNextControl(ControlPtr control);
+    static ControlPtr GetPrevControl(ControlPtr control);
 
     /*
     ClampToScreen
@@ -1020,7 +1020,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void ClampToScreen() noexcept;
+    void ClampToScreen() noexcept;
 
     /*
     RemoveControl
@@ -1032,7 +1032,7 @@ public:
             'std::invalid_argument': in _DEBUG if no controls have id 'ID'
     
     */
-	void RemoveControl(ControlIndex ID);
+    void RemoveControl(ControlIndex ID);
 
     /*
     RemoveAllControls
@@ -1043,7 +1043,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void RemoveAllControls() noexcept;
+    void RemoveAllControls() noexcept;
 
 
     /*
@@ -1059,7 +1059,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext = nullptr) noexcept;
+    void SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext = nullptr) noexcept;
 
 
     /*
@@ -1073,7 +1073,7 @@ public:
             no-throw guarantee
     
     */
-	void Refresh()  noexcept;
+    void Refresh()  noexcept;
 
     /*
     OnRender
@@ -1088,7 +1088,7 @@ public:
             no-throw guarantee
     
     */
-	void OnRender(float elapsedTime) noexcept; 
+    void OnRender(float elapsedTime) noexcept; 
 
     /*
     ClearFocus
@@ -1100,7 +1100,7 @@ public:
             no-throw guarantee
 
     */
-	static void ClearFocus() noexcept;
+    static void ClearFocus() noexcept;
 
     /*
     FocusDefaultControl
@@ -1111,7 +1111,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void FocusDefaultControl() noexcept;
+    void FocusDefaultControl() noexcept;
 
     /*
     ScreenSpaceToGLSpace
@@ -1137,7 +1137,7 @@ private:
             This is a monolithic function, so there is no support for XML loading of elements
     
     */
-	void InitDefaultElements();
+    void InitDefaultElements();
 
     /*
     Message Handlers
@@ -1152,8 +1152,8 @@ private:
             no-throw guarantee
     
     */
-	void OnMouseMove(const Point& pt) noexcept;
-	void OnMouseUp(const Point& pt) noexcept;
+    void OnMouseMove(const Point& pt) noexcept;
+    void OnMouseUp(const Point& pt) noexcept;
 
     /*
     SetNextDialog
@@ -1168,7 +1168,7 @@ private:
             no-throw guarantee
     
     */
-	void SetNextDialog(DialogPtr nextDialog) noexcept;
+    void SetNextDialog(DialogPtr nextDialog) noexcept;
 
     /*
     OnCycleFocus
@@ -1183,7 +1183,7 @@ private:
             no-throw guarantee
 
     */
-	bool OnCycleFocus(bool forward) noexcept;
+    bool OnCycleFocus(bool forward) noexcept;
 
 };
 
@@ -1206,7 +1206,7 @@ TextureNode
 */
 struct TextureNode
 {
-	TextureIndex mTextureElement;
+    TextureIndex mTextureElement;
 };
 
 //WIP, support more font options eg. stroke, italics, variable leading, etc.
@@ -1226,10 +1226,10 @@ FontNode
 */
 struct FontNode
 {
-	//FontSize mSize;
-	FontWeight mWeight;
-	FontSize mLeading;
-	FontPtr mFontType;
+    //FontSize mSize;
+    FontWeight mWeight;
+    FontSize mLeading;
+    FontPtr mFontType;
 };
 
 
@@ -1262,8 +1262,8 @@ SpriteVertexStruct
 */
 struct SpriteVertexStruct : public VertexStruct
 {
-	glm::vec3 mPos;
-	Color4f mColor;
+    glm::vec3 mPos;
+    Color4f mColor;
     glm::vec2 mTexCoords;
 
     SpriteVertexStruct(){}
@@ -1353,8 +1353,8 @@ class DialogResourceManager
 
     friend Dialog;
 public:
-	DialogResourceManager();
-	~DialogResourceManager();
+    DialogResourceManager();
+    ~DialogResourceManager();
 
     /*
     MsgProg
@@ -1368,7 +1368,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
+    bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept;
     
     /*
     ApplyRenderUI(Untex)
@@ -1380,8 +1380,8 @@ public:
         Throws:
             no-throw guarantee
     */
-	void ApplyRenderUI() noexcept;
-	void ApplyRenderUIUntex() noexcept;
+    void ApplyRenderUI() noexcept;
+    void ApplyRenderUIUntex() noexcept;
 
     /*
     BeginSprites
@@ -1392,7 +1392,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void BeginSprites() noexcept;
+    void BeginSprites() noexcept;
 
     /*
     EndSprites
@@ -1408,7 +1408,7 @@ public:
         Throws:
             'std::out_of_range': if element texture index is out of range
     */
-	void EndSprites(const Element* element, bool textured);
+    void EndSprites(const Element* element, bool textured);
 
     /*
     GetFont/TextureNode
@@ -1419,8 +1419,8 @@ public:
         Throws:
             'std::out_of_range': if 'index' is larger than the size of the font/texture cache
     */
-	FontNodePtr    GetFontNode(FontIndex index) const		{ return mFontCache[index];		}
-	TextureNodePtr GetTextureNode(TextureIndex index) const	{ return mTextureCache[index];	}
+    FontNodePtr    GetFontNode(FontIndex index) const        { return mFontCache[index];        }
+    TextureNodePtr GetTextureNode(TextureIndex index) const    { return mTextureCache[index];    }
 
 
     /*
@@ -1433,8 +1433,8 @@ public:
             no-throw guarantee
     
     */
-	Size GetTextureCount() const noexcept   { return static_cast<Size>(mTextureCache.size()); }
-	Size GetFontCount() const noexcept      { return static_cast<Size>(mFontCache.size());    }
+    Size GetTextureCount() const noexcept   { return static_cast<Size>(mTextureCache.size()); }
+    Size GetFontCount() const noexcept      { return static_cast<Size>(mFontCache.size());    }
 
     /*
     AddFont
@@ -1451,7 +1451,7 @@ public:
             no-throw guarantee
         
     */
-	FontIndex AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept;
+    FontIndex AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept;
 
     /*
     AddTexture
@@ -1469,7 +1469,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	TextureIndex AddTexture(GLuint texture) noexcept;
+    TextureIndex AddTexture(GLuint texture) noexcept;
 
     /*
     RegisterDialog
@@ -1484,7 +1484,7 @@ public:
             no-throw guarantee
     
     */
-	void RegisterDialog(const DialogPtr& pDialog) noexcept;
+    void RegisterDialog(const DialogPtr& pDialog) noexcept;
 
     /*
     UnregisterDialog
@@ -1496,7 +1496,7 @@ public:
             'std::invalid_argument': if 'dialog' == nullptr or if 'dialog' is not a registered dialog in _DEBUG mode
     
     */
-	void UnregisterDialog(const DialogPtr& dialog);
+    void UnregisterDialog(const DialogPtr& dialog);
 
     /*
     EnableKeyboardInputForAllDialogs
@@ -1507,7 +1507,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void EnableKeyboardInputForAllDialogs() noexcept;
+    void EnableKeyboardInputForAllDialogs() noexcept;
 
 
     /*
@@ -1521,7 +1521,7 @@ public:
             The size of the window in pixels
     
     */
-	Point GetWindowSize();
+    Point GetWindowSize();
     
     /*
     GetOrthoMatrix
@@ -1533,7 +1533,7 @@ public:
             no-throw guarantee
     
     */
-	glm::mat4 GetOrthoMatrix() noexcept;
+    glm::mat4 GetOrthoMatrix() noexcept;
 
 
     /*
@@ -1557,7 +1557,7 @@ protected:
         Throws:
             no-throw guarantee
     */
-	void ApplyOrtho() noexcept;
+    void ApplyOrtho() noexcept;
 
 };
 
@@ -1645,7 +1645,7 @@ protected:
 
 
 public:
-	virtual ~Control();
+    virtual ~Control();
 
 
     /*
@@ -1667,7 +1667,7 @@ public:
             no-throw guarantee
     
     */
-	virtual void Refresh() noexcept;
+    virtual void Refresh() noexcept;
 
     /*
     Render
@@ -1679,7 +1679,7 @@ public:
             no-throw guarantee: child classes must NOT throw any critical exceptions
     
     */
-	virtual void Render(float elapsedTime) noexcept{};
+    virtual void Render(float elapsedTime) noexcept{};
 
     /*
     MsgProc
@@ -1690,7 +1690,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept { return false; }
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept { return false; }
 
              
     /*
@@ -1701,23 +1701,23 @@ public:
         Throws:
             GetElement: 'std::out_of_range'
     */
-    virtual bool	GetEnabled() const noexcept		    { return mEnabled;              }
-    virtual bool	GetVisible() const noexcept		    { return mVisible;              }
-    int				GetID() const noexcept			    { return mID;                   }
-    int				GetHotkey()	const noexcept		    { return mHotkey;               }
-    ControlType     GetType() const	noexcept		    { return mType;                 }
-	virtual bool	CanHaveFocus() const noexcept	    { return false;					}
+    virtual bool    GetEnabled() const noexcept            { return mEnabled;              }
+    virtual bool    GetVisible() const noexcept            { return mVisible;              }
+    int                GetID() const noexcept                { return mID;                   }
+    int                GetHotkey()    const noexcept            { return mHotkey;               }
+    ControlType     GetType() const    noexcept            { return mType;                 }
+    virtual bool    CanHaveFocus() const noexcept        { return false;                    }
     Rect            GetRegion() const noexcept          { return mRegion;               }
-    Element&  	    GetElement(ElementIndex element);
+    Element&          GetElement(ElementIndex element);
 
-    virtual void	SetEnabled(bool enabled) noexcept		    { mEnabled = enabled;                       }
-    virtual void	SetVisible(bool visible) noexcept		    { mVisible = visible;                       }
+    virtual void    SetEnabled(bool enabled) noexcept            { mEnabled = enabled;                       }
+    virtual void    SetVisible(bool visible) noexcept            { mVisible = visible;                       }
     virtual void    SetRegion(const Rect& region) noexcept
                                                                 { mRegion = region;                         }
-    void			SetLocation(long x, long y) noexcept	    { RepositionRect(mRegion, x, y);        }
-    void			SetSize(long width, long height) noexcept   { ResizeRect(mRegion, width, height);   }
-    void			SetHotkey(KeyId hotkey) noexcept		{ mHotkey = hotkey;                         }
-    void			SetID(int ID) noexcept					    { mID = ID;                                 }
+    void            SetLocation(long x, long y) noexcept        { RepositionRect(mRegion, x, y);        }
+    void            SetSize(long width, long height) noexcept   { ResizeRect(mRegion, width, height);   }
+    void            SetHotkey(KeyId hotkey) noexcept        { mHotkey = hotkey;                         }
+    void            SetID(int ID) noexcept                        { mID = ID;                                 }
 
     bool IsMouseOver()  const noexcept   { return mMouseOver; }
     bool IsFocused()    const noexcept   { return mHasFocus; }
@@ -1734,11 +1734,11 @@ public:
     */
     virtual bool ContainsPoint(const Point& pt) const noexcept  
                                             { return PtInRect(mRegion, pt);                         }
-	virtual void OnFocusIn() noexcept		{ mHasFocus = true;						    				}
-	virtual void OnFocusOut() noexcept		{ mHasFocus = false;										}
-	virtual void OnMouseEnter() noexcept	{ mMouseOver = true;										}
-	virtual void OnMouseLeave() noexcept	{ mMouseOver = false;										}
-	virtual void OnHotkey() noexcept		{ /*this function usually acts like the user 'clicked' it*/ }
+    virtual void OnFocusIn() noexcept        { mHasFocus = true;                                            }
+    virtual void OnFocusOut() noexcept        { mHasFocus = false;                                        }
+    virtual void OnMouseEnter() noexcept    { mMouseOver = true;                                        }
+    virtual void OnMouseLeave() noexcept    { mMouseOver = false;                                        }
+    virtual void OnHotkey() noexcept        { /*this function usually acts like the user 'clicked' it*/ }
 
     /*
     SetElement
@@ -1754,7 +1754,7 @@ public:
             no-throw guarantee
 
     */
-	void SetElement(ElementIndex elementId, const Element& element) noexcept;
+    void SetElement(ElementIndex elementId, const Element& element) noexcept;
 
     /*
     SetTextColor
@@ -1769,7 +1769,7 @@ public:
             no-throw guarantee
     
     */
-	virtual void SetTextColor(const Color& color) noexcept;
+    virtual void SetTextColor(const Color& color) noexcept;
 
 
 protected:
@@ -1799,9 +1799,9 @@ ElementHolder
 */
 struct ElementHolder
 {
-	ControlType mControlType;
-	ElementIndex mElementIndex;
-	Element mElement;
+    ControlType mControlType;
+    ElementIndex mElementIndex;
+    Element mElement;
 };
 
 
@@ -1838,7 +1838,7 @@ public:
             This always returns false, because this control never should receive message
     
     */
-	virtual bool ContainsPoint(const Point& pt) const noexcept override { return false; }
+    virtual bool ContainsPoint(const Point& pt) const noexcept override { return false; }
 
     /*
     Getters and Setters
@@ -1848,7 +1848,7 @@ public:
 
     */
     void                  GetTextCopy(std::wstring& dest) const noexcept    { dest = mText;         }
-	const std::wstring&   GetText() const noexcept                          { return mText;         }
+    const std::wstring&   GetText() const noexcept                          { return mText;         }
     void                  SetText(const std::wstring& text) noexcept        { mText = text;         }
     void                  SetTextFlags(Bitfield flags) noexcept         { mTextFlags = flags;   }
 
@@ -1885,7 +1885,7 @@ public:
     Overridden Unambiguous Member Functions
     
     */
-    virtual bool CanHaveFocus()	const noexcept override	{ return (mVisible && mEnabled); }
+    virtual bool CanHaveFocus()    const noexcept override    { return (mVisible && mEnabled); }
     virtual void Render(float elapsedTime) noexcept override;
     virtual bool ContainsPoint(const Point& pt) const noexcept override{ return PtInRect(mRegion, pt); }
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
@@ -1928,15 +1928,15 @@ public:
             no-throw guarantee
     
     */
-	bool GetChecked() const noexcept         { return mChecked;                      }
-	void SetChecked(bool checked) noexcept   { SetCheckedInternal(checked, false);   }
+    bool GetChecked() const noexcept         { return mChecked;                      }
+    void SetChecked(bool checked) noexcept   { SetCheckedInternal(checked, false);   }
 
     /*
     Overridden Unambiguous Member Functions
     
     */
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void Render(float elapsedTime) noexcept override;
+    virtual void Render(float elapsedTime) noexcept override;
     virtual void OnHotkey() noexcept override;
     virtual bool ContainsPoint(const Point& pt) const noexcept override;
     virtual void UpdateRects() noexcept override;
@@ -1957,7 +1957,7 @@ protected:
             no-throw guarantee
     
     */
-	virtual void SetCheckedInternal(bool checked, bool fromInput);
+    virtual void SetCheckedInternal(bool checked, bool fromInput);
 };
 
 
@@ -1989,16 +1989,16 @@ public:
         Throws:
             no-throw guarantee
     */
-	void            SetChecked(bool checked, bool clearGroup = true) noexcept   { SetCheckedInternal(checked, clearGroup, false);   }
+    void            SetChecked(bool checked, bool clearGroup = true) noexcept   { SetCheckedInternal(checked, clearGroup, false);   }
     void            SetButtonGroup(RadioButtonGroup buttonGroup) noexcept   { mButtonGroup = buttonGroup;                       }
-	unsigned int    GetButtonGroup() const noexcept                             { return mButtonGroup;                              }
+    unsigned int    GetButtonGroup() const noexcept                             { return mButtonGroup;                              }
 
 
     /*
     Overridden Unambiguous Member Functions
 
     */
-	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
     virtual void OnMouseEnter() noexcept override;
     virtual void OnMouseLeave() noexcept override;
@@ -2024,7 +2024,7 @@ protected:
             'fromInput': whether or not the user triggered this
     
     */
-	virtual void SetCheckedInternal(bool checked, bool clearGroup, bool fromInput);
+    virtual void SetCheckedInternal(bool checked, bool clearGroup, bool fromInput);
 };
 
 
@@ -2092,7 +2092,7 @@ protected:
     double mArrowTS;
 
 public:
-	virtual         ~ScrollBar();
+    virtual         ~ScrollBar();
 
 
     /*
@@ -2102,11 +2102,11 @@ public:
             no-throw guarantee
     
     */
-	void SetTrackRange(int nStart, int nEnd) noexcept;
-	void SetTrackPos(int nPosition) noexcept	{ mPosition = nPosition; Cap(); UpdateThumbRect();  }
-	void SetPageSize(int nPageSize)	noexcept    { mPageSize = nPageSize; Cap(); UpdateThumbRect();  }
-	int  GetTrackPos() const noexcept	        { return mPosition;									}
-	int  GetPageSize() const noexcept	        { return mPageSize;									}
+    void SetTrackRange(int nStart, int nEnd) noexcept;
+    void SetTrackPos(int nPosition) noexcept    { mPosition = nPosition; Cap(); UpdateThumbRect();  }
+    void SetPageSize(int nPageSize)    noexcept    { mPageSize = nPageSize; Cap(); UpdateThumbRect();  }
+    int  GetTrackPos() const noexcept            { return mPosition;                                    }
+    int  GetPageSize() const noexcept            { return mPageSize;                                    }
 
     /*
     Scroll
@@ -2114,7 +2114,7 @@ public:
         Parameters:
             'delta': the change in position
     */
-	void Scroll(int delta);
+    void Scroll(int delta);
 
 
     /*
@@ -2135,8 +2135,8 @@ public:
 
     */
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void Render(float elapsedTime) noexcept override;
-	virtual void UpdateRects() noexcept override;
+    virtual void Render(float elapsedTime) noexcept override;
+    virtual void UpdateRects() noexcept override;
 
 protected:
     
@@ -2183,10 +2183,10 @@ ListBoxItem
 */
 typedef struct ListBoxItem_t
 {
-	std::wstring mText;
+    std::wstring mText;
     GenericData& mData;
-	bool mVisible;
-	Rect mTextRegion;
+    bool mVisible;
+    Rect mTextRegion;
 
     ListBoxItem_t(GenericData& data) : mData(data){}
 } ListBoxItem, ComboBoxItem;
@@ -2246,7 +2246,7 @@ protected:
     std::vector<ListBoxItemPtr> mItems;
 
 public:
-	virtual ~ListBox();
+    virtual ~ListBox();
 
     enum ListBoxStyle
     {
@@ -2270,15 +2270,15 @@ public:
 
     */
     
-	GenericData&    GetItemData(const std::wstring& text, Index start) const;
+    GenericData&    GetItemData(const std::wstring& text, Index start) const;
     GenericData&    GetItemData(Index index) const;
-	Size            GetNumItems() const	noexcept		{ return mItems.size();		}
+    Size            GetNumItems() const    noexcept        { return mItems.size();        }
     ListBoxItemPtr  GetItem(const std::wstring& text, Index start = 0) const;
-    ListBoxItemPtr  GetItem(Index index) const		{ return mItems[index];     }
-	Bitfield        GetStyle() const noexcept			{ return mStyle;			}
-	Size            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
+    ListBoxItemPtr  GetItem(Index index) const        { return mItems[index];     }
+    Bitfield        GetStyle() const noexcept            { return mStyle;            }
+    Size            GetScrollBarWidth() const noexcept    { return mSBWidth;          }
 
-	void            SetStyle(Bitfield style)  noexcept				        { mStyle = style;						                        }
+    void            SetStyle(Bitfield style)  noexcept                        { mStyle = style;                                                }
     void            SetScrollBarWidth(Size width) noexcept                  { mSBWidth = width; UpdateRects();                              }
     void            SetMargins(Size vertical, Size horizontal) noexcept     { mVerticalMargin = vertical; mHorizontalMargin = horizontal;   }
 
@@ -2322,7 +2322,7 @@ public:
             'std::out_of_range': if 'index' is too big in _DEBUG
 
     */
-	void RemoveItem(Index index);
+    void RemoveItem(Index index);
 
     /*
     RemoveAllItems
@@ -2334,7 +2334,7 @@ public:
             no-throw guarantee
 
     */
-	void RemoveAllItems() noexcept;
+    void RemoveAllItems() noexcept;
 
     /*
     GetSelectedIndex
@@ -2353,7 +2353,7 @@ public:
             'NoItemSelectedException': if no item is selected
 
     */
-	Index GetSelectedIndex(Index previousSelected) const;//for multi-line
+    Index GetSelectedIndex(Index previousSelected) const;//for multi-line
     Index GetSelectedIndex() const;//for single-line (or finding the first selected item)
 
     /*
@@ -2404,7 +2404,7 @@ public:
             'std::out_of_range': if index is too big in _DEBUG
             'std::invalid_argument': if 'text' is not found in _DEBUG
     */
-	void SelectItem(Index index);
+    void SelectItem(Index index);
     void SelectItem(const std::wstring& text, Index start = 0);
 
     /*
@@ -2477,12 +2477,12 @@ public:
     
 
     */
-	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar)); UpdateRects(); }
-	virtual bool CanHaveFocus() const noexcept override	{ return (mVisible && mEnabled);			    }
-	virtual void Render(float elapsedTime) noexcept override;
-	virtual void UpdateRects() noexcept override;
-	virtual bool ContainsPoint(const Point& pt) const noexcept override{ return Control::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt); }
+    virtual bool CanHaveFocus() const noexcept override    { return (mVisible && mEnabled);                }
+    virtual void Render(float elapsedTime) noexcept override;
+    virtual void UpdateRects() noexcept override;
+    virtual bool ContainsPoint(const Point& pt) const noexcept override{ return Control::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt); }
 
 protected:
 
@@ -2497,7 +2497,7 @@ protected:
             no-throw guarantee
     
     */
-	virtual void UpdateItemRects() noexcept;
+    virtual void UpdateItemRects() noexcept;
 };
 
 
@@ -2546,7 +2546,7 @@ protected:
     std::vector <ComboBoxItemPtr> mItems;
 
 public:
-	virtual         ~ComboBox();
+    virtual         ~ComboBox();
     
 
     /*
@@ -2564,14 +2564,14 @@ public:
 
     */
     
-	GenericData&    GetItemData(const std::wstring& text, Index start = 0) const;
+    GenericData&    GetItemData(const std::wstring& text, Index start = 0) const;
     GenericData&    GetItemData(Index index) const;
-	Size            GetScrollBarWidth() const noexcept	{ return mSBWidth;          }
-	Size            GetNumItems() const	noexcept		{ return mItems.size();		}
+    Size            GetScrollBarWidth() const noexcept    { return mSBWidth;          }
+    Size            GetNumItems() const    noexcept        { return mItems.size();        }
     ComboBoxItemPtr GetItem(const std::wstring& text, Index start = 0) const;
-    ComboBoxItemPtr GetItem(Index index) const		{ return mItems[index]; }
+    ComboBoxItemPtr GetItem(Index index) const        { return mItems[index]; }
 
-    void                SetDropHeight(Size nHeight)			    { mDropHeight = nHeight; UpdateRects(); }
+    void                SetDropHeight(Size nHeight)                { mDropHeight = nHeight; UpdateRects(); }
     void                SetScrollBarWidth(Size width) noexcept  { mSBWidth = width; UpdateRects();      }
 
     /*
@@ -2614,7 +2614,7 @@ public:
             'std::out_of_range': if 'index' is too big in _DEBUG
 
     */
-	void RemoveItem(Index index);
+    void RemoveItem(Index index);
 
     /*
     RemoveAllItems
@@ -2626,7 +2626,7 @@ public:
             no-throw guarantee
 
     */
-	void RemoveAllItems() noexcept;
+    void RemoveAllItems() noexcept;
 
     /*
     GetSelectedIndex
@@ -2677,7 +2677,7 @@ public:
             'std::out_of_range': if index is too big in _DEBUG
             'std::invalid_argument': if 'text' is not found in _DEBUG, or if 'data' is not found in _DEBUG
     */
-	void SelectItem(Index index);
+    void SelectItem(Index index);
     void SelectItem(const std::wstring& text, Index start = 0);
     void SelectItem(const GenericData& data);
     
@@ -2722,14 +2722,14 @@ public:
     
     
     */
-	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void OnHotkey() noexcept override;
-	virtual bool CanHaveFocus() const noexcept override{ return (mVisible && mEnabled); }
-	virtual void OnFocusOut() noexcept override;
-	virtual void Render(float elapsedTime) noexcept override;
-	virtual void UpdateRects() noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual void OnHotkey() noexcept override;
+    virtual bool CanHaveFocus() const noexcept override{ return (mVisible && mEnabled); }
+    virtual void OnFocusOut() noexcept override;
+    virtual void Render(float elapsedTime) noexcept override;
+    virtual void UpdateRects() noexcept override;
     virtual void OnInit() override;
-	virtual void SetTextColor(const Color& Color) noexcept override;
+    virtual void SetTextColor(const Color& Color) noexcept override;
     virtual bool ContainsPoint(const Point& pt) const noexcept override;
 
 protected:
@@ -2745,7 +2745,7 @@ protected:
             no-throw guarantee
     
     */
-	void UpdateItemRects() noexcept;
+    void UpdateItemRects() noexcept;
 };
 
 
@@ -2823,7 +2823,7 @@ protected:
         Throws:
             no-throw guarantee
     */
-	void      SetValueInternal(int nValue, bool bFromInput) noexcept;
+    void      SetValueInternal(int nValue, bool bFromInput) noexcept;
 
     /*
     ValueFromXPos
@@ -2841,7 +2841,7 @@ protected:
             no-throw guarantee
 
     */
-	Value ValueFromXPos(Value xPos) const noexcept;
+    Value ValueFromXPos(Value xPos) const noexcept;
 
 };
 
@@ -3116,7 +3116,7 @@ protected:
     virtual void UpdateCharRectsSingleline() noexcept;
 
 public:
-	virtual         ~EditBox();
+    virtual         ~EditBox();
 
     /*
     
@@ -3156,7 +3156,7 @@ public:
     void SetCaretPosition(Value pos) noexcept;
     void SetInsertMode(bool insertMode) noexcept;
     void SetSelectionStart(Value pos) noexcept;
-	void SetSelectionEmpty() noexcept;
+    void SetSelectionEmpty() noexcept;
     void SetVerticalMargin(Size marg) noexcept;
     void SetHorizontalMargin(Size marg) noexcept;
     void SetSelectedTextBlendColor(const BlendColor& col) noexcept;
@@ -3182,10 +3182,10 @@ public:
 
     */
     
-	virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-	virtual void UpdateRects() noexcept override;
-	virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
-	virtual void Render(float elapsedTime) noexcept override;
+    virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
+    virtual void UpdateRects() noexcept override;
+    virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
+    virtual void Render(float elapsedTime) noexcept override;
     virtual void OnFocusIn() noexcept override;
     virtual void OnFocusOut() noexcept override;
     virtual void OnMouseEnter() noexcept override;
@@ -3248,7 +3248,7 @@ public:
     Point mPoint;
 
 
-	~TextHelper(){};
+    ~TextHelper(){};
 
     /*
     Begin
@@ -3263,7 +3263,7 @@ public:
         Throws:
             'std::out_of_range': if 'drmFont': is out of the range within the DRM
     */
-	void Begin(FontIndex drmFont, FontSize leading, FontSize size);
+    void Begin(FontIndex drmFont, FontSize leading, FontSize size);
 
     /*
     DrawFormattedTextLine
@@ -3300,7 +3300,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	void DrawTextLine(const std::wstring& text) noexcept;
+    void DrawTextLine(const std::wstring& text) noexcept;
     void DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept;
 
     /*
@@ -3313,7 +3313,7 @@ public:
             no-throw guarantee
     
     */
-	void End() noexcept;
+    void End() noexcept;
 
     /*
     RenderText
