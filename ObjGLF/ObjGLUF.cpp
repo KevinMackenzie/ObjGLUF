@@ -3374,7 +3374,7 @@ void VertexArrayBase::BindVertexArray() noexcept
 {
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
-{
+    {
         //store the old one before binding this one
         GLint tmpVAOId = 0;
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &tmpVAOId);
