@@ -21,10 +21,14 @@ for more details.
 #pragma warning (disable : 4251)
 
 #ifdef _WIN32
+#ifdef OBJGLF_DLL
 #ifdef OBJGLUF_EXPORTS
 #define OBJGLUF_API __declspec(dllexport)
 #else
 #define OBJGLUF_API __declspec(dllimport)
+#endif
+#else
+#define OBJGLUF_API
 #endif
 #else
 #define OBJGLUF_API
@@ -38,12 +42,11 @@ for more details.
 //support guided materials
 
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -99,12 +102,12 @@ Added std Funcitonality
 
 namespace std
 {
-	//This is a very useful function that is not in the standard libraries
-	template<class _Ty> inline
-	const _Ty& (clamp)(const _Ty& _Value, const _Ty& _Min, const _Ty& _Max)
-	{
-		return std::min(std::max(_Value, _Min), _Max);
-	}
+    //This is a very useful function that is not in the standard libraries
+    template<class _Ty> inline
+    const _Ty& (clamp)(const _Ty& _Value, const _Ty& _Min, const _Ty& _Max)
+    {
+        return std::min(std::max(_Value, _Min), _Max);
+    }
 }
 
 namespace GLUF
@@ -144,7 +147,7 @@ using ErrorMethod = void(*)(const std::string& message, const char* funcName, co
 
 #define GLUF_ERROR(message) GetErrorMethod()(message, __FUNCTION__, __FILE__, __LINE__);
 #define GLUF_ERROR_LONG(chain) {std::stringstream ss; ss << chain;  GetErrorMethod()(ss.str(), __FUNCTION__, __FILE__, __LINE__);}
-#define GLUF_ASSERT(expr)	{ if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; _ERROR(ss.str().c_str()) } }
+#define GLUF_ASSERT(expr)    { if (!(expr)) { std::stringstream ss; ss << "ASSERTION FAILURE: \"" << #expr << "\""; _ERROR(ss.str().c_str()) } }
 
 
 #ifdef GLUF_DEBUG
@@ -177,18 +180,6 @@ Utility Macros
 #define GLUF_NULL(type) (std::shared_ptr<type>(nullptr))//may be deprecated
 #define GLUF_UNREFERENCED_PARAMETER(value) (value)
 
-//in debug mode, don't catch exceptions, because they may be helpful in debugging situations
-#ifdef _WIN32
-#ifdef _DEBUG
-#define NOEXCEPT_REGION_START
-#define NOEXCEPT_REGION_END
-#define noexcept
-#else
-#define NOEXCEPT_REGION_START try{
-#define NOEXCEPT_REGION_END }catch(...){}
-#define noexcept throw()
-#endif
-#endif
 /*
 ======================================================================================================================================================================================================
 Multithreading Macros
@@ -380,9 +371,7 @@ LoadFileIntoMemory
     Note:
         If 'binMemory' is not empty, the data will be overwritten
 */
-OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::vector<char>& binMemory);
 OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::vector<char>& binMemory);
-OBJGLUF_API void LoadFileIntoMemory(const std::wstring& path, std::string& memory);
 OBJGLUF_API void LoadFileIntoMemory(const std::string& path, std::string& memory);
 
 /*
@@ -467,18 +456,18 @@ inline void bFlip(bool& b)
     b = !b;
 }
 
-OBJGLUF_API bool		PtInRect(const Rect& rect, const Point& pt);
-OBJGLUF_API void		SetRectEmpty(Rect& rect);
-OBJGLUF_API void		SetRect(Rect& rect, long left, long top, long right, long bottom);
-OBJGLUF_API void		SetRect(Rectf& rect, float left, float top, float right, float bottom);
-OBJGLUF_API void		OffsetRect(Rect& rect, long x, long y);
+OBJGLUF_API bool        PtInRect(const Rect& rect, const Point& pt);
+OBJGLUF_API void        SetRectEmpty(Rect& rect);
+OBJGLUF_API void        SetRect(Rect& rect, long left, long top, long right, long bottom);
+OBJGLUF_API void        SetRect(Rectf& rect, float left, float top, float right, float bottom);
+OBJGLUF_API void        OffsetRect(Rect& rect, long x, long y);
 OBJGLUF_API void        RepositionRect(Rect& rect, long newX, long newY);
-OBJGLUF_API long		RectHeight(const Rect& rect);
-OBJGLUF_API long		RectWidth(const Rect& rect);
-OBJGLUF_API void		InflateRect(Rect& rect, long dx, long dy);//center stays in same spot
+OBJGLUF_API long        RectHeight(const Rect& rect);
+OBJGLUF_API long        RectWidth(const Rect& rect);
+OBJGLUF_API void        InflateRect(Rect& rect, long dx, long dy);//center stays in same spot
 OBJGLUF_API void        ResizeRect(Rect& rect, long newWidth, long newHeight);//bottom left stays in same spot
-OBJGLUF_API bool		IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect);
-OBJGLUF_API Point	    MultPoints(const Point& pt0, const Point& pt1);
+OBJGLUF_API bool        IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect);
+OBJGLUF_API Point        MultPoints(const Point& pt0, const Point& pt1);
 
 /*
 ======================================================================================================================================================================================================
@@ -498,14 +487,14 @@ MatrixStack
 */
 class OBJGLUF_API MatrixStack
 {
-	std::stack<glm::mat4> mStack;
-	static glm::mat4 mIdentity;
+    std::stack<glm::mat4> mStack;
+    static glm::mat4 mIdentity;
 public:
-	void Push(const glm::mat4& matrix);
-	void Pop(void);
-	const glm::mat4& Top() const;//this returns the matrix that is a concatination of all subsequent matrices
-	size_t Size() const;
-	bool Empty() const;
+    void Push(const glm::mat4& matrix);
+    void Pop(void);
+    const glm::mat4& Top() const;//this returns the matrix that is a concatination of all subsequent matrices
+    size_t Size() const;
+    bool Empty() const;
 };
 
 
@@ -520,10 +509,10 @@ MemStreamBuf
 class OBJGLUF_API MemStreamBuf : public std::streambuf
 {
 public:
-	MemStreamBuf(char* data, std::ptrdiff_t length)
-	{
-		setg(data, data, data + length);
-	}
+    MemStreamBuf(char* data, std::ptrdiff_t length)
+    {
+        setg(data, data, data + length);
+    }
 };
 
 
@@ -551,46 +540,48 @@ SplitStr
 
 inline std::vector<std::wstring> &SplitStr(const std::wstring &s, wchar_t delim, std::vector<std::wstring> &elems, bool keepDelim = false, bool removeBlank = false)
 {
-	std::wstringstream ss(s);
-	std::wstring item;
-	while (std::getline(ss, item, delim))
-	{
-		if (keepDelim)//OOPS forgot this earlier
-			item += delim;
-		if(removeBlank && item != L"")
-			if(item[0] != '\0')
-				elems.push_back(item);
-	}
-	return elems;
+    std::wstringstream ss(s);
+    std::wstring item;
+    while (std::getline(ss, item, delim))
+    {
+        if (keepDelim)//OOPS forgot this earlier
+            item += delim;
+        if (removeBlank && item == L"")
+            continue;
+        if(item[0] != '\0')
+            elems.push_back(item);
+    }
+    return elems;
 }
 
 inline std::vector<std::wstring> SplitStr(const std::wstring &s, wchar_t delim, bool keepDelim = false, bool removeBlank = false)
 {
-	std::vector<std::wstring> elems;
-	SplitStr(s, delim, elems, keepDelim, removeBlank);
-	return elems;
+    std::vector<std::wstring> elems;
+    SplitStr(s, delim, elems, keepDelim, removeBlank);
+    return elems;
 }
 
 inline std::vector<std::string> &SplitStr(const std::string &s, char delim, std::vector<std::string> &elems, bool keepDelim = false, bool removeBlank = false)
 {
-	std::stringstream ss(s);
-	std::string item;
-	while (std::getline(ss, item, delim))
-	{
-		if (keepDelim)//OOPS forgot this earlier
-			item += delim;
-		if (removeBlank || !item.empty())
-			if (item[0] != '\0')
-				elems.push_back(item);
-	}
-	return elems;
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+        if (keepDelim)//OOPS forgot this earlier
+            item += delim;
+        if (removeBlank && item == "")
+            continue;
+        if (item[0] != '\0')
+            elems.push_back(item);
+    }
+    return elems;
 }
 
 inline std::vector<std::string> SplitStr(const std::string &s, char delim, bool keepDelim = false, bool removeBlank = false)
 {
-	std::vector<std::string> elems;
-	SplitStr(s, delim, elems, keepDelim, removeBlank);
-	return elems;
+    std::vector<std::string> elems;
+    SplitStr(s, delim, elems, keepDelim, removeBlank);
+    return elems;
 }
 
 
@@ -697,30 +688,30 @@ Note:
 
 enum LocationType
 {
-	GLT_ATTRIB = 0,
-	GLT_UNIFORM,
+    GLT_ATTRIB = 0,
+    GLT_UNIFORM,
 };
 
 struct OBJGLUF_API ShaderInfoStruct
 {
-	bool mSuccess = false;
+    bool mSuccess = false;
 
     std::string mLog;
 
-	operator bool() const
-	{
-		return mSuccess;
-	}
+    operator bool() const
+    {
+        return mSuccess;
+    }
 };
 
 enum ShaderType
 {
-	SH_VERTEX_SHADER = GL_VERTEX_SHADER,
-	SH_TESSCONTROL_SHADER = GL_TESS_CONTROL_SHADER,
-	SH_TESS_EVALUATION_SHADER = GL_TESS_EVALUATION_SHADER,
-	SH_GEOMETRY_SHADER = GL_GEOMETRY_SHADER,
-	SH_FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
-	SH_COMPUTE_SHADER = GL_COMPUTE_SHADER
+    SH_VERTEX_SHADER = GL_VERTEX_SHADER,
+    SH_TESSCONTROL_SHADER = GL_TESS_CONTROL_SHADER,
+    SH_TESS_EVALUATION_SHADER = GL_TESS_EVALUATION_SHADER,
+    SH_GEOMETRY_SHADER = GL_GEOMETRY_SHADER,
+    SH_FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
+    SH_COMPUTE_SHADER = GL_COMPUTE_SHADER
 };
 
 enum ProgramStage
@@ -774,11 +765,11 @@ using SepProgramPtr     = std::shared_ptr<SeparateProgram>;
 using SepProgramPtrWeak = std::weak_ptr<SeparateProgram>;
 
 using ShaderSourceList      = std::map<ShaderType, std::string>;
-using ShaderPathList        = std::map<ShaderType, std::wstring>;//use wstring, because paths may have unicode characters, but the source shall not
+using ShaderPathList        = std::map<ShaderType, std::string>;
 using ShaderIdList          = std::vector<GLuint>;
 using ProgramIdList         = std::vector<GLuint>;
-using ShaderNameList        = std::vector<std::wstring>;
-using ProgramNameList       = std::vector<std::wstring>;
+using ShaderNameList        = std::vector<std::string>;
+using ProgramNameList       = std::vector<std::string>;
 using ShaderPtrList         = std::vector<ShaderPtr>;
 using ProgramPtrList        = std::vector<ProgramPtr>;
 using ProgramPtrMap         = std::map<ShaderType, ProgramPtr>;
@@ -813,13 +804,13 @@ class Exception : public std::exception
 { 
 public:
     
-    const char* what() const = 0;
+    const char* what() const noexcept = 0;
 };
 
 class UseProgramException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Failed to Use Program!";
     }
@@ -830,7 +821,7 @@ public:
 class MakeShaderException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Shading Creation Failed!";
     }
@@ -841,7 +832,7 @@ public:
 class MakeProgramException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Program Creation Failed!";
     }
@@ -852,7 +843,7 @@ public:
 class MakePPOException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "PPO Creation Failed!";
     }
@@ -863,7 +854,7 @@ public:
 class NoActiveProgramUniformException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Attempt to Buffer Uniform to PPO with no Active Program!";
     }
@@ -900,9 +891,9 @@ ShaderManager
 class OBJGLUF_API ShaderManager
 {
 
-	//a list of logs
-	std::map<ShaderPtr, ShaderInfoStruct>  mCompileLogs;
-	std::map<ProgramPtr, ShaderInfoStruct> mLinklogs;
+    //a list of logs
+    std::map<ShaderPtr, ShaderInfoStruct>  mCompileLogs;
+    std::map<ProgramPtr, ShaderInfoStruct> mLinklogs;
 
     mutable std::mutex mCompLogMutex;
     mutable std::mutex mLinkLogMutex;
@@ -965,7 +956,7 @@ public:
     
     */
 
-	void CreateShaderFromFile(ShaderPtr& outShader, const std::wstring& filePath, ShaderType type);
+    void CreateShaderFromFile(ShaderPtr& outShader, const std::string& filePath, ShaderType type);
     void CreateShaderFromText(ShaderPtr& outShader, const std::string& text, ShaderType type);
     void CreateShaderFromMemory(ShaderPtr& outShader, const std::vector<char>& memory, ShaderType type);
 
@@ -987,9 +978,9 @@ public:
     
     */
 
-	void CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders, bool separate = false);
+    void CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders, bool separate = false);
     void CreateProgram(ProgramPtr& outProgram, ShaderSourceList shaderSources, bool separate = false);
-    void CreateProgram(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate = false);
+    void CreateProgramFromFiles(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate = false);
 
 
     /*
@@ -1010,7 +1001,7 @@ public:
     
     */
 
-	const GLuint GetShaderVariableLocation(const ProgramPtr& program, LocationType locType, const std::string& varName) const;
+    const GLuint GetShaderVariableLocation(const ProgramPtr& program, LocationType locType, const std::string& varName) const;
     const VariableLocMap& GetShaderAttribLocations(const ProgramPtr& program) const;
     const VariableLocMap& GetShaderUniformLocations(const ProgramPtr& program) const;
 
@@ -1034,8 +1025,8 @@ public:
     
     */
 
-	void DeleteShader(ShaderPtr& shader) noexcept;
-	void DeleteProgram(ProgramPtr& program) noexcept;
+    void DeleteShader(ShaderPtr& shader) noexcept;
+    void DeleteProgram(ProgramPtr& program) noexcept;
 
 
     //self-explanitory
@@ -1057,9 +1048,9 @@ public:
         Throws
             'std::invalid_argument': if shader/program == nullptr
     */
-    const GLuint	        GetShaderId(const ShaderPtr& shader) const;
+    const GLuint            GetShaderId(const ShaderPtr& shader) const;
     const ShaderType    GetShaderType(const ShaderPtr& shader) const;
-    const GLuint	        GetProgramId(const ProgramPtr& program) const;
+    const GLuint            GetProgramId(const ProgramPtr& program) const;
 
     const CompileOutputStruct   GetShaderLog(const ShaderPtr& shaderPtr) const;
     const LinkOutputStruct      GetProgramLog(const ProgramPtr& programPtr) const;
@@ -1332,7 +1323,7 @@ Texture Utilities:
 class TextureCreationException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Failed to Create Texture!";
     }
@@ -1342,8 +1333,8 @@ public:
 
 enum TextureFileFormat
 {
-	TFF_DDS = 0,//we will ONLY support dds's, because they are flexible enough, AND have mipmaps
-	TTF_DDS_CUBEMAP = 1
+    TFF_DDS = 0,//we will ONLY support dds's, because they are flexible enough, AND have mipmaps
+    TTF_DDS_CUBEMAP = 1
 };
 
 
@@ -1368,7 +1359,7 @@ LoadTextureFrom*
         If formats other than ABGR are supported, ABGR will likely be faster at loading
 
 */
-GLuint OBJGLUF_API LoadTextureFromFile(const std::wstring& filePath, TextureFileFormat format);
+GLuint OBJGLUF_API LoadTextureFromFile(const std::string& filePath, TextureFileFormat format);
 GLuint OBJGLUF_API LoadTextureFromMemory(const std::vector<char>& data, TextureFileFormat format);//this is broken, WHY
 
 
@@ -1383,8 +1374,8 @@ Buffer Utilities
 
 struct MeshBarebones
 {
-	Vec3Array mVertices;
-	IndexArray mIndices;
+    Vec3Array mVertices;
+    IndexArray mIndices;
 };
 
 
@@ -1401,10 +1392,10 @@ VertexAttribInfo
 
 struct OBJGLUF_API VertexAttribInfo
 {
-	unsigned short mBytesPerElement;//int would be 4
-	unsigned short mElementsPerValue;//vec4 would be 4
-	AttribLoc  mVertexAttribLocation;
-	GLenum         mType;//float would be GL_FLOAT
+    unsigned short mBytesPerElement;//int would be 4
+    unsigned short mElementsPerValue;//vec4 would be 4
+    AttribLoc  mVertexAttribLocation;
+    GLenum         mType;//float would be GL_FLOAT
     GLuint         mOffset;//will be 0 in SoA
 };
 
@@ -1418,7 +1409,7 @@ Vertex Array Exceptions
 class MakeVOAException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "VAO Creation Failed!";
     }
@@ -1429,7 +1420,7 @@ public:
 class InvalidSoABufferLenException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Buffer Passed Has Length Inconsistent With the Vertex Attributes!";
     }
@@ -1440,7 +1431,7 @@ public:
 class MakeBufferException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Buffer Creation Failed!";
     }
@@ -1451,7 +1442,7 @@ public:
 class InvalidAttrubuteLocationException : public Exception
 {
 public:
-    virtual const char* what() const override
+    virtual const char* what() const noexcept override
     {
         return "Attribute Location Not Found in This Buffer!";
     }
@@ -1478,16 +1469,16 @@ VertexArrayBase
 class OBJGLUF_API VertexArrayBase
 {
 protected:
-	GLuint mVertexArrayId = 0;
-	GLuint mVertexCount = 0;
-	
+    GLuint mVertexArrayId = 0;
+    GLuint mVertexCount = 0;
+    
 
-	GLenum mUsageType;
-	GLenum mPrimitiveType;
-	std::map<AttribLoc, VertexAttribInfo> mAttribInfos;
+    GLenum mUsageType;
+    GLenum mPrimitiveType;
+    std::map<AttribLoc, VertexAttribInfo> mAttribInfos;
 
-	GLuint mIndexBuffer = 0;
-	GLuint mIndexCount  = 0;
+    GLuint mIndexBuffer = 0;
+    GLuint mIndexCount  = 0;
 
     GLuint mTempVAOId = 0;
 
@@ -1506,13 +1497,13 @@ protected:
             -similer code for each of the 'BufferIndices' functions
     
     */
-	virtual void RefreshDataBufferAttribute() noexcept = 0;
-	const VertexAttribInfo& GetAttribInfoFromLoc(AttribLoc loc) const;
+    virtual void RefreshDataBufferAttribute() noexcept = 0;
+    const VertexAttribInfo& GetAttribInfoFromLoc(AttribLoc loc) const;
     void BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept;
 
 
     //disallow copy constructor and assignment operator
-	VertexArrayBase(const VertexArrayBase& other) = delete;
+    VertexArrayBase(const VertexArrayBase& other) = delete;
     VertexArrayBase& operator=(const VertexArrayBase& other) = delete;
 public:
     /*
@@ -1530,7 +1521,7 @@ public:
     */
     
     VertexArrayBase(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool index = true);
-	
+    
     
     ~VertexArrayBase();
 
@@ -1556,9 +1547,9 @@ public:
             'std::invalid_argument': if loc does not exist or if 'mBytesPerElement == 0' of if 'mElementsPerValue == 0'
     
     */
-	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-	virtual void AddVertexAttrib(const VertexAttribInfo& info);
-	virtual void RemoveVertexAttrib(AttribLoc loc);
+    //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+    virtual void AddVertexAttrib(const VertexAttribInfo& info);
+    virtual void RemoveVertexAttrib(AttribLoc loc);
 
     /*
     BindVertexArray
@@ -1639,11 +1630,11 @@ public:
                 is entering reasonible data to give predictible results
     */
 
-	void BufferIndices(const std::vector<GLuint>& indices) noexcept;
+    void BufferIndices(const std::vector<GLuint>& indices) noexcept;
     void BufferIndices(const std::vector<glm::u32vec2>& indices) noexcept;
     void BufferIndices(const std::vector<glm::u32vec3>& indices) noexcept;
     void BufferIndices(const std::vector<glm::u32vec4>& indices) noexcept;
-	//void BufferFaces(GLuint* indices, GLuint FaceCount);
+    //void BufferFaces(GLuint* indices, GLuint FaceCount);
 
     /*
     Enable/DisableVertexAttributes
@@ -1698,7 +1689,7 @@ VertexStruct
 
 struct VertexStruct
 {
-    virtual void* operator&() const = 0;
+    virtual char* get_data() const = 0;
     virtual size_t size() const = 0;
     virtual size_t n_elem_size(size_t element) = 0;
     virtual void buffer_element(void* data, size_t element) = 0;
@@ -1707,6 +1698,7 @@ struct VertexStruct
 /*
 
 GLVector
+    TODO: Re-evaluate this class
     
     -a small excention to the std::vector class;
     -use this just like you would std::vector, except T MUST be derived from 'VertexStruct'
@@ -1726,7 +1718,7 @@ public:
     Default Constructor
     */
     GLVector(){}
-	~GLVector();
+    ~GLVector();
 
     /*
 
@@ -1813,16 +1805,16 @@ class OBJGLUF_API VertexArrayAoS : public VertexArrayBase
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void RemoveVertexAttrib(AttribLoc loc) sealed {}
+    virtual void RemoveVertexAttrib(AttribLoc loc) final {}
 
 protected:
-	GLuint mDataBuffer = 0;
+    GLuint mDataBuffer = 0;
     GLuint mCopyBuffer = 0;
 
 
 
     //see 'VertexArrayBase' Docs
-	virtual void RefreshDataBufferAttribute();
+    virtual void RefreshDataBufferAttribute() noexcept;
 
 public:
 
@@ -1839,7 +1831,7 @@ public:
             'MakeVAOException': if construction fails         
             'MakeBufferException': if buffer creation specifically fails
     */
-	VertexArrayAoS(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+    VertexArrayAoS(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
 
     ~VertexArrayAoS();
 
@@ -1866,7 +1858,7 @@ public:
         Throws:
             no-throw guarantee
     */
-	GLuint GetVertexSize() const noexcept;
+    GLuint GetVertexSize() const noexcept;
 
 
 
@@ -1968,11 +1960,11 @@ VertexArraySoA
 class OBJGLUF_API VertexArraySoA : public VertexArrayBase
 {
 protected:
-	//       Attrib Location, buffer location
-	std::map<AttribLoc, GLuint> mDataBuffers;
+    //       Attrib Location, buffer location
+    std::map<AttribLoc, GLuint> mDataBuffers;
 
     //see parent docs
-	virtual void RefreshDataBufferAttribute();
+    virtual void RefreshDataBufferAttribute() noexcept;
 
     /*
     GetBufferIdFromAttribLoc
@@ -1986,7 +1978,7 @@ protected:
         Throws:
             'InvalidAttrubuteLocationException': if no attrubte has location 'loc'
     */
-	GLuint GetBufferIdFromAttribLoc(AttribLoc loc) const;
+    GLuint GetBufferIdFromAttribLoc(AttribLoc loc) const;
 
 public:
     /*
@@ -2002,7 +1994,7 @@ public:
             'MakeVAOException': if construction fails
 
     */
-	VertexArraySoA(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
+    VertexArraySoA(GLenum primType = GL_TRIANGLES, GLenum buffUsage = GL_STATIC_DRAW, bool indexed = true);
 
     ~VertexArraySoA();
 
@@ -2030,7 +2022,7 @@ public:
     
     */
 
-	void GetBarebonesMesh(MeshBarebones& inData);
+    void GetBarebonesMesh(MeshBarebones& inData);
 
     /*
     BufferData
@@ -2060,7 +2052,7 @@ public:
     template<typename T>
     void BufferSubData(AttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data);
 
-	//this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
+    //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
 
     /*
     Add/RemoveVertexAttrib
@@ -2077,8 +2069,8 @@ public:
                 attribute simply is not added
             if 'loc' does not exist, nothing is deleted
     */
-	virtual void AddVertexAttrib(const VertexAttribInfo& info) noexcept;
-	virtual void RemoveVertexAttrib(AttribLoc loc) noexcept;
+    virtual void AddVertexAttrib(const VertexAttribInfo& info) noexcept;
+    virtual void RemoveVertexAttrib(AttribLoc loc) noexcept;
 
 
     /*
@@ -2154,8 +2146,8 @@ LoadVertexArrayFromScene
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 
 */
-std::shared_ptr<VertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum = 0);
-std::shared_ptr<VertexArray>				OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, const VertexAttribMap& inputs, GLuint meshNum = 0);
+std::shared_ptr<VertexArray>                OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum = 0);
+std::shared_ptr<VertexArray>                OBJGLUF_API LoadVertexArrayFromScene(const aiScene* scene, const VertexAttribMap& inputs, GLuint meshNum = 0);
 
 
 
@@ -2175,8 +2167,8 @@ LoadVertexArraysFromScene
     Throws:
         TOOD: SEE ASSIMP DOCUMENTATION TO SEE WHAT IT THROWS PLUS WHAT THIS MIGHT THROW
 */
-std::vector<std::shared_ptr<VertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset = 0, GLuint numMeshes = 1);
-std::vector<std::shared_ptr<VertexArray>>	OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const VertexAttribMap&>& inputs, GLuint meshOffset = 0, GLuint numMeshes = 1);
+std::vector<std::shared_ptr<VertexArray>>    OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset = 0, GLuint numMeshes = 1);
+std::vector<std::shared_ptr<VertexArray>>    OBJGLUF_API LoadVertexArraysFromScene(const aiScene* scene, const std::vector<const VertexAttribMap&>& inputs, GLuint meshOffset = 0, GLuint numMeshes = 1);
 
 
 //the unsigned char represents the below #defines (_VERTEX_ATTRIB_*)
@@ -2190,30 +2182,30 @@ A Set of Guidelines for Attribute Locations (organized by number of vector eleme
 */
 //2 elements
 
-#define GLUF_VERTEX_ATTRIB_UV0			1
-#define GLUF_VERTEX_ATTRIB_UV1			2
-#define GLUF_VERTEX_ATTRIB_UV2			3
-#define GLUF_VERTEX_ATTRIB_UV3			4
-#define GLUF_VERTEX_ATTRIB_UV4			5
-#define GLUF_VERTEX_ATTRIB_UV5			6
-#define GLUF_VERTEX_ATTRIB_UV6			7
-#define GLUF_VERTEX_ATTRIB_UV7			8
+#define GLUF_VERTEX_ATTRIB_UV0            1
+#define GLUF_VERTEX_ATTRIB_UV1            2
+#define GLUF_VERTEX_ATTRIB_UV2            3
+#define GLUF_VERTEX_ATTRIB_UV3            4
+#define GLUF_VERTEX_ATTRIB_UV4            5
+#define GLUF_VERTEX_ATTRIB_UV5            6
+#define GLUF_VERTEX_ATTRIB_UV6            7
+#define GLUF_VERTEX_ATTRIB_UV7            8
 //3 elements
 
-#define GLUF_VERTEX_ATTRIB_POSITION		9
-#define GLUF_VERTEX_ATTRIB_NORMAL		10
-#define GLUF_VERTEX_ATTRIB_TAN			11
-#define GLUF_VERTEX_ATTRIB_BITAN		12
+#define GLUF_VERTEX_ATTRIB_POSITION        9
+#define GLUF_VERTEX_ATTRIB_NORMAL        10
+#define GLUF_VERTEX_ATTRIB_TAN            11
+#define GLUF_VERTEX_ATTRIB_BITAN        12
 //4 elements
 
-#define GLUF_VERTEX_ATTRIB_COLOR0		13
-#define GLUF_VERTEX_ATTRIB_COLOR1		14
-#define GLUF_VERTEX_ATTRIB_COLOR2		15
-#define GLUF_VERTEX_ATTRIB_COLOR3		16
-#define GLUF_VERTEX_ATTRIB_COLOR4		17
-#define GLUF_VERTEX_ATTRIB_COLOR5		18
-#define GLUF_VERTEX_ATTRIB_COLOR6		19
-#define GLUF_VERTEX_ATTRIB_COLOR7		20
+#define GLUF_VERTEX_ATTRIB_COLOR0        13
+#define GLUF_VERTEX_ATTRIB_COLOR1        14
+#define GLUF_VERTEX_ATTRIB_COLOR2        15
+#define GLUF_VERTEX_ATTRIB_COLOR3        16
+#define GLUF_VERTEX_ATTRIB_COLOR4        17
+#define GLUF_VERTEX_ATTRIB_COLOR5        18
+#define GLUF_VERTEX_ATTRIB_COLOR6        19
+#define GLUF_VERTEX_ATTRIB_COLOR7        20
 
 
 /*
@@ -2257,53 +2249,53 @@ Global methods for converting assimp and glm data types
 #ifdef USING_ASSIMP
 inline glm::vec2 AssimpToGlm(aiVector2D v)
 {
-	return glm::vec2(v.x, v.y);
+    return glm::vec2(v.x, v.y);
 }
 inline glm::vec2 AssimpToGlm3_2(aiVector3D v)
 {
-	return glm::vec2(v.x, v.y);
+    return glm::vec2(v.x, v.y);
 }
 inline glm::vec2* AssimpToGlm(aiVector2D* v, GLuint count)
 {
-	glm::vec2* ret = new glm::vec2[count];
-	for (GLuint i = 0; i < count; ++i)
-		ret[i] = AssimpToGlm(v[i]);
-	return ret;
+    glm::vec2* ret = new glm::vec2[count];
+    for (GLuint i = 0; i < count; ++i)
+        ret[i] = AssimpToGlm(v[i]);
+    return ret;
 }
 inline glm::vec2* AssimpToGlm3_2(aiVector3D* v, GLuint count)
 {
-	glm::vec2* ret = new glm::vec2[count];
-	for (GLuint i = 0; i < count; ++i)
-		ret[i] = AssimpToGlm3_2(v[i]);
-	return ret;
+    glm::vec2* ret = new glm::vec2[count];
+    for (GLuint i = 0; i < count; ++i)
+        ret[i] = AssimpToGlm3_2(v[i]);
+    return ret;
 }
 
 
 
 inline glm::vec3 AssimpToGlm(aiVector3D v)
 {
-	return glm::vec3(v.x, v.y, v.z);
+    return glm::vec3(v.x, v.y, v.z);
 }
 inline glm::vec3* AssimpToGlm(aiVector3D* v, GLuint count)
 {
-	glm::vec3* ret = new glm::vec3[count];
-	for (GLuint i = 0; i < count; ++i)
-		ret[i] = AssimpToGlm(v[i]);
-	return ret;
+    glm::vec3* ret = new glm::vec3[count];
+    for (GLuint i = 0; i < count; ++i)
+        ret[i] = AssimpToGlm(v[i]);
+    return ret;
 }
 inline glm::vec3 AssimpToGlm(aiColor3D v)
 {
-	return glm::vec3(v.r, v.g, v.b);
+    return glm::vec3(v.r, v.g, v.b);
 }
 
 inline glm::vec4 AssimpToGlm(aiColor4D v)
 {
-	return glm::vec4(v.r, v.g, v.b, v.a);
+    return glm::vec4(v.r, v.g, v.b, v.a);
 }
 
 inline GLUF::Color AssimpToGlm4_3u8(aiColor4D col)
 {
-	return GLUF::Color(col.r * 255, col.g * 255, col.b * 255, col.a * 255);
+    return GLUF::Color(col.r * 255, col.g * 255, col.b * 255, col.a * 255);
 }
 
 #endif

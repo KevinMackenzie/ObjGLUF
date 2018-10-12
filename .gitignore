@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# External Dependencies
+Lib/
+CMakeBuild/
+
+peda-session-*
+
 # User-specific files
 *.suo
 *.user

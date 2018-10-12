@@ -15,11 +15,10 @@ for more details.
 
 */
 
-
-#include "stdafx.h"
 #include "GLUFGui.h"
 //#include "CBFG/BitmapFontClass.h"
 //#include <algorithm>
+#include <cassert>
 
 #ifdef WIN32
 #pragma warning( disable : 4715 )
@@ -67,12 +66,13 @@ namespace Text
 #define _FAR_BUTTON_DEPTH -0.8f
 
 #define _MAX_GUI_SPRITES 500
-#define WHEEL_DELTA 400//TODO:
+
+#define _WHEEL_DELTA 400//TODO:
 
 //this is just a constant to be a little bit less windows api dependent (TODO: make this a setting)
 unsigned int GetCaretBlinkTime()
 {
-	return 400;
+    return 400;
 }
 
 
@@ -94,43 +94,43 @@ GLFW Window Callbacks
 //--------------------------------------------------------------------------------------
 void GLFWWindowPosCallback(GLFWwindow*, int x, int y)
 {
-	MessageProcedure(POS, x, y, 0, 0);
+    MessageProcedure(POS, x, y, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowSizeCallback(GLFWwindow*, int width, int height)
 {
-	MessageProcedure(RESIZE, width, height, 0, 0);
+    MessageProcedure(RESIZE, width, height, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowCloseCallback(GLFWwindow*)
 {
-	MessageProcedure(CLOSE, 0, 0, 0, 0);
+    MessageProcedure(CLOSE, 0, 0, 0, 0);
 }
 /*
 //--------------------------------------------------------------------------------------
 void GLFWWindowRefreshCallback(GLFWwindow*)
 {
-	MessageProcedure(REFRESH, 0, 0, 0, 0);
+    MessageProcedure(REFRESH, 0, 0, 0, 0);
 }*/
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowFocusCallback(GLFWwindow*, int focused)
 {
-	MessageProcedure(FOCUS, focused, 0, 0, 0);
+    MessageProcedure(FOCUS, focused, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWWindowIconifyCallback(GLFWwindow*, int iconified)
 {
-	MessageProcedure(ICONIFY, iconified, 0, 0, 0);
+    MessageProcedure(ICONIFY, iconified, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWFrameBufferSizeCallback(GLFWwindow*, int width, int height)
 {
-	MessageProcedure(FRAMEBUFFER_SIZE, width, height, 0, 0);
+    MessageProcedure(FRAMEBUFFER_SIZE, width, height, 0, 0);
 }
 
 /*
@@ -142,37 +142,37 @@ GLFW Input Callback
 //--------------------------------------------------------------------------------------
 void GLFWMouseButtonCallback(GLFWwindow*, int button, int action, int mods)
 {
-	MessageProcedure(MB, button, action, mods, 0);
+    MessageProcedure(MB, button, action, mods, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWCursorPosCallback(GLFWwindow*, double xPos, double yPos)
 {
-	MessageProcedure(CURSOR_POS, (int)xPos, (int)yPos, 0, 0);
+    MessageProcedure(CURSOR_POS, (int)xPos, (int)yPos, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWCursorEnterCallback(GLFWwindow*, int entered)
 {
-	MessageProcedure(CURSOR_ENTER, entered, 0, 0, 0);
+    MessageProcedure(CURSOR_ENTER, entered, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWScrollCallback(GLFWwindow*, double xoffset, double yoffset)
 {
-	MessageProcedure(SCROLL, (int)(xoffset * 1000.0), (int)(yoffset * 1000.0), 0, 0);
+    MessageProcedure(SCROLL, (int)(xoffset * 1000.0), (int)(yoffset * 1000.0), 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWKeyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 {
-	MessageProcedure(KEY, key, scancode, action, mods);
+    MessageProcedure(KEY, key, scancode, action, mods);
 }
 
 //--------------------------------------------------------------------------------------
 void GLFWCharCallback(GLFWwindow*, unsigned int codepoint)
 {
-	MessageProcedure(UNICODE_CHAR, (int)codepoint, 0, 0, 0);
+    MessageProcedure(UNICODE_CHAR, (int)codepoint, 0, 0, 0);
 }
 
 
@@ -181,12 +181,12 @@ CallbackFuncPtr g_pCallback;
 //--------------------------------------------------------------------------------------
 void MessageProcedure(MessageType msg, int param1, int param2, int param3, int param4)
 {
-	if (g_pCallback(msg, param1, param2, param3, param4))
-	{
+    if (g_pCallback(msg, param1, param2, param3, param4))
+    {
 
-	}
+    }
 
-	//todo: anything else to do?
+    //todo: anything else to do?
 }
 
 
@@ -200,15 +200,15 @@ Various Structs Used For UI
 */
 struct ScreenVertex
 {
-	glm::vec3 pos;
-	Color     color;
-	glm::vec2 uv;
+    glm::vec3 pos;
+    Color     color;
+    glm::vec2 uv;
 };
 
 struct ScreenVertexUntex
 {
-	glm::vec3 pos;
-	Color     color;
+    glm::vec3 pos;
+    Color     color;
 };
 
 struct TextVertexStruct : public VertexStruct
@@ -221,7 +221,7 @@ struct TextVertexStruct : public VertexStruct
         mPos(pos), mTexCoords(texCoords)
     {}
 
-    virtual void* operator&() const override
+    virtual char* get_data() const override
     {
         char* ret = new char[size()];
 
@@ -335,74 +335,74 @@ Shaders for UI Elements
 */
 
 std::string g_UIShaderVert =
-"#version 120														\n"\
-"attribute vec3 _Position;											\n"\
-"attribute vec2 _UV;												\n"\
-"attribute vec4 _Color;												\n"\
-"uniform   mat4 _Ortho;												\n"\
-"varying vec4 Color;												\n"\
-"varying vec2 uvCoord;												\n"\
-"void main(void)													\n"\
-"{																	\n"\
-"	gl_Position = vec4(_Position, 1.0f) * _Ortho;					\n"\
-"	Color = _Color;		        									\n"\
-"   uvCoord = abs(vec2(0.0f, 1.0f) - _UV);							\n"\
-"}																	\n";
+"#version 120                                                        \n"\
+"attribute vec3 _Position;                                            \n"\
+"attribute vec2 _UV;                                                \n"\
+"attribute vec4 _Color;                                                \n"\
+"uniform   mat4 _Ortho;                                                \n"\
+"varying vec4 Color;                                                \n"\
+"varying vec2 uvCoord;                                                \n"\
+"void main(void)                                                    \n"\
+"{                                                                    \n"\
+"    gl_Position = vec4(_Position, 1.0f) * _Ortho;                    \n"\
+"    Color = _Color;                                                    \n"\
+"   uvCoord = abs(vec2(0.0f, 1.0f) - _UV);                            \n"\
+"}                                                                    \n";
 /*the V's are inverted because the texture is loaded bottom to top*/
 
 
 std::string g_UIShaderFrag =
-"#version 120														\n"\
-"varying vec4 Color;												\n"\
-"varying vec2 uvCoord;												\n"\
-"uniform sampler2D _TS;												\n"\
-"void main(void)													\n"\
-"{																	\n"\
-"	//Color = vec4(1.0f, 0.0, 0.0f, 1.0f);							\n"\
-"	//Color = fs_in.Color;											\n"\
-"   vec4 oColor = texture2D(_TS, uvCoord);							\n"\
-"	oColor = vec4(                                                  \n"\
+"#version 120                                                        \n"\
+"varying vec4 Color;                                                \n"\
+"varying vec2 uvCoord;                                                \n"\
+"uniform sampler2D _TS;                                                \n"\
+"void main(void)                                                    \n"\
+"{                                                                    \n"\
+"    //Color = vec4(1.0f, 0.0, 0.0f, 1.0f);                            \n"\
+"    //Color = fs_in.Color;                                            \n"\
+"   vec4 oColor = texture2D(_TS, uvCoord);                            \n"\
+"    oColor = vec4(                                                  \n"\
 "       oColor.r * Color.r,                                         \n"\
 "       oColor.g * Color.g,                                         \n"\
 "       oColor.b * Color.b,                                         \n"\
-"       oColor.a * Color.a);	                                    \n"\
-"	gl_FragColor = oColor;											\n"\
-"}																	\n"; 
+"       oColor.a * Color.a);                                        \n"\
+"    gl_FragColor = oColor;                                            \n"\
+"}                                                                    \n"; 
 
 std::string g_UIShaderFragUntex =
-"#version 120														\n"\
-"varying vec4 Color;												\n"\
-"varying vec2 uvCoord;												\n"\
-"void main(void)													\n"\
-"{																	\n"\
-"	gl_FragColor = Color;											\n"\
-"}																	\n";
+"#version 120                                                        \n"\
+"varying vec4 Color;                                                \n"\
+"varying vec2 uvCoord;                                                \n"\
+"void main(void)                                                    \n"\
+"{                                                                    \n"\
+"    gl_FragColor = Color;                                            \n"\
+"}                                                                    \n";
 
 std::string g_TextShaderVert =
-"#version 120														\n"\
-"attribute vec3 _Position;											\n"\
-"attribute vec2 _UV;												\n"\
-"uniform mat4 _Ortho;												\n"\
-"varying vec2 uvCoord;												\n"\
-"void main(void)													\n"\
-"{																	\n"\
-"   uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/;					\n"\
-"	gl_Position = vec4(_Position, 1.0f) * _Ortho;					\n"\
-"}																	\n";
+"#version 120                                                        \n"\
+"attribute vec3 _Position;                                            \n"\
+"attribute vec2 _UV;                                                \n"\
+"uniform mat4 _Ortho;                                                \n"\
+"varying vec2 uvCoord;                                                \n"\
+"void main(void)                                                    \n"\
+"{                                                                    \n"\
+"   uvCoord = /*abs(vec2(0.0f, 1.0f) - */_UV/*)*/;                    \n"\
+"    gl_Position = vec4(_Position, 1.0f) * _Ortho;                    \n"\
+"}                                                                    \n";
 
 std::string g_TextShaderFrag =
-"#version 120														\n"\
-"uniform vec4 _Color;												\n"\
-"uniform sampler2D _TS;												\n"\
-"varying vec2 uvCoord;												\n"\
-"void main(void)													\n"\
-"{																	\n"\
-"	vec4 Color;														\n"\
-"	Color.a = texture2D(_TS, uvCoord).r;							\n"\
-"	Color.rgb = _Color.rgb;											\n"\
-"	Color.a *= _Color.a;											\n"\
-"	gl_FragColor = Color;											\n"\
-"}																	\n";
+"#version 120                                                        \n"\
+"uniform vec4 _Color;                                                \n"\
+"uniform sampler2D _TS;                                                \n"\
+"varying vec2 uvCoord;                                                \n"\
+"void main(void)                                                    \n"\
+"{                                                                    \n"\
+"    vec4 Color;                                                        \n"\
+"    Color.a = texture2D(_TS, uvCoord).r;                            \n"\
+"    Color.rgb = _Color.rgb;                                            \n"\
+"    Color.a *= _Color.a;                                            \n"\
+"    gl_FragColor = Color;                                            \n"\
+"}                                                                    \n";
 
 
 /*
@@ -415,71 +415,71 @@ Initialization Functions
 //--------------------------------------------------------------------------------------
 bool InitGui(GLFWwindow* pInitializedGLFWWindow, CallbackFuncPtr callback, GLuint controltex)
 {
-	g_pGLFWWindow = pInitializedGLFWWindow;
-	g_pCallback = callback;
-	
-	//register glfw event handlers
-	glfwSetMouseButtonCallback(g_pGLFWWindow, GLFWMouseButtonCallback);
-	glfwSetCursorPosCallback(g_pGLFWWindow, GLFWCursorPosCallback);
-	glfwSetCursorEnterCallback(g_pGLFWWindow, GLFWCursorEnterCallback);
-	glfwSetScrollCallback(g_pGLFWWindow, GLFWScrollCallback);
-	glfwSetKeyCallback(g_pGLFWWindow, GLFWKeyCallback);
-	glfwSetCharCallback(g_pGLFWWindow, GLFWCharCallback);
+    g_pGLFWWindow = pInitializedGLFWWindow;
+    g_pCallback = callback;
+    
+    //register glfw event handlers
+    glfwSetMouseButtonCallback(g_pGLFWWindow, GLFWMouseButtonCallback);
+    glfwSetCursorPosCallback(g_pGLFWWindow, GLFWCursorPosCallback);
+    glfwSetCursorEnterCallback(g_pGLFWWindow, GLFWCursorEnterCallback);
+    glfwSetScrollCallback(g_pGLFWWindow, GLFWScrollCallback);
+    glfwSetKeyCallback(g_pGLFWWindow, GLFWKeyCallback);
+    glfwSetCharCallback(g_pGLFWWindow, GLFWCharCallback);
 
-	glfwSetWindowPosCallback(g_pGLFWWindow, GLFWWindowPosCallback);
-	glfwSetWindowSizeCallback(g_pGLFWWindow, GLFWWindowSizeCallback);
-	glfwSetWindowCloseCallback(g_pGLFWWindow, GLFWWindowCloseCallback);
-	//glfwSetWindowRefreshCallback(g_pGLFWWindow, GLFWWindowRefreshCallback); huge performace overhead
-	glfwSetWindowFocusCallback(g_pGLFWWindow, GLFWWindowFocusCallback);
-	glfwSetWindowIconifyCallback(g_pGLFWWindow, GLFWWindowIconifyCallback);
-	glfwSetFramebufferSizeCallback(g_pGLFWWindow, GLFWFrameBufferSizeCallback);
+    glfwSetWindowPosCallback(g_pGLFWWindow, GLFWWindowPosCallback);
+    glfwSetWindowSizeCallback(g_pGLFWWindow, GLFWWindowSizeCallback);
+    glfwSetWindowCloseCallback(g_pGLFWWindow, GLFWWindowCloseCallback);
+    //glfwSetWindowRefreshCallback(g_pGLFWWindow, GLFWWindowRefreshCallback); huge performace overhead
+    glfwSetWindowFocusCallback(g_pGLFWWindow, GLFWWindowFocusCallback);
+    glfwSetWindowIconifyCallback(g_pGLFWWindow, GLFWWindowIconifyCallback);
+    glfwSetFramebufferSizeCallback(g_pGLFWWindow, GLFWFrameBufferSizeCallback);
 
-	//load the ui shaders
+    //load the ui shaders
     ShaderSourceList sources;
     sources.insert({ SH_VERTEX_SHADER, g_UIShaderVert });
     sources.insert({ SH_FRAGMENT_SHADER, g_UIShaderFrag });
-	SHADERMANAGER.CreateProgram(g_UIProgram, sources);
-	sources.clear();
+    SHADERMANAGER.CreateProgram(g_UIProgram, sources);
+    sources.clear();
 
     sources.insert({ SH_VERTEX_SHADER, g_UIShaderVert });
     sources.insert({ SH_FRAGMENT_SHADER, g_UIShaderFragUntex });
-	SHADERMANAGER.CreateProgram(g_UIProgramUntex, sources);
-	sources.clear();
+    SHADERMANAGER.CreateProgram(g_UIProgramUntex, sources);
+    sources.clear();
 
     sources.insert({ SH_VERTEX_SHADER, g_TextShaderVert });
     sources.insert({ SH_FRAGMENT_SHADER, g_TextShaderFrag });
-	SHADERMANAGER.CreateProgram(g_TextProgram, sources);
+    SHADERMANAGER.CreateProgram(g_TextProgram, sources);
 
 
-	//load the locations
-	g_UIShaderLocations.position		= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
-	g_UIShaderLocations.uv				= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
-	g_UIShaderLocations.color			= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
-	g_UIShaderLocations.ortho			= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
-	g_UIShaderLocations.sampler			= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
+    //load the locations
+    g_UIShaderLocations.position        = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+    g_UIShaderLocations.uv                = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
+    g_UIShaderLocations.color            = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+    g_UIShaderLocations.ortho            = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
+    g_UIShaderLocations.sampler            = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
 
-	g_UIShaderLocationsUntex.position	= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
-	g_UIShaderLocationsUntex.color		= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
-	g_UIShaderLocationsUntex.ortho		= SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
+    g_UIShaderLocationsUntex.position    = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+    g_UIShaderLocationsUntex.color        = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+    g_UIShaderLocationsUntex.ortho        = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
 
-	g_TextShaderLocations.position		= SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
-	g_TextShaderLocations.uv			= SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
-	g_TextShaderLocations.color			= SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
-	g_TextShaderLocations.ortho			= SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
-	g_TextShaderLocations.sampler		= SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
+    g_TextShaderLocations.position        = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
+    g_TextShaderLocations.uv            = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
+    g_TextShaderLocations.color            = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
+    g_TextShaderLocations.ortho            = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
+    g_TextShaderLocations.sampler        = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
 
-	//create the text arrrays
-	/*glGenVertexArrayBindVertexArray(&g_TextVAO);
-	glGenBuffers(1, &g_TextPos);
-	glGenBuffers(1, &g_TextTexCoords);
+    //create the text arrrays
+    /*glGenVertexArrayBindVertexArray(&g_TextVAO);
+    glGenBuffers(1, &g_TextPos);
+    glGenBuffers(1, &g_TextTexCoords);
 
-	glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
-	glVertexAttribPointer(g_TextShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glBindBuffer(GL_ARRAY_BUFFER, g_TextPos);
+    glVertexAttribPointer(g_TextShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
-	glVertexAttribPointer(g_TextShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glBindBuffer(GL_ARRAY_BUFFER, g_TextTexCoords);
+    glVertexAttribPointer(g_TextShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glBindVertexArray(0);*/
+    glBindVertexArray(0);*/
 
     g_TextVertexArray = std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true);
     g_TextVertexArray->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
@@ -493,38 +493,38 @@ bool InitGui(GLFWwindow* pInitializedGLFWWindow, CallbackFuncPtr callback, GLuin
 
     g_TextVertexArray->BufferIndices(indices);*/
 
-	//initialize the freetype library.
-	FT_Error err = FT_Init_FreeType(&g_FtLib);
-	if (err)
-	{
-		GLUF_ERROR("Failed to Initialize the Freetype Library!");
-		return false;
-	}
+    //initialize the freetype library.
+    FT_Error err = FT_Init_FreeType(&g_FtLib);
+    if (err)
+    {
+        GLUF_ERROR("Failed to Initialize the Freetype Library!");
+        return false;
+    }
 
-	//load the texture for the controls
-	g_pControlTexturePtr = controltex;
+    //load the texture for the controls
+    g_pControlTexturePtr = controltex;
 
 
-	int w, h;
-	glfwGetWindowSize(g_pGLFWWindow, &w, &h);
-	g_WndHeight = h;
-	g_WndWidth = w;
+    int w, h;
+    glfwGetWindowSize(g_pGLFWWindow, &w, &h);
+    g_WndHeight = h;
+    g_WndWidth = w;
 
-	return true;
+    return true;
 }
 
 //--------------------------------------------------------------------------------------
 CallbackFuncPtr ChangeCallbackFunc(CallbackFuncPtr newCallback)
 {
     CallbackFuncPtr tmp = g_pCallback;
-	g_pCallback = newCallback;
-	return tmp;
+    g_pCallback = newCallback;
+    return tmp;
 }
 
 //--------------------------------------------------------------------------------------
 void Terminate()
 {
-	FT_Done_FreeType(g_FtLib);
+    FT_Done_FreeType(g_FtLib);
 }
 
 
@@ -554,7 +554,7 @@ CharacterInfo
 */
 struct CharacterInfo
 {
-	glm::u32vec2 mAdvance;
+    glm::u32vec2 mAdvance;
     glm::u32vec2 mBitSize;
     glm::u32vec2 mBitLoc;
     float mTexXOffset;
@@ -578,18 +578,18 @@ Font
         'mTexLineBreakIndices': the character codes which caused line breaks within the texture
 */
 class Font
-{	
+{    
     std::vector<uint32_t> mTexLineBreakIndices;
 public:
 
-	FT_Face mFtFont;
-	FontSize mHeight;
+    FT_Face mFtFont;
+    FontSize mHeight;
     glm::u32vec2 mAtlasSize;
-	GLuint mTexId = 0;
+    GLuint mTexId = 0;
     std::vector<CharacterInfo> mCharAtlas;
-	glm::uint32 mCharacterOffset = 32;
+    glm::uint32 mCharacterOffset = 32;
     glm::uint32 mCharacterEnd = 0xFFF;
-	
+    
 
     /*
     GetCharWidth
@@ -604,7 +604,7 @@ public:
             'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd
 
     */
-	FontSize GetCharWidth(wchar_t ch);
+    FontSize GetCharWidth(wchar_t ch);
 
     /*
     GetCharHeight
@@ -616,7 +616,7 @@ public:
             'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd  
     
     */
-	FontSize GetCharHeight(wchar_t ch);
+    FontSize GetCharHeight(wchar_t ch);
 
     /*
     GetCharAdvance
@@ -631,7 +631,7 @@ public:
             'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd
     
     */
-	FontSize GetCharAdvance(wchar_t ch);
+    FontSize GetCharAdvance(wchar_t ch);
 
     /*
     GetStringWidth
@@ -644,7 +644,7 @@ public:
             'std::out_of_range': if any characters within the string are not within mCharacterOffset and mCharacterEnd
     
     */
-	FontSize GetStringWidth(const std::wstring& str);
+    FontSize GetStringWidth(const std::wstring& str);
 
     /*
     Init
@@ -659,7 +659,7 @@ public:
         Throws:
             'LoadFontException': if loading failed
     */
-	void Init(const std::vector<char>& data, FontSize fontHeight);
+    void Init(const std::vector<char>& data, FontSize fontHeight);
 
     /*
     Refresh
@@ -671,7 +671,7 @@ public:
             no-throw guarantee
     
     */
-	void Refresh() noexcept;
+    void Refresh() noexcept;
 
     /*
     GetChar*Rect
@@ -686,33 +686,33 @@ public:
             'std::out_of_range': if ch is not within mCharacterOffset and mCaracterEnd
     
     */
-	Rect GetCharRect(wchar_t ch);
-	Rectf GetCharTexRect(wchar_t ch);
+    Rect GetCharRect(wchar_t ch);
+    Rectf GetCharTexRect(wchar_t ch);
     
 };
 
 FontSize GetFontHeight(FontPtr font)
 {
-	return font->mHeight;
+    return font->mHeight;
 }
 
-void Font::Refresh()
+void Font::Refresh() noexcept
 {
 
-	//reset variables
+    //reset variables
     mAtlasSize = { 0, 0 };
 
 
-	//int mult = (g_WndHeight >= g_WndWidth) ? g_WndWidth : g_WndHeight;
+    //int mult = (g_WndHeight >= g_WndWidth) ? g_WndWidth : g_WndHeight;
 
-	int pxlHeight = mHeight;
+    int pxlHeight = mHeight;
 
-	if (FT_Set_Char_Size(mFtFont, pxlHeight << 6, pxlHeight << 6, 96, 96))
-	{
-		GLUF_ERROR("Size setting Failed");
-	}
+    if (FT_Set_Char_Size(mFtFont, pxlHeight << 6, pxlHeight << 6, 96, 96))
+    {
+        GLUF_ERROR("Size setting Failed");
+    }
 
-	FT_GlyphSlot g = mFtFont->glyph;
+    FT_GlyphSlot g = mFtFont->glyph;
 
     //get maximum texture size, so we don't get opengl complaining
     GLint maxTexSize = 1024;
@@ -723,14 +723,14 @@ void Font::Refresh()
     mAtlasSize.y += lineHeightWithSpacing;
     uint32_t atlasWidthTmp = 0;
 
-	//load the characters' dimmensions
-	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++)
-	{
-		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER)) 
-		{
-			GLUF_ERROR("Loading character failed!\n");
-			continue;
-		}
+    //load the characters' dimmensions
+    for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++)
+    {
+        if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER)) 
+        {
+            GLUF_ERROR("Loading character failed!\n");
+            continue;
+        }
 
         //on each line, make sure we check if the next texture will go past the max x position
         glm::uint32 potentialAtlasX = atlasWidthTmp + g->bitmap.width + GLYPH_PADDING;
@@ -753,46 +753,46 @@ void Font::Refresh()
             mAtlasSize.x = glm::max(atlasWidthTmp, mAtlasSize.x);
         }
 
-		//mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
+        //mAtlasSize.y = std::max(mAtlasSize.y, static_cast<glm::uint32>(g->bitmap.rows));
 
     }
 
     //resize after getting the texture size, so if characters were omitted due to insufficient texture size, the atlas is of appropriate size
     mCharAtlas.resize(mCharacterEnd - mCharacterOffset);
 
-	//generate textures
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, mTexId);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //generate textures
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mTexId);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	// Fonts should be rendered at native resolution so no need for texture filtering
-	//float fLargest = 0.0f;
-	//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
-	//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+    // Fonts should be rendered at native resolution so no need for texture filtering
+    //float fLargest = 0.0f;
+    //glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
+    //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	// Stop chararcters from bleeding over edges
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    // Stop chararcters from bleeding over edges
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	GLfloat transparent[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, transparent);//any overflow will be transparent
+    GLfloat transparent[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, transparent);//any overflow will be transparent
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasSize.x, mAtlasSize.y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasSize.x, mAtlasSize.y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
 
-	//load texture data
+    //load texture data
 
     //the data for the glyph padding
     std::vector<char> paddingData;
     paddingData.resize(GLYPH_PADDING * lineHeightWithSpacing, 0);
 
-	int x = 0;
+    int x = 0;
     int y = 0;
     unsigned int lineIndex = 0;
-	for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
-	{
+    for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
+    {
         if (std::find(std::begin(mTexLineBreakIndices), std::end(mTexLineBreakIndices), i) != std::end(mTexLineBreakIndices))
         {
             y += lineHeightWithSpacing;
@@ -800,73 +800,73 @@ void Font::Refresh()
             lineIndex = 0;
         }
 
-		unsigned int p = i - mCharacterOffset;
+        unsigned int p = i - mCharacterOffset;
 
-		if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
-			continue;
+        if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
+            continue;
 
-		if (i == 32/*space*/)
-		{
-			FT_UInt spId = FT_Get_Char_Index(mFtFont, 32);
-			if (FT_Load_Glyph(mFtFont, spId, FT_LOAD_RENDER))
-				continue;
+        if (i == 32/*space*/)
+        {
+            FT_UInt spId = FT_Get_Char_Index(mFtFont, 32);
+            if (FT_Load_Glyph(mFtFont, spId, FT_LOAD_RENDER))
+                continue;
 
-			mCharAtlas[p].mAdvance.x = (mFtFont->glyph->advance.x >> 6);
-			mCharAtlas[p].mAdvance.y = 0L;
+            mCharAtlas[p].mAdvance.x = (mFtFont->glyph->advance.x >> 6);
+            mCharAtlas[p].mAdvance.y = 0L;
 
-			mCharAtlas[p].mBitSize.x = mCharAtlas[p].mAdvance.x;//this is useful in the edit box.
-			mCharAtlas[p].mBitSize.y = mAtlasSize.y;
+            mCharAtlas[p].mBitSize.x = mCharAtlas[p].mAdvance.x;//this is useful in the edit box.
+            mCharAtlas[p].mBitSize.y = mAtlasSize.y;
 
-			mCharAtlas[p].mBitLoc.x = 0L;
-			mCharAtlas[p].mBitLoc.y = 0L;
+            mCharAtlas[p].mBitLoc.x = 0L;
+            mCharAtlas[p].mBitLoc.y = 0L;
 
-			mCharAtlas[p].mTexXOffset = static_cast<float>(mAtlasSize.x - GLYPH_PADDING);
+            mCharAtlas[p].mTexXOffset = static_cast<float>(mAtlasSize.x - GLYPH_PADDING);
             mCharAtlas[p].mTexYOffset = static_cast<float>(y) / static_cast<float>(mAtlasSize.y);
 
-			continue;
-		}
+            continue;
+        }
 
         glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING), y, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
 
-		//this adds padding to keep the characters looking clean
+        //this adds padding to keep the characters looking clean
         glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
 
         mCharAtlas[p].mTexXOffset = static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
         mCharAtlas[p].mTexYOffset = (static_cast<float>(y)+0.5f) / static_cast<float>(mAtlasSize.y);
 
-		x += g->bitmap.width;
+        x += g->bitmap.width;
 
-		mCharAtlas[p].mAdvance.x = (g->advance.x >> 6);
-		mCharAtlas[p].mAdvance.y = (g->advance.y >> 6);
+        mCharAtlas[p].mAdvance.x = (g->advance.x >> 6);
+        mCharAtlas[p].mAdvance.y = (g->advance.y >> 6);
 
-		mCharAtlas[p].mBitSize.x = g->bitmap.width;
-		mCharAtlas[p].mBitSize.y = g->bitmap.rows;
+        mCharAtlas[p].mBitSize.x = g->bitmap.width;
+        mCharAtlas[p].mBitSize.y = g->bitmap.rows;
 
-		mCharAtlas[p].mBitLoc.x = g->bitmap_left;
-		mCharAtlas[p].mBitLoc.y = g->bitmap_top;
+        mCharAtlas[p].mBitLoc.x = g->bitmap_left;
+        mCharAtlas[p].mBitLoc.y = g->bitmap_top;
 
         ++lineIndex;
-	}
+    }
 
-	//FT_Done_Face(mFtFont);
-	g = 0;
+    //FT_Done_Face(mFtFont);
+    g = 0;
 }
 
 void Font::Init(const std::vector<char>& data, FontSize fontHeight)
 {
-	mHeight = fontHeight;
+    mHeight = fontHeight;
 
     if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data.data(), (FT_Long)data.size(), 0, &mFtFont))
         throw LoadFontException();
 
-	glGenTextures(1, &mTexId);
+    glGenTextures(1, &mTexId);
 
     if (mTexId == 0)
     {
         throw LoadFontException();
     }
 
-	Refresh();
+    Refresh();
 }
 
 Rect Font::GetCharRect(wchar_t ch)
@@ -876,45 +876,45 @@ Rect Font::GetCharRect(wchar_t ch)
         return{ { 0 }, 0, 0, { 0 } };
     }
 
-	Rect rc = { 0, GetCharHeight(ch), GetCharWidth(ch), 0 };
+    Rect rc = { 0, GetCharHeight(ch), GetCharWidth(ch), 0 };
 
-	if (ch < mCharacterOffset)
-		return rc;
-	//OffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
+    if (ch < mCharacterOffset)
+        return rc;
+    //OffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
 
-	//if there is a dropdown, make sure it is accounted for
-	//float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
-	//OffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, dy);
-	OffsetRect(rc, mCharAtlas[ch - mCharacterOffset].mBitLoc.x, -(long)(mCharAtlas[ch - mCharacterOffset].mBitSize.y - mCharAtlas[ch - mCharacterOffset].mBitLoc.y));
-	return rc;
+    //if there is a dropdown, make sure it is accounted for
+    //float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
+    //OffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, dy);
+    OffsetRect(rc, mCharAtlas[ch - mCharacterOffset].mBitLoc.x, -(long)(mCharAtlas[ch - mCharacterOffset].mBitSize.y - mCharAtlas[ch - mCharacterOffset].mBitLoc.y));
+    return rc;
 }
 
 /*Rect Font::GetCharRectNDC(wchar_t ch)
 {
-	Rect rc = { 0.0f, 2.0f * GetCharHeight(ch), 2.0f * GetCharWidth(ch), 0.0f };
-	//OffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
+    Rect rc = { 0.0f, 2.0f * GetCharHeight(ch), 2.0f * GetCharWidth(ch), 0.0f };
+    //OffsetRect(rc, 0.0f, mCharAtlas[ch - mCharacterOffset].ay);
 
-	//if there is a dropdown, make sure it is accounted for
-	float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
-	OffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, -2 * dy);
-	return rc;
+    //if there is a dropdown, make sure it is accounted for
+    float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
+    OffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, -2 * dy);
+    return rc;
 }*/
 
 Rectf Font::GetCharTexRect(wchar_t ch)
 {
     if (ch < mCharacterOffset || ch >= mCharacterEnd)
     {
-        return{ { 0 }, 0, 0, { 0 } };
+        return{ 0, 0, 0, 0 };
     }
 
-	float l = 0, t = 0, r = 0, b = 0;
+    float l = 0, t = 0, r = 0, b = 0;
 
-	l = mCharAtlas[ch - mCharacterOffset].mTexXOffset;
-	t = mCharAtlas[ch - mCharacterOffset].mTexYOffset;
+    l = mCharAtlas[ch - mCharacterOffset].mTexXOffset;
+    t = mCharAtlas[ch - mCharacterOffset].mTexYOffset;
     r = mCharAtlas[ch - mCharacterOffset].mTexXOffset + static_cast<float>(GetCharWidth(ch)) / static_cast<float>(mAtlasSize.x);
-	b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y) + mCharAtlas[ch - mCharacterOffset].mTexYOffset;
+    b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y) + mCharAtlas[ch - mCharacterOffset].mTexYOffset;
 
-	return{ l, t, r, b };
+    return{ l, t, r, b };
 };
 
 FontSize Font::GetCharAdvance(wchar_t ch)
@@ -924,7 +924,7 @@ FontSize Font::GetCharAdvance(wchar_t ch)
         return 0;
     }
 
-	return mCharAtlas[ch - mCharacterOffset].mAdvance.x;
+    return mCharAtlas[ch - mCharacterOffset].mAdvance.x;
 }
 
 FontSize Font::GetCharWidth(wchar_t ch)
@@ -934,7 +934,7 @@ FontSize Font::GetCharWidth(wchar_t ch)
         return 0;
     }
 
-	return mCharAtlas[ch - mCharacterOffset].mBitSize.x;
+    return mCharAtlas[ch - mCharacterOffset].mBitSize.x;
 }
 
 FontSize Font::GetCharHeight(wchar_t ch)
@@ -944,7 +944,7 @@ FontSize Font::GetCharHeight(wchar_t ch)
         return 0;
     }
 
-	return mCharAtlas[ch - mCharacterOffset].mBitSize.y;
+    return mCharAtlas[ch - mCharacterOffset].mBitSize.y;
 }
 
 FontSize Font::GetStringWidth(const std::wstring& str)
@@ -957,12 +957,12 @@ FontSize Font::GetStringWidth(const std::wstring& str)
         }
     }
     */
-	FontSize tmp = 0;
-	for (auto it : str)
-	{
-		tmp += GetCharAdvance(it);
-	}
-	return tmp;
+    FontSize tmp = 0;
+    for (auto it : str)
+    {
+        tmp += GetCharAdvance(it);
+    }
+    return tmp;
 }
 
 
@@ -997,16 +997,16 @@ void BlendColor::Init(const Color& defaultColor, const Color& disabledColor, con
         it->second = defColor;
     }
 
-	mStates[STATE_DISABLED] = static_cast<HighBitColor>(disabledColor);
-	mStates[STATE_HIDDEN] = static_cast<HighBitColor>(hiddenColor);
-	mCurrentColor = mStates[STATE_HIDDEN];//start hidden
+    mStates[STATE_DISABLED] = static_cast<HighBitColor>(disabledColor);
+    mStates[STATE_HIDDEN] = static_cast<HighBitColor>(hiddenColor);
+    mCurrentColor = mStates[STATE_HIDDEN];//start hidden
 }
 
 
 //--------------------------------------------------------------------------------------
 void BlendColor::Blend(ControlState state, float elapsedTime, float rate)
 {
-	//this is quite condensed, this basically interpolates from the current state to the destination state based on the time
+    //this is quite condensed, this basically interpolates from the current state to the destination state based on the time
     //the speed of this transition is a recurisve version of e^kx - 1.0f
     float delta = elapsedTime - mPrevBlendTime;
     HighBitColor col = mStates[state];
@@ -1023,13 +1023,13 @@ void BlendColor::Blend(ControlState state, float elapsedTime, float rate)
 //--------------------------------------------------------------------------------------
 void BlendColor::SetCurrent(const Color& current)
 {
-	mCurrentColor = current;
+    mCurrentColor = current;
 }
 
 //--------------------------------------------------------------------------------------
 void BlendColor::SetCurrent(ControlState state)
 {
-	mCurrentColor = mStates[state];
+    mCurrentColor = mStates[state];
 }
 
 //--------------------------------------------------------------------------------------
@@ -1040,7 +1040,7 @@ void BlendColor::SetAll(const Color& color)
         mStates[static_cast<ControlState>(i)] = color;
     }
 
-	SetCurrent(color);
+    SetCurrent(color);
 }
 
 //--------------------------------------------------------------------------------------
@@ -1091,8 +1091,8 @@ void Element::SetFont(FontIndex font, const Color& defaultFontColor, Bitfield te
 //--------------------------------------------------------------------------------------
 void Element::Refresh()
 {
-	//mTextureColor.SetCurrent(STATE_HIDDEN);
-	//mFontColor.SetCurrent(STATE_HIDDEN);
+    //mTextureColor.SetCurrent(STATE_HIDDEN);
+    //mFontColor.SetCurrent(STATE_HIDDEN);
 }
 
 
@@ -1127,17 +1127,17 @@ Dialog::~Dialog()
     printf("Dialog Destroyed\n");
 #endif
 
-	RemoveAllControls();
+    RemoveAllControls();
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog)
 {
-	if (g_ControlTextureResourceManLocation == -1)
-	{
+    if (g_ControlTextureResourceManLocation == -1)
+    {
         g_ControlTextureResourceManLocation = manager->AddTexture(g_pControlTexturePtr);
-	}
+    }
 
     Init(manager, registerDialog, g_ControlTextureResourceManLocation);
 }
@@ -1154,7 +1154,7 @@ void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog, Textur
         mDialogManager->RegisterDialog(shared_from_this());
 
     SetTexture(0, textureIndex);//this will always be the first one in our buffer of indices
-	InitDefaultElements();
+    InitDefaultElements();
 }
 
 
@@ -1162,37 +1162,32 @@ void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog, Textur
 
 /*void Dialog::Init(DialogResourceManager* pManager, bool bRegisterDialog, LPCWSTR szControlTextureResourceName, HMODULE hControlTextureResourceModule)
 {
-	m_pManager = pManager;
-	if (bRegisterDialog)
-		pManager->RegisterDialog(this);
+    m_pManager = pManager;
+    if (bRegisterDialog)
+        pManager->RegisterDialog(this);
 
-	SetTexture(0, szControlTextureResourceName, hControlTextureResourceModule);
-	InitDefaultElements();
+    SetTexture(0, szControlTextureResourceName, hControlTextureResourceModule);
+    InitDefaultElements();
 }*/
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext) noexcept
 {
-    NOEXCEPT_REGION_START
-	// If this assert triggers, you need to call Dialog::Init() first.  This change
-	// was made so that the 's GUI could become separate and optional from 's core.  The 
-	// creation and interfacing with DialogResourceManager is now the responsibility 
-	// of the application if it wishes to use 's GUI.
-	_ASSERT(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
+    // If this assert triggers, you need to call Dialog::Init() first.  This change
+    // was made so that the 's GUI could become separate and optional from 's core.  The 
+    // creation and interfacing with DialogResourceManager is now the responsibility 
+    // of the application if it wishes to use 's GUI.
+    assert(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
 
     mCallbackEvent = callback;
-	mCallbackContext = userContext;
-
-    NOEXCEPT_REGION_END
+    mCallbackContext = userContext;
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::RemoveControl(ControlIndex ID)
 {
-    NOEXCEPT_REGION_START
-
     auto it = mControls.find(ID);
 
     if (it != mControls.end())
@@ -1211,217 +1206,199 @@ void Dialog::RemoveControl(ControlIndex ID)
         mControls.erase(it);
 
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::RemoveAllControls() noexcept
 {
-    NOEXCEPT_REGION_START
+    if (sControlFocus && &sControlFocus->mDialog == this)
+        sControlFocus = nullptr;
+    if (sControlPressed && &sControlPressed->mDialog == this)
+        sControlPressed = nullptr;
+    mControlMouseOver = nullptr;
 
-	if (sControlFocus && &sControlFocus->mDialog == this)
-		sControlFocus = nullptr;
-	if (sControlPressed && &sControlPressed->mDialog == this)
-		sControlPressed = nullptr;
-	mControlMouseOver = nullptr;
-
-	mControls.clear();
-
-    NOEXCEPT_REGION_END
+    mControls.clear();
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::Refresh() noexcept
 {
-    NOEXCEPT_REGION_START
+    if (sControlFocus)
+        sControlFocus->OnFocusOut();
 
-	if (sControlFocus)
-		sControlFocus->OnFocusOut();
+    if (mControlMouseOver)
+        mControlMouseOver->OnMouseLeave();
 
-	if (mControlMouseOver)
-		mControlMouseOver->OnMouseLeave();
+    sControlFocus = nullptr;
+    sControlPressed = nullptr;
+    mControlMouseOver = nullptr;
 
-	sControlFocus = nullptr;
-	sControlPressed = nullptr;
-	mControlMouseOver = nullptr;
+    for (auto it : mControls)
+    {
+        it.second->Refresh();
+    }
 
-	for (auto it : mControls)
-	{
-		it.second->Refresh();
-	}
-
-	if (mKeyboardInput)
-		FocusDefaultControl();
-
-    NOEXCEPT_REGION_END
+    if (mKeyboardInput)
+        FocusDefaultControl();
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::OnRender(float elapsedTime) noexcept
 {
-	// If this assert triggers, you need to call DialogResourceManager::On*Device() from inside
-	// the application's device callbacks.  See the SDK samples for an example of how to do this.
-	//_ASSERT(m_pManager->GetD3D11Device() &&
-	//	L"To fix hook up DialogResourceManager to device callbacks.  See comments for details");
-	//no need for "devices", this is all handled by GLFW
+    // If this assert triggers, you need to call DialogResourceManager::On*Device() from inside
+    // the application's device callbacks.  See the SDK samples for an example of how to do this.
+    //assert(m_pManager->GetD3D11Device() &&
+    //    L"To fix hook up DialogResourceManager to device callbacks.  See comments for details");
+    //no need for "devices", this is all handled by GLFW
 
-    NOEXCEPT_REGION_START
-
-	// See if the dialog needs to be refreshed
-	if (mTimePrevRefresh < sTimeRefresh)
-	{
+    // See if the dialog needs to be refreshed
+    if (mTimePrevRefresh < sTimeRefresh)
+    {
         mTimePrevRefresh = GetTime();
-		Refresh();
-	}
+        Refresh();
+    }
 
-	// For invisible dialog, out now.
-	if (!mVisible ||
-		(mMinimized && !mCaptionEnabled))
-		return;
+    // For invisible dialog, out now.
+    if (!mVisible ||
+        (mMinimized && !mCaptionEnabled))
+        return;
 
-	// Enable depth test
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_CLAMP);
+    // Enable depth test
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_CLAMP);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	mDialogManager->BeginSprites();
+    mDialogManager->BeginSprites();
 
-	if (!mMinimized)
-	{
-		// Convert the draw rectangle from screen coordinates to clip space coordinates.(where the origin is in the middle of the screen, and the edges are 1, or negative 1
-		Rect windowCoords = { 0, GetHeight(), GetWidth(), 0 };
-		//windowCoords = ScreenToClipspace(windowCoords);
+    if (!mMinimized)
+    {
+        // Convert the draw rectangle from screen coordinates to clip space coordinates.(where the origin is in the middle of the screen, and the edges are 1, or negative 1
+        Rect windowCoords = { 0, GetHeight(), GetWidth(), 0 };
+        //windowCoords = ScreenToClipspace(windowCoords);
 
-		DrawSprite(mDlgElement, windowCoords, -0.99f, false);
-	}
+        DrawSprite(mDlgElement, windowCoords, -0.99f, false);
+    }
 
-	// Sort depth back to front
-	Text::BeginText(mDialogManager->GetOrthoMatrix());
+    // Sort depth back to front
+    Text::BeginText(mDialogManager->GetOrthoMatrix());
 
 
-	//m_pManager->ApplyRenderUI();
-	// If the dialog is minimized, skip rendering
-	// its controls.
-	if (!mMinimized)
-	{
-		for (auto it : mControls)
-		{
-			// Focused control is drawn last
-			if (it.second == sControlFocus)
-				continue;
+    //m_pManager->ApplyRenderUI();
+    // If the dialog is minimized, skip rendering
+    // its controls.
+    if (!mMinimized)
+    {
+        for (auto it : mControls)
+        {
+            // Focused control is drawn last
+            if (it.second == sControlFocus)
+                continue;
 
-			it.second->Render(elapsedTime);
-		}
+            it.second->Render(elapsedTime);
+        }
 
-		if (sControlFocus && &sControlFocus->mDialog == this)
-			sControlFocus->Render(elapsedTime);
-	}
+        if (sControlFocus && &sControlFocus->mDialog == this)
+            sControlFocus->Render(elapsedTime);
+    }
 
-	// Render the caption if it's enabled.
-	if (mCaptionEnabled)
-	{
-		// DrawSprite will offset the rect down by
-		// m_nCaptionHeight, so adjust the rect higher
-		// here to negate the effect.
+    // Render the caption if it's enabled.
+    if (mCaptionEnabled)
+    {
+        // DrawSprite will offset the rect down by
+        // m_nCaptionHeight, so adjust the rect higher
+        // here to negate the effect.
 
-		mCapElement.mTextureColor.SetCurrent(STATE_NORMAL);
-		mCapElement.mFontColor.SetCurrent(STATE_NORMAL);
-		Rect rc = { 0, 0, GetWidth(), -mCaptionHeight };
+        mCapElement.mTextureColor.SetCurrent(STATE_NORMAL);
+        mCapElement.mFontColor.SetCurrent(STATE_NORMAL);
+        Rect rc = { 0, 0, GetWidth(), -mCaptionHeight };
 
-		mDialogManager->ApplyRenderUIUntex();
-		DrawSprite(mCapElement, rc, -0.99f, false);
+        mDialogManager->ApplyRenderUIUntex();
+        DrawSprite(mCapElement, rc, -0.99f, false);
 
-		rc.left += 5; // Make a left margin
+        rc.left += 5; // Make a left margin
 
-		if (mMinimized)
-		{
+        if (mMinimized)
+        {
             std::wstringstream wss;
             wss << mCaptionText;
             wss << L" (Minimized)";
-			DrawText(wss.str(), mCapElement, rc);
-		}
-		else
-			DrawText(mCaptionText, mCapElement, rc);
-	}
+            DrawText(wss.str(), mCapElement, rc);
+        }
+        else
+            DrawText(mCaptionText, mCapElement, rc);
+    }
 
-	// End sprites
-	/*if (m_bCaption)
-	{
-		m_pManager->EndSprites();
-		EndText();
-	}*/
-	//m_pManager->RestoreD3D11State(pd3dDeviceContext);
+    // End sprites
+    /*if (m_bCaption)
+    {
+        m_pManager->EndSprites();
+        EndText();
+    }*/
+    //m_pManager->RestoreD3D11State(pd3dDeviceContext);
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
-
-    NOEXCEPT_REGION_END
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept
 {
-    NOEXCEPT_REGION_START
+    // If no callback has been registered there's nowhere to send the event to
+    if (!mCallbackEvent)
+        return;
 
-	// If no callback has been registered there's nowhere to send the event to
-	if (!mCallbackEvent)
-		return;
+    // Discard events triggered programatically if these types of events haven't been
+    // enabled
+    if (!triggeredByUser && !mNonUserEvents)
+        return;
 
-	// Discard events triggered programatically if these types of events haven't been
-	// enabled
-	if (!triggeredByUser && !mNonUserEvents)
-		return;
-
-	mCallbackEvent(ctrlEvent, control, mCallbackContext);
-
-    NOEXCEPT_REGION_END
+    mCallbackEvent(ctrlEvent, control, mCallbackContext);
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::SetFont(FontIndex index, FontIndex resManFontIndex)
 {
-	// If this assert triggers, you need to call Dialog::Init() first.  This change
-	// was made so that the 's GUI could become separate and optional from 's core.  The 
-	// creation and interfacing with DialogResourceManager is now the responsibility 
-	// of the application if it wishes to use 's GUI.
-	_ASSERT(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
-	//_Analysis_assume_(m_pManager);
+    // If this assert triggers, you need to call Dialog::Init() first.  This change
+    // was made so that the 's GUI could become separate and optional from 's core.  The 
+    // creation and interfacing with DialogResourceManager is now the responsibility 
+    // of the application if it wishes to use 's GUI.
+    assert(mDialogManager && L"To fix call Dialog::Init() first.  See comments for details.");
+    //_Analysis_assume_(m_pManager);
 
 
     //call this to trigger an exception if the font index does not exist
     mDialogManager->GetFontNode(resManFontIndex);
 
-	mFonts[index] = resManFontIndex;
+    mFonts[index] = resManFontIndex;
 }
 
 
 //--------------------------------------------------------------------------------------
 FontNodePtr Dialog::GetFont(FontIndex index) const
 {
-	if (!mDialogManager)
-		return nullptr;
-	return mDialogManager->GetFontNode(index);
+    if (!mDialogManager)
+        return nullptr;
+    return mDialogManager->GetFontNode(index);
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::SetTexture(TextureIndex index, TextureIndex resManTexIndex)
 {
-	// If this assert triggers, you need to call Dialog::Init() first.  This change
-	// was made so that the 's GUI could become separate and optional from 's core.  The 
-	// creation and interfacing with DialogResourceManager is now the responsibility 
-	// of the application if it wishes to use 's GUI.
-	_ASSERT(mDialogManager && L"To fix this, call Dialog::Init() first.  See comments for details.");
-	//_Analysis_assume_(m_pManager);
+    // If this assert triggers, you need to call Dialog::Init() first.  This change
+    // was made so that the 's GUI could become separate and optional from 's core.  The 
+    // creation and interfacing with DialogResourceManager is now the responsibility 
+    // of the application if it wishes to use 's GUI.
+    assert(mDialogManager && L"To fix this, call Dialog::Init() first.  See comments for details.");
+    //_Analysis_assume_(m_pManager);
     
     //call this to trigger an exception if the texture index does not exist
     mDialogManager->GetTextureNode(resManTexIndex);
@@ -1432,389 +1409,381 @@ void Dialog::SetTexture(TextureIndex index, TextureIndex resManTexIndex)
 //--------------------------------------------------------------------------------------
 TextureNodePtr Dialog::GetTexture(TextureIndex index) const
 {
-	if (!mDialogManager)
-		return nullptr;
-	return mDialogManager->GetTextureNode(index);
+    if (!mDialogManager)
+        return nullptr;
+    return mDialogManager->GetTextureNode(index);
 }
 
 //--------------------------------------------------------------------------------------
 bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
-	if (mFirstTime)
+    if (mFirstTime)
         mFirstTime = false;
-	else
-		mMousePositionOld = mMousePosition;
+    else
+        mMousePositionOld = mMousePosition;
 
-	mDialogManager->MsgProc(_PASS_CALLBACK_PARAM);
+    mDialogManager->MsgProc(_PASS_CALLBACK_PARAM);
 
     if (msg == UNICODE_CHAR)
     {
         int i = 0;
     }
 
-	//first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
-	double x, y;
-	glfwGetCursorPos(g_pGLFWWindow, &x, &y);
-	mMousePosition = Point(static_cast<long>(x), g_WndHeight - static_cast<long>(y));
+    //first, even if we are not going to use it, snatch up the cursor position just in case it moves in the time it takes to do this
+    double x, y;
+    glfwGetCursorPos(g_pGLFWWindow, &x, &y);
+    mMousePosition = Point(static_cast<long>(x), g_WndHeight - static_cast<long>(y));
     
     //this gets broken when window is too big
-	mMousePositionDialogSpace.x = mMousePosition.x - mRegion.x;
-	mMousePositionDialogSpace.y = mMousePosition.y - mRegion.y - mCaptionHeight;//TODO: fix
+    mMousePositionDialogSpace.x = mMousePosition.x - mRegion.x;
+    mMousePositionDialogSpace.y = mMousePosition.y - mRegion.y - mCaptionHeight;//TODO: fix
 
-	//if (m_bCaption)
-	//	m_MousePositionDialogSpace.y -= m_nCaptionHeight;
+    //if (m_bCaption)
+    //    m_MousePositionDialogSpace.y -= m_nCaptionHeight;
 
-	bool bHandled = false;
+    bool bHandled = false;
 
 
-	//if it is a resize method, refresh ALL components
-	if (msg == RESIZE || msg == FRAMEBUFFER_SIZE)
-	{
-		for (auto it = mControls.begin(); it != mControls.end(); ++it)
-		{
-			it->second->MsgProc(msg, param1, param2, param3, param4);
-		}
-	}
+    //if it is a resize method, refresh ALL components
+    if (msg == RESIZE || msg == FRAMEBUFFER_SIZE)
+    {
+        for (auto it = mControls.begin(); it != mControls.end(); ++it)
+        {
+            it->second->MsgProc(msg, param1, param2, param3, param4);
+        }
+    }
 
-	// For invisible dialog, do not handle anything.
-	if (!mVisible)
-		return false;
+    // For invisible dialog, do not handle anything.
+    if (!mVisible)
+        return false;
 
     if (!mKeyboardInput && (msg == KEY || msg == UNICODE_CHAR))
-		return false;
+        return false;
 
-	// If caption is enable, check for clicks in the caption area.
-	if (mCaptionEnabled && !mLocked)
-	{
-		static Point totalDelta;
+    // If caption is enable, check for clicks in the caption area.
+    if (mCaptionEnabled && !mLocked)
+    {
+        static Point totalDelta;
 
-		if (((msg == MB) == true) &&
-			((param1 == GLFW_MOUSE_BUTTON_LEFT) == true) &&
-			((param2 == GLFW_PRESS) == true) )
-		{
+        if (((msg == MB) == true) &&
+            ((param1 == GLFW_MOUSE_BUTTON_LEFT) == true) &&
+            ((param2 == GLFW_PRESS) == true) )
+        {
 
-			if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < RectWidth(mRegion) &&
-				mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
-			{
-				mDrag = true;
-				mDragged = false;
-				//SetCapture(GetHWND());
-				return true;
-			}
-			else if (!mMinimized && mGrabAnywhere && !GetControlAtPoint(mMousePositionDialogSpace))
-			{
-				//ONLY allow this if it is not on top of a control
-				mDrag = true;
-				return true;
-			}
-		}
-		else if ((msg == MB) == true &&
-				(param1 == GLFW_MOUSE_BUTTON_LEFT) == true &&
-				(param2 == GLFW_RELEASE) == true && 
-				(mDrag))
-		{
-			if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < RectWidth(mRegion) &&
-				mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
-			{
-				//ReleaseCapture();
+            if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < RectWidth(mRegion) &&
+                mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
+            {
+                mDrag = true;
+                mDragged = false;
+                //SetCapture(GetHWND());
+                return true;
+            }
+            else if (!mMinimized && mGrabAnywhere && !GetControlAtPoint(mMousePositionDialogSpace))
+            {
+                //ONLY allow this if it is not on top of a control
+                mDrag = true;
+                return true;
+            }
+        }
+        else if ((msg == MB) == true &&
+                (param1 == GLFW_MOUSE_BUTTON_LEFT) == true &&
+                (param2 == GLFW_RELEASE) == true && 
+                (mDrag))
+        {
+            if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < RectWidth(mRegion) &&
+                mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
+            {
+                //ReleaseCapture();
 
-				mDrag = false;
+                mDrag = false;
 
-				//only minimize if the dialog WAS NOT moved
-				if (!mDragged)
-				{
-					//reset this when it passes its threshhold, which is when m_bDragged is toggled
-					totalDelta = { 0L, 0L };
-					mMinimized = !mMinimized;
-				}
+                //only minimize if the dialog WAS NOT moved
+                if (!mDragged)
+                {
+                    //reset this when it passes its threshhold, which is when m_bDragged is toggled
+                    totalDelta = { 0L, 0L };
+                    mMinimized = !mMinimized;
+                }
 
-				return true;
-			}
-			else if (!mMinimized && mGrabAnywhere)
-			{
-				mDrag = false;
-				return true;
-			}
-		}
-		else if ((msg == CURSOR_POS))
-		{
-			//is it over the caption?
-			if (glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-			{
-				if (mDrag)
-				{
-					//if (m_MousePosition.x < 0.0f || m_MousePosition.y < 0.0f)
-					//{
-					//	glfwSetCursorPos(g_pGLFWWindow, (m_MousePosition.x < 0.0f) ? 0 : param1, (m_MousePosition.y < 0.0f) ? param2 : 0);
-					//}
+                return true;
+            }
+            else if (!mMinimized && mGrabAnywhere)
+            {
+                mDrag = false;
+                return true;
+            }
+        }
+        else if ((msg == CURSOR_POS))
+        {
+            //is it over the caption?
+            if (glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+            {
+                if (mDrag)
+                {
+                    //if (m_MousePosition.x < 0.0f || m_MousePosition.y < 0.0f)
+                    //{
+                    //    glfwSetCursorPos(g_pGLFWWindow, (m_MousePosition.x < 0.0f) ? 0 : param1, (m_MousePosition.y < 0.0f) ? param2 : 0);
+                    //}
 
 
-					Point delta = mMousePosition - mMousePositionOld;
-					totalDelta = { totalDelta.x + delta.x, totalDelta.y + delta.y };
+                    Point delta = mMousePosition - mMousePositionOld;
+                    totalDelta = { totalDelta.x + delta.x, totalDelta.y + delta.y };
                     
-					RepositionRect(mRegion, 
+                    RepositionRect(mRegion, 
                         std::clamp(delta.x + mRegion.x, 0L, static_cast<long>(g_WndWidth) - RectWidth(mRegion)),
                         std::clamp(delta.y + mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight));
                     
 
-					//give a threshhold, because sometimes when a use clicks, the user will move the mouse a bit
-					if (totalDelta.x > 3 || totalDelta.y > 3)
-						mDragged = true;
+                    //give a threshhold, because sometimes when a use clicks, the user will move the mouse a bit
+                    if (totalDelta.x > 3 || totalDelta.y > 3)
+                        mDragged = true;
 
-					return true;
-				}
-			}
-		}
-	}
+                    return true;
+                }
+            }
+        }
+    }
 
-	//this is important, if the window is resized, then make sure to reclamp the dialog position
-	if (mAutoClamp && msg == RESIZE)
-	{
-		ClampToScreen();
-	}
+    //this is important, if the window is resized, then make sure to reclamp the dialog position
+    if (mAutoClamp && msg == RESIZE)
+    {
+        ClampToScreen();
+    }
 
-	// If the dialog is minimized, don't send any messages to controls.
-	if (mMinimized)
-		return false;
+    // If the dialog is minimized, don't send any messages to controls.
+    if (mMinimized)
+        return false;
 
-	// If a control is in focus, it belongs to this dialog, and it's enabled, then give
-	// it the first chance at handling the message.
-	if (sControlFocus &&
-		&sControlFocus->mDialog == this &&
-		sControlFocus->GetEnabled())
-	{
-		// If the control MsgProc handles it, then we don't.
-		if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
-			return true;
-	}
+    // If a control is in focus, it belongs to this dialog, and it's enabled, then give
+    // it the first chance at handling the message.
+    if (sControlFocus &&
+        &sControlFocus->mDialog == this &&
+        sControlFocus->GetEnabled())
+    {
+        // If the control MsgProc handles it, then we don't.
+        if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
+            return true;
+    }
 
-	switch (msg)
-	{
-	case RESIZE:
-	case POS:
-	{
-		// Handle sizing and moving messages so that in case the mouse cursor is moved out
-		// of an UI control because of the window adjustment, we can properly
-		// unhighlight the highlighted control.
-		Point pt =
-		{
-			-1, -1
-		};
-		OnMouseMove(pt);
-		break;
-	}
+    switch (msg)
+    {
+    case RESIZE:
+    case POS:
+    {
+        // Handle sizing and moving messages so that in case the mouse cursor is moved out
+        // of an UI control because of the window adjustment, we can properly
+        // unhighlight the highlighted control.
+        Point pt =
+        {
+            -1, -1
+        };
+        OnMouseMove(pt);
+        break;
+    }
 
-	case FOCUS:
-		// Call OnFocusIn()/OnFocusOut() of the control that currently has the focus
-		// as the application is activated/deactivated.  This matches the Windows
-		// behavior.
-		if (sControlFocus &&
-			&sControlFocus->mDialog == this &&
-			sControlFocus->GetEnabled())
-		{
-			if (param1 == GL_TRUE)
-				sControlFocus->OnFocusIn();
-			else
-				sControlFocus->OnFocusOut();
-		}
-		break;
+    case FOCUS:
+        // Call OnFocusIn()/OnFocusOut() of the control that currently has the focus
+        // as the application is activated/deactivated.  This matches the Windows
+        // behavior.
+        if (sControlFocus &&
+            &sControlFocus->mDialog == this &&
+            sControlFocus->GetEnabled())
+        {
+            if (param1 == GL_TRUE)
+                sControlFocus->OnFocusIn();
+            else
+                sControlFocus->OnFocusOut();
+        }
+        break;
 
-		// Keyboard messages
-	case KEY:
-	//case WM_SYSKEYDOWN:
-	//case WM_KEYUP:
-	//case WM_SYSKEYUP:
-	{
-		// If a control is in focus, it belongs to this dialog, and it's enabled, then give
-		// it the first chance at handling the message.
-		/*if (sControlFocus &&
-			&sControlFocus->mDialog == this &&
-			sControlFocus->GetEnabled())
-			for (auto it : mControls)     --> Not Quite sure what this loop was here for
-			{
-			    if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
-				    return true;
-			}*/
+        // Keyboard messages
+    case KEY:
+    //case WM_SYSKEYDOWN:
+    //case WM_KEYUP:
+    //case WM_SYSKEYUP:
+    {
+        // If a control is in focus, it belongs to this dialog, and it's enabled, then give
+        // it the first chance at handling the message.
+        /*if (sControlFocus &&
+            &sControlFocus->mDialog == this &&
+            sControlFocus->GetEnabled())
+            for (auto it : mControls)     --> Not Quite sure what this loop was here for
+            {
+                if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
+                    return true;
+            }*/
 
-		// Not yet handled, see if this matches a control's hotkey
-		// Activate the hotkey if the focus doesn't belong to an
-		// edit box.
-		if (param3 == GLFW_PRESS && (!sControlFocus ||
-			(sControlFocus->GetType() != CONTROL_EDITBOX
-			&& sControlFocus->GetType() != CONTROL_IMEEDITBOX)))
-		{
-			for (auto it : mControls)
-			{
-				if (it.second->GetHotkey() == param1)
-				{
-					it.second->OnHotkey();
-					return true;
-				}
-			}
-		}
+        // Not yet handled, see if this matches a control's hotkey
+        // Activate the hotkey if the focus doesn't belong to an
+        // edit box.
+        if (param3 == GLFW_PRESS && (!sControlFocus ||
+            (sControlFocus->GetType() != CONTROL_EDITBOX
+            && sControlFocus->GetType() != CONTROL_IMEEDITBOX)))
+        {
+            for (auto it : mControls)
+            {
+                if (it.second->GetHotkey() == param1)
+                {
+                    it.second->OnHotkey();
+                    return true;
+                }
+            }
+        }
 
-		// Not yet handled, check for focus messages
-		if (param3 == GLFW_PRESS)
-		{
-			// If keyboard input is not enabled, this message should be ignored
-			if (!mKeyboardInput)
-				return false;
+        // Not yet handled, check for focus messages
+        if (param3 == GLFW_PRESS)
+        {
+            // If keyboard input is not enabled, this message should be ignored
+            if (!mKeyboardInput)
+                return false;
 
-			switch (param1)
-			{
-			case GLFW_KEY_RIGHT:
-			case GLFW_KEY_DOWN:
-				if (sControlFocus)
-				{
-					return OnCycleFocus(true);
-				}
-				break;
+            switch (param1)
+            {
+            case GLFW_KEY_RIGHT:
+            case GLFW_KEY_DOWN:
+                if (sControlFocus)
+                {
+                    return OnCycleFocus(true);
+                }
+                break;
 
-			case GLFW_KEY_LEFT:
-			case GLFW_KEY_UP:
-				if (sControlFocus)
-				{
-					return OnCycleFocus(false);
-				}
-				break;
+            case GLFW_KEY_LEFT:
+            case GLFW_KEY_UP:
+                if (sControlFocus)
+                {
+                    return OnCycleFocus(false);
+                }
+                break;
 
-			case GLFW_KEY_TAB:
-			{
-				bool bShiftDown =(glfwGetKey(g_pGLFWWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ||
-								(glfwGetKey(g_pGLFWWindow, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
-				return OnCycleFocus(!bShiftDown);
-			}
-			}
-		}
+            case GLFW_KEY_TAB:
+            {
+                bool bShiftDown =(glfwGetKey(g_pGLFWWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ||
+                                (glfwGetKey(g_pGLFWWindow, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
+                return OnCycleFocus(!bShiftDown);
+            }
+            }
+        }
 
-		break;
-	}
-
-
-		// Mouse messages
-	//case WM_MOUSEMOVE:
-	//case WM_LBUTTONDOWN:
-	//case WM_LBUTTONUP:
-	//case WM_MBUTTONDOWN:
-	//case WM_MBUTTONUP:
-	//case WM_RBUTTONDOWN:
-	//case WM_RBUTTONUP:
-	//case WM_XBUTTONDOWN:
-	//case WM_XBUTTONUP:
-	//case WM_LBUTTONDBLCLK:
-	//case WM_MBUTTONDBLCLK:
-	//case WM_RBUTTONDBLCLK:
-	//case WM_XBUTTONDBLCLK:
-	//case WM_MOUSEWHEEL:
-	case MB:
-	case SCROLL:
-	case CURSOR_POS:
-	{
-		// If not accepting mouse input, return false to indicate the message should still 
-		// be handled by the application (usually to move the camera).
-		if (!mMouseInput)
-			return false;
+        break;
+    }
 
 
-		// If caption is enabled, offset the Y coordinate by its height.
-		//if (m_bCaption)
-		//	m_MousePosition.y += m_nCaptionHeight;
+        // Mouse messages
+    //case WM_MOUSEMOVE:
+    //case WM_LBUTTONDOWN:
+    //case WM_LBUTTONUP:
+    //case WM_MBUTTONDOWN:
+    //case WM_MBUTTONUP:
+    //case WM_RBUTTONDOWN:
+    //case WM_RBUTTONUP:
+    //case WM_XBUTTONDOWN:
+    //case WM_XBUTTONUP:
+    //case WM_LBUTTONDBLCLK:
+    //case WM_MBUTTONDBLCLK:
+    //case WM_RBUTTONDBLCLK:
+    //case WM_XBUTTONDBLCLK:
+    //case WM_MOUSEWHEEL:
+    case MB:
+    case SCROLL:
+    case CURSOR_POS:
+    {
+        // If not accepting mouse input, return false to indicate the message should still 
+        // be handled by the application (usually to move the camera).
+        if (!mMouseInput)
+            return false;
 
-		// If a control is in focus, it belongs to this dialog, and it's enabled, then give
-		// it the first chance at handling the message.
-		if (sControlFocus &&
-			&sControlFocus->mDialog == this &&
-			sControlFocus->GetEnabled())
-		{
-			if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
-				return true;
-		}
 
-		// Not yet handled, see if the mouse is over any controls
-		ControlPtr pControl = GetControlAtPoint(mMousePositionDialogSpace);
-		if (pControl && pControl->GetEnabled())
-		{
-			bHandled = pControl->MsgProc(msg, param1, param2, param3, param4);
-			if (bHandled)
-				return true;
-		}
-		else
-		{
-			// Mouse not over any controls in this dialog, if there was a control
-			// which had focus it just lost it
-			if (param1 == GLFW_MOUSE_BUTTON_LEFT &&
-				param2 == GLFW_PRESS &&
-				sControlFocus &&
-				&sControlFocus->mDialog == this)
-			{
-				sControlFocus->OnFocusOut();
-				sControlFocus = nullptr;
-			}
-		}
+        // If caption is enabled, offset the Y coordinate by its height.
+        //if (m_bCaption)
+        //    m_MousePosition.y += m_nCaptionHeight;
 
-		// Still not handled, hand this off to the dialog. Return false to indicate the
-		// message should still be handled by the application (usually to move the camera).
-		switch (msg)
-		{
-		case CURSOR_POS:
-			OnMouseMove(mMousePositionDialogSpace);
-			return false;
-		}
+        // If a control is in focus, it belongs to this dialog, and it's enabled, then give
+        // it the first chance at handling the message.
+        if (sControlFocus &&
+            &sControlFocus->mDialog == this &&
+            sControlFocus->GetEnabled())
+        {
+            if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
+                return true;
+        }
 
-		break;
-	}
+        // Not yet handled, see if the mouse is over any controls
+        ControlPtr pControl = GetControlAtPoint(mMousePositionDialogSpace);
+        if (pControl && pControl->GetEnabled())
+        {
+            bHandled = pControl->MsgProc(msg, param1, param2, param3, param4);
+            if (bHandled)
+                return true;
+        }
+        else
+        {
+            // Mouse not over any controls in this dialog, if there was a control
+            // which had focus it just lost it
+            if (param1 == GLFW_MOUSE_BUTTON_LEFT &&
+                param2 == GLFW_PRESS &&
+                sControlFocus &&
+                &sControlFocus->mDialog == this)
+            {
+                sControlFocus->OnFocusOut();
+                sControlFocus = nullptr;
+            }
+        }
 
-	case CURSOR_ENTER:
-	{
-		// The application has lost mouse capture.
-		// The dialog object may not have received
-		// a WM_MOUSEUP when capture changed. Reset
-		// mDrag so that the dialog does not mistakenly
-		// think the mouse button is still held down.
-		if (param1 == GL_FALSE)
-			mDrag = false;
-	}
-	}
+        // Still not handled, hand this off to the dialog. Return false to indicate the
+        // message should still be handled by the application (usually to move the camera).
+        switch (msg)
+        {
+        case CURSOR_POS:
+            OnMouseMove(mMousePositionDialogSpace);
+            return false;
+        }
 
-    NOEXCEPT_REGION_END
+        break;
+    }
 
-	return false;
+    case CURSOR_ENTER:
+    {
+        // The application has lost mouse capture.
+        // The dialog object may not have received
+        // a WM_MOUSEUP when capture changed. Reset
+        // mDrag so that the dialog does not mistakenly
+        // think the mouse button is still held down.
+        if (param1 == GL_FALSE)
+            mDrag = false;
+    }
+    }
+
+    return false;
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::ClampToScreen() noexcept
 {
-    NOEXCEPT_REGION_START
-
-	mRegion.x = std::clamp(mRegion.x, 0L, static_cast<long>(g_WndWidth) - RectWidth(mRegion));
-	mRegion.y = std::clamp(mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight);
-
-    NOEXCEPT_REGION_END
+    mRegion.x = std::clamp(mRegion.x, 0L, static_cast<long>(g_WndWidth) - RectWidth(mRegion));
+    mRegion.y = std::clamp(mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight);
 }
 
 //--------------------------------------------------------------------------------------
-ControlPtr Dialog::GetControlAtPoint(const Point& pt) const
+ControlPtr Dialog::GetControlAtPoint(const Point& pt) const noexcept
 {
-	// Search through all child controls for the first one which
-	// contains the mouse point
-	for (auto it : mControls)
-	{
-		if (!it.second)
-		{
-			continue;
-		}
+    // Search through all child controls for the first one which
+    // contains the mouse point
+    for (auto it : mControls)
+    {
+        if (!it.second)
+        {
+            continue;
+        }
 
-		// We only return the current control if it is visible
-		// and enabled.  Because GetControlAtPoint() is used to do mouse
-		// hittest, it makes sense to perform this filtering.
-		if (it.second->ContainsPoint(pt) && it.second->GetEnabled() && it.second->GetVisible())
-		{
-			return it.second;
-		}
-	}
+        // We only return the current control if it is visible
+        // and enabled.  Because GetControlAtPoint() is used to do mouse
+        // hittest, it makes sense to perform this filtering.
+        if (it.second->ContainsPoint(pt) && it.second->GetEnabled() && it.second->GetVisible())
+        {
+            return it.second;
+        }
+    }
 
     return nullptr;
 }
@@ -1823,11 +1792,11 @@ ControlPtr Dialog::GetControlAtPoint(const Point& pt) const
 //--------------------------------------------------------------------------------------
 bool Dialog::GetControlEnabled(ControlIndex ID) const
 {
-	ControlPtr pControl = GetControl<Control>(ID);
-	if (!pControl)
-		return false;
+    ControlPtr pControl = GetControl<Control>(ID);
+    if (!pControl)
+        return false;
 
-	return pControl->GetEnabled();
+    return pControl->GetEnabled();
 }
 
 
@@ -1835,62 +1804,54 @@ bool Dialog::GetControlEnabled(ControlIndex ID) const
 //--------------------------------------------------------------------------------------
 void Dialog::SetControlEnabled(ControlIndex ID, bool bEnabled)
 {
-	ControlPtr pControl = GetControl<Control>(ID);
-	if (!pControl)
-		return;
+    ControlPtr pControl = GetControl<Control>(ID);
+    if (!pControl)
+        return;
 
-	pControl->SetEnabled(bEnabled);
+    pControl->SetEnabled(bEnabled);
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::OnMouseUp(const Point& pt) noexcept
 {
-    NOEXCEPT_REGION_START
-
     //TODO: do something here?
     GLUF_UNREFERENCED_PARAMETER(pt);
     sControlPressed = nullptr;
     mControlMouseOver = nullptr;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::OnMouseMove(const Point& pt) noexcept
 {
-    NOEXCEPT_REGION_START
+    // Figure out which control the mouse is over now
+    ControlPtr pControl = GetControlAtPoint(pt);
 
-	// Figure out which control the mouse is over now
-	ControlPtr pControl = GetControlAtPoint(pt);
+    // If the mouse is still over the same control, nothing needs to be done
+    if (pControl == mControlMouseOver)
+        return;
 
-	// If the mouse is still over the same control, nothing needs to be done
-	if (pControl == mControlMouseOver)
-		return;
-
-	// Handle mouse leaving the old control
+    // Handle mouse leaving the old control
     if (mControlMouseOver)
     {
         mControlMouseOver->OnMouseLeave();
         mControlMouseOver = nullptr;
     }
 
-	// Handle mouse entering the new control
-	mControlMouseOver = pControl;
+    // Handle mouse entering the new control
+    mControlMouseOver = pControl;
     if (pControl)
     {
         mControlMouseOver->OnMouseEnter();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element& element)
 {
-	// If this Element type already exist in the list, simply update the stored Element
+    // If this Element type already exist in the list, simply update the stored Element
     for (auto it : mDefaultElements)
     {
         if (it->mControlType == controlType && it->mElementIndex == elementIndex)
@@ -1900,14 +1861,14 @@ void Dialog::SetDefaultElement(ControlType controlType, ElementIndex elementInde
         }
     }
 
-	// Otherwise, add a new entry
+    // Otherwise, add a new entry
     ElementHolderPtr pNewHolder = std::make_shared<ElementHolder>();
 
-	pNewHolder->mControlType = controlType;
-	pNewHolder->mElementIndex = elementIndex;
-	pNewHolder->mElement = element;
+    pNewHolder->mControlType = controlType;
+    pNewHolder->mElementIndex = elementIndex;
+    pNewHolder->mElement = element;
 
-	mDefaultElements.push_back(pNewHolder);
+    mDefaultElements.push_back(pNewHolder);
 }
 
 
@@ -1935,13 +1896,13 @@ void Dialog::AddStatic(ControlIndex ID, const std::wstring& strText, const Rect&
     if (ctrlPtr)
         *ctrlPtr = pStatic;
 
-	// Set the ID and list index
-	pStatic->SetID(ID);
-	pStatic->SetText(strText);
+    // Set the ID and list index
+    pStatic->SetID(ID);
+    pStatic->SetText(strText);
     pStatic->SetRegion(region);
-	pStatic->mIsDefault = isDefault;
+    pStatic->mIsDefault = isDefault;
 
-	AddControl(std::dynamic_pointer_cast<Control>(pStatic));
+    AddControl(std::dynamic_pointer_cast<Control>(pStatic));
 }
 
 
@@ -1953,12 +1914,12 @@ void Dialog::AddButton(ControlIndex ID, const std::wstring& strText, const Rect&
     if (ctrlPtr)
         *ctrlPtr = pButton;
 
-	// Set the ID and list index
-	pButton->SetID(ID);
-	pButton->SetText(strText);
+    // Set the ID and list index
+    pButton->SetID(ID);
+    pButton->SetText(strText);
     pButton->SetRegion(region);
-	pButton->SetHotkey(hotkey);
-	pButton->mIsDefault = isDefault;
+    pButton->SetHotkey(hotkey);
+    pButton->mIsDefault = isDefault;
 
     AddControl(std::dynamic_pointer_cast<Control>(pButton));
 }
@@ -1972,13 +1933,13 @@ void Dialog::AddCheckBox(ControlIndex ID, const std::wstring& strText, const Rec
     if (ctrlPtr)
         *ctrlPtr = pCheckBox;
 
-	// Set the ID and list index
-	pCheckBox->SetID(ID);
-	pCheckBox->SetText(strText);
+    // Set the ID and list index
+    pCheckBox->SetID(ID);
+    pCheckBox->SetText(strText);
     pCheckBox->SetRegion(region);
-	pCheckBox->SetHotkey(hotkey);
-	pCheckBox->mIsDefault = isDefault;
-	pCheckBox->SetChecked(checked);
+    pCheckBox->SetHotkey(hotkey);
+    pCheckBox->mIsDefault = isDefault;
+    pCheckBox->SetChecked(checked);
 
     AddControl(std::dynamic_pointer_cast<Control>(pCheckBox));
 }
@@ -1992,15 +1953,15 @@ void Dialog::AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const
     if (ctrlPtr)
         *ctrlPtr = pRadioButton;
 
-	// Set the ID and list index
-	pRadioButton->SetID(ID);
-	pRadioButton->SetText(strText);
-	pRadioButton->SetButtonGroup(buttonGroup);
+    // Set the ID and list index
+    pRadioButton->SetID(ID);
+    pRadioButton->SetText(strText);
+    pRadioButton->SetButtonGroup(buttonGroup);
     pRadioButton->SetRegion(region);
-	pRadioButton->SetHotkey(hotkey);
-	pRadioButton->SetChecked(checked);
-	pRadioButton->mIsDefault = isDefault;
-	pRadioButton->SetChecked(checked);
+    pRadioButton->SetHotkey(hotkey);
+    pRadioButton->SetChecked(checked);
+    pRadioButton->mIsDefault = isDefault;
+    pRadioButton->SetChecked(checked);
 
     AddControl(std::dynamic_pointer_cast<Control>(pRadioButton));
 }
@@ -2014,11 +1975,11 @@ void Dialog::AddComboBox(ControlIndex ID, const Rect& region, int hotKey, bool i
     if (ctrlPtr)
         *ctrlPtr = pComboBox;
 
-	// Set the ID and list index
-	pComboBox->SetID(ID);
+    // Set the ID and list index
+    pComboBox->SetID(ID);
     pComboBox->SetRegion(region);
-	pComboBox->SetHotkey(hotKey);
-	pComboBox->mIsDefault = isDefault;
+    pComboBox->SetHotkey(hotKey);
+    pComboBox->mIsDefault = isDefault;
 
     AddControl(std::dynamic_pointer_cast<Control>(pComboBox));
 }
@@ -2032,13 +1993,13 @@ void Dialog::AddSlider(ControlIndex ID, const Rect& region, long min, long max, 
     if (ctrlPtr)
         *ctrlPtr = pSlider;
 
-	// Set the ID and list index
-	pSlider->SetID(ID);
+    // Set the ID and list index
+    pSlider->SetID(ID);
     pSlider->SetRegion(region);
-	pSlider->mIsDefault = isDefault;
-	pSlider->SetRange(min, max);
-	pSlider->SetValue(value);
-	pSlider->UpdateRects();
+    pSlider->mIsDefault = isDefault;
+    pSlider->SetRange(min, max);
+    pSlider->SetValue(value);
+    pSlider->UpdateRects();
 
     AddControl(std::dynamic_pointer_cast<Control>(pSlider));
 }
@@ -2047,91 +2008,91 @@ void Dialog::AddSlider(ControlIndex ID, const Rect& region, long min, long max, 
 //--------------------------------------------------------------------------------------
 void Dialog::AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset, GLbitfield textFlags, bool isDefault, std::shared_ptr<EditBoxPtr> ctrlPtr)
 {
-	auto pEditBox = CreateEditBox(*this, (textFlags & GT_MULTI_LINE) == GT_MULTI_LINE);
+    auto pEditBox = CreateEditBox(*this, (textFlags & GT_MULTI_LINE) == GT_MULTI_LINE);
 
-	if (ctrlPtr)
-		*ctrlPtr = pEditBox;
+    if (ctrlPtr)
+        *ctrlPtr = pEditBox;
 
-	pEditBox->GetElement(0).mTextFormatFlags = textFlags;
+    pEditBox->GetElement(0).mTextFormatFlags = textFlags;
 
-	// Set the ID and position
-	pEditBox->SetID(ID);
+    // Set the ID and position
+    pEditBox->SetID(ID);
     pEditBox->SetRegion(region);
-	pEditBox->mIsDefault = isDefault;
+    pEditBox->mIsDefault = isDefault;
     pEditBox->SetCharset(charset);
-	pEditBox->SetText(strText);
+    pEditBox->SetText(strText);
 
-	AddControl(std::dynamic_pointer_cast<Control>(pEditBox));
+    AddControl(std::dynamic_pointer_cast<Control>(pEditBox));
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::AddListBox(ControlIndex ID, const Rect& region, Bitfield style, std::shared_ptr<ListBoxPtr> ctrlPtr)
 {
-	auto pListBox = CreateListBox(*this);
+    auto pListBox = CreateListBox(*this);
 
-	if (ctrlPtr)
-		*ctrlPtr = pListBox;
+    if (ctrlPtr)
+        *ctrlPtr = pListBox;
 
-	// Set the ID and position
-	pListBox->SetID(ID);
+    // Set the ID and position
+    pListBox->SetID(ID);
     pListBox->SetRegion(region);
-	pListBox->SetStyle(style);
+    pListBox->SetStyle(style);
 
     AddControl(std::dynamic_pointer_cast<Control>(pListBox));
 }
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddControl(ControlPtr& pControl)
+void Dialog::AddControl(ControlPtr pControl)
 {
-	InitControl(pControl);
+    InitControl(pControl);
 
     if (!pControl)
         return;
 
-	// Add to the list
-	mControls[pControl->mID] = pControl;
+    // Add to the list
+    mControls[pControl->mID] = pControl;
 }
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::InitControl(ControlPtr& pControl)
+void Dialog::InitControl(ControlPtr pControl)
 {
-	//Result hr;
+    //Result hr;
 
-	if (!pControl)
-		return;
+    if (!pControl)
+        return;
 
-	pControl->mIndex = static_cast<unsigned int>(mControls.size());
+    pControl->mIndex = static_cast<unsigned int>(mControls.size());
 
-	// Look for a default Element entry
-	for (auto it : mDefaultElements)
-	{
-		if (it->mControlType == pControl->GetType())
+    // Look for a default Element entry
+    for (auto it : mDefaultElements)
+    {
+        if (it->mControlType == pControl->GetType())
             pControl->SetElement(it->mElementIndex, it->mElement);
-	}
+    }
 
-	pControl->OnInit();
+    pControl->OnInit();
 }
 
 
 //--------------------------------------------------------------------------------------
 ControlPtr Dialog::GetControl(ControlIndex ID, ControlType controlType) const
 {
-	// Try to find the control with the given ID
-	for (auto it : mControls)
-	{
-		if (it.second->GetID() == ID && it.second->GetType() == controlType)
-		{
-			return it.second;
-		}
+    // Try to find the control with the given ID
+    for (auto it : mControls)
+    {
+        if (it.second->GetID() == ID && it.second->GetType() == controlType)
+        {
+            return it.second;
+        }
     }
 
     GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("Control ID Not Found"));
 
-	// Not found
-	return nullptr;
+    // Not found
+    return nullptr;
 }
 
 
@@ -2157,13 +2118,13 @@ ControlPtr Dialog::GetNextControl(ControlPtr control)
     if (!nextDlg)
         return control;
 
-    auto* nextDialogIndexIt = &nextDlg->mControls.begin();
+    auto nextDialogIndexIt = nextDlg->mControls.begin();
 
     //keep going through dialogs until one with a control is found, but prevent looping back through
-    while (*nextDialogIndexIt == nextDlg->mControls.end())
+    while (nextDialogIndexIt == nextDlg->mControls.end())
     {
         nextDlg = nextDlg->mNextDialog;
-        nextDialogIndexIt = &nextDlg->mControls.begin();
+        nextDialogIndexIt = nextDlg->mControls.begin();
 
         //if the same dialog is looped back through, return the current control
         if (nextDlg.get() == &dialog)
@@ -2173,7 +2134,7 @@ ControlPtr Dialog::GetNextControl(ControlPtr control)
     }
 
     //a control was found before the dialog chain was looped through
-    return (*nextDialogIndexIt)->second;
+    return nextDialogIndexIt->second;
 }
 
 
@@ -2198,13 +2159,13 @@ ControlPtr Dialog::GetPrevControl(ControlPtr control)
     if (!prevDlg)
         return control;
 
-    auto* prevDialogIndexIt = &prevDlg->mControls.rbegin();
+    auto prevDialogIndexIt = prevDlg->mControls.rbegin();
 
     //keep going through the dialogs until one with a control is found, but prevent looping back through
-    while (*prevDialogIndexIt == prevDlg->mControls.rend())
+    while (prevDialogIndexIt == prevDlg->mControls.rend())
     {
         prevDlg = prevDlg->mPrevDialog;
-        prevDialogIndexIt = &prevDlg->mControls.rbegin();
+        prevDialogIndexIt = prevDlg->mControls.rbegin();
 
         //if the same dialog is looped back through, return the current control
         if (prevDlg.get() == &dialog)
@@ -2214,24 +2175,24 @@ ControlPtr Dialog::GetPrevControl(ControlPtr control)
     }
 
     //a control was found before the dialog chain was looped through
-    return (*prevDialogIndexIt)->second;
+    return prevDialogIndexIt->second;
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::ClearRadioButtonGroup(RadioButtonGroup buttonGroup)
 {
-	// Find all radio buttons with the given group number
-	for (auto it : mControls)
-	{
-		if (it.second->GetType() == CONTROL_RADIOBUTTON)
-		{
-			RadioButtonPtr radioButton = std::dynamic_pointer_cast<RadioButton>(it.second);
+    // Find all radio buttons with the given group number
+    for (auto it : mControls)
+    {
+        if (it.second->GetType() == CONTROL_RADIOBUTTON)
+        {
+            RadioButtonPtr radioButton = std::dynamic_pointer_cast<RadioButton>(it.second);
 
             if (radioButton->GetButtonGroup() == buttonGroup)
                 radioButton->SetChecked(false, false);
-		}
-	}
+        }
+    }
 }
 
 
@@ -2259,43 +2220,43 @@ std::vector<RadioButtonPtr> Dialog::GetRadioButtonGroup(RadioButtonGroup buttonG
 //--------------------------------------------------------------------------------------
 void Dialog::ClearComboBox(ControlIndex ID)
 {
-	ComboBoxPtr comboBox = GetControl<ComboBox>(ID);
-	if (!comboBox)
-		return;
+    ComboBoxPtr comboBox = GetControl<ComboBox>(ID);
+    if (!comboBox)
+        return;
 
-	comboBox->RemoveAllItems();
+    comboBox->RemoveAllItems();
 }
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::RequestFocus(ControlPtr& control)
+void Dialog::RequestFocus(ControlPtr control)
 {
     if (sControlFocus == control)
-		return;
+        return;
 
     if (!control->CanHaveFocus())
-		return;
+        return;
 
-	if (sControlFocus)
-		sControlFocus->OnFocusOut();
+    if (sControlFocus)
+        sControlFocus->OnFocusOut();
 
-	control->OnFocusIn();
-	sControlFocus = control;
+    control->OnFocusIn();
+    sControlFocus = control;
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::DrawRect(const Rect& rect, const Color& color, bool transform)
 {
-	Rect rcScreen = rect;
+    Rect rcScreen = rect;
 
     if (transform)
         ScreenSpaceToGLSpace(rcScreen);
 
-	//if (m_bCaption)
-	//	OffsetRect(rcScreen, 0, m_nCaptionHeight);
+    //if (m_bCaption)
+    //    OffsetRect(rcScreen, 0, m_nCaptionHeight);
 
-	//rcScreen = ScreenToClipspace(rcScreen);
+    //rcScreen = ScreenToClipspace(rcScreen);
 
     auto thisSprite = SpriteVertexStruct::MakeMany(4);
     thisSprite[0] = 
@@ -2328,8 +2289,8 @@ void Dialog::DrawRect(const Rect& rect, const Color& color, bool transform)
 
     mDialogManager->mSpriteBuffer.BufferData(thisSprite);
 
-	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
-	// draw a sprite every time to keep the order correct between sprites and text.
+    // Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
+    // draw a sprite every time to keep the order correct between sprites and text.
     mDialogManager->EndSprites(nullptr, false);//render in untextured mode
 }
 
@@ -2338,23 +2299,23 @@ void Dialog::DrawRect(const Rect& rect, const Color& color, bool transform)
 
 void Dialog::DrawSprite(const Element& element, const Rect& rect, float depth, bool textured)
 {
-	// No need to draw fully transparent layers
+    // No need to draw fully transparent layers
     if (element.mTextureColor.GetCurrent().a == 0)
         return;
 
     /*if (element->mTextureColor.GetCurrent() == element->mTextureColor.mStates[STATE_HIDDEN])
-		return;*/
+        return;*/
 
 
     Rectf uvRect = element.mUVRect;
 
-	Rect rcScreen = rect;
+    Rect rcScreen = rect;
 
-	OffsetRect(rcScreen, mRegion.x - long(g_WndWidth / 2), mCaptionHeight + mRegion.y - long(g_WndHeight / 2));
+    OffsetRect(rcScreen, mRegion.x - long(g_WndWidth / 2), mCaptionHeight + mRegion.y - long(g_WndHeight / 2));
     
-	/*TextureNodePtr textureNode = GetTexture(pElement->iTexture);
+    /*TextureNodePtr textureNode = GetTexture(pElement->iTexture);
     if (!textureNode)
-		return;*/
+        return;*/
 
     auto thisSprite = SpriteVertexStruct::MakeMany(4);
 
@@ -2388,34 +2349,34 @@ void Dialog::DrawSprite(const Element& element, const Rect& rect, float depth, b
 
     mDialogManager->mSpriteBuffer.BufferData(thisSprite);
 
-	// Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
-	// draw a sprite every time to keep the order correct between sprites and text.
-	mDialogManager->EndSprites(&element, textured);
+    // Why are we drawing the sprite every time?  This is very inefficient, but the sprite workaround doesn't have support for sorting now, so we have to
+    // draw a sprite every time to keep the order correct between sprites and text.
+    mDialogManager->EndSprites(&element, textured);
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::DrawText(const std::wstring& text, const Element& element, const Rect& rect, bool shadow, bool hardRect)
 {
-	// No need to draw fully transparent layers
+    // No need to draw fully transparent layers
     if (element.mFontColor.GetCurrent().a == 0)
-		return;
+        return;
 
-	Rect screen = rect;
+    Rect screen = rect;
     OffsetRect(screen, mRegion.x, mRegion.y);
 
 
-	OffsetRect(screen, 0, mCaptionHeight);
+    OffsetRect(screen, 0, mCaptionHeight);
 
-	/*if (bShadow)
-	{
-		Rect rcShadow = rcScreen;
-		OffsetRect(rcShadow, 1 / m_pManager->GetWindowSize().x, 1 / m_pManager->GetWindowSize().y);
+    /*if (bShadow)
+    {
+        Rect rcShadow = rcScreen;
+        OffsetRect(rcShadow, 1 / m_pManager->GetWindowSize().x, 1 / m_pManager->GetWindowSize().y);
 
-		Color vShadowColor(0, 0, 0, 255);
-		DrawText(*m_pManager->GetFontNode(pElement->mFontIndex), strText, rcShadow, vShadowColor, bCenter, bHardRect);
+        Color vShadowColor(0, 0, 0, 255);
+        DrawText(*m_pManager->GetFontNode(pElement->mFontIndex), strText, rcShadow, vShadowColor, bCenter, bHardRect);
 
-	}*/
+    }*/
 
     Color vFontColor = element.mFontColor.GetCurrent();
     Text::DrawText(mDialogManager->GetFontNode(element.mFontIndex), text, screen, element.mFontColor.GetCurrent(), element.mTextFormatFlags, hardRect);
@@ -2425,22 +2386,20 @@ void Dialog::DrawText(const std::wstring& text, const Element& element, const Re
 //--------------------------------------------------------------------------------------
 void Dialog::CalcTextRect(const std::wstring& text, const Element& element, Rect& rect) const
 {
-	FontNodePtr pFontNode = GetFont(element.mFontIndex);
-	if (!pFontNode)
-		return;
+    FontNodePtr pFontNode = GetFont(element.mFontIndex);
+    if (!pFontNode)
+        return;
 
     GLUF_UNREFERENCED_PARAMETER(text);
     GLUF_UNREFERENCED_PARAMETER(element);
     GLUF_UNREFERENCED_PARAMETER(rect);
-	// TODO -
+    // TODO -
 
 }
 
 //--------------------------------------------------------------------------------------
 void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!nextDialog)
         mNextDialog = shared_from_this();
     else
@@ -2448,31 +2407,23 @@ void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept
         mNextDialog = nextDialog;
         nextDialog->mPrevDialog = shared_from_this();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::ClearFocus() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (sControlFocus)
     {
         sControlFocus->OnFocusOut();
         sControlFocus = nullptr;
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Dialog::FocusDefaultControl() noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Check for default control in this dialog
     for (auto it : mControls)
     {
@@ -2487,8 +2438,6 @@ void Dialog::FocusDefaultControl() noexcept
             return;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 void Dialog::ScreenSpaceToGLSpace(Rect& rc) noexcept
@@ -2506,8 +2455,6 @@ void Dialog::ScreenSpaceToGLSpace(Point& pt) noexcept
 //--------------------------------------------------------------------------------------
 bool Dialog::OnCycleFocus(bool forward) noexcept
 {
-    NOEXCEPT_REGION_START
-
     ControlPtr pControl = nullptr;
     DialogPtr pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
     DialogPtr pLastDialog;    // focus from first control to last or vice versa.
@@ -2572,7 +2519,7 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
     {
         // Focused control belongs to this dialog. Cycle to the
         // next/previous control.
-        _ASSERT(pControl != 0);
+        assert(pControl != 0);
 
         //this is safe to assume that the dialog is 'this' because of the line 'else if (&sControlFocus->mDialog != this)'
         pLastDialog = shared_from_this();
@@ -2584,7 +2531,7 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
             pDialog = shared_from_this();//not sure if this is what to do if the dialog is not found, but its the best thing I could think of
     }
 
-    _ASSERT(pControl != 0);
+    assert(pControl != 0);
 
     // If we just wrapped from last control to first or vice versa,
     // set the focused control to nullptr. This state, where no control
@@ -2642,77 +2589,73 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
     // If we reached this point, the chain of dialogs didn't form a complete loop
     GLUF_ERROR("Dialog: Multiple dialogs are improperly chained together");
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 FontPtr g_ArialDefault = nullptr;
 //--------------------------------------------------------------------------------------
 void Dialog::InitDefaultElements()
 {
-	//this makes it more efficient
-	int fontIndex = 0;
-	if (g_DefaultFont == nullptr)
-	{
-		if (g_ArialDefault == nullptr)
-		{
+    //this makes it more efficient
+    int fontIndex = 0;
+    if (g_DefaultFont == nullptr)
+    {
+        if (g_ArialDefault == nullptr)
+        {
 
             std::vector<char> rawData;
-            LoadFileIntoMemory(L"Arial.ttf", rawData);
-			LoadFont(g_ArialDefault, rawData, 15L);
-		}
+            LoadFileIntoMemory("Arial.ttf", rawData);
+            LoadFont(g_ArialDefault, rawData, 15L);
+        }
 
-		fontIndex = mDialogManager->AddFont(g_ArialDefault, 20, FONT_WEIGHT_NORMAL);
-	}
-	else
-	{
+        fontIndex = mDialogManager->AddFont(g_ArialDefault, 20, FONT_WEIGHT_NORMAL);
+    }
+    else
+    {
         fontIndex = mDialogManager->AddFont(g_DefaultFont, 20, FONT_WEIGHT_NORMAL);
-	}
+    }
 
-	SetFont(0, fontIndex);
+    SetFont(0, fontIndex);
 
-	Element Element;
-	Rectf rcTexture;
+    Element Element;
+    Rectf rcTexture;
 
-	//-------------------------------------
-	// Element for the caption
-	//-------------------------------------
+    //-------------------------------------
+    // Element for the caption
+    //-------------------------------------
     //mCapElement = Element();
-	mCapElement.SetFont(0);
-	SetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
+    mCapElement.SetFont(0);
+    SetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
     mCapElement.SetTexture(0, rcTexture);
     mCapElement.mTextureColor.Init({ 255, 255, 255, 255 });
     mCapElement.mFontColor.Init({ 255, 255, 255, 255 });
     mCapElement.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
-	// Pre-blend as we don't need to transition the state
+    // Pre-blend as we don't need to transition the state
     mCapElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
     mCapElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
 
     //mDlgElement = Element()
-	mDlgElement.SetFont(0);
-	SetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
-	//SetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
-	mDlgElement.SetTexture(0, rcTexture);
+    mDlgElement.SetFont(0);
+    SetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
+    //SetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
+    mDlgElement.SetTexture(0, rcTexture);
     mDlgElement.mTextureColor.Init({ 255, 0, 0, 128 });
     mDlgElement.mFontColor.Init({ 0, 0, 0, 255 });
     mDlgElement.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
-	// Pre-blend as we don't need to transition the state
-	mDlgElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
-	mDlgElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
+    // Pre-blend as we don't need to transition the state
+    mDlgElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
+    mDlgElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
 
     /*
     
     Streamline the control blending
     
     */
-	Element.mFontColor.SetState(STATE_NORMAL, {0, 0, 0, 255});
-	Element.mFontColor.SetState(STATE_DISABLED, {0, 0, 0, 128});
-	Element.mFontColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
-	Element.mFontColor.SetState(STATE_FOCUS, {0, 0, 0, 255});
-	Element.mFontColor.SetState(STATE_MOUSEOVER, {0, 0, 0, 255});
-	Element.mFontColor.SetState(STATE_PRESSED, {0, 0, 0, 255});
+    Element.mFontColor.SetState(STATE_NORMAL, {0, 0, 0, 255});
+    Element.mFontColor.SetState(STATE_DISABLED, {0, 0, 0, 128});
+    Element.mFontColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
+    Element.mFontColor.SetState(STATE_FOCUS, {0, 0, 0, 255});
+    Element.mFontColor.SetState(STATE_MOUSEOVER, {0, 0, 0, 255});
+    Element.mFontColor.SetState(STATE_PRESSED, {0, 0, 0, 255});
     Element.mFontColor.SetCurrent(STATE_NORMAL);
 
     Element.mTextureColor.SetState(STATE_NORMAL, { 180, 180, 180, 255 });
@@ -2726,246 +2669,246 @@ void Dialog::InitDefaultElements()
     Element.mFontIndex = 0;
     Element.mTextureIndex = 0;
 
-	//-------------------------------------
-	// Static
-	//-------------------------------------
-	Element.mTextFormatFlags = GT_LEFT | GT_VCENTER;
+    //-------------------------------------
+    // Static
+    //-------------------------------------
+    Element.mTextFormatFlags = GT_LEFT | GT_VCENTER;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_STATIC, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_STATIC, 0, Element);
 
 
-	//-------------------------------------
-	// Button - Button
-	//-------------------------------------
-	SetRect(rcTexture, 0.0f, 1.0f, 0.53125f, 0.7890625f);
+    //-------------------------------------
+    // Button - Button
+    //-------------------------------------
+    SetRect(rcTexture, 0.0f, 1.0f, 0.53125f, 0.7890625f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_BUTTON, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_BUTTON, 0, Element);
 
 
-	//-------------------------------------
-	// Button - Fill layer
-	//-------------------------------------
+    //-------------------------------------
+    // Button - Fill layer
+    //-------------------------------------
     SetRect(rcTexture, 0.53125f, 1.0f, 0.984375f, 0.7890625f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_BUTTON, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_BUTTON, 1, Element);
 
 
-	//-------------------------------------
-	// CheckBox - Box
-	//-------------------------------------
-	SetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
+    //-------------------------------------
+    // CheckBox - Box
+    //-------------------------------------
+    SetRect(rcTexture, 0.0f, 0.7890625f, 0.10546875f, 0.68359375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_CHECKBOX, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_CHECKBOX, 0, Element);
 
 
-	//-------------------------------------
-	// CheckBox - Check
-	//-------------------------------------
+    //-------------------------------------
+    // CheckBox - Check
+    //-------------------------------------
     SetRect(rcTexture, 0.10546875f, 0.7890625f, 0.2109375f, 0.68359375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_CHECKBOX, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_CHECKBOX, 1, Element);
 
 
-	//-------------------------------------
-	// RadioButton - Box
-	//-------------------------------------
+    //-------------------------------------
+    // RadioButton - Box
+    //-------------------------------------
     SetRect(rcTexture, 0.2109375f, 0.7890625f, 0.31640625f, 0.68359375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_RADIOBUTTON, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_RADIOBUTTON, 0, Element);
 
 
-	//-------------------------------------
-	// RadioButton - Check
-	//-------------------------------------
+    //-------------------------------------
+    // RadioButton - Check
+    //-------------------------------------
     SetRect(rcTexture, 0.31640625f, 0.7890625f, 0.421875f, 0.68359375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_RADIOBUTTON, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_RADIOBUTTON, 1, Element);
 
 
-	//-------------------------------------
-	// ComboBox - Main
-	//-------------------------------------
+    //-------------------------------------
+    // ComboBox - Main
+    //-------------------------------------
     //SetRect(rcTexture, 0.02734375f, 0.5234375f, 0.96484375f, 0.3671875f);
     SetRect(rcTexture, 0.05078125f, 0.5234375f, 0.96484375f, 0.3671875f);
     Element.mUVRect = rcTexture;
 
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_COMBOBOX, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_COMBOBOX, 0, Element);
 
 
-	//-------------------------------------
-	// ComboBox - Button
-	//-------------------------------------
+    //-------------------------------------
+    // ComboBox - Button
+    //-------------------------------------
     SetRect(rcTexture, 0.3828125f, 0.26171875f, 0.58984375f, 0.0703125f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_COMBOBOX, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_COMBOBOX, 1, Element);
 
 
-	//-------------------------------------
-	// ComboBox - Dropdown
-	//-------------------------------------
+    //-------------------------------------
+    // ComboBox - Dropdown
+    //-------------------------------------
     SetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.37109375f);
     Element.mUVRect = rcTexture;
     Element.mTextFormatFlags = GT_LEFT | GT_TOP;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_COMBOBOX, 2, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_COMBOBOX, 2, Element);
 
 
-	//-------------------------------------
-	// ComboBox - Selection
-	//-------------------------------------
+    //-------------------------------------
+    // ComboBox - Selection
+    //-------------------------------------
     SetRect(rcTexture, 0.046875f, 0.36328125f, 0.93359375f, 0.28515625f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_COMBOBOX, 3, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_COMBOBOX, 3, Element);
 
 
-	//-------------------------------------
-	// Slider - Track
-	//-------------------------------------
+    //-------------------------------------
+    // Slider - Track
+    //-------------------------------------
     SetRect(rcTexture, 0.00390625f, 0.26953125f, 0.36328125f, 0.109375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_SLIDER, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_SLIDER, 0, Element);
 
-	//-------------------------------------
-	// Slider - Button
-	//-------------------------------------
+    //-------------------------------------
+    // Slider - Button
+    //-------------------------------------
     SetRect(rcTexture, 0.58984375f, 0.24609375f, 0.75f, 0.0859375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_SLIDER, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_SLIDER, 1, Element);
 
-	//-------------------------------------
-	// ScrollBar - Track
-	//-------------------------------------
-	float nScrollBarStartX = 0.76470588f;
-	float nScrollBarStartY = 0.046875f;
+    //-------------------------------------
+    // ScrollBar - Track
+    //-------------------------------------
+    float nScrollBarStartX = 0.76470588f;
+    float nScrollBarStartY = 0.046875f;
     SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_SCROLLBAR, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_SCROLLBAR, 0, Element);
 
-	//-------------------------------------
-	// ScrollBar - Down Arrow
-	//-------------------------------------
+    //-------------------------------------
+    // ScrollBar - Down Arrow
+    //-------------------------------------
     SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
     Element.mUVRect = rcTexture;
 
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_SCROLLBAR, 2, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_SCROLLBAR, 2, Element);
 
-	//-------------------------------------
-	// ScrollBar - Up Arrow
-	//-------------------------------------
+    //-------------------------------------
+    // ScrollBar - Up Arrow
+    //-------------------------------------
     SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
     Element.mUVRect = rcTexture;
 
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_SCROLLBAR, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_SCROLLBAR, 1, Element);
 
-	//-------------------------------------
-	// ScrollBar - Button
-	//-------------------------------------
+    //-------------------------------------
+    // ScrollBar - Button
+    //-------------------------------------
     SetRect(rcTexture, 0.859375f, 0.25f, 0.9296875f, 0.0859375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_SCROLLBAR, 3, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_SCROLLBAR, 3, Element);
 
-	//-------------------------------------
-	// EditBox
-	//-------------------------------------
-	// Element assignment:
-	//   0 - text area
-	//   1 - top left border
-	//   2 - top border
-	//   3 - top right border
-	//   4 - left border
-	//   5 - right border
-	//   6 - lower left border
-	//   7 - lower border
-	//   8 - lower right border
+    //-------------------------------------
+    // EditBox
+    //-------------------------------------
+    // Element assignment:
+    //   0 - text area
+    //   1 - top left border
+    //   2 - top border
+    //   3 - top right border
+    //   4 - left border
+    //   5 - right border
+    //   6 - lower left border
+    //   7 - lower border
+    //   8 - lower right border
 
-	//TODO: this
-	// Assign the style
+    //TODO: this
+    // Assign the style
     SetRect(rcTexture, 0.0507812f, 0.6484375f, 0.9375f, 0.55859375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 0, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 0, Element);
 
     SetRect(rcTexture, 0.03125f, 0.6796875f, 0.0546875f, 0.6484375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 1, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 1, Element);
 
     SetRect(rcTexture, 0.0546875f, 0.6796875f, 0.94140625f, 0.6484375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 2, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 2, Element);
 
     SetRect(rcTexture, 0.94140625f, 0.6796875f, 0.9609375f, 0.6484375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 3, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 3, Element);
 
     SetRect(rcTexture, 0.03125f, 0.6484375f, 0.0546875f, 0.55859375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 4, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 4, Element);
 
     SetRect(rcTexture, 0.94140625f, 0.6484375f, 0.9609375f, 0.55859375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 5, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 5, Element);
 
     SetRect(rcTexture, 0.03125f, 0.55859375f, 0.0546875f, 0.52734375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 6, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 6, Element);
 
     SetRect(rcTexture, 0.0546875f, 0.55859375f, 0.94140625f, 0.52734375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 7, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 7, Element);
 
     SetRect(rcTexture, 0.94140625f, 0.55859375f, 0.9609375f, 0.52734375f);
     Element.mUVRect = rcTexture;
-	SetDefaultElement(CONTROL_EDITBOX, 8, Element);
+    SetDefaultElement(CONTROL_EDITBOX, 8, Element);
 
-	//-------------------------------------
-	// ListBox - Main
-	//-------------------------------------
+    //-------------------------------------
+    // ListBox - Main
+    //-------------------------------------
     SetRect(rcTexture, 0.05078125f, 0.51953125f, 0.94140625f, 0.375f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_LISTBOX, 0, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_LISTBOX, 0, Element);
 
-	//-------------------------------------
-	// ListBox - Selection
-	//-------------------------------------
+    //-------------------------------------
+    // ListBox - Selection
+    //-------------------------------------
 
     SetRect(rcTexture, 0.0625f, 0.3515625f, 0.9375f, 0.28515625f);
     Element.mUVRect = rcTexture;
 
-	// Assign the Element
-	SetDefaultElement(CONTROL_LISTBOX, 1, Element);
+    // Assign the Element
+    SetDefaultElement(CONTROL_LISTBOX, 1, Element);
 }
 
 
@@ -2982,43 +2925,43 @@ DialogResourceManager Functions
 DialogResourceManager::DialogResourceManager() :
     mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be changed every frame
 {
-	//glGenVertexArrayBindVertexArray(&m_pVBScreenQuadVAO);
-	//glGenBuffers(1, &m_pVBScreenQuadIndicies);
-	//glGenBuffers(1, &m_pVBScreenQuadPositions);
-	//glGenBuffers(1, &m_pVBScreenQuadColor);
-	//glGenBuffers(1, &m_pVBScreenQuadUVs);
+    //glGenVertexArrayBindVertexArray(&m_pVBScreenQuadVAO);
+    //glGenBuffers(1, &m_pVBScreenQuadIndicies);
+    //glGenBuffers(1, &m_pVBScreenQuadPositions);
+    //glGenBuffers(1, &m_pVBScreenQuadColor);
+    //glGenBuffers(1, &m_pVBScreenQuadUVs);
 
-	/*glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadPositions);
-	glVertexAttribPointer(g_UIShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    /*glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadPositions);
+    glVertexAttribPointer(g_UIShaderLocations.position, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadColor);
-	glVertexAttribPointer(g_UIShaderLocations.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadColor);
+    glVertexAttribPointer(g_UIShaderLocations.color, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadUVs);
-	glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);*/
+    glGenBufferBindBuffer(GL_ARRAY_BUFFER, &m_pVBScreenQuadUVs);
+    glVertexAttribPointer(g_UIShaderLocations.uv, 2, GL_FLOAT, GL_FALSE, 0, nullptr);*/
 
-	//this is static
-	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
+    //this is static
+    //glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_pVBScreenQuadIndicies);
 
-	//GLubyte indices[6] = {	2, 1, 0, 
-	//						2, 3, 1};
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
+    //GLubyte indices[6] = {    2, 1, 0, 
+    //                        2, 3, 1};
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indices, GL_STATIC_DRAW);
 
 
-	//glGenVertexArrayBindVertexArray(&m_SpriteBufferVao);
-	//glBindVertexArray(m_SpriteBufferVao);
+    //glGenVertexArrayBindVertexArray(&m_SpriteBufferVao);
+    //glBindVertexArray(m_SpriteBufferVao);
 
-	//glGenBuffers(1, &m_SpriteBufferPos);
-	//glGenBuffers(1, &m_SpriteBufferColors);
-	//glGenBuffers(1, &m_SpriteBufferTexCoords);
-	//glGenBuffers(1, &m_SpriteBufferIndices);
+    //glGenBuffers(1, &m_SpriteBufferPos);
+    //glGenBuffers(1, &m_SpriteBufferColors);
+    //glGenBuffers(1, &m_SpriteBufferTexCoords);
+    //glGenBuffers(1, &m_SpriteBufferIndices);
 
     mSpriteBuffer.AddVertexAttrib({ 4, 3, g_UIShaderLocations.position, GL_FLOAT, 0 }, 0);
     mSpriteBuffer.AddVertexAttrib({ 4, 4, g_UIShaderLocations.color, GL_FLOAT, 0 }, 12);
     mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.uv, GL_FLOAT, 0 }, 28);
 
-	//this is static
-	//glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
+    //this is static
+    //glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
 
     mSpriteBuffer.BufferIndices(
     { 
@@ -3026,42 +2969,40 @@ DialogResourceManager::DialogResourceManager() :
         2, 3, 1 
     });
 
-	//GLubyte indicesS[6] = { 2, 1, 0,
-	//						2, 3, 1 };
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indicesS, GL_STATIC_DRAW);
+    //GLubyte indicesS[6] = { 2, 1, 0,
+    //                        2, 3, 1 };
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLubyte), indicesS, GL_STATIC_DRAW);
 
 
-	GetWindowSize();
+    GetWindowSize();
 }
 
 
 //--------------------------------------------------------------------------------------
 DialogResourceManager::~DialogResourceManager()
 {
-	//mFontCache.clear();
-	//mTextureCache.clear();
+    //mFontCache.clear();
+    //mTextureCache.clear();
 
-	//TODO: make this with a class in the buffer sections
-	/*glBindVertexArray(m_pVBScreenQuadVAO);
-	glDeleteBuffers(1, &m_pVBScreenQuadPositions);
-	glDeleteBuffers(1, &m_pVBScreenQuadColor);
-	glDeleteBuffers(1, &m_pVBScreenQuadUVs);
-	glDeleteVertexArrays(1, &m_pVBScreenQuadVAO);
+    //TODO: make this with a class in the buffer sections
+    /*glBindVertexArray(m_pVBScreenQuadVAO);
+    glDeleteBuffers(1, &m_pVBScreenQuadPositions);
+    glDeleteBuffers(1, &m_pVBScreenQuadColor);
+    glDeleteBuffers(1, &m_pVBScreenQuadUVs);
+    glDeleteVertexArrays(1, &m_pVBScreenQuadVAO);
 
-	glBindVertexArray(m_SpriteBufferVao);
-	glDeleteBuffers(1, &m_SpriteBufferPos);
-	glDeleteBuffers(1, &m_SpriteBufferColors);
-	glDeleteBuffers(1, &m_SpriteBufferTexCoords);
-	glDeleteVertexArrays(1, &m_SpriteBufferVao);
-	glBindVertexArray(0);*/
+    glBindVertexArray(m_SpriteBufferVao);
+    glDeleteBuffers(1, &m_SpriteBufferPos);
+    glDeleteBuffers(1, &m_SpriteBufferColors);
+    glDeleteBuffers(1, &m_SpriteBufferTexCoords);
+    glDeleteVertexArrays(1, &m_SpriteBufferVao);
+    glBindVertexArray(0);*/
 }
 
 
 //--------------------------------------------------------------------------------------
 bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     GLUF_UNREFERENCED_PARAMETER(msg);
     //GLUF_UNREFERENCED_PARAMETER(param1);
     //GLUF_UNREFERENCED_PARAMETER(param2);
@@ -3082,17 +3023,11 @@ bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t par
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::ApplyRenderUI() noexcept
 {
-    NOEXCEPT_REGION_START
-
         // Shaders
         /*glEnableVertexAttribArray(g_UIShaderLocations.position);
         glEnableVertexAttribArray(g_UIShaderLocations.color);
@@ -3100,31 +3035,25 @@ void DialogResourceManager::ApplyRenderUI() noexcept
     SHADERMANAGER.UseProgram(g_UIProgram);
 
     ApplyOrtho();
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::ApplyRenderUIUntex() noexcept
 {
-    NOEXCEPT_REGION_START
-
     /*glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
     glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);*/
     SHADERMANAGER.UseProgram(g_UIProgramUntex);
 
     ApplyOrtho();
-
-    NOEXCEPT_REGION_END
 }
 
 glm::mat4 DialogResourceManager::GetOrthoMatrix() noexcept
 {
-	Point pt = GetWindowSize();
-	float x2 = (float)pt.x / 2.0f;
-	float y2 = (float)pt.y / 2.0f;
-	return glm::ortho((float)-x2, (float)x2, (float)-y2, (float)y2);
+    Point pt = GetWindowSize();
+    float x2 = (float)pt.x / 2.0f;
+    float y2 = (float)pt.y / 2.0f;
+    return glm::ortho((float)-x2, (float)x2, (float)-y2, (float)y2);
 }
 
 DialogPtr DialogResourceManager::GetDialogPtrFromRef(const Dialog& ref) noexcept
@@ -3142,8 +3071,8 @@ DialogPtr DialogResourceManager::GetDialogPtrFromRef(const Dialog& ref) noexcept
 
 void DialogResourceManager::ApplyOrtho() noexcept
 {
-	glm::mat4 mat = GetOrthoMatrix();
-	SHADERMANAGER.GLUniformMatrix4f(g_UIShaderLocations.ortho, mat);
+    glm::mat4 mat = GetOrthoMatrix();
+    SHADERMANAGER.GLUniformMatrix4f(g_UIShaderLocations.ortho, mat);
 }
 
 //--------------------------------------------------------------------------------------
@@ -3156,32 +3085,32 @@ void DialogResourceManager::BeginSprites() noexcept
 
 void DialogResourceManager::EndSprites(const Element* element, bool textured)
 {
-	/*if (textured)
-	{
+    /*if (textured)
+    {
         mSpriteBuffer.EnableVertexAttribute(2);
-	}
-	else
-	{
+    }
+    else
+    {
         mSpriteBuffer.DisableVertexAttribute(2);
-	}*/
+    }*/
 
-	
-	if (textured && element)
-	{
-		ApplyRenderUI();
+    
+    if (textured && element)
+    {
+        ApplyRenderUI();
 
-		TextureNodePtr pTexture = GetTextureNode(element->mTextureIndex);
+        TextureNodePtr pTexture = GetTextureNode(element->mTextureIndex);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, pTexture->mTextureElement);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, pTexture->mTextureElement);
         glUniform1i(g_UIShaderLocations.sampler, 0);
-	}
-	else
-	{
+    }
+    else
+    {
         ApplyRenderUIUntex();
-	}
+    }
 
-	
+    
     mSpriteBuffer.Draw();
 }
 
@@ -3189,8 +3118,6 @@ void DialogResourceManager::EndSprites(const Element* element, bool textured)
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::RegisterDialog(const DialogPtr& dialog) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!dialog)
         return;
 
@@ -3208,74 +3135,66 @@ void DialogResourceManager::RegisterDialog(const DialogPtr& dialog) noexcept
     if (mDialogs.size() > 1)
         mDialogs[mDialogs.size() - 2]->SetNextDialog(dialog);
     mDialogs[mDialogs.size() - 1]->SetNextDialog(mDialogs[0]);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::UnregisterDialog(const DialogPtr& pDialog)
 {
-	// Search for the dialog in the list.
-	for (size_t i = 0; i < mDialogs.size(); ++i)
-	{
-		if (mDialogs[i] == pDialog)
-		{
-			mDialogs.erase(mDialogs.begin() + i);
-			if (!mDialogs.empty())
-			{
-				int l, r;
+    // Search for the dialog in the list.
+    for (size_t i = 0; i < mDialogs.size(); ++i)
+    {
+        if (mDialogs[i] == pDialog)
+        {
+            mDialogs.erase(mDialogs.begin() + i);
+            if (!mDialogs.empty())
+            {
+                int l, r;
 
-				if (0 == i)
-					l = int(mDialogs.size() - 1);
-				else
-					l = int(i) - 1;
+                if (0 == i)
+                    l = int(mDialogs.size() - 1);
+                else
+                    l = int(i) - 1;
 
-				if (mDialogs.size() == i)
-					r = 0;
-				else
-					r = int(i);
+                if (mDialogs.size() == i)
+                    r = 0;
+                else
+                    r = int(i);
 
-				mDialogs[l]->SetNextDialog(mDialogs[r]);
-			}
-			return;
-		}
-	}
+                mDialogs[l]->SetNextDialog(mDialogs[r]);
+            }
+            return;
+        }
+    }
 }
 
 
 //--------------------------------------------------------------------------------------
 void DialogResourceManager::EnableKeyboardInputForAllDialogs() noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Enable keyboard input for all registered dialogs
     for (auto it : mDialogs)
         it->EnableKeyboardInput(true);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 Point DialogResourceManager::GetWindowSize()
 {
-	if (mWndSize.x == 0L || mWndSize.y == 0L)
-	{
-		int w, h;
-		glfwGetWindowSize(g_pGLFWWindow, &w, &h);
-		mWndSize.width = (long)w;
-		mWndSize.height = (long)h;
-		g_WndHeight = (unsigned short)h;
-		g_WndWidth = (unsigned short)w;
-	}
-	return mWndSize;
+    if (mWndSize.x == 0L || mWndSize.y == 0L)
+    {
+        int w, h;
+        glfwGetWindowSize(g_pGLFWWindow, &w, &h);
+        mWndSize.width = (long)w;
+        mWndSize.height = (long)h;
+        g_WndHeight = (unsigned short)h;
+        g_WndWidth = (unsigned short)w;
+    }
+    return mWndSize;
 }
 
 //--------------------------------------------------------------------------------------
 FontIndex DialogResourceManager::AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // See if this font already exists (this is simple)
     for (size_t i = 0; i < mFontCache.size(); ++i)
     {
@@ -3295,16 +3214,12 @@ FontIndex DialogResourceManager::AddFont(const FontPtr& font, FontSize leading, 
     mFontCache.push_back(newFontNode);
 
     return mFontCache.size() - 1;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // See if this texture already exists
     for (size_t i = 0; i < mTextureCache.size(); ++i)
     {
@@ -3320,8 +3235,6 @@ TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept
     mTextureCache.push_back(newTextureNode);
 
     return mTextureCache.size() - 1;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3334,16 +3247,16 @@ Control Functions
 
 Control::Control(Dialog& dialog) : mDialog(dialog)
 {
-	mType = CONTROL_BUTTON;
-	mID = 0;
-	mHotkey = 0;
-	mIndex = 0;
+    mType = CONTROL_BUTTON;
+    mID = 0;
+    mHotkey = 0;
+    mIndex = 0;
 
-	mEnabled = true;
-	mVisible = true;
-	mMouseOver = false;
-	mHasFocus = false;
-	mIsDefault = false;
+    mEnabled = true;
+    mVisible = true;
+    mMouseOver = false;
+    mHasFocus = false;
+    mIsDefault = false;
 
     mRegion = { { 0 }, 0, 0, { 0 } };
 }
@@ -3368,37 +3281,29 @@ Element& Control::GetElement(ElementIndex element)
 //--------------------------------------------------------------------------------------
 void Control::SetTextColor(const Color& color) noexcept
 {
-    NOEXCEPT_REGION_START
-
     Element& element = mElements[0];
 
     element.mFontColor.mStates[STATE_NORMAL] = color;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Control::SetElement(ElementIndex elementId, const Element& element) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mElements[elementId] = element;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
-void Control::Refresh()
+void Control::Refresh() noexcept
 {
-	mMouseOver = false;
-	mHasFocus = false;
+    mMouseOver = false;
+    mHasFocus = false;
 
-	for (auto it : mElements)
-	{
-		it.second.Refresh();
-	}
+    for (auto it : mElements)
+    {
+        it.second.Refresh();
+    }
 }
 
 
@@ -3412,15 +3317,13 @@ Static Functions
 //--------------------------------------------------------------------------------------
 Static::Static(const Bitfield& textFlags, Dialog& dialog) : Control(dialog), mTextFlags(textFlags)
 {
-	mType = CONTROL_STATIC;
+    mType = CONTROL_STATIC;
 }
 
 
 //--------------------------------------------------------------------------------------
 void Static::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mVisible)
         return;
 
@@ -3435,8 +3338,6 @@ void Static::Render(float elapsedTime) noexcept
     element.mFontColor.Blend(state, elapsedTime);
 
     mDialog.DrawText(mText, element, mRegion, false, false);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3449,30 +3350,24 @@ Button Functions
 
 Button::Button(Dialog& dialog) : Static(GT_CENTER | GT_VCENTER, dialog)
 {
-	mType = CONTROL_BUTTON;
+    mType = CONTROL_BUTTON;
 
-	mPressed = false;
+    mPressed = false;
 }
 
 //--------------------------------------------------------------------------------------
 void Button::OnHotkey() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mDialog.IsKeyboardInputEnabled())
     {
         mDialog.RequestFocus(shared_from_this());
         mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -3561,77 +3456,71 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     return false;
 
-    NOEXCEPT_REGION_END
-
     return false;
 }
 
 //--------------------------------------------------------------------------------------
 void Button::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
+    int nOffsetX = 0;
+    int nOffsetY = 0;
 
-	int nOffsetX = 0;
-	int nOffsetY = 0;
+    Point wndSize = mDialog.GetManager()->GetWindowSize();
 
-	Point wndSize = mDialog.GetManager()->GetWindowSize();
+    ControlState iState = STATE_NORMAL;
 
-	ControlState iState = STATE_NORMAL;
+    if (mVisible == false)
+    {
+        iState = STATE_HIDDEN;
+    }
+    else if (mEnabled == false)
+    {
+        iState = STATE_DISABLED;
+    }
+    else if (mPressed)
+    {
+        iState = STATE_PRESSED;
 
-	if (mVisible == false)
-	{
-		iState = STATE_HIDDEN;
-	}
-	else if (mEnabled == false)
-	{
-		iState = STATE_DISABLED;
-	}
-	else if (mPressed)
-	{
-		iState = STATE_PRESSED;
+        nOffsetX = 1;
+        nOffsetY = 2;
+    }
+    else if (mMouseOver)
+    {
+        iState = STATE_MOUSEOVER;
 
-		nOffsetX = 1;
-		nOffsetY = 2;
-	}
-	else if (mMouseOver)
-	{
-		iState = STATE_MOUSEOVER;
-
-		nOffsetX = -1;
-		nOffsetY = -2;
-	}
-	else if (mHasFocus)
-	{
-		iState = STATE_FOCUS;
-	}
+        nOffsetX = -1;
+        nOffsetY = -2;
+    }
+    else if (mHasFocus)
+    {
+        iState = STATE_FOCUS;
+    }
 
     float fBlendRate = 5.0f;//(iState == STATE_PRESSED) ? 0.0f : 0.8f;
 
-	Rect rcWindow = mRegion;
-	OffsetRect(rcWindow, nOffsetX, nOffsetY);
+    Rect rcWindow = mRegion;
+    OffsetRect(rcWindow, nOffsetX, nOffsetY);
 
 
-	// Background fill layer
-	Element* pElement = &mElements[0];
+    // Background fill layer
+    Element* pElement = &mElements[0];
 
-	// Blend current color
-	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
-	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-	mDialog.DrawSprite(*pElement, rcWindow, _FAR_BUTTON_DEPTH);
-	//mDialog.DrawText(m_strText, pElement, rcWindow, false, true);
+    mDialog.DrawSprite(*pElement, rcWindow, _FAR_BUTTON_DEPTH);
+    //mDialog.DrawText(m_strText, pElement, rcWindow, false, true);
 
-	// Main button
-	pElement = &mElements[1];
+    // Main button
+    pElement = &mElements[1];
 
-	// Blend current color
-	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
-	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
+    // Blend current color
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-	mDialog.DrawSprite(*pElement, rcWindow, _NEAR_BUTTON_DEPTH);
-	mDialog.DrawText(mText, *pElement, rcWindow, false, true);
-
-    NOEXCEPT_REGION_END
+    mDialog.DrawSprite(*pElement, rcWindow, _NEAR_BUTTON_DEPTH);
+    mDialog.DrawText(mText, *pElement, rcWindow, false, true);
 }
 
 
@@ -3644,7 +3533,7 @@ CheckBox Functions
 
 CheckBox::CheckBox(bool checked, Dialog& dialog) : Button(dialog)
 {
-	mType = CONTROL_CHECKBOX;
+    mType = CONTROL_CHECKBOX;
 
     mChecked = checked;
 }
@@ -3653,8 +3542,6 @@ CheckBox::CheckBox(bool checked, Dialog& dialog) : Button(dialog)
 
 bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -3748,10 +3635,6 @@ bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
     };
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 
@@ -3767,21 +3650,15 @@ void CheckBox::SetCheckedInternal(bool checked, bool fromInput)
 //--------------------------------------------------------------------------------------
 bool CheckBox::ContainsPoint(const Point& pt) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return (PtInRect(mRegion, pt) ||
     PtInRect(mButtonRegion, pt) ||
     PtInRect(mTextRegion, pt));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void CheckBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Button::UpdateRects();
 
     mButtonRegion = mRegion;
@@ -3792,60 +3669,51 @@ void CheckBox::UpdateRects() noexcept
 
     //resize the text rect based on the length of the string
     mTextRegion.right = mTextRegion.left + mDialog.GetFont(mElements[0].mFontIndex)->mFontType->GetStringWidth(mText);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void CheckBox::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-	ControlState iState = STATE_NORMAL;
+    ControlState iState = STATE_NORMAL;
 
-	if (mVisible == false)
-		iState = STATE_HIDDEN;
-	else if (mEnabled == false)
-		iState = STATE_DISABLED;
-	else if (mPressed)
-		iState = STATE_PRESSED;
-	else if (mMouseOver)
-		iState = STATE_MOUSEOVER;
-	else if (mHasFocus)
-		iState = STATE_FOCUS;
+    if (mVisible == false)
+        iState = STATE_HIDDEN;
+    else if (mEnabled == false)
+        iState = STATE_DISABLED;
+    else if (mPressed)
+        iState = STATE_PRESSED;
+    else if (mMouseOver)
+        iState = STATE_MOUSEOVER;
+    else if (mHasFocus)
+        iState = STATE_FOCUS;
 
-	Element* pElement = &mElements[0];
+    Element* pElement = &mElements[0];
 
-	float fBlendRate = 5.0f;
+    float fBlendRate = 5.0f;
 
-	pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
-	pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
+    pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+    pElement->mFontColor.Blend(iState, elapsedTime, fBlendRate);
 
-	mDialog.DrawSprite(*pElement, mButtonRegion, _FAR_BUTTON_DEPTH);
-	mDialog.DrawText(mText, *pElement, mTextRegion, false, false);
+    mDialog.DrawSprite(*pElement, mButtonRegion, _FAR_BUTTON_DEPTH);
+    mDialog.DrawText(mText, *pElement, mTextRegion, false, false);
 
-	if (mChecked)
-	{
-		pElement = &mElements[1];
+    if (mChecked)
+    {
+        pElement = &mElements[1];
 
-		pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
-		mDialog.DrawSprite(*pElement, mButtonRegion, _NEAR_BUTTON_DEPTH);
-	}
-
-    NOEXCEPT_REGION_END
+        pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
+        mDialog.DrawSprite(*pElement, mButtonRegion, _NEAR_BUTTON_DEPTH);
+    }
 }
 
 
 //--------------------------------------------------------------------------------------
 void CheckBox::OnHotkey() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mDialog.IsKeyboardInputEnabled())
         mDialog.RequestFocus(shared_from_this());
     SetCheckedInternal(!mChecked, true);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -3858,14 +3726,12 @@ RadioButton Functions
 
 RadioButton::RadioButton(Dialog& dialog) : CheckBox(false, dialog)
 {
-	mType = CONTROL_RADIOBUTTON;
+    mType = CONTROL_RADIOBUTTON;
 }
 
 //--------------------------------------------------------------------------------------
 bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -3954,40 +3820,30 @@ bool RadioButton::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32
     };
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::SetCheckedInternal(bool checked, bool clearGroup, bool fromInput)
 {
     if (checked && clearGroup)
-		mDialog.ClearRadioButtonGroup(mButtonGroup);
+        mDialog.ClearRadioButtonGroup(mButtonGroup);
 
-	mChecked = checked;
-	mDialog.SendEvent(EVENT_RADIOBUTTON_CHANGED, fromInput, shared_from_this());
+    mChecked = checked;
+    mDialog.SendEvent(EVENT_RADIOBUTTON_CHANGED, fromInput, shared_from_this());
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnHotkey() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mDialog.IsKeyboardInputEnabled())
         mDialog.RequestFocus(shared_from_this());
 
     SetCheckedInternal(true, true, true);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseEnter() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = true;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -3995,15 +3851,11 @@ void RadioButton::OnMouseEnter() noexcept
     {
         it->OnMouseEnterNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseLeave() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = false;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -4011,35 +3863,23 @@ void RadioButton::OnMouseLeave() noexcept
     {
         it->OnMouseLeaveNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseEnterNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = true;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnMouseLeaveNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMouseOver = false;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusIn() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = true;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -4047,15 +3887,11 @@ void RadioButton::OnFocusIn() noexcept
     {
         it->OnFocusInNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusOut() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = false;
 
     auto thisGroup = mDialog.GetRadioButtonGroup(mButtonGroup);
@@ -4063,28 +3899,18 @@ void RadioButton::OnFocusOut() noexcept
     {
         it->OnFocusOutNoRecurse();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusInNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = true;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void RadioButton::OnFocusOutNoRecurse() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mHasFocus = false;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4124,8 +3950,6 @@ ScrollBar::~ScrollBar()
 //--------------------------------------------------------------------------------------
 void ScrollBar::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::UpdateRects();
 
     // Make the buttons square
@@ -4146,8 +3970,6 @@ void ScrollBar::UpdateRects() noexcept
     mThumbRegion.right = mUpButtonRegion.right;
 
     UpdateThumbRect();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4215,8 +4037,6 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
 {
     //UNREFERENCED_PARAMETER(wParam);
 
-    NOEXCEPT_REGION_START
-
     if (FOCUS == msg && param1 == GL_FALSE)
     {
         // The application just lost mouse capture. We may not have gotten
@@ -4233,7 +4053,7 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
     //if the mousebutton is NOT PRESSED, the stop scrolling(since this does not get the mouse release button if it is not over the control)
     //int mbPressed = glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT);
     //if (mbPressed == GLFW_RELEASE)
-    //	mDrag = false;
+    //    mDrag = false;
 
     switch (msg)
     {
@@ -4344,18 +4164,12 @@ bool ScrollBar::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 
 //--------------------------------------------------------------------------------------
 void ScrollBar::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
 
@@ -4462,21 +4276,15 @@ void ScrollBar::Render(float elapsedTime) noexcept
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
     mDialog.DrawSprite(*pElement, mThumbRegion, _NEAR_BUTTON_DEPTH);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void ScrollBar::SetTrackRange(int nStart, int nEnd) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mStart = nStart; mEnd = nEnd;
     Cap();
     UpdateThumbRect();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4538,8 +4346,6 @@ GenericData& ListBox::GetItemData(Index index) const
 //--------------------------------------------------------------------------------------
 void ListBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::UpdateRects();
 
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
@@ -4569,8 +4375,6 @@ void ListBox::UpdateRects() noexcept
 
     mScrollBar->UpdateRects();
     UpdateItemRects();
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4586,8 +4390,6 @@ void ListBox::AddItem(const std::wstring& text, GenericData& data) noexcept
 
 void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto newItem = std::make_shared<ListBoxItem>(data);
 
     //clear the selection vector
@@ -4607,8 +4409,6 @@ void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& dat
 
     mItems[index] = newItem;
     mScrollBar->SetTrackRange(0, (int)mItems.size());
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4634,14 +4434,10 @@ void ListBox::RemoveItem(Index index)
 //--------------------------------------------------------------------------------------
 void ListBox::RemoveAllItems() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
     mSelected.clear();
     //mSelected.push_back(-1);  
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -4746,19 +4542,13 @@ void ListBox::SelectItem(const std::wstring& text, Index start)
 //--------------------------------------------------------------------------------------
 void ListBox::ClearSelected() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mSelected.clear();
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 bool ListBox::ContainsItem(const std::wstring& text, Index start) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     for (auto it : mItems)
     {
         if (it->mText == text)
@@ -4766,23 +4556,21 @@ bool ListBox::ContainsItem(const std::wstring& text, Index start) const noexcept
     }
 
     return false;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 Index ListBox::FindItemIndex(const std::wstring& text, Index start) const
 {
-	for (Index i = start; i < mItems.size(); ++i)
-	{
-		ListBoxItemPtr pItem = mItems[i];
+    for (Index i = start; i < mItems.size(); ++i)
+    {
+        ListBoxItemPtr pItem = mItems[i];
 
-		if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
-		{
-			return static_cast<int>(i);
-		}
-	}
+        if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
+        {
+            return static_cast<int>(i);
+        }
+    }
 
     throw std::invalid_argument("\"text\" was not found in combo box");
 }
@@ -4805,8 +4593,6 @@ Index ListBox::FindItemIndex(const std::wstring& text, Index start) const
 //--------------------------------------------------------------------------------------
 bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     if (FOCUS == msg && param1 == GL_FALSE)
     {
@@ -5059,8 +4845,8 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                                 */
                                 mSelected.push_back(i);
 
-								if (i == 0)
-									break;
+                                if (i == 0)
+                                    break;
                             }
                         }
                         /*else
@@ -5213,15 +4999,11 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     case SCROLL:
         //UINT uLines = 0;
         //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
-        //	uLines = 0;
+        //    uLines = 0;
         //int nScrollAmount = int((short)HIWORD(wParam)) / WHEEL_DELTA * uLines;
-        mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        mScrollBar->Scroll(-(param2 / _WHEEL_DELTA));
         return true;
     }
-
-    return false;
-
-    NOEXCEPT_REGION_END
 
     return false;
 }
@@ -5229,8 +5011,6 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 //--------------------------------------------------------------------------------------
 void ListBox::UpdateItemRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
     if (pFont)
     {
@@ -5263,15 +5043,11 @@ void ListBox::UpdateItemRects() noexcept
             curY -= pFont->mLeading;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void ListBox::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
 
@@ -5357,8 +5133,6 @@ void ListBox::Render(float elapsedTime) noexcept
     // Render the scroll bar
 
     mScrollBar->Render(elapsedTime);
-
-    NOEXCEPT_REGION_END
 }
 
 /*
@@ -5370,29 +5144,27 @@ ComboBox Functions
 
 ComboBox::ComboBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Button(dialog)
 {
-	mType = CONTROL_COMBOBOX;
+    mType = CONTROL_COMBOBOX;
 
-	mDropHeight = 100L;
+    mDropHeight = 100L;
 
-	mSBWidth = 16L;
-	mOpened = false;
-	mSelected = -1;
-	mFocused = -1;
+    mSBWidth = 16L;
+    mOpened = false;
+    mSelected = -1;
+    mFocused = -1;
 }
 
 
 //--------------------------------------------------------------------------------------
 ComboBox::~ComboBox()
 {
-	RemoveAllItems();
+    RemoveAllItems();
 }
 
 
 //--------------------------------------------------------------------------------------
 void ComboBox::SetTextColor(const Color& Color) noexcept
 {
-    NOEXCEPT_REGION_START
-
     Element* pElement = &mElements[0];
 
     pElement->mFontColor.mStates[STATE_NORMAL] = Color;
@@ -5401,16 +5173,12 @@ void ComboBox::SetTextColor(const Color& Color) noexcept
 
     if (pElement)
         pElement->mFontColor.mStates[STATE_NORMAL] = Color;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void ComboBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     Button::UpdateRects();
 
@@ -5452,8 +5220,6 @@ void ComboBox::UpdateRects() noexcept
     mScrollBar->UpdateRects();
     mRegion.right = mButtonRegion.left;
 
-    NOEXCEPT_REGION_END
-
 }
 
 
@@ -5468,8 +5234,6 @@ void ComboBox::OnInit()
 //--------------------------------------------------------------------------------------
 void ComboBox::UpdateItemRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     FontNodePtr pFont = mDialog.GetFont(GetElement(2).mFontIndex);
     if (pFont)
     {
@@ -5495,20 +5259,14 @@ void ComboBox::UpdateItemRects() noexcept
             curY -= pFont->mLeading;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void ComboBox::OnFocusOut() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Button::OnFocusOut();
 
     mOpened = false;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -5516,8 +5274,6 @@ void ComboBox::OnFocusOut() noexcept
 //--------------------------------------------------------------------------------------
 bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -5653,12 +5409,12 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
     case SCROLL:
     {
-        int zDelta = (param2) / WHEEL_DELTA;
+        int zDelta = (param2) / _WHEEL_DELTA;
         if (mOpened)
         {
             //UINT uLines = 0;
             //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
-            //	uLines = 0;
+            //    uLines = 0;
             mScrollBar->Scroll(-zDelta/* * uLines*/);
 
             //if it is scroll, then make sure to also send a mouse move event to select the newly hovered item
@@ -5784,48 +5540,38 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
     };
 
     return false;
-
-    NOEXCEPT_REGION_END
-
-    return false;
 }
 
 //--------------------------------------------------------------------------------------
-void ComboBox::OnHotkey()
+void ComboBox::OnHotkey() noexcept
 {
-	if (mOpened)
-		return;
+    if (mOpened)
+        return;
 
-	if (mSelected == -1)
-		return;
+    if (mSelected == -1)
+        return;
 
-	if (mDialog.IsKeyboardInputEnabled())
-		mDialog.RequestFocus(shared_from_this());
+    if (mDialog.IsKeyboardInputEnabled())
+        mDialog.RequestFocus(shared_from_this());
 
-	mSelected++;
+    mSelected++;
 
-	if (mSelected >= (int)mItems.size())
-		mSelected = 0;
+    if (mSelected >= (int)mItems.size())
+        mSelected = 0;
 
-	mFocused = mSelected;
+    mFocused = mSelected;
     mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 }
 
 bool ComboBox::ContainsPoint(const Point& pt) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return (PtInRect(mRegion, pt) || PtInRect(mButtonRegion, pt));// || (PtInRect(mDropdownRegion, pt) && mOpened));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void ComboBox::Render( float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
     ControlState iState = STATE_NORMAL;
@@ -5902,14 +5648,14 @@ void ComboBox::Render( float elapsedTime) noexcept
                 //pItem->mVisible = true;
 
                 //SetRect(rc, mDropdownRegion.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), mDropdownRegion.right,
-                //	pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
+                //    pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
                 //SetRect(rc, mDropdownRegion.left + RectWidth(mDropdownRegion) / 12.0f, mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * i), mDropdownRegion.right,
-                //	mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * (i + 1)));
+                //    mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * (i + 1)));
 
                 if ((int)i == mFocused)
                 {
                     //SetRect(rc, mDropdownRegion.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), mDropdownRegion.right,
-                    //	pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
+                    //    pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
                     /*SetRect(rc, mDropdownRegion.left, mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * i), mDropdownRegion.right,
                         mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * (i + 1)));*/
                     //mDialog.DrawText(pItem->mText, pSelectionElement, rc);
@@ -5986,8 +5732,6 @@ void ComboBox::Render( float elapsedTime) noexcept
         }
     }
 
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -5995,8 +5739,6 @@ void ComboBox::Render( float elapsedTime) noexcept
 
 void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Create a new item and set the data
     auto pItem = std::make_shared<ComboBoxItem>(data);
 
@@ -6015,8 +5757,6 @@ void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
         mFocused = 0;
         mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
     }
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6041,48 +5781,40 @@ void ComboBox::RemoveItem(Index index)
     }
     mItems = newItemList;
 
-	mScrollBar->SetTrackRange(0, (int)mItems.size());
-	if (mSelected >= (int)mItems.size())
-		mSelected = (int)mItems.size() - 1;
+    mScrollBar->SetTrackRange(0, (int)mItems.size());
+    if (mSelected >= (int)mItems.size())
+        mSelected = (int)mItems.size() - 1;
 }
 
 
 //--------------------------------------------------------------------------------------
 void ComboBox::RemoveAllItems() noexcept
 {
-    NOEXCEPT_REGION_START
-    
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
     mFocused = mSelected = -1;
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 bool ComboBox::ContainsItem(const std::wstring& text, Index start) const noexcept
 { 
-    NOEXCEPT_REGION_START
-
     return (-1 != FindItemIndex(text, start));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 Index ComboBox::FindItemIndex(const std::wstring& text, Index start) const
 {
-	for (Index i = start; i < mItems.size(); ++i)
-	{
-		ComboBoxItemPtr pItem = mItems[i];
+    for (Index i = start; i < mItems.size(); ++i)
+    {
+        ComboBoxItemPtr pItem = mItems[i];
 
-		if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
-		{
-			return static_cast<int>(i);
-		}
-	}
+        if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
+        {
+            return static_cast<int>(i);
+        }
+    }
 
     throw std::invalid_argument("\"text\" was not found in combo box");
 }
@@ -6109,8 +5841,8 @@ GenericData& ComboBox::GetSelectedData() const
     if (mSelected < 0)
         throw NoItemSelectedException();
 
-	ComboBoxItemPtr pItem = mItems[mSelected];
-	return pItem->mData;
+    ComboBoxItemPtr pItem = mItems[mSelected];
+    return pItem->mData;
 }
 
 
@@ -6147,8 +5879,8 @@ void ComboBox::SelectItem(Index index)
         return;
     }
 
-	mFocused = mSelected = index;
-	mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
+    mFocused = mSelected = index;
+    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
 }
 
 
@@ -6168,7 +5900,7 @@ void ComboBox::SelectItem(const std::wstring& text, Index start)
     }
 
     mFocused = mSelected = itemIndex;
-	mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
+    mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
 }
 
 
@@ -6192,11 +5924,7 @@ void ComboBox::SelectItem(const GenericData& data)
         return;
     }
 
-    NOEXCEPT_REGION_START
-
     SelectItem(itemIndex);
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6209,32 +5937,26 @@ Slider Functions
 
 Slider::Slider(Dialog& dialog) : Control(dialog)
 {
-	mType = CONTROL_SLIDER;
+    mType = CONTROL_SLIDER;
 
-	mMin = 0;
-	mMax = 100;
-	mValue = 0;
-	mPressed = false;
+    mMin = 0;
+    mMax = 100;
+    mValue = 0;
+    mPressed = false;
 }
 
 
 //--------------------------------------------------------------------------------------
 bool Slider::ContainsPoint(const Point& pt) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     return (PtInRect(mRegion, pt) ||
     PtInRect(mButtonRegion, pt));
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Slider::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::UpdateRects();
 
     mButtonRegion = mRegion;
@@ -6243,29 +5965,21 @@ void Slider::UpdateRects() noexcept
 
     mButtonX = (int)((float(mValue - mMin) / float(mMax - mMin)) * RectWidth(mRegion));
     OffsetRect(mButtonRegion, mButtonX, 0);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 Value Slider::ValueFromXPos(Value x) const noexcept
 {
-    NOEXCEPT_REGION_START
-
     float fValuePerPixel = (float)(mMax - mMin) / RectWidth(mRegion);
     float fPixelPerValue2 = 1.0f / (2.0f * fValuePerPixel);//use this to get it to change locations at the half way mark instead of using truncate int methods
     return int(((x - mRegion.x + fPixelPerValue2) * fValuePerPixel) + mMin);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (!mEnabled || !mVisible)
         return false;
 
@@ -6338,7 +6052,7 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     case SCROLL:
     {
-        int nScrollAmount = param2 / WHEEL_DELTA;
+        int nScrollAmount = param2 / _WHEEL_DELTA;
         SetValueInternal(mValue - nScrollAmount, true);
         return true;
     }
@@ -6383,30 +6097,22 @@ bool Slider::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     return false;
 
-    NOEXCEPT_REGION_END
-
     return false;
 }
 
 //--------------------------------------------------------------------------------------
 void Slider::SetRange(int nMin, int nMax) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mMin = nMin;
     mMax = nMax;
 
     SetValueInternal(mValue, false);
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Slider::SetValueInternal(int nValue, bool bFromInput) noexcept
 {
-    NOEXCEPT_REGION_START
-
     // Clamp to range
     nValue = std::clamp(nValue, mMin, mMax);
 
@@ -6419,16 +6125,12 @@ void Slider::SetValueInternal(int nValue, bool bFromInput) noexcept
     UpdateRects();
 
     mDialog.SendEvent(EVENT_SLIDER_VALUE_CHANGED, bFromInput, shared_from_this());
-
-    NOEXCEPT_REGION_END
 }
 
 
 //--------------------------------------------------------------------------------------
 void Slider::Render( float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mVisible == false)
         return;
 
@@ -6477,34 +6179,32 @@ void Slider::Render( float elapsedTime) noexcept
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
     mDialog.DrawSprite(*pElement, mButtonRegion, _NEAR_BUTTON_DEPTH);
-
-    NOEXCEPT_REGION_END
 }
 
 const std::wstring g_Charsets[] = 
 { 
-	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
-	L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ",
-	L"0123456789",
-	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-	L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+    L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ",
+    L"0123456789",
+    L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 };
 
 //--------------------------------------------------------------------------------------
 bool CharsetContains(wchar_t codepoint, Charset charset)
 {
-	switch (charset)
-	{
-	case Unicode:
-		return true;
-	default:
-		for (unsigned int i = 0; i < g_Charsets[charset].size(); ++i)
-		{
-			if (g_Charsets[charset][i] == codepoint)
-				return true;
-		}
-		return false;
-	}
+    switch (charset)
+    {
+    case Unicode:
+        return true;
+    default:
+        for (unsigned int i = 0; i < g_Charsets[charset].size(); ++i)
+        {
+            if (g_Charsets[charset][i] == codepoint)
+                return true;
+        }
+        return false;
+    }
 }
 
 //--------------------------------------------------------------------------------------
@@ -6869,8 +6569,6 @@ void EditBox::SetText(const std::wstring& text)
 //--------------------------------------------------------------------------------------
 void EditBox::SetCharset(Charset chSet) noexcept
 {
-    NOEXCEPT_REGION_START
-
     mCharset = chSet;
     std::wstring text = GetText();
 
@@ -6882,8 +6580,6 @@ void EditBox::SetCharset(Charset chSet) noexcept
     }
 
     mTextHistoryKeeper.SetText(text);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -6901,14 +6597,10 @@ void EditBox::SetCaretState(bool state) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::SetCaretPosition(Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mIsEmpty)
         mCaretPos = -1;
 
     mCaretPos = glm::clamp(pos, -1, (int32_t)GetText().length());
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -6926,8 +6618,8 @@ void EditBox::SetSelectionStart(Value pos) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::SetSelectionEmpty() noexcept
 {
-	SetSelectionStart(-2);
-	SetCaretPosition(-1);
+    SetSelectionStart(-2);
+    SetCaretPosition(-1);
 }
 
 //--------------------------------------------------------------------------------------
@@ -6967,11 +6659,7 @@ void EditBox::SetCaretBlendColor(const BlendColor& col) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
 { 
-    NOEXCEPT_REGION_START
-    
     mElements[0].mFontColor = col;
-
-    NOEXCEPT_REGION_END
 }
 
 
@@ -6980,8 +6668,6 @@ void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
 //--------------------------------------------------------------------------------------
 void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     //start by removing ALL newlines
     std::wstring newStr = str;
@@ -7011,15 +6697,11 @@ void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
     mSelStart = -2;
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     pos = glm::clamp(pos, -1, static_cast<Value>(GetText().size()));
 
     //since a space is used as a placeholder when there is no text, make sure to clear when we get text
@@ -7036,14 +6718,10 @@ void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
     mSelStart = -2;
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 void EditBox::DeleteChar(Value pos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (pos < 0 || pos >= GetText().size())
         return;
 
@@ -7062,15 +6740,11 @@ void EditBox::DeleteChar(Value pos) noexcept
     }
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
 {
-    NOEXCEPT_REGION_START
-		
     auto mousePos = mDialog.GetMousePositionDialogSpace();
 
     if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/)
@@ -7092,9 +6766,9 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     if (!mHasFocus)
                         mDialog.RequestFocus(shared_from_this());
 
-					mSelStart = -2;
-					SetCaretPosition(PointToCharPos(mousePos));
-					mMouseDrag = true;
+                    mSelStart = -2;
+                    SetCaretPosition(PointToCharPos(mousePos));
+                    mMouseDrag = true;
                 }
             }
             else if (param2 == GLFW_RELEASE)
@@ -7135,9 +6809,9 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     }
     case SCROLL:
     {
-        mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
+        mScrollBar->Scroll(-(param2 / _WHEEL_DELTA));
         InvalidateRects();
-		MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);//this doesn't 100% work
+        MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);//this doesn't 100% work
         /*if (mMultiline)
         {
             mScrollBar->Scroll(-(param2 / WHEEL_DELTA));
@@ -7259,16 +6933,16 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
         }
         break;
     }
-	case FRAMEBUFFER_SIZE:
-		//if the window resizes, we must reset our text 
-		InvalidateRects();
-		break;
-	case FOCUS:
-		if (param1 == GL_TRUE)
-		{
-			SetSelectionEmpty();
-		}
-		break;
+    case FRAMEBUFFER_SIZE:
+        //if the window resizes, we must reset our text 
+        InvalidateRects();
+        break;
+    case FOCUS:
+        if (param1 == GL_TRUE)
+        {
+            SetSelectionEmpty();
+        }
+        break;
     default:
         break;
     }
@@ -7276,41 +6950,29 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     ApplyCompositeModifications();
 
     return false;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRectsMultiline() noexcept
 {
-    NOEXCEPT_REGION_START
-
 
     mScrollBar->SetRegion({ { mTextRegion.right - static_cast<long>(mSBWidth) }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
     mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
 
-    mTextRegion.right -= 2 * mSBWidth;
+    mTextRegion.right -= static_cast<long>(2 * mSBWidth);
 
     //TODO: finish setting up the scroll bar page size/everything else for the scroll bar update
     mScrollBar->UpdateRects();
-
-    
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRectsSingleline() noexcept
 {
-    NOEXCEPT_REGION_START
-    
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (GetText().size() == 0)
     {
         mIsEmpty = true;
@@ -7337,15 +6999,11 @@ void EditBox::UpdateRects() noexcept
     UpdateCharRects();
 
     mUpdateRequired = false;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RenderMultiline(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     //debug rendering
     /*unsigned int color = 0x80000000;
     for (auto it : mCharacterBBs)
@@ -7356,23 +7014,16 @@ void EditBox::RenderMultiline(float elapsedTime) noexcept
     }*/   
 
     mScrollBar->Render(elapsedTime);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RenderSingleline(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::Render(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mUpdateRequired)
         UpdateRects();
 
@@ -7457,15 +7108,11 @@ void EditBox::Render(float elapsedTime) noexcept
     }
 
     (this->*mRenderFunction)(elapsedTime);
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RenderText(float elapsedTime) noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto& element = mElements[0];
 
     SHADERMANAGER.UseProgram(g_TextProgram);
@@ -7549,15 +7196,11 @@ void EditBox::RenderText(float elapsedTime) noexcept
         SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(element.mFontColor.GetCurrent()));
         mTextDataBuffer->DrawRange(postSelectionStartIndex, postSelectionSize);
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::RemoveSelectedRegion() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mSelStart != -2)
     {
         if (mSelStart > mCaretPos)
@@ -7573,15 +7216,11 @@ void EditBox::RemoveSelectedRegion() noexcept
     }
 
     InvalidateRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 Value EditBox::PointToCharPos(const Point& pt) noexcept
 {
-    NOEXCEPT_REGION_START
-
     //convert the point into the right space
     Point newPt = pt;
     mDialog.ScreenSpaceToGLSpace(newPt);
@@ -7648,10 +7287,7 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
         }
     }
 
-    NOEXCEPT_REGION_END
-
     return -1;
-
 }
 
 //--------------------------------------------------------------------------------------
@@ -7663,8 +7299,6 @@ Value EditBox::RenderTextToText(Value rndIndex)
 //--------------------------------------------------------------------------------------
 Rect EditBox::CharPosToRect(Value charPos) noexcept
 {
-    NOEXCEPT_REGION_START
-
     charPos = glm::clamp(charPos, -1, static_cast<Value>(mCharacterBBs.size() - 1));
 
     //if it is the first position
@@ -7690,15 +7324,11 @@ Rect EditBox::CharPosToRect(Value charPos) noexcept
     }
 
     return thisRect;
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 bool EditBox::ShouldRenderCaret() noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto caretPosRect = CharPosToRect(mCaretPos);
     auto textRenderRect = mTextRegion;
     mDialog.ScreenSpaceToGLSpace(textRenderRect);
@@ -7711,17 +7341,11 @@ bool EditBox::ShouldRenderCaret() noexcept
 
 
     return false;
-
-    NOEXCEPT_REGION_END
 }
 
 void EditBox::ApplyCompositeModifications() noexcept
 {
-    NOEXCEPT_REGION_START
-
     mTextHistoryKeeper.ApplyPartialModifications();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
@@ -7733,68 +7357,46 @@ Value EditBox::TextToRenderText(Value txtIndex)
 //--------------------------------------------------------------------------------------
 void EditBox::OnFocusIn() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnFocusIn();
     mScrollBar->OnFocusIn();
 
-	MsgProc(FOCUS, GL_TRUE, 0, 0, 0);
-
-    NOEXCEPT_REGION_END
+    MsgProc(FOCUS, GL_TRUE, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnFocusOut() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnFocusOut();
     mScrollBar->OnFocusOut();
 
-	MsgProc(FOCUS, GL_FALSE, 0, 0, 0);
-
-    NOEXCEPT_REGION_END
+    MsgProc(FOCUS, GL_FALSE, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnMouseEnter() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnMouseEnter();
     mScrollBar->OnMouseEnter();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::OnMouseLeave() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Control::OnMouseLeave();
     mScrollBar->OnMouseLeave();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnInit() noexcept
+void EditBox::OnInit()
 {
-    NOEXCEPT_REGION_START
-
     Control::OnInit();
 
     mScrollBar->OnInit();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateCharRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     if (mIsEmpty)
     {
         //mText = L" ";
@@ -7803,15 +7405,11 @@ void EditBox::UpdateCharRects() noexcept
     (this->*mUpdateCharRectsFunction)();
 
     BufferCharRects();
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateCharRectsMultiline() noexcept
 {
-    NOEXCEPT_REGION_START
-
     std::wstring text = GetText();
 
     Rect rcScreen = mTextRegion;
@@ -7960,15 +7558,11 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         else if (it < lastLine)
             mRenderCount += textLines[it].size();
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::UpdateCharRectsSingleline() noexcept
 {
-    NOEXCEPT_REGION_START
-
     Rect rcScreen = mTextRegion;
     auto dlgRect = mDialog.GetRegion();
     mDialog.ScreenSpaceToGLSpace(rcScreen);
@@ -8043,15 +7637,11 @@ void EditBox::UpdateCharRectsSingleline() noexcept
             ++mRenderCount;
         }
     }
-
-    NOEXCEPT_REGION_END
 }
 
 //--------------------------------------------------------------------------------------
 void EditBox::BufferCharRects() noexcept
 {
-    NOEXCEPT_REGION_START
-
     auto str = GetText();
 
     //make sure there are characters to load
@@ -8117,8 +7707,6 @@ void EditBox::BufferCharRects() noexcept
 
     mTextDataBuffer->BufferData(textVertices);
     mTextDataBuffer->BufferIndices(indices);
-
-    NOEXCEPT_REGION_END
 }
 
 /*
@@ -8368,20 +7956,20 @@ void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
     Text::BeginText(mManager->GetOrthoMatrix());
 }
 
-void TextHelper::DrawTextLine(const std::wstring& text)
+void TextHelper::DrawTextLine(const std::wstring& text) noexcept
 {
     DrawTextLineBase({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
 
-	//set the point down however many lines were drawn
-	for (auto it : text)
-	{
-		if (it == '\n')
+    //set the point down however many lines were drawn
+    for (auto it : text)
+    {
+        if (it == '\n')
             mPoint.y += mLeading;
-	}
+    }
     mPoint.y -= mLeading;//once no matter what because we are drawing a LINE of text
 }
 
-void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text)
+void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept
 {
     mManager->GetFontNode(mFontIndex)->mLeading = mLeading;
     Text::DrawText(mManager->GetFontNode(mFontIndex), text, rc, mColor, flags, true);

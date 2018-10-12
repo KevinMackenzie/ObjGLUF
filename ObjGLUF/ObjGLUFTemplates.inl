@@ -27,12 +27,9 @@ namespace GLUF
     inline std::vector<T> AdoptArray(T*& arr, unsigned long len) noexcept
     {
         if (arr == nullptr)
-        throw std::invalid_argument("AdoptArray: \'arr\' == nullptr");
-
-        NOEXCEPT_REGION_START
-
-            //the return data;
-            std::vector<T> ret;
+            throw std::invalid_argument("AdoptArray: \'arr\' == nullptr");
+        //the return data;
+        std::vector<T> ret;
 
         //the (hidden) internal vector member variables which contain the vector's memory internals
         ret._Myfirst = arr;
@@ -43,10 +40,6 @@ namespace GLUF
         arr = nullptr;
 
         return ret;
-
-        NOEXCEPT_REGION_END
-
-            return std::vector <T>();//to keep the compiler from complaining
     }
 
 
@@ -63,12 +56,12 @@ namespace GLUF
         other.mGLData = 0;
     }
 
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	GLVector<T>::~GLVector()
-	{
-		this->gl_delete_data();
-	}
+    //--------------------------------------------------------------------------------------
+    template<typename T>
+    GLVector<T>::~GLVector()
+    {
+        this->gl_delete_data();
+    }
 
     //--------------------------------------------------------------------------------------
     template<typename T>
@@ -97,20 +90,20 @@ namespace GLUF
     template<typename T>
     void* GLVector<T>::gl_data() const
     {
-        if (size() == 0)
+        if (std::vector<T>::size() == 0)
             return nullptr;
 
         {
-            size_t expcetedSize = front().size();
+            size_t expcetedSize = std::vector<T>::front().size();
             for (auto it : *this)
             {
-                if (it.size() != front().size())
+                if (it.size() != std::vector<T>::front().size())
                     throw std::length_error("Inconsistent Lengths Used in GLVector");
             }
         }
 
-        size_t stride = front().size();
-        size_t rawSize = stride * size();
+        size_t stride = std::vector<T>::front().size();
+        size_t rawSize = stride * std::vector<T>::size();
 
         //compile the data into one array of contiguous data
 
@@ -119,10 +112,11 @@ namespace GLUF
         mGLData = new char[rawSize];
 
         //add each element
-        for (size_t i = 0; i < size(); ++i)
+        for (size_t i = 0; i < std::vector<T>::size(); ++i)
         {
+            // TODO: just make this a virtual function... what was I thinking
             //this doesn't actually take the memory location of the element, because the '&' operator is overloaded to return a contiguous array of bytes containing each element's data
-            void* mem = &(*this)[i];
+            char* mem = (*this)[i].get_data();
 
             //may be unsafe, but that's a later problem
             std::memcpy(mGLData + i * stride, mem, stride);
@@ -138,12 +132,8 @@ namespace GLUF
     template<typename T>
     void* GLVector<T>::gl_delete_data() const
     {
-        NOEXCEPT_REGION_START
-
-            delete[] mGLData;
+        delete[] mGLData;
         return nullptr;
-
-        NOEXCEPT_REGION_END
     }
 
     //--------------------------------------------------------------------------------------
@@ -151,11 +141,11 @@ namespace GLUF
     void GLVector<T>::buffer_element(void* data, size_t element)
     {
         char* tmpUsableData = static_cast<char*>(data);
-        if (element >= front().size())
+        if (element >= std::vector<T>::front().size())
             return;
 
-        size_t elementSize = front().n_elem_size(element);
-        for (unsigned int i = 0; i < size(); ++i)
+        size_t elementSize = std::vector<T>::front().n_elem_size(element);
+        for (unsigned int i = 0; i < std::vector<T>::size(); ++i)
         {
             (*this)[i].buffer_element(tmpUsableData, element);
             tmpUsableData += elementSize;
