@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(objgluf)
 
-# TODO: split ObjGLUF and GLUFGui into two projects
-set(objgluf_SOURCES ObjGLUF.cpp GLUFGui.cpp)
-set(objgluf_HEADERS ObjGLUF.h GLUFGui.h GLUFGuiTemplates.inl ObjGLUFTemplates.inl)
+set(objgluf_SOURCES ObjGLUF.cpp)
+set(objgluf_HEADERS ObjGLUF.h ObjGLUFTemplates.inl)
 
 add_definitions(-DOBJGLUF_EXPORTS)
 

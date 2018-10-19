@@ -25,7 +25,7 @@ for more details.
 #endif
 
 #include <ft2build.h> 
-#include FT_FREETYPE_H
+#include FT_FREETYPE_H"freetype/freetype.h"
 
 
 namespace GLUF

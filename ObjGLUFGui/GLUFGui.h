@@ -17,7 +17,7 @@ for more details.
 
 #pragma once
 
-#include "ObjGLUF.h"
+#include "../ObjGLUF/ObjGLUF.h"
 
 
 /*

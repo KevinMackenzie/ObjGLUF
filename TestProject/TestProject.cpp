@@ -5,7 +5,7 @@
 #define GLUF_DEBUG
 #define SUPPRESS_RADIAN_ERROR
 #define SUPPRESS_UTF8_ERROR
-#include "../ObjGLUF/GLUFGui.h"
+#include "../include/ObjGLUFGui.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
