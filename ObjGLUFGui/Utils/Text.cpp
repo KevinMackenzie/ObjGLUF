@@ -1,5 +1,69 @@
 #include "Text.h"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H"freetype/freetype.h"
+
+
+struct TextVertexStruct : public VertexStruct
+{
+    glm::vec3 mPos;
+    glm::vec2 mTexCoords;
+
+    TextVertexStruct(){}
+    TextVertexStruct(const glm::vec3& pos, const glm::vec2& texCoords) :
+            mPos(pos), mTexCoords(texCoords)
+    {}
+
+    virtual char* get_data() const override
+    {
+        char* ret = new char[size()];
+
+        memcpy(ret, &mPos[0], 12);
+        memcpy(ret + 12, &mTexCoords[0], 8);
+
+        return ret;
+    }
+
+    virtual size_t size() const override
+    {
+        return 20; // sizeof(mPos) + sizeof(mTexCoords);
+    }
+
+    virtual size_t n_elem_size(size_t element)
+    {
+        switch (element)
+        {
+            case 0:
+                return 12;
+            case 1:
+                return 8;
+            default:
+                return 0;//if it is too big, just return 0; not worth an exception
+        }
+    }
+
+    virtual void buffer_element(void* data, size_t element) override
+    {
+        switch (element)
+        {
+            case 0:
+                mPos = static_cast<glm::vec3*>(data)[0];
+            case 1:
+                mTexCoords = static_cast<glm::vec2*>(data)[0];
+            default:
+                break;
+        }
+    }
+
+    static GLVector<TextVertexStruct> MakeMany(size_t howMany)
+    {
+        GLVector<TextVertexStruct> ret;
+        ret.resize(howMany);
+
+        return ret;
+    }
+};
+
 FT_Library g_FtLib;
 ProgramPtr g_TextProgram = nullptr;
 VertexArrayPtr g_TextVertexArray = nullptr;
@@ -514,3 +578,264 @@ void LoadFont(FontPtr& font, const std::vector<char>& rawData, FontSize fontHeig
 }
 
 
+//glm::mat4 g_TextModelMatrix;
+//GLVector<TextVertexStruct> g_TextVertices;
+//Color4f g_TextColor;
+
+//--------------------------------------------------------------------------------------
+void BeginText(const glm::mat4& orthoMatrix)
+{
+    g_TextOrtho = orthoMatrix;
+    //g_TextVertices.clear();
+}
+
+//--------------------------------------------------------------------------------------
+void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rect, const Color& color, Bitfield textFlags, bool hardRect)
+{
+
+    if ((long)font->mFontType->mHeight > RectHeight(rect) && hardRect)
+        return;//no sense rendering if it is too big
+
+    //rcScreen = ScreenToClipspace(rcScreen);
+
+    FontSize tmpSize = font->mFontType->mHeight; // _FONT_HEIGHT_NDC(font->mFontType->mHeight);
+
+    Rectf UV;
+
+    Rect rcScreen = rect;
+    OffsetRect(rcScreen, -long(g_WndWidth / 2), -long(g_WndHeight / 2));
+
+    long CurX = rcScreen.left;
+    long CurY = rcScreen.top;
+
+    //calc widths
+    long strWidth = font->mFontType->GetStringWidth(text);
+    int centerOffset = (RectWidth(rcScreen) - strWidth) / 2;
+    if (textFlags & GT_CENTER)
+    {
+        CurX = rcScreen.left + centerOffset;
+    }
+    else if (textFlags & GT_RIGHT)
+    {
+        CurX = rcScreen.left + centerOffset * 2;
+    }
+
+    int numLines = 1;//always have one to get the GT_VCENTER correct
+    for (auto it : text)
+    {
+        if (it == L'\n')
+            numLines++;
+    }
+
+    if (textFlags & GT_VCENTER)
+    {
+        long value = RectHeight(rcScreen);
+        value = value - numLines * font->mFontType->mHeight;
+        value /= 2;
+        CurY -= (RectHeight(rcScreen) - (long)numLines * (long)font->mFontType->mHeight) / 2;
+    }
+    else if (textFlags & GT_BOTTOM)
+    {
+        CurY -= RectHeight(rcScreen) - numLines * font->mFontType->mHeight;
+    }
+
+
+    //get the number of vertices
+    GLsizei textBuffLen = text.size() * 4;
+
+    auto textVertices = TextVertexStruct::MakeMany(textBuffLen);
+    std::vector<glm::u32vec3> indices;
+    indices.resize(text.size() * 2);
+
+    float z = _NEAR_BUTTON_DEPTH;
+    unsigned int i = 0;
+    for (auto ch : text)
+    {
+        int widthConverted = font->mFontType->GetCharAdvance(ch);//(font->mFontType->CellX * tmpSize) / font->mFontType->mAtlasWidth;
+
+        //lets support newlines :) (or if the next char will go outside the rect)
+        if (ch == '\n' || (CurX + widthConverted > rcScreen.right && hardRect))
+        {
+            if (textFlags & GT_CENTER)
+                CurX = rcScreen.left + centerOffset;
+            else if (textFlags & GT_LEFT)
+                CurX = rcScreen.left;
+            else if (textFlags & GT_RIGHT)
+                CurX = rcScreen.left + centerOffset * 2;
+
+            CurY -= font->mLeading;// *1.1f;//assume a reasonible leding
+
+            //if the next line will go off of the page, then don't draw it
+            if ((CurY - (long)font->mLeading < rcScreen.bottom) && hardRect)
+                break;
+
+            if (ch == '\n')
+            {
+                continue;
+            }
+        }
+
+        //Row = (ch - font->mFontType->Base) / font->mFontType->RowPitch;
+        //Col = (ch - font->mFontType->Base) - Row*font->mFontType->RowPitch;
+
+        //U = Col*font->mFontType->ColFactor;
+        //V = Row*font->mFontType->RowFactor;
+        //U1 = U + font->mFontType->ColFactor;
+        //V1 = V + font->mFontType->RowFactor;
+
+        //U = font->mFontType->GetTextureXOffset(ch);
+        //V = 0.0f;
+        //U1 = U + font->mFontType->GetCharWidth(ch);
+        //V1 = 1.0f;
+        UV = font->mFontType->GetCharTexRect(ch);
+
+        //glTexCoord2f(U, V1);  glVertex2i(CurX, CurY);
+        //glTexCoord2f(U1, V1);  glVertex2i(CurX + font->mFontType->CellX, CurY);
+        //glTexCoord2f(U1, V); glVertex2i(CurX + font->mFontType->CellX, CurY + font->mFontType->CellY);
+        //glTexCoord2f(U, V); glVertex2i(CurX, CurY + font->mFontType->CellY);
+
+        Rect glyph = font->mFontType->GetCharRect(ch);
+
+        //remember to expand for this
+        //glyph.right = _FONT_HEIGHT_NDC(glyph.right);
+        //glyph.top   = _FONT_HEIGHT_NDC(glyph.right);
+
+        OffsetRect(glyph, CurX, CurY - (tmpSize));
+
+        //glyph.left = CurX;
+        //glyph.right = CurX + widthConverted;
+        //glyph.top = CurY;
+        //glyph.bottom = CurY - tmpSize;
+
+        unsigned int vertI = i * 4;
+
+        textVertices[vertI] =
+                {
+                        glm::vec3(GetVec2FromRect(glyph, false, false), z),
+                        GetVec2FromRect(UV, false, false)
+                };
+
+        textVertices[vertI + 1] =
+                {
+                        glm::vec3(GetVec2FromRect(glyph, true, false), z),
+                        GetVec2FromRect(UV, true, false)
+                };
+
+        textVertices[vertI + 2] =
+                {
+                        glm::vec3(GetVec2FromRect(glyph, true, true), z),
+                        GetVec2FromRect(UV, true, true)
+                };
+
+        textVertices[vertI + 3] =
+                {
+                        glm::vec3(GetVec2FromRect(glyph, false, true), z),
+                        GetVec2FromRect(UV, false, true)
+                };
+
+        unsigned int indexI = i * 2;
+        indices[indexI] =
+                {
+                        vertI + 3, vertI, vertI + 2
+                };
+
+        indices[indexI + 1] =
+                {
+                        vertI + 2, vertI, vertI + 1
+                };
+
+        CurX += widthConverted;
+
+        ++i;
+    }
+    //glEnd();
+
+    //g_TextColor = ColorToFloat(color);
+
+    //g_TextModelMatrix = glm::translate(glm::mat4(), glm::vec3(0.5f, 1.5f, 0.0f));//glm::mat4(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.3f, 0.3f, 0.0f, 1.0f);
+
+    //buffer the data
+    g_TextVertexArray->BufferData(textVertices);
+
+    //buffer the indices
+    g_TextVertexArray->BufferIndices(indices);
+
+    EndText(font->mFontType, g_TextVertexArray, color, g_TextOrtho);
+
+}
+
+
+void EndText(const FontPtr& font, const VertexArrayPtr& data, const Color& textColor, const glm::mat4& projMatrix)
+{
+    SHADERMANAGER.UseProgram(g_TextProgram);
+
+    //first uniform: model-view matrix
+    SHADERMANAGER.GLUniformMatrix4f(g_TextShaderLocations.ortho, projMatrix);
+
+    //second, the sampler
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, font->mTexId);
+    SHADERMANAGER.GLUniform1i(g_TextShaderLocations.sampler, 0);
+
+
+    //third, the color
+    SHADERMANAGER.GLUniform4f(g_TextShaderLocations.color, ColorToFloat(textColor));
+
+    //make sure to enable this with text
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    data->Draw();
+
+    //g_TextVertices.clear();
+}
+
+
+//TextHelper
+TextHelper::TextHelper(DialogResourceManagerPtr& manager) :
+        mManager(manager), mColor(0, 0, 0, 255), mPoint(0L, 0L),
+        mFontIndex(0), mFontSize(15L)
+{}
+
+void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
+{
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_CLAMP);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    mManager->GetFontNode(drmFont);
+
+    mFontIndex = drmFont;
+    mFontSize = size;
+    mLeading = leading;
+
+    Text::BeginText(mManager->GetOrthoMatrix());
+}
+
+void TextHelper::DrawTextLine(const std::wstring& text) noexcept
+{
+    DrawTextLineBase({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
+
+    //set the point down however many lines were drawn
+    for (auto it : text)
+    {
+        if (it == '\n')
+            mPoint.y += mLeading;
+    }
+    mPoint.y -= mLeading;//once no matter what because we are drawing a LINE of text
+}
+
+void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept
+{
+    mManager->GetFontNode(mFontIndex)->mLeading = mLeading;
+    Text::DrawText(mManager->GetFontNode(mFontIndex), text, rc, mColor, flags, true);
+}
+
+void TextHelper::End() noexcept
+{
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
+}
