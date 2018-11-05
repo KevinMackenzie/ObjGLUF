@@ -1,7 +1,3 @@
-//
-// Created by donald on 11/4/18.
-//
-
 #ifndef OBJGLUF_SPRITEVERTEXSTRUCT_H
 #define OBJGLUF_SPRITEVERTEXSTRUCT_H
 

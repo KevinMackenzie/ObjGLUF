@@ -1,7 +1,3 @@
-//
-// Created by donald on 11/4/18.
-//
-
 #ifndef OBJGLUF_DIALOGRESOURCEMANAGER_H
 #define OBJGLUF_DIALOGRESOURCEMANAGER_H
 

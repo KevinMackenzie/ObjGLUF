@@ -1,7 +1,3 @@
-//
-// Created by donald on 10/19/18.
-//
-
 #ifndef OBJGLUF_ASSIMP_H
 #define OBJGLUF_ASSIMP_H
 
