@@ -1,32 +1,28 @@
 #include "ModificationStack.h"
 
+namespace GLUF {
+
 //--------------------------------------------------------------------------------------
-void ModificationStack::FlattenRedoStack() noexcept
-{
-    while (!mRedoStack.empty())
-    {
+void ModificationStack::FlattenRedoStack() noexcept {
+    while (!mRedoStack.empty()) {
         mRedoStack.pop();
     }
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::FlattenUndoStack() noexcept
-{
-    while (!mUndoStack.empty())
-    {
+void ModificationStack::FlattenUndoStack() noexcept {
+    while (!mUndoStack.empty()) {
         mUndoStack.pop();
     }
 }
 
 //--------------------------------------------------------------------------------------
-ModificationStack::ModificationStack(const std::wstring& initialText) :
-        mText(initialText)
-{
+ModificationStack::ModificationStack(const std::wstring &initialText) :
+        mText(initialText) {
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::PushAddition(const std::wstring& text, uint32_t loc)
-{
+void ModificationStack::PushAddition(const std::wstring &text, uint32_t loc) {
     ModificationStackInternal::ModificationAddition m;
     m.mInsertLocation = loc;
     m.mNewText = text;
@@ -34,8 +30,7 @@ void ModificationStack::PushAddition(const std::wstring& text, uint32_t loc)
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::PushRemoval(uint32_t start, uint32_t end)
-{
+void ModificationStack::PushRemoval(uint32_t start, uint32_t end) {
     ModificationStackInternal::ModificationRemoval m;
     m.mStartIndex = start;
     m.mEndIndex = end;
@@ -54,8 +49,7 @@ void ModificationStack::PushRemoval(uint32_t start, uint32_t end)
 }*/
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::ApplyPartialModifications() noexcept
-{
+void ModificationStack::ApplyPartialModifications() noexcept {
     if (mPartialMod.Empty())
         return;
 
@@ -64,8 +58,7 @@ void ModificationStack::ApplyPartialModifications() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::PushPartialAddition(const std::wstring& text, uint32_t loc)
-{
+void ModificationStack::PushPartialAddition(const std::wstring &text, uint32_t loc) {
     ModificationStackInternal::ModificationAddition m;
     m.mInsertLocation = loc;
     m.mNewText = text;
@@ -73,8 +66,7 @@ void ModificationStack::PushPartialAddition(const std::wstring& text, uint32_t l
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::PushPartialRemoval(uint32_t start, uint32_t end)
-{
+void ModificationStack::PushPartialRemoval(uint32_t start, uint32_t end) {
     ModificationStackInternal::ModificationRemoval m;
     m.mStartIndex = start;
     m.mEndIndex = end;
@@ -82,8 +74,7 @@ void ModificationStack::PushPartialRemoval(uint32_t start, uint32_t end)
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::UndoNextItem() noexcept
-{
+void ModificationStack::UndoNextItem() noexcept {
     if (mUndoStack.empty())
         return;
 
@@ -94,8 +85,7 @@ void ModificationStack::UndoNextItem() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::RedoNextItem() noexcept
-{
+void ModificationStack::RedoNextItem() noexcept {
     if (mRedoStack.empty())
         return;
 
@@ -106,15 +96,13 @@ void ModificationStack::RedoNextItem() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::FlattenStack() noexcept
-{
+void ModificationStack::FlattenStack() noexcept {
     FlattenUndoStack();
     FlattenRedoStack();
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStack::SetText(const std::wstring& text) noexcept
-{
+void ModificationStack::SetText(const std::wstring &text) noexcept {
     mText = text;
     FlattenStack();
 }
@@ -126,8 +114,7 @@ Subclass functions
 */
 
 //--------------------------------------------------------------------------------------
-ModificationStackInternal::ModificationAddition& ModificationStackInternal::ModificationAddition::operator=(const ModificationAddition& str)
-{
+ModificationStackInternal::ModificationAddition &ModificationStackInternal::ModificationAddition::operator=(const ModificationAddition &str) {
     mInsertLocation = str.mInsertLocation;
     mNewText = str.mNewText;
 
@@ -135,24 +122,22 @@ ModificationStackInternal::ModificationAddition& ModificationStackInternal::Modi
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::ModificationAddition::ApplyModificationToString(std::wstring& str) const
-{
-    auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t)0, static_cast<uint32_t>(str.size()));
+void ModificationStackInternal::ModificationAddition::ApplyModificationToString(std::wstring &str) const {
+    auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t) 0, static_cast<uint32_t>(str.size()));
     str.insert(begin, std::begin(mNewText), std::end(mNewText));
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::ModificationAddition::RemoveModificationToString(std::wstring& str) const
-{
-    auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t)0, static_cast<uint32_t>(str.size()));
-    auto end = std::begin(str) + std::clamp(mInsertLocation + static_cast<uint32_t>(mNewText.size()), (uint32_t)0, static_cast<uint32_t>(str.size()));
+void ModificationStackInternal::ModificationAddition::RemoveModificationToString(std::wstring &str) const {
+    auto begin = std::begin(str) + std::clamp(mInsertLocation, (uint32_t) 0, static_cast<uint32_t>(str.size()));
+    auto end = std::begin(str) + std::clamp(mInsertLocation + static_cast<uint32_t>(mNewText.size()), (uint32_t) 0,
+                                            static_cast<uint32_t>(str.size()));
 
     str.erase(begin, end);
 }
 
 //--------------------------------------------------------------------------------------
-ModificationStackInternal::ModificationRemoval& ModificationStackInternal::ModificationRemoval::operator=(const ModificationRemoval& str)
-{
+ModificationStackInternal::ModificationRemoval &ModificationStackInternal::ModificationRemoval::operator=(const ModificationRemoval &str) {
     mStartIndex = str.mStartIndex;
     mEndIndex = str.mEndIndex;
     mRemovedText = str.mRemovedText;
@@ -161,40 +146,35 @@ ModificationStackInternal::ModificationRemoval& ModificationStackInternal::Modif
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::ModificationRemoval::ApplyModificationToString(std::wstring& str) const
-{
-    auto begin = std::begin(str) + std::clamp(mStartIndex, (uint32_t)0, static_cast<uint32_t>(str.size()));
-    auto end = std::begin(str) + std::clamp(mEndIndex, (uint32_t)0, static_cast<uint32_t>(str.size()));
+void ModificationStackInternal::ModificationRemoval::ApplyModificationToString(std::wstring &str) const {
+    auto begin = std::begin(str) + std::clamp(mStartIndex, (uint32_t) 0, static_cast<uint32_t>(str.size()));
+    auto end = std::begin(str) + std::clamp(mEndIndex, (uint32_t) 0, static_cast<uint32_t>(str.size()));
 
     mRemovedText.assign(begin, end);
     str.erase(begin, end);
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::ModificationRemoval::RemoveModificationToString(std::wstring& str) const
-{
-    auto begin = std::begin(str) + std::clamp(mStartIndex, (uint32_t)0, static_cast<uint32_t>(str.size()));
+void ModificationStackInternal::ModificationRemoval::RemoveModificationToString(std::wstring &str) const {
+    auto begin = std::begin(str) + std::clamp(mStartIndex, (uint32_t) 0, static_cast<uint32_t>(str.size()));
 
     str.insert(begin, mRemovedText.begin(), mRemovedText.end());
     mRemovedText.clear();
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::ModificationRemovalAndAddition::ApplyModificationToString(std::wstring& str) const
-{
+void ModificationStackInternal::ModificationRemovalAndAddition::ApplyModificationToString(std::wstring &str) const {
     ModificationRemoval::ApplyModificationToString(str);
     ModificationAddition::ApplyModificationToString(str);
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::ModificationRemovalAndAddition::RemoveModificationToString(std::wstring& str) const
-{
+void ModificationStackInternal::ModificationRemovalAndAddition::RemoveModificationToString(std::wstring &str) const {
     ModificationAddition::RemoveModificationToString(str);
     ModificationRemoval::RemoveModificationToString(str);
 }
 
-ModificationStackInternal::ModificationRemovalAndAddition& ModificationStackInternal::ModificationRemovalAndAddition::operator=(const ModificationRemovalAndAddition& str)
-{
+ModificationStackInternal::ModificationRemovalAndAddition &ModificationStackInternal::ModificationRemovalAndAddition::operator=(const ModificationRemovalAndAddition &str) {
     mStartIndex = str.mStartIndex;
     mEndIndex = str.mEndIndex;
     mInsertLocation = str.mInsertLocation;
@@ -205,38 +185,33 @@ ModificationStackInternal::ModificationRemovalAndAddition& ModificationStackInte
 }
 
 //--------------------------------------------------------------------------------------
-ModificationStackInternal::ModificationRemovalAndAddition::ModificationRemovalAndAddition(const ModificationRemovalAndAddition& other) : ModificationRemoval(other), ModificationAddition(other)
-{
+ModificationStackInternal::ModificationRemovalAndAddition::ModificationRemovalAndAddition(const ModificationRemovalAndAddition &other)
+        : ModificationRemoval(other), ModificationAddition(other) {
 }
 
 //--------------------------------------------------------------------------------------
-ModificationStackInternal::ModificationRemovalAndAddition::ModificationRemovalAndAddition() : ModificationRemoval(), ModificationAddition()
-{
+ModificationStackInternal::ModificationRemovalAndAddition::ModificationRemovalAndAddition()
+        : ModificationRemoval(), ModificationAddition() {
 }
 
 
-
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::GenericCompositeModification::ApplyModificationToString(std::wstring& str) const
-{
-    for (auto& it : mParts)
-    {
+void ModificationStackInternal::GenericCompositeModification::ApplyModificationToString(std::wstring &str) const {
+    for (auto &it : mParts) {
         it->ApplyModificationToString(str);
     }
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::GenericCompositeModification::RemoveModificationToString(std::wstring& str) const
-{
-    for (auto it = mParts.crbegin(); it != mParts.crend(); ++it)
-    {
+void ModificationStackInternal::GenericCompositeModification::RemoveModificationToString(std::wstring &str) const {
+    for (auto it = mParts.crbegin(); it != mParts.crend(); ++it) {
         (*it)->RemoveModificationToString(str);
     }
 }
 
 //--------------------------------------------------------------------------------------
-void ModificationStackInternal::GenericCompositeModification::ClearParts()
-{
+void ModificationStackInternal::GenericCompositeModification::ClearParts() {
     mParts.clear();
 }
 
+}

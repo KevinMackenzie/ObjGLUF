@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_COMBOBOX_H
 #define OBJGLUF_COMBOBOX_H
 
+namespace GLUF {
 /*
 ComboBox
 
@@ -21,13 +22,12 @@ ComboBox
         'mItems': the items within the combo box
 
 */
-class ComboBox : public Button
-{
+class ComboBox : public Button {
 protected:
 
     ComboBox() = delete;
-    ComboBox(Dialog& dialog);
-    friend std::shared_ptr<ComboBox> CreateComboBox(Dialog& dialog);
+    ComboBox(Dialog &dialog);
+    friend std::shared_ptr <ComboBox> CreateComboBox(Dialog &dialog);
 
     sIndex mSelected;
     sIndex mFocused;
@@ -63,15 +63,26 @@ public:
 
     */
 
-    GenericData&    GetItemData(const std::wstring& text, Index start = 0) const;
-    GenericData&    GetItemData(Index index) const;
-    Size            GetScrollBarWidth() const noexcept    { return mSBWidth;          }
-    Size            GetNumItems() const    noexcept        { return mItems.size();        }
-    ComboBoxItemPtr GetItem(const std::wstring& text, Index start = 0) const;
-    ComboBoxItemPtr GetItem(Index index) const        { return mItems[index]; }
+    GenericData &GetItemData(const std::wstring &text, Index start = 0) const;
+    GenericData &GetItemData(Index index) const;
 
-    void                SetDropHeight(Size nHeight)                { mDropHeight = nHeight; UpdateRects(); }
-    void                SetScrollBarWidth(Size width) noexcept  { mSBWidth = width; UpdateRects();      }
+    Size GetScrollBarWidth() const noexcept { return mSBWidth; }
+
+    Size GetNumItems() const noexcept { return mItems.size(); }
+
+    ComboBoxItemPtr GetItem(const std::wstring &text, Index start = 0) const;
+
+    ComboBoxItemPtr GetItem(Index index) const { return mItems[index]; }
+
+    void SetDropHeight(Size nHeight) {
+        mDropHeight = nHeight;
+        UpdateRects();
+    }
+
+    void SetScrollBarWidth(Size width) noexcept {
+        mSBWidth = width;
+        UpdateRects();
+    }
 
     /*
     AddItem
@@ -83,7 +94,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GenericData& data) noexcept;
+    void AddItem(const std::wstring &text, GenericData &data) noexcept;
 
     /*
     InsertItem
@@ -101,7 +112,7 @@ public:
             no-throw guarantee
 
     */
-    void InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept;//IMPLEMENT
+    void InsertItem(Index index, const std::wstring &text, GenericData &data) noexcept;//IMPLEMENT
 
     /*
     RemoveItem
@@ -161,7 +172,7 @@ public:
             'NoItemSelectedException': if no item is selected
 
     */
-    GenericData& GetSelectedData() const;
+    GenericData &GetSelectedData() const;
 
     /*
     SelectItem
@@ -177,8 +188,8 @@ public:
             'std::invalid_argument': if 'text' is not found in _DEBUG, or if 'data' is not found in _DEBUG
     */
     void SelectItem(Index index);
-    void SelectItem(const std::wstring& text, Index start = 0);
-    void SelectItem(const GenericData& data);
+    void SelectItem(const std::wstring &text, Index start = 0);
+    void SelectItem(const GenericData &data);
 
     /*
     ContainsItem
@@ -194,7 +205,7 @@ public:
             no-throw guarantee
 
     */
-    bool ContainsItem(const std::wstring& text, Index start = 0) const noexcept;
+    bool ContainsItem(const std::wstring &text, Index start = 0) const noexcept;
 
     /*
     FindItem(Index)
@@ -212,8 +223,8 @@ public:
             'std::invalid_argument': if no item is found
 
     */
-    Index           FindItemIndex(const std::wstring& text, Index start = 0) const;
-    ComboBoxItemPtr FindItem(const std::wstring& text, Index start = 0) const;
+    Index FindItemIndex(const std::wstring &text, Index start = 0) const;
+    ComboBoxItemPtr FindItem(const std::wstring &text, Index start = 0) const;
 
 
     /*
@@ -223,13 +234,15 @@ public:
     */
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void OnHotkey() noexcept override;
-    virtual bool CanHaveFocus() const noexcept override{ return (mVisible && mEnabled); }
+
+    virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
+
     virtual void OnFocusOut() noexcept override;
     virtual void Render(float elapsedTime) noexcept override;
     virtual void UpdateRects() noexcept override;
     virtual void OnInit() override;
-    virtual void SetTextColor(const Color& Color) noexcept override;
-    virtual bool ContainsPoint(const Point& pt) const noexcept override;
+    virtual void SetTextColor(const Color &Color) noexcept override;
+    virtual bool ContainsPoint(const Point &pt) const noexcept override;
 
 protected:
 
@@ -246,4 +259,5 @@ protected:
     */
     void UpdateItemRects() noexcept;
 };
+}
 #endif //OBJGLUF_COMBOBOX_H

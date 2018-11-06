@@ -1,35 +1,35 @@
 #include "EditBox.h"
 
+namespace GLUF {
+
 //--------------------------------------------------------------------------------------
-EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true)), mMultiline(isMultiline), mTextHistoryKeeper(L"")
-{
+EditBox::EditBox(Dialog &dialog, bool isMultiline) : Control(dialog), mTextDataBuffer(
+        std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true)), mMultiline(isMultiline),
+                                                     mTextHistoryKeeper(L"") {
     mType = CONTROL_EDITBOX;
 
     mScrollBar = CreateScrollBar(dialog);
 
     mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar));
 
-    mTextDataBuffer->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
-    mTextDataBuffer->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12 });
+    mTextDataBuffer->AddVertexAttrib({4, 3, g_TextShaderLocations.position, GL_FLOAT, 0});
+    mTextDataBuffer->AddVertexAttrib({4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12});
 
-    mCaretColor.SetAll({ 0, 0, 0, 255 });
-    mCaretColor.SetState(STATE_DISABLED, { 0, 0, 0, 0 });
-    mCaretColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+    mCaretColor.SetAll({0, 0, 0, 255});
+    mCaretColor.SetState(STATE_DISABLED, {0, 0, 0, 0});
+    mCaretColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
 
-    mSelBkColor.SetAll({ 0, 0, 200, 128 });
-    mSelBkColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+    mSelBkColor.SetAll({0, 0, 200, 128});
+    mSelBkColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
 
-    mSelTextColor.SetAll({ 0, 0, 0, 255 });
-    mSelTextColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
+    mSelTextColor.SetAll({0, 0, 0, 255});
+    mSelTextColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
 
-    if (isMultiline)
-    {
+    if (isMultiline) {
         mUpdateRectsFunction = &EditBox::UpdateRectsMultiline;
         mUpdateCharRectsFunction = &EditBox::UpdateCharRectsMultiline;
         mRenderFunction = &EditBox::RenderMultiline;
-    }
-    else
-    {
+    } else {
         mUpdateRectsFunction = &EditBox::UpdateRectsSingleline;
         mUpdateCharRectsFunction = &EditBox::UpdateCharRectsSingleline;
         mRenderFunction = &EditBox::RenderSingleline;
@@ -37,35 +37,29 @@ EditBox::EditBox(Dialog& dialog, bool isMultiline) : Control(dialog), mTextDataB
 }
 
 //--------------------------------------------------------------------------------------
-EditBox::~EditBox()
-{
+EditBox::~EditBox() {
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::InvalidateRects() noexcept
-{
+void EditBox::InvalidateRects() noexcept {
     mUpdateRequired = true;
 }
 
 #pragma region Setters and Getters
 
 //--------------------------------------------------------------------------------------
-std::wstring EditBox::GetSelectedText() noexcept
-{
+std::wstring EditBox::GetSelectedText() noexcept {
     if (mSelStart == -2)
         return L"";
 
     std::wstring text = GetText();
     std::wstring::iterator begin, end;
     long len = 0;
-    if (mSelStart < mCaretPos)
-    {
+    if (mSelStart < mCaretPos) {
         begin = std::begin(text) + (mSelStart + 1);
         end = std::begin(text) + (mCaretPos + 1);
         len = mCaretPos + 1 - (mSelStart + 1);
-    }
-    else
-    {
+    } else {
         begin = std::begin(text) + (mCaretPos + 1);
         end = std::begin(text) + (mSelStart + 1);
         len = mSelStart + 1 - (mCaretPos + 1);
@@ -78,8 +72,7 @@ std::wstring EditBox::GetSelectedText() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetText(const std::wstring& text)
-{
+void EditBox::SetText(const std::wstring &text) {
     if (!CharsetContains(text, mCharset))
         GLUF_CRITICAL_EXCEPTION(StringContainsInvalidCharacters());
 
@@ -88,14 +81,12 @@ void EditBox::SetText(const std::wstring& text)
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetCharset(Charset chSet) noexcept
-{
+void EditBox::SetCharset(Charset chSet) noexcept {
     mCharset = chSet;
     std::wstring text = GetText();
 
     //remove all characters from the string that are not in 'chSet'
-    for (auto it = text.begin(); it != text.end(); ++it)
-    {
+    for (auto it = text.begin(); it != text.end(); ++it) {
         if (!CharsetContains(*it, chSet))
             text.erase(it);
     }
@@ -104,82 +95,70 @@ void EditBox::SetCharset(Charset chSet) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetBlinkPeriod(double period) noexcept
-{
+void EditBox::SetBlinkPeriod(double period) noexcept {
     mBlinkPeriod = period;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetCaretState(bool state) noexcept
-{
+void EditBox::SetCaretState(bool state) noexcept {
     mHideCaret = !state;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetCaretPosition(Value pos) noexcept
-{
+void EditBox::SetCaretPosition(Value pos) noexcept {
     if (mIsEmpty)
         mCaretPos = -1;
 
-    mCaretPos = glm::clamp(pos, -1, (int32_t)GetText().length());
+    mCaretPos = glm::clamp(pos, -1, (int32_t) GetText().length());
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetInsertMode(bool insertMode) noexcept
-{
+void EditBox::SetInsertMode(bool insertMode) noexcept {
     mInsertMode = insertMode;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetSelectionStart(Value pos) noexcept
-{
+void EditBox::SetSelectionStart(Value pos) noexcept {
     mSelStart = pos;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetSelectionEmpty() noexcept
-{
+void EditBox::SetSelectionEmpty() noexcept {
     SetSelectionStart(-2);
     SetCaretPosition(-1);
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetHorizontalMargin(Size marg) noexcept
-{
+void EditBox::SetHorizontalMargin(Size marg) noexcept {
     mHorizontalMargin = marg;
 
     InvalidateRects();
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetVerticalMargin(Size marg) noexcept
-{
+void EditBox::SetVerticalMargin(Size marg) noexcept {
     mVerticalMargin = marg;
 
     InvalidateRects();
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetSelectedTextBlendColor(const BlendColor& col) noexcept
-{
+void EditBox::SetSelectedTextBlendColor(const BlendColor &col) noexcept {
     mSelTextColor = col;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetSelectedBackgroundBlendColor(const BlendColor& col) noexcept
-{
+void EditBox::SetSelectedBackgroundBlendColor(const BlendColor &col) noexcept {
     mSelBkColor = col;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetCaretBlendColor(const BlendColor& col) noexcept
-{
+void EditBox::SetCaretBlendColor(const BlendColor &col) noexcept {
     mCaretColor = col;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
-{
+void EditBox::SetTextBlendColor(const BlendColor &col) noexcept {
     mElements[0].mFontColor = col;
 }
 
@@ -187,16 +166,14 @@ void EditBox::SetTextBlendColor(const BlendColor& col) noexcept
 #pragma endregion
 
 //--------------------------------------------------------------------------------------
-void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
-{
+void EditBox::InsertString(const std::wstring &str, Value pos) noexcept {
 
     //start by removing ALL newlines
     std::wstring newStr = str;
     {
         std::wstring::iterator it = std::find(newStr.begin(), newStr.end(), '\n');
 
-        while (it != newStr.end())
-        {
+        while (it != newStr.end()) {
             newStr.erase(it);
             it = std::find(newStr.begin(), newStr.end(), '\n');
         }
@@ -205,8 +182,7 @@ void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
     pos = glm::clamp(pos, -1, static_cast<Value>(GetText().size()));
 
     //since a space is used as a placeholder when there is no text, make sure to clear when we get text
-    if (mIsEmpty)
-    {
+    if (mIsEmpty) {
         mTextHistoryKeeper.PushPartialRemoval(0, 1);
         mIsEmpty = false;
     }
@@ -221,13 +197,11 @@ void EditBox::InsertString(const std::wstring& str, Value pos) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
-{
+void EditBox::InsertChar(wchar_t ch, Value pos) noexcept {
     pos = glm::clamp(pos, -1, static_cast<Value>(GetText().size()));
 
     //since a space is used as a placeholder when there is no text, make sure to clear when we get text
-    if (mIsEmpty)
-    {
+    if (mIsEmpty) {
         mTextHistoryKeeper.PushPartialRemoval(0, 1);
         mIsEmpty = false;
     }
@@ -241,22 +215,17 @@ void EditBox::InsertChar(wchar_t ch, Value pos) noexcept
     InvalidateRects();
 }
 
-void EditBox::DeleteChar(Value pos) noexcept
-{
+void EditBox::DeleteChar(Value pos) noexcept {
     if (pos < 0 || pos >= GetText().size())
         return;
 
-    if (GetText().size() == 1)
-    {
-        if (!mIsEmpty)
-        {
+    if (GetText().size() == 1) {
+        if (!mIsEmpty) {
             mTextHistoryKeeper.PushPartialRemoval(0, 1);
             mTextHistoryKeeper.PushPartialAddition(L" ", 0);
             mIsEmpty = true;
         }
-    }
-    else
-    {
+    } else {
         mTextHistoryKeeper.PushPartialRemoval(pos, pos + 1);
     }
 
@@ -264,26 +233,19 @@ void EditBox::DeleteChar(Value pos) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
     auto mousePos = mDialog.GetMousePositionDialogSpace();
 
-    if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/)
-    {
+    if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM)/* || mScrollBar->ContainsPoint(mousePos)*/) {
         InvalidateRects();
         return true;
     }
 
-    switch (msg)
-    {
-        case MB:
-        {
-            if (param1 == GLFW_MOUSE_BUTTON_LEFT)
-            {
-                if (param2 == GLFW_PRESS)
-                {
-                    if (PtInRect(mRegion, mousePos))
-                    {
+    switch (msg) {
+        case MB: {
+            if (param1 == GLFW_MOUSE_BUTTON_LEFT) {
+                if (param2 == GLFW_PRESS) {
+                    if (PtInRect(mRegion, mousePos)) {
                         if (!mHasFocus)
                             mDialog.RequestFocus(shared_from_this());
 
@@ -291,9 +253,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                         SetCaretPosition(PointToCharPos(mousePos));
                         mMouseDrag = true;
                     }
-                }
-                else if (param2 == GLFW_RELEASE)
-                {
+                } else if (param2 == GLFW_RELEASE) {
                     //is the scroll bar pressed
                     /*if (mScrollBar->IsPressed())
                     {
@@ -310,26 +270,20 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
             break;
         }
-        case CURSOR_POS:
-        {
+        case CURSOR_POS: {
             //if there is a selection, make sure to update which parts are selected
-            if (mMouseDrag)
-            {
-                if (mSelStart == -2)
-                {
+            if (mMouseDrag) {
+                if (mSelStart == -2) {
                     mSelStart = PointToCharPos(mousePos);
                     SetCaretPosition(mSelStart);
-                }
-                else
-                {
+                } else {
                     SetCaretPosition(PointToCharPos(mousePos));
                 }
 
             }
             break;
         }
-        case SCROLL:
-        {
+        case SCROLL: {
             mScrollBar->Scroll(-(param2 / _WHEEL_DELTA));
             InvalidateRects();
             MsgProc(MessageType::CURSOR_POS, 0, 0, 0, 0);//this doesn't 100% work
@@ -343,12 +297,10 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             }*/
             break;
         }
-        case UNICODE_CHAR:
-        {
+        case UNICODE_CHAR: {
 
             //is there a selection?
-            if (mSelStart != -2)
-            {
+            if (mSelStart != -2) {
                 //if so, delete it
                 RemoveSelectedRegion();
             }
@@ -357,19 +309,13 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
             break;
         }
-        case KEY:
-        {
-            switch(param1)
-            {
+        case KEY: {
+            switch (param1) {
                 case GLFW_KEY_BACKSPACE:
-                    if (param3 != GLFW_RELEASE)
-                    {
-                        if (mSelStart != -2)
-                        {
+                    if (param3 != GLFW_RELEASE) {
+                        if (mSelStart != -2) {
                             RemoveSelectedRegion();
-                        }
-                        else
-                        {
+                        } else {
                             DeleteChar(mCaretPos);
                             SetCaretPosition(mCaretPos - 1);
                         }
@@ -377,24 +323,18 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 
                     break;
                 case GLFW_KEY_DELETE:
-                    if (param3 != GLFW_RELEASE)
-                    {
-                        if (mSelStart != -2)
-                        {
+                    if (param3 != GLFW_RELEASE) {
+                        if (mSelStart != -2) {
                             RemoveSelectedRegion();
-                        }
-                        else
-                        {
+                        } else {
                             DeleteChar(mCaretPos + 1);
                         }
                     }
 
                     break;
                 case GLFW_KEY_ENTER:
-                    if (param3 != GLFW_RELEASE)
-                    {
-                        if (mSelStart != -2)
-                        {
+                    if (param3 != GLFW_RELEASE) {
+                        if (mSelStart != -2) {
                             RemoveSelectedRegion();
                         }
 
@@ -403,8 +343,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     }
                     break;
                 case GLFW_KEY_C:
-                    if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
-                    {
+                    if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS) {
                         //get selected text
                         auto selText = GetSelectedText();
 
@@ -412,8 +351,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     }
                     break;
                 case GLFW_KEY_V:
-                    if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
-                    {
+                    if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE) {
                         //insert clipboard
                         std::string clipboardString = glfwGetClipboardString(g_pGLFWWindow);
 
@@ -421,8 +359,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     }
                     break;
                 case GLFW_KEY_X:
-                    if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
-                    {
+                    if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS) {
                         auto selText = GetSelectedText();
 
                         glfwSetClipboardString(g_pGLFWWindow, WStringToString(selText).c_str());
@@ -431,22 +368,19 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     }
                     break;
                 case GLFW_KEY_A:
-                    if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS)
-                    {
+                    if (param4 == GLFW_MOD_CONTROL && param3 == GLFW_PRESS) {
                         mSelStart = -1;
                         mCaretPos = GetText().size() - 1;
                     }
                     break;
                 case GLFW_KEY_Z:
-                    if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
-                    {
+                    if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE) {
                         mTextHistoryKeeper.UndoNextItem();
                         InvalidateRects();
                     }
                     break;
                 case GLFW_KEY_Y:
-                    if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE)
-                    {
+                    if (param4 == GLFW_MOD_CONTROL && param3 != GLFW_RELEASE) {
                         mTextHistoryKeeper.RedoNextItem();
                         InvalidateRects();
                     }
@@ -459,8 +393,7 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             InvalidateRects();
             break;
         case FOCUS:
-            if (param1 == GL_TRUE)
-            {
+            if (param1 == GL_TRUE) {
                 SetSelectionEmpty();
             }
             break;
@@ -474,11 +407,12 @@ bool EditBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::UpdateRectsMultiline() noexcept
-{
+void EditBox::UpdateRectsMultiline() noexcept {
 
-    mScrollBar->SetRegion({ { mTextRegion.right - static_cast<long>(mSBWidth) }, mSubRegions[0].top, mSubRegions[0].right, { mSubRegions[0].bottom } });
-    mScrollBar->SetPageSize(static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
+    mScrollBar->SetRegion({{mTextRegion.right - static_cast<long>(mSBWidth)}, mSubRegions[0].top, mSubRegions[0].right,
+                           {mSubRegions[0].bottom}});
+    mScrollBar->SetPageSize(
+            static_cast<int>(RectHeight(mTextRegion) / mDialog.GetFont(mElements[0].mFontIndex)->mLeading));
 
     mTextRegion.right -= static_cast<long>(2 * mSBWidth);
 
@@ -487,15 +421,12 @@ void EditBox::UpdateRectsMultiline() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::UpdateRectsSingleline() noexcept
-{
+void EditBox::UpdateRectsSingleline() noexcept {
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::UpdateRects() noexcept
-{
-    if (GetText().size() == 0)
-    {
+void EditBox::UpdateRects() noexcept {
+    if (GetText().size() == 0) {
         mIsEmpty = true;
     }
 
@@ -523,8 +454,7 @@ void EditBox::UpdateRects() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::RenderMultiline(float elapsedTime) noexcept
-{
+void EditBox::RenderMultiline(float elapsedTime) noexcept {
     //debug rendering
     /*unsigned int color = 0x80000000;
     for (auto it : mCharacterBBs)
@@ -538,13 +468,11 @@ void EditBox::RenderMultiline(float elapsedTime) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::RenderSingleline(float elapsedTime) noexcept
-{
+void EditBox::RenderSingleline(float elapsedTime) noexcept {
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::Render(float elapsedTime) noexcept
-{
+void EditBox::Render(float elapsedTime) noexcept {
     if (mUpdateRequired)
         UpdateRects();
 
@@ -559,12 +487,10 @@ void EditBox::Render(float elapsedTime) noexcept
         state = STATE_FOCUS;
 
     unsigned int i = 0;
-    for (auto& it : mElements)
-    {
+    for (auto &it : mElements) {
         it.second.mTextureColor.Blend(state, elapsedTime);
 
-        if (i == 0)
-        {
+        if (i == 0) {
             it.second.mFontColor.Blend(state, elapsedTime);
         }
 
@@ -581,18 +507,14 @@ void EditBox::Render(float elapsedTime) noexcept
     RenderText(elapsedTime);
 
     //draw the selected region
-    if (mSelStart != -2 && mCharacterBBs.size() > 0 && mSelStart != mCaretPos)
-    {
+    if (mSelStart != -2 && mCharacterBBs.size() > 0 && mSelStart != mCaretPos) {
 
         Value begin = 0;
         Value end = 0;
-        if (mCaretPos > mSelStart)
-        {
+        if (mCaretPos > mSelStart) {
             begin = mSelStart;
             end = mCaretPos;
-        }
-        else if (mCaretPos < mSelStart)
-        {
+        } else if (mCaretPos < mSelStart) {
             begin = mCaretPos;
             end = mSelStart;
         }
@@ -604,25 +526,21 @@ void EditBox::Render(float elapsedTime) noexcept
 
         //if caret position and selection start are equal, it won't render anything
 
-        for (int32_t i = begin; i <= end; ++i)
-        {
+        for (int32_t i = begin; i <= end; ++i) {
             mDialog.DrawRect(mCharacterBBs[i], mSelBkColor.GetCurrent(), false);
         }
     }
 
     //draw the caret
-    if (!mHideCaret)
-    {
+    if (!mHideCaret) {
 
-        if (mCaretOn && ShouldRenderCaret())
-        {
+        if (mCaretOn && ShouldRenderCaret()) {
             //get the caret rect
             Rect caretRect = CharPosToRect(mCaretPos);
             mDialog.DrawRect(caretRect, mCaretColor.GetCurrent(), false);
         }
 
-        if (GetTime() - mPreviousBlinkTime >= mBlinkPeriod)
-        {
+        if (GetTime() - mPreviousBlinkTime >= mBlinkPeriod) {
             bFlip(mCaretOn);
             mPreviousBlinkTime = GetTime();
         }
@@ -632,9 +550,8 @@ void EditBox::Render(float elapsedTime) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::RenderText(float elapsedTime) noexcept
-{
-    auto& element = mElements[0];
+void EditBox::RenderText(float elapsedTime) noexcept {
+    auto &element = mElements[0];
 
     SHADERMANAGER.UseProgram(g_TextProgram);
 
@@ -654,23 +571,17 @@ void EditBox::RenderText(float elapsedTime) noexcept
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    if (mSelStart == -2 || mSelStart == mCaretPos)
-    {
+    if (mSelStart == -2 || mSelStart == mCaretPos) {
         mTextDataBuffer->DrawRange(mRenderOffset * 6, mRenderCount * 6);
-    }
-    else
-    {
+    } else {
         //get the begin and end of the selected text region
         GLuint begin = 6;
         GLuint end = 6;
 
-        if (mSelStart > mCaretPos)
-        {
+        if (mSelStart > mCaretPos) {
             begin *= mCaretPos;
             end *= mSelStart;
-        }
-        else if (mSelStart < mCaretPos)
-        {
+        } else if (mSelStart < mCaretPos) {
             begin *= mSelStart;
             end *= mCaretPos;
         }
@@ -720,10 +631,8 @@ void EditBox::RenderText(float elapsedTime) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::RemoveSelectedRegion() noexcept
-{
-    if (mSelStart != -2)
-    {
+void EditBox::RemoveSelectedRegion() noexcept {
+    if (mSelStart != -2) {
         if (mSelStart > mCaretPos)
             mTextHistoryKeeper.PushPartialRemoval(mCaretPos + 1, mSelStart + 1);
         else
@@ -740,26 +649,20 @@ void EditBox::RemoveSelectedRegion() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-Value EditBox::PointToCharPos(const Point& pt) noexcept
-{
+Value EditBox::PointToCharPos(const Point &pt) noexcept {
     //convert the point into the right space
     Point newPt = pt;
     mDialog.ScreenSpaceToGLSpace(newPt);
 
     //first see if it intersects a character
-    for (unsigned int i = 0; i < mCharacterBBs.size(); ++i)
-    {
+    for (unsigned int i = 0; i < mCharacterBBs.size(); ++i) {
         auto thisRect = mCharacterBBs[i];
-        if (PtInRect(thisRect, newPt))
-        {
+        if (PtInRect(thisRect, newPt)) {
             //see which side of the rect it is on
-            if (newPt.x > thisRect.left + RectWidth(thisRect) / 2 || !mInsertMode)
-            {
+            if (newPt.x > thisRect.left + RectWidth(thisRect) / 2 || !mInsertMode) {
                 //left side:
                 return i;
-            }
-            else
-            {
+            } else {
                 //right side:
                 return i - 1;
             }
@@ -776,8 +679,7 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
         mDialog.ScreenSpaceToGLSpace(regionRndSpace);
         Rect textRegionRndSpace = mTextRegion;
         mDialog.ScreenSpaceToGLSpace(textRegionRndSpace);
-        for (int i = 0; i < mCharacterBBs.size(); ++i)
-        {
+        for (int i = 0; i < mCharacterBBs.size(); ++i) {
             if (!onCurrentLine && foundLine)
                 return i - 2;
 
@@ -790,18 +692,13 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
             //use the left as the left of the text region, because if the cursor is to the left of the text region, we want the FIRST character on the line, not the last
             rightOf.left = textRegionRndSpace.left;
             rightOf.right = regionRndSpace.right;
-            if (PtInRect(rightOf, newPt))
-            {
+            if (PtInRect(rightOf, newPt)) {
                 foundLine = true;
                 onCurrentLine = true;
-            }
-            else if (PtInRect(leftOf, newPt))
-            {
+            } else if (PtInRect(leftOf, newPt)) {
                 //this can only possibly occur the first time on the line
                 return i;
-            }
-            else
-            {
+            } else {
                 //the first character on the next line is hit, so activate that flag
                 onCurrentLine = false;
             }
@@ -812,23 +709,19 @@ Value EditBox::PointToCharPos(const Point& pt) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-Value EditBox::RenderTextToText(Value rndIndex)
-{
+Value EditBox::RenderTextToText(Value rndIndex) {
     return -1;
 }
 
 //--------------------------------------------------------------------------------------
-Rect EditBox::CharPosToRect(Value charPos) noexcept
-{
+Rect EditBox::CharPosToRect(Value charPos) noexcept {
     charPos = glm::clamp(charPos, -1, static_cast<Value>(mCharacterBBs.size() - 1));
 
     //if it is the first position
-    if (charPos == -1)
-    {
+    if (charPos == -1) {
         auto firstRect = mCharacterBBs[0];
 
-        if (mInsertMode)
-        {
+        if (mInsertMode) {
             firstRect.right = firstRect.left;
             firstRect.left -= mCaretSize;
         }
@@ -838,8 +731,7 @@ Rect EditBox::CharPosToRect(Value charPos) noexcept
 
     auto thisRect = mCharacterBBs[charPos];
 
-    if (mInsertMode)
-    {
+    if (mInsertMode) {
         thisRect.right = mCharacterRects[charPos].right + mCaretSize;
         thisRect.left = thisRect.right - mCaretSize;
     }
@@ -848,36 +740,32 @@ Rect EditBox::CharPosToRect(Value charPos) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-bool EditBox::ShouldRenderCaret() noexcept
-{
+bool EditBox::ShouldRenderCaret() noexcept {
     auto caretPosRect = CharPosToRect(mCaretPos);
     auto textRenderRect = mTextRegion;
     mDialog.ScreenSpaceToGLSpace(textRenderRect);
 
 
     //is the caret within the visible window
-    if (PtInRect(textRenderRect, { caretPosRect.x, caretPosRect.y }) ||
-        PtInRect(textRenderRect, { caretPosRect.right, caretPosRect.y }))
+    if (PtInRect(textRenderRect, {caretPosRect.x, caretPosRect.y}) ||
+        PtInRect(textRenderRect, {caretPosRect.right, caretPosRect.y}))
         return true;
 
 
     return false;
 }
 
-void EditBox::ApplyCompositeModifications() noexcept
-{
+void EditBox::ApplyCompositeModifications() noexcept {
     mTextHistoryKeeper.ApplyPartialModifications();
 }
 
 //--------------------------------------------------------------------------------------
-Value EditBox::TextToRenderText(Value txtIndex)
-{
+Value EditBox::TextToRenderText(Value txtIndex) {
     return -1;
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnFocusIn() noexcept
-{
+void EditBox::OnFocusIn() noexcept {
     Control::OnFocusIn();
     mScrollBar->OnFocusIn();
 
@@ -885,8 +773,7 @@ void EditBox::OnFocusIn() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnFocusOut() noexcept
-{
+void EditBox::OnFocusOut() noexcept {
     Control::OnFocusOut();
     mScrollBar->OnFocusOut();
 
@@ -894,32 +781,27 @@ void EditBox::OnFocusOut() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnMouseEnter() noexcept
-{
+void EditBox::OnMouseEnter() noexcept {
     Control::OnMouseEnter();
     mScrollBar->OnMouseEnter();
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnMouseLeave() noexcept
-{
+void EditBox::OnMouseLeave() noexcept {
     Control::OnMouseLeave();
     mScrollBar->OnMouseLeave();
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::OnInit()
-{
+void EditBox::OnInit() {
     Control::OnInit();
 
     mScrollBar->OnInit();
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::UpdateCharRects() noexcept
-{
-    if (mIsEmpty)
-    {
+void EditBox::UpdateCharRects() noexcept {
+    if (mIsEmpty) {
         //mText = L" ";
     }
 
@@ -929,8 +811,7 @@ void EditBox::UpdateCharRects() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::UpdateCharRectsMultiline() noexcept
-{
+void EditBox::UpdateCharRectsMultiline() noexcept {
     std::wstring text = GetText();
 
     Rect rcScreen = mTextRegion;
@@ -943,8 +824,8 @@ void EditBox::UpdateCharRectsMultiline() noexcept
     auto fontHeight = font->mFontType->mHeight;
     auto leading = font->mLeading;
 
-    std::vector<std::wstring> textLines = { L"" };
-    std::vector<bool> whichLinesCausedByNewlines = { 0 };
+    std::vector <std::wstring> textLines = {L""};
+    std::vector<bool> whichLinesCausedByNewlines = {0};
 
     mCharacterRects.resize(text.size());
     mCharacterBBs.resize(text.size());
@@ -958,8 +839,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         Get Each Line of Text
 
         */
-        for (unsigned int i = 0; i < text.size(); ++i)
-        {
+        for (unsigned int i = 0; i < text.size(); ++i) {
             auto thisChar = text[i];
             auto thisCharWidth = 0;
 
@@ -971,8 +851,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
 
             */
             bool execNewlineCode = thisChar == '\n';
-            if (!execNewlineCode)
-            {
+            if (!execNewlineCode) {
                 thisCharWidth = font->mFontType->GetCharAdvance(thisChar);
                 potentialNewLineWidth = lineWidth + thisCharWidth;
                 lineWidth += thisCharWidth;
@@ -980,14 +859,12 @@ void EditBox::UpdateCharRectsMultiline() noexcept
                 execNewlineCode = potentialNewLineWidth > textRegionWidth;
             }
 
-            if (execNewlineCode)
-            {
+            if (execNewlineCode) {
                 textLines.push_back(L"");
 
                 lineWidth = 0;
 
-                if (thisChar == '\n')
-                {
+                if (thisChar == '\n') {
                     whichLinesCausedByNewlines.push_back(true);
                     continue;
                 }
@@ -1008,13 +885,10 @@ void EditBox::UpdateCharRectsMultiline() noexcept
         unsigned charIndex = 0;
         long currY = rcScreen.top + mScrollBar->GetTrackPos() * leading;
         long lineXOffset = 0;
-        for (unsigned int i = 0; i < textLines.size() + 1; ++i)
-        {
+        for (unsigned int i = 0; i < textLines.size() + 1; ++i) {
             //do this at the beginning of the loop to put the newline character in the right place for the caret
-            if (i != 0 && i < whichLinesCausedByNewlines.size())
-            {
-                if (whichLinesCausedByNewlines[i])
-                {
+            if (i != 0 && i < whichLinesCausedByNewlines.size()) {
+                if (whichLinesCausedByNewlines[i]) {
                     //make the bounding box invalid so the newline character can never truly be 'clicked on'
                     SetRect(mCharacterRects[charIndex], rcScreen.left, currY, rcScreen.left - 1, currY - leading);
                     mCharacterBBs[charIndex] = mCharacterRects[charIndex];
@@ -1031,9 +905,9 @@ void EditBox::UpdateCharRectsMultiline() noexcept
             lineXOffset = rcScreen.left;
 
 
-
             if (textFlags & GT_CENTER)
-                lineXOffset += static_cast<long>((static_cast<float>(textRegionWidth) / 2.0f) - (static_cast<float>(lineWidth) / 2.0f));
+                lineXOffset += static_cast<long>((static_cast<float>(textRegionWidth) / 2.0f) -
+                                                 (static_cast<float>(lineWidth) / 2.0f));
             else if (textFlags & GT_RIGHT)
                 lineXOffset += textRegionWidth - lineWidth;
             //else if(textFlags & GT_LEFT)
@@ -1041,20 +915,19 @@ void EditBox::UpdateCharRectsMultiline() noexcept
 
 
             //get the rects for this line
-            for (unsigned int j = 0; j < thisLine.size(); ++j)
-            {
+            for (unsigned int j = 0; j < thisLine.size(); ++j) {
                 auto thisCharRect = font->mFontType->GetCharRect(thisLine[j]);
                 OffsetRect(thisCharRect, lineXOffset, currY - fontHeight);
 
                 mCharacterRects[charIndex] = thisCharRect;
 
                 long left = j != 0 ? mCharacterBBs[charIndex - 1].right : thisCharRect.left;
-                SetRect(mCharacterBBs[charIndex], left, currY, left + font->mFontType->GetCharAdvance(thisLine[j]), currY - leading);
+                SetRect(mCharacterBBs[charIndex], left, currY, left + font->mFontType->GetCharAdvance(thisLine[j]),
+                        currY - leading);
 
                 lineXOffset += font->mFontType->GetCharAdvance(thisLine[j]);
                 charIndex++;
             }
-
 
 
             currY -= leading;
@@ -1072,8 +945,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
     auto lastLine = mScrollBar->GetPageSize() + sbPos;
     mRenderOffset = 0;
     mRenderCount = 0;
-    for (auto it = 0; it < textLines.size(); ++it)
-    {
+    for (auto it = 0; it < textLines.size(); ++it) {
         if (it < sbPos)
             mRenderOffset += textLines[it].size();
         else if (it < lastLine)
@@ -1082,8 +954,7 @@ void EditBox::UpdateCharRectsMultiline() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::UpdateCharRectsSingleline() noexcept
-{
+void EditBox::UpdateCharRectsSingleline() noexcept {
     Rect rcScreen = mTextRegion;
     auto dlgRect = mDialog.GetRegion();
     mDialog.ScreenSpaceToGLSpace(rcScreen);
@@ -1101,12 +972,9 @@ void EditBox::UpdateCharRectsSingleline() noexcept
 
     //get the vertical alignment
     long yPos = rcScreen.top;
-    if (textFlags | GT_VCENTER)
-    {
+    if (textFlags | GT_VCENTER) {
         yPos = rcScreen.top - (RectHeight(rcScreen) - fontHeight) / 2;
-    }
-    else if (textFlags | GT_BOTTOM)
-    {
+    } else if (textFlags | GT_BOTTOM) {
         yPos = rcScreen.bottom + fontHeight;
     }
 
@@ -1117,8 +985,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
     long currX = rcScreen.left;
     {
         long offset = 0;
-        for (Value i = 0; i < mScrollBar->GetTrackPos(); ++i)
-        {
+        for (Value i = 0; i < mScrollBar->GetTrackPos(); ++i) {
             offset -= font->mFontType->GetCharAdvance(str[i]);
         }
 
@@ -1129,8 +996,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
 
     //get the character rects
     unsigned int i = 0;
-    for (auto it : str)
-    {
+    for (auto it : str) {
         auto thisCharRect = font->mFontType->GetCharRect(it);
         OffsetRect(thisCharRect, currX, yPos - fontHeight);
 
@@ -1149,8 +1015,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
     {
         long tmpWidth = 0;
         long textRectWidth = RectWidth(mTextRegion);
-        for (i = mScrollBar->GetTrackPos(); i < str.size(); ++i)
-        {
+        for (i = mScrollBar->GetTrackPos(); i < str.size(); ++i) {
             tmpWidth += font->mFontType->GetCharAdvance(str[i]);
             if (tmpWidth > textRectWidth)
                 break;
@@ -1161,8 +1026,7 @@ void EditBox::UpdateCharRectsSingleline() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void EditBox::BufferCharRects() noexcept
-{
+void EditBox::BufferCharRects() noexcept {
     auto str = GetText();
 
     //make sure there are characters to load
@@ -1175,13 +1039,12 @@ void EditBox::BufferCharRects() noexcept
     Buffer data into OpenGL
 
     */
-    GLVector<TextVertexStruct> textVertices = TextVertexStruct::MakeMany(str.size() * 4);
-    std::vector<glm::u32vec3> indices;
+    GLVector <TextVertexStruct> textVertices = TextVertexStruct::MakeMany(str.size() * 4);
+    std::vector <glm::u32vec3> indices;
     indices.resize(str.size() * 2);
 
     float z = _NEAR_BUTTON_DEPTH;
-    for (unsigned int i = 0; i < str.size(); ++i)
-    {
+    for (unsigned int i = 0; i < str.size(); ++i) {
         auto &glyph = mCharacterRects[i];
         auto ch = str[i];
 
@@ -1230,4 +1093,4 @@ void EditBox::BufferCharRects() noexcept
     mTextDataBuffer->BufferIndices(indices);
 }
 
-
+}

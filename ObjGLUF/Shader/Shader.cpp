@@ -1,5 +1,9 @@
 #include "Shader.h"
 
+namespace GLUF {
+
+ShaderManager g_ShaderManager;
+
 /*
 ======================================================================================================================================================================================================
 Shader API (Alpha)
@@ -10,55 +14,45 @@ Note:
 */
 
 
-class CompileShaderException : public Exception
-{
+class CompileShaderException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "Failed to Compile Shader!";
     }
 
     EXCEPTION_CONSTRUCTOR(CompileShaderException)
 };
 
-class CreateGLShaderException : public Exception
-{
+class CreateGLShaderException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "OpenGL Failed to Create Shader Instance!";
     }
 
     EXCEPTION_CONSTRUCTOR(CreateGLShaderException)
 };
 
-class LinkProgramException : public Exception
-{
+class LinkProgramException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "Failed to Link Program!";
     }
 
     EXCEPTION_CONSTRUCTOR(LinkProgramException)
 };
 
-class CreateGLProgramException : public Exception
-{
+class CreateGLProgramException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "OpenGL Failed to Create Program Instance!";
     }
 
     EXCEPTION_CONSTRUCTOR(CreateGLProgramException)
 };
 
-class CreateGLPPOException : public Exception
-{
+class CreateGLPPOException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "OpenGL Failed to Create PPO Instance!";
     }
 
@@ -75,22 +69,20 @@ ShaderTypeToProgramStage
 
 
 //--------------------------------------------------------------------------------------
-ProgramStage ShaderTypeToProgramStage(ShaderType type)
-{
-    switch (type)
-    {
-    case SH_VERTEX_SHADER:
-        return PPO_VERTEX_SHADER_BIT;
-    case SH_TESSCONTROL_SHADER:
-        return PPO_TESSCONTROL_SHADER_BIT;
-    case SH_TESS_EVALUATION_SHADER:
-        return PPO_TESS_EVALUATION_SHADER_BIT;
-    case SH_GEOMETRY_SHADER:
-        return PPO_GEOMETRY_SHADER_BIT;
-    case SH_FRAGMENT_SHADER:
-        return PPO_FRAGMENT_SHADER_BIT;
-    default:
-        return PPO_INVALID_SHADER_BIT;
+ProgramStage ShaderTypeToProgramStage(ShaderType type) {
+    switch (type) {
+        case SH_VERTEX_SHADER:
+            return PPO_VERTEX_SHADER_BIT;
+        case SH_TESSCONTROL_SHADER:
+            return PPO_TESSCONTROL_SHADER_BIT;
+        case SH_TESS_EVALUATION_SHADER:
+            return PPO_TESS_EVALUATION_SHADER_BIT;
+        case SH_GEOMETRY_SHADER:
+            return PPO_GEOMETRY_SHADER_BIT;
+        case SH_FRAGMENT_SHADER:
+            return PPO_FRAGMENT_SHADER_BIT;
+        default:
+            return PPO_INVALID_SHADER_BIT;
     }
 };
 
@@ -103,8 +95,7 @@ Shader
         'mShaderType': what shader type is it (i.e. GL_FRAGMENT_SHADER)
 
 */
-class Shader
-{
+class Shader {
     friend ShaderManager;
     friend Program;
 
@@ -115,8 +106,8 @@ class Shader
     ShaderType mShaderType;
 
     //disallow copy and assign, because these must always be refered to by pointers
-    Shader(const Shader& other) = delete;
-    Shader& operator=(const Shader& other) = delete;
+    Shader(const Shader &other) = delete;
+    Shader &operator=(const Shader &other) = delete;
 public:
 
     /*
@@ -153,7 +144,7 @@ public:
         Throws:
             may throw 'std::bad_alloc' if string allocation fails
     */
-    void Load(const std::string& shaderText, bool append = false);
+    void Load(const std::string &shaderText, bool append = false);
 
     /*
     LoadFromMemory
@@ -202,7 +193,7 @@ public:
             'CreateGLShaderException': if shader creaetion failes (because shader creation is stalled until compilation)
     
     */
-    void Compile(ShaderInfoStruct& retStruct);
+    void Compile(ShaderInfoStruct &retStruct);
 
 
     /*
@@ -232,13 +223,12 @@ Program
         'mStages': the stages which this program uses; initialized if separable set to true
 
 */
-class Program
-{
+class Program {
     friend ShaderManager;
 
     //GLuint mUniformBuffId;
     GLuint mProgramId;
-    std::map<ShaderType, ShaderPtr > mShaderBuff;
+    std::map<ShaderType, ShaderPtr> mShaderBuff;
     VariableLocMap mAttributeLocations;
     VariableLocMap mUniformLocations;
     GLbitfield mStages;
@@ -296,7 +286,7 @@ public:
         Throws:
             'LinkProgramException': if program linking fails
     */
-    void Build(ShaderInfoStruct& retStruct, bool separate);
+    void Build(ShaderInfoStruct &retStruct, bool separate);
 
     /*
     GetId
@@ -304,7 +294,7 @@ public:
         Returns:
             OpenGL Id of the program
     */
-    GLuint GetId(){ return mProgramId; }
+    GLuint GetId() { return mProgramId; }
 
 
     /*
@@ -337,8 +327,7 @@ SeparateProgram
         'mActiveProgram': the currently active program which is having uniforms buffered
 
 */
-class SeparateProgram
-{
+class SeparateProgram {
     friend ShaderManager;
     GLuint mPPOId;
 
@@ -357,7 +346,7 @@ public:
             'CreateGLPPOException': if opengl creation of PPO failed
     */
     void Init();
-    
+
     /*
     AttachProgram
 
@@ -368,7 +357,7 @@ public:
             no-throw guarantee
 
     */
-    void AttachProgram(const ProgramPtr& program);
+    void AttachProgram(const ProgramPtr &program);
 
     /*
     ClearStages
@@ -404,7 +393,7 @@ public:
             id of ppo object
     
     */
-    GLuint GetId()const noexcept{ return mPPOId; }
+    GLuint GetId() const noexcept { return mPPOId; }
 
     /*
     GetActiveProgram
@@ -416,7 +405,7 @@ public:
             'std::exception' if there is no active program
 
     */
-    const ProgramPtr& GetActiveProgram() const;
+    const ProgramPtr &GetActiveProgram() const;
 
 };
 
@@ -430,45 +419,38 @@ SeparateProgram Methods
 */
 
 //--------------------------------------------------------------------------------------
-SeparateProgram::SeparateProgram()
-{
+SeparateProgram::SeparateProgram() {
     //prevents from attempting to create separate shaders w/o the extension
     ASSERT_EXTENTION(GL_ARB_separate_shader_objects);
 }
 
 //--------------------------------------------------------------------------------------
-SeparateProgram::~SeparateProgram()
-{
-    glDeleteProgramPipelines(1, &mPPOId); 
+SeparateProgram::~SeparateProgram() {
+    glDeleteProgramPipelines(1, &mPPOId);
 }
 
 //--------------------------------------------------------------------------------------
-void SeparateProgram::Init()
-{
+void SeparateProgram::Init() {
     glGenProgramPipelines(1, &mPPOId);
 
-    if (mPPOId == 0)
-    {
+    if (mPPOId == 0) {
         GLUF_CRITICAL_EXCEPTION(CreateGLPPOException());
     }
 }
 
 //--------------------------------------------------------------------------------------
-void SeparateProgram::AttachProgram(const ProgramPtr& program)
-{
+void SeparateProgram::AttachProgram(const ProgramPtr &program) {
     glBindProgramPipeline(mPPOId);
-    mPrograms.push_back(program); 
+    mPrograms.push_back(program);
     glUseProgramStages(mPPOId, program->GetBitfield(), program->GetId());
 }
 
 //--------------------------------------------------------------------------------------
-void SeparateProgram::ClearStages(GLbitfield stages)
-{
+void SeparateProgram::ClearStages(GLbitfield stages) {
     glUseProgramStages(mPPOId, stages, 0);
 
     //remove the programs that are affected by this clear
-    for (auto it = mPrograms.begin(); it != mPrograms.end(); ++it)
-    {
+    for (auto it = mPrograms.begin(); it != mPrograms.end(); ++it) {
         //if any of the bits of this bitfield are the same, then remove the program.  NOTE: IT IS BAD PRACTICE TO HAVE PROGRAMS HAVE MULTIPLE STAGES, AND ONLY REMOVE ONE OF THEM
         if (((*it)->GetBitfield() & stages) != 0)
             mPrograms.erase(it);
@@ -476,45 +458,37 @@ void SeparateProgram::ClearStages(GLbitfield stages)
 }
 
 //--------------------------------------------------------------------------------------
-void SeparateProgram::SetActiveShaderProgram(ProgramStage stage)
-{
+void SeparateProgram::SetActiveShaderProgram(ProgramStage stage) {
     glBindProgramPipeline(mPPOId);
 
     //does the currently bound program have this stage?
     if (mActiveProgram)
         if ((mActiveProgram->GetBitfield() & stage) != 0)
             return;//do nothing
-    
+
     //find which program contains this stage
     bool success = false;
-    for (auto it : mPrograms)
-    {
-        if ((it->GetBitfield() & stage) != 0)
-        {
+    for (auto it : mPrograms) {
+        if ((it->GetBitfield() & stage) != 0) {
             mActiveProgram = it;
             success = true;
             break;
         }
     }
 
-    if (!success)
-    {
+    if (!success) {
         //if the stage does not exist, reset to default (null)
         mActiveProgram = nullptr;
         glActiveShaderProgram(mPPOId, 0);
 
-    }
-    else
-    {
+    } else {
         glActiveShaderProgram(mPPOId, mActiveProgram->GetId());
     }
 }
 
 //--------------------------------------------------------------------------------------
-const ProgramPtr& SeparateProgram::GetActiveProgram() const
-{
-    if (mActiveProgram == nullptr)
-    {
+const ProgramPtr &SeparateProgram::GetActiveProgram() const {
+    if (mActiveProgram == nullptr) {
         GLUF_NON_CRITICAL_EXCEPTION(NoActiveProgramUniformException());
     }
 
@@ -531,31 +505,26 @@ Shader Methods
 
 
 //--------------------------------------------------------------------------------------
-Shader::Shader() noexcept 
-{
+Shader::Shader() noexcept {
     mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-Shader::~Shader() noexcept 
-{
-    if (mShaderId != 0)
-    {
+Shader::~Shader() noexcept {
+    if (mShaderId != 0) {
         glDeleteShader(mShaderId);
     }
     mTmpShaderText.clear();
 }
 
 //--------------------------------------------------------------------------------------
-void Shader::Init(ShaderType shaderType) noexcept 
-{
+void Shader::Init(ShaderType shaderType) noexcept {
     mShaderType = shaderType;
     mShaderId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-void Shader::Load(const std::string& shaderText, bool append)
-{
+void Shader::Load(const std::string &shaderText, bool append) {
     if (!append)
         mTmpShaderText.clear();
 
@@ -563,10 +532,8 @@ void Shader::Load(const std::string& shaderText, bool append)
 }
 
 //--------------------------------------------------------------------------------------
-void Shader::Destroy() noexcept 
-{
-    if (mShaderId != 0)
-    {
+void Shader::Destroy() noexcept {
+    if (mShaderId != 0) {
         glDeleteShader(mShaderId);
         mShaderId = 0;
     }
@@ -632,11 +599,9 @@ void Shader::Destroy() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Shader::Compile(ShaderInfoStruct& returnStruct)
-{
+void Shader::Compile(ShaderInfoStruct &returnStruct) {
     //if the shader id is not 0, this means the previous compile attempt was successful, because if it was not, the program is deleted and reset to 0
-    if (mShaderId != 0)
-    {
+    if (mShaderId != 0) {
         returnStruct.mSuccess = false;
         returnStruct.mLog = "F";
         return;
@@ -654,10 +619,10 @@ void Shader::Compile(ShaderInfoStruct& returnStruct)
 
     std::string tmpText = mTmpShaderText;
 
-    GLint tmpSize = (GLuint)mTmpShaderText.length();
+    GLint tmpSize = (GLuint) mTmpShaderText.length();
     tmpSize--; /*BECAUSE OF NULL TERMINATED STRINGS*/
 
-    const GLchar* text = tmpText.c_str();
+    const GLchar *text = tmpText.c_str();
     glShaderSource(mShaderId, 1, &text, &tmpSize);
 
     //flush text upon compile no matter what (if compile failed, why would we want to keep the error-ridden code)
@@ -680,8 +645,7 @@ void Shader::Compile(ShaderInfoStruct& returnStruct)
     //Exit with failure.
 
     //if it failed, delete the shader, to have a universal way of determining failure
-    if (returnStruct.mSuccess == false)
-    {
+    if (returnStruct.mSuccess == false) {
         glDeleteShader(mShaderId);
         mShaderId = 0;
         GLUF_CRITICAL_EXCEPTION(CompileShaderException());
@@ -701,20 +665,17 @@ Program Methods
 */
 
 //--------------------------------------------------------------------------------------
-Program::Program() noexcept 
-{
+Program::Program() noexcept {
     mProgramId = 0;
 }
 
 //--------------------------------------------------------------------------------------
-Program::~Program() noexcept 
-{
+Program::~Program() noexcept {
     glDeleteProgram(mProgramId);
 }
 
 //--------------------------------------------------------------------------------------
-void Program::Init()
-{
+void Program::Init() {
     //unlike with the shader, this will be created during initialization
     mProgramId = glCreateProgram();
 
@@ -723,14 +684,12 @@ void Program::Init()
 }
 
 //--------------------------------------------------------------------------------------
-void Program::AttachShader(ShaderPtr shader)
-{
-    ShaderP toInsert{ shader->mShaderType, shader };
-    
+void Program::AttachShader(ShaderPtr shader) {
+    ShaderP toInsert{shader->mShaderType, shader};
+
     //does this stage already have a shader assigned to it?
     auto exists = mShaderBuff.find(shader->mShaderType);
-    if (exists != mShaderBuff.end())
-    {
+    if (exists != mShaderBuff.end()) {
         //if it does, delete it
         mShaderBuff.erase(exists);
     }
@@ -743,31 +702,26 @@ void Program::AttachShader(ShaderPtr shader)
 }
 
 //--------------------------------------------------------------------------------------
-void Program::FlushShaders(void) noexcept 
-{
+void Program::FlushShaders(void) noexcept {
     //simply go through all of the shaders, remove them, and clear the shader buffer
-    for (auto it : mShaderBuff)
-    {
+    for (auto it : mShaderBuff) {
         glDetachShader(mProgramId, it.second->mShaderId);
     }
     mShaderBuff.clear();
 }
 
 //--------------------------------------------------------------------------------------
-void Program::Build(ShaderInfoStruct& retStruct, bool separate)
-{
+void Program::Build(ShaderInfoStruct &retStruct, bool separate) {
     //make sure we enable separate shading
-    if (separate)
-    { 
+    if (separate) {
         mStages = 0;
 
-        glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE); 
+        glProgramParameteri(mProgramId, GL_PROGRAM_SEPARABLE, GL_TRUE);
 
 
         //also create the 'mStages' list
 
-        for (auto it : mShaderBuff)
-        {
+        for (auto it : mShaderBuff) {
             mStages |= ShaderTypeToProgramStage(it.first);
         }
     }
@@ -787,22 +741,19 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
     retStruct.mLog.resize(maxLength);
     glGetProgramInfoLog(mProgramId, maxLength, &maxLength, &retStruct.mLog[0]);
 
-    if (!retStruct.mSuccess)
-    {
+    if (!retStruct.mSuccess) {
         //in the case of failure, DO NOT DELETE ANYTHING, but do throw an error
         GLUF_CRITICAL_EXCEPTION(LinkProgramException());
-    }
-    else
-    {
+    } else {
         FlushShaders();//this removes the references to them from the program, but they will still exist unless this is the last reference to them
-        
+
         /*
         
         This region loads uniform and attribute locations
 
         */
-        
-        
+
+
         //Load the variable names
         GLint attribCount = 0;
         glGetProgramiv(mProgramId, GL_ACTIVE_ATTRIBUTES, &attribCount);
@@ -815,12 +766,9 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
         GLint written, size;
 
         //this is used to trim the null charactors from the end of the string
-        const auto TrimString = [](std::string& toTrim)
-        {
-            for (unsigned int i = 0; i < toTrim.size(); ++i)
-            {
-                if (toTrim[i] == '\0')
-                {
+        const auto TrimString = [](std::string &toTrim) {
+            for (unsigned int i = 0; i < toTrim.size(); ++i) {
+                if (toTrim[i] == '\0') {
                     toTrim.erase(toTrim.begin() + i, toTrim.end());
                     break;
                 }
@@ -830,8 +778,7 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
 
 
         std::string data;
-        for (int i = 0; i < attribCount; ++i)
-        {
+        for (int i = 0; i < attribCount; ++i) {
             //resize and clear every time is a bit messy, but is the only way to make sure the string is the right length
             data.resize(maxLength);
 
@@ -845,8 +792,7 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
         GLint uniformCount = 0;
         glGetProgramiv(mProgramId, GL_ACTIVE_UNIFORMS, &uniformCount);
 
-        for (int i = 0; i < uniformCount; ++i)
-        {
+        for (int i = 0; i < uniformCount; ++i) {
             //resize and clear every time is a bit messy, but is the only way to make sure the string is the right length
             data.resize(maxLength);
 
@@ -860,10 +806,8 @@ void Program::Build(ShaderInfoStruct& retStruct, bool separate)
 }
 
 //--------------------------------------------------------------------------------------
-void Program::Destroy() noexcept 
-{ 
-    if (mProgramId != 0)
-    {
+void Program::Destroy() noexcept {
+    if (mProgramId != 0) {
         glDeleteProgram(mProgramId);
         mProgramId = 0;
     }
@@ -873,8 +817,7 @@ void Program::Destroy() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-GLbitfield Program::GetBitfield() const noexcept
-{
+GLbitfield Program::GetBitfield() const noexcept {
     return mStages;
 
     return 0;
@@ -914,8 +857,7 @@ ShaderPtr ShaderManager::CreateShader(std::wstring shad, ShaderType type, bool f
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::AddCompileLog(const ShaderPtr& shader, const ShaderInfoStruct& log)
-{
+void ShaderManager::AddCompileLog(const ShaderPtr &shader, const ShaderInfoStruct &log) {
     //TODO: vs2013 does not support shared locking
     _TSAFE_SCOPE(mCompLogMutex);
 
@@ -923,20 +865,17 @@ void ShaderManager::AddCompileLog(const ShaderPtr& shader, const ShaderInfoStruc
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::AddLinkLog(const ProgramPtr& program, const ShaderInfoStruct& log)
-{
+void ShaderManager::AddLinkLog(const ProgramPtr &program, const ShaderInfoStruct &log) {
     _TSAFE_SCOPE(mLinkLogMutex);
 
     mLinklogs.insert(std::pair<ProgramPtr, ShaderInfoStruct>(program, log));
 }
 
 //--------------------------------------------------------------------------------------
-GLuint ShaderManager::GetUniformIdFromName(const SepProgramPtr& ppo, const std::string& name) const
-{
+GLuint ShaderManager::GetUniformIdFromName(const SepProgramPtr &ppo, const std::string &name) const {
     auto activeProgram = ppo->GetActiveProgram();
     auto it = activeProgram->mUniformLocations.find(name);
-    if (it == activeProgram->mUniformLocations.end())
-    {
+    if (it == activeProgram->mUniformLocations.end()) {
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("Uniform Name Not Found!"));
         return 0;//if we are in release mode, and the name does not exist, default to the 0th, however this MAY CREATE UNDESIRED RESULTS
     }
@@ -945,11 +884,9 @@ GLuint ShaderManager::GetUniformIdFromName(const SepProgramPtr& ppo, const std::
 }
 
 //--------------------------------------------------------------------------------------
-GLuint ShaderManager::GetUniformIdFromName(const ProgramPtr& prog, const std::string& name) const
-{
+GLuint ShaderManager::GetUniformIdFromName(const ProgramPtr &prog, const std::string &name) const {
     auto it = prog->mUniformLocations.find(name);
-    if (it == prog->mUniformLocations.end())
-    {
+    if (it == prog->mUniformLocations.end()) {
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("Uniform Name Not Found!"));
         return 0;//if we are in release mode, and the name does not exist, default to the 0th, however this MAY CREATE UNDESIRED RESULTS
     }
@@ -959,8 +896,7 @@ GLuint ShaderManager::GetUniformIdFromName(const ProgramPtr& prog, const std::st
 
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::string& filePath, ShaderType type)
-{
+void ShaderManager::CreateShaderFromFile(ShaderPtr &outShader, const std::string &filePath, ShaderType type) {
     //create the shader
     outShader = std::make_shared<Shader>();
 
@@ -969,8 +905,7 @@ void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::string
     inFile.exceptions(std::ios::badbit | std::ios::failbit);
 
     ShaderInfoStruct output;
-    try
-    {
+    try {
         //Load the text from the file
         std::string newString;
 
@@ -993,21 +928,18 @@ void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::string
         outShader->Compile(output);
         AddCompileLog(outShader, output);
     }
-    catch (const std::ios_base::failure& e)
-    {
+    catch (const std::ios_base::failure &e) {
         GLUF_ERROR_LONG("(ShaderManager): Shader File Load Failed: " << e.what());
         RETHROW;//rethrow here, because if file loading failed, the it never got to compilation
     }
-    catch (const CompileShaderException& e)
-    {
+    catch (const CompileShaderException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         //add the log if file load failed
         AddCompileLog(outShader, output);
 
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
-    catch (const CreateGLShaderException& e)
-    {
+    catch (const CreateGLShaderException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());//don't add compile log if the shader could not be created
     }
@@ -1015,13 +947,11 @@ void ShaderManager::CreateShaderFromFile(ShaderPtr& outShader, const std::string
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateShaderFromText(ShaderPtr& outShader, const std::string& text, ShaderType type)
-{
+void ShaderManager::CreateShaderFromText(ShaderPtr &outShader, const std::string &text, ShaderType type) {
     outShader = std::make_shared<Shader>();
 
     ShaderInfoStruct out;
-    try
-    {
+    try {
         //initialize the shader
         outShader->Init(type);
 
@@ -1032,24 +962,21 @@ void ShaderManager::CreateShaderFromText(ShaderPtr& outShader, const std::string
         outShader->Compile(out);
         AddCompileLog(outShader, out);
     }
-    catch (const CompileShaderException& e)
-    {
+    catch (const CompileShaderException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what() << "\n ========Log======== \n" << out.mLog);
         //add the log if file load failed
         AddCompileLog(outShader, out);
 
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
-    catch (const CreateGLShaderException& e)
-    {
+    catch (const CreateGLShaderException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());//don't add compile log if the shader could not be created
     }
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateShaderFromMemory(ShaderPtr& outShader, const std::vector<char>& memory, ShaderType type)
-{
+void ShaderManager::CreateShaderFromMemory(ShaderPtr &outShader, const std::vector<char> &memory, ShaderType type) {
     //load the string from the memory
     std::string outString;
     LoadBinaryArrayIntoString(memory, outString);
@@ -1059,19 +986,16 @@ void ShaderManager::CreateShaderFromMemory(ShaderPtr& outShader, const std::vect
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders, bool separate)
-{
+void ShaderManager::CreateProgram(ProgramPtr &outProgram, ShaderPtrList shaders, bool separate) {
     outProgram = std::make_shared<Program>();
 
     ShaderInfoStruct out;
-    try
-    {
+    try {
         //initialize
         outProgram->Init();
 
         //add the shaders
-        for (auto it : shaders)
-        {
+        for (auto it : shaders) {
             outProgram->AttachShader(it);
         }
 
@@ -1079,18 +1003,15 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders,
         outProgram->Build(out, separate);
         AddLinkLog(outProgram, out);
     }
-    catch (const CreateGLProgramException& e)
-    {
+    catch (const CreateGLProgramException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());
     }
-    catch (const LinkProgramException& e)
-    {
+    catch (const LinkProgramException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what() << "\n ========Log======== \n" << out.mLog);
         AddLinkLog(outProgram, out);//if linking failed, still add the log
     }
-    catch (const std::invalid_argument& e)
-    {
+    catch (const std::invalid_argument &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         outProgram->FlushShaders();//if any of the shaders failed to add, flush so it is in a valid state
         GLUF_CRITICAL_EXCEPTION(MakeShaderException());
@@ -1099,11 +1020,9 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderPtrList shaders,
 
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderSourceList shaderSources, bool separate)
-{
+void ShaderManager::CreateProgram(ProgramPtr &outProgram, ShaderSourceList shaderSources, bool separate) {
     ShaderPtrList shaders;
-    for (auto it : shaderSources)
-    {
+    for (auto it : shaderSources) {
         //create the shader from the text
         std::shared_ptr<Shader> nowShader;
         CreateShaderFromText(nowShader, it.second, it.first);
@@ -1119,11 +1038,9 @@ void ShaderManager::CreateProgram(ProgramPtr& outProgram, ShaderSourceList shade
 
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateProgramFromFiles(ProgramPtr& outProgram, ShaderPathList shaderPaths, bool separate)
-{
+void ShaderManager::CreateProgramFromFiles(ProgramPtr &outProgram, ShaderPathList shaderPaths, bool separate) {
     ShaderPtrList shaders;
-    for (auto it : shaderPaths)
-    {
+    for (auto it : shaderPaths) {
         //create the shader from the text
         auto nowShader = std::make_shared<Shader>();
         CreateShaderFromFile(nowShader, it.second, it.first);
@@ -1140,24 +1057,21 @@ void ShaderManager::CreateProgramFromFiles(ProgramPtr& outProgram, ShaderPathLis
 //for removing things
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::DeleteShader(ShaderPtr& shader) noexcept
-{
+void ShaderManager::DeleteShader(ShaderPtr &shader) noexcept {
     //make sure it exists
     if (shader)
         shader->Destroy();
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::DeleteProgram(ProgramPtr& program) noexcept
-{
+void ShaderManager::DeleteProgram(ProgramPtr &program) noexcept {
     //make sure it exists
     if (program)
         program->Destroy();
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::FlushLogs() 
-{
+void ShaderManager::FlushLogs() {
     mLinklogs.clear();
     mCompileLogs.clear();
 }
@@ -1166,8 +1080,7 @@ void ShaderManager::FlushLogs()
 //for accessing things
 
 //--------------------------------------------------------------------------------------
-const GLuint ShaderManager::GetShaderId(const ShaderPtr& shader) const
-{
+const GLuint ShaderManager::GetShaderId(const ShaderPtr &shader) const {
     GLUF_NULLPTR_CHECK(shader);
 
     return shader->mShaderId;
@@ -1175,8 +1088,7 @@ const GLuint ShaderManager::GetShaderId(const ShaderPtr& shader) const
 
 
 //--------------------------------------------------------------------------------------
-const ShaderType ShaderManager::GetShaderType(const ShaderPtr& shader) const
-{
+const ShaderType ShaderManager::GetShaderType(const ShaderPtr &shader) const {
     GLUF_NULLPTR_CHECK(shader);
 
     return shader->mShaderType;
@@ -1184,16 +1096,14 @@ const ShaderType ShaderManager::GetShaderType(const ShaderPtr& shader) const
 
 
 //--------------------------------------------------------------------------------------
-const GLuint ShaderManager::GetProgramId(const ProgramPtr& program) const
-{
+const GLuint ShaderManager::GetProgramId(const ProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(program);
 
     return program->mProgramId;
 }
 
 //--------------------------------------------------------------------------------------
-const CompileOutputStruct ShaderManager::GetShaderLog(const ShaderPtr& shaderPtr) const
-{
+const CompileOutputStruct ShaderManager::GetShaderLog(const ShaderPtr &shaderPtr) const {
     GLUF_NULLPTR_CHECK(shaderPtr);
     _TSAFE_SCOPE(mCompLogMutex);
 
@@ -1202,8 +1112,7 @@ const CompileOutputStruct ShaderManager::GetShaderLog(const ShaderPtr& shaderPtr
 
 
 //--------------------------------------------------------------------------------------
-const LinkOutputStruct ShaderManager::GetProgramLog(const ProgramPtr& programPtr) const
-{
+const LinkOutputStruct ShaderManager::GetProgramLog(const ProgramPtr &programPtr) const {
     GLUF_NULLPTR_CHECK(programPtr);
     _TSAFE_SCOPE(mLinkLogMutex);
 
@@ -1213,8 +1122,7 @@ const LinkOutputStruct ShaderManager::GetProgramLog(const ProgramPtr& programPtr
 //for using things
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::UseProgram(const ProgramPtr& program) const
-{
+void ShaderManager::UseProgram(const ProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(program);
 
     //binding a null program means the program is uninitialized or broken, which is an error
@@ -1228,24 +1136,20 @@ void ShaderManager::UseProgram(const ProgramPtr& program) const
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::UseProgramNull() const noexcept
-{
+void ShaderManager::UseProgramNull() const noexcept {
     glUseProgram(0);
     glBindProgramPipeline(0);//juse in case we are using pipelines
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::CreateSeparateProgram(SepProgramPtr& ppo, const ProgramPtrList& programs) const
-{
+void ShaderManager::CreateSeparateProgram(SepProgramPtr &ppo, const ProgramPtrList &programs) const {
     ppo = std::make_shared<SeparateProgram>();
 
-    try
-    {
+    try {
         //initialize the PPO
         ppo->Init();
 
-        for (auto it : programs)
-        {
+        for (auto it : programs) {
             GLUF_NULLPTR_CHECK(it);
             if (it->GetId() == 0)
                 GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
@@ -1253,42 +1157,36 @@ void ShaderManager::CreateSeparateProgram(SepProgramPtr& ppo, const ProgramPtrLi
             ppo->AttachProgram(it);
         }
     }
-    catch (const CreateGLPPOException& e)
-    {
+    catch (const CreateGLPPOException &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         GLUF_CRITICAL_EXCEPTION(MakePPOException());
     }
-    catch (const std::invalid_argument& e)
-    {
+    catch (const std::invalid_argument &e) {
         GLUF_ERROR_LONG("(ShaderManager): " << e.what());
         RETHROW;
     }
 }
 
 //--------------------------------------------------------------------------------------
-const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr& program, LocationType locType, const std::string& varName) const
-{
+const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr &program, LocationType locType, const std::string &varName) const {
     GLUF_NULLPTR_CHECK(program);
 
     VariableLocMap::iterator it;
 
-    if (locType == GLT_ATTRIB)
-    {
+    if (locType == GLT_ATTRIB) {
         it = program->mAttributeLocations.find(varName);
 
-        if (it == program->mAttributeLocations.end())
-        {
-            GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program attributes!"));
+        if (it == program->mAttributeLocations.end()) {
+            GLUF_NON_CRITICAL_EXCEPTION(
+                    std::invalid_argument("\"varName\" Could not be found when searching program attributes!"));
             return 0;
         }
-    }
-    else
-    {
+    } else {
         it = program->mUniformLocations.find(varName);
 
-        if (it == program->mUniformLocations.end())
-        {
-            GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"varName\" Could not be found when searching program uniforms!"));
+        if (it == program->mUniformLocations.end()) {
+            GLUF_NON_CRITICAL_EXCEPTION(
+                    std::invalid_argument("\"varName\" Could not be found when searching program uniforms!"));
             return 0;
         }
     }
@@ -1297,27 +1195,23 @@ const GLuint ShaderManager::GetShaderVariableLocation(const ProgramPtr& program,
 }
 
 //--------------------------------------------------------------------------------------
-const VariableLocMap& ShaderManager::GetShaderAttribLocations(const ProgramPtr& program) const
-{
+const VariableLocMap &ShaderManager::GetShaderAttribLocations(const ProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(program);
     return program->mAttributeLocations;
 }
 
 //--------------------------------------------------------------------------------------
-const VariableLocMap& ShaderManager::GetShaderUniformLocations(const ProgramPtr& program) const
-{
+const VariableLocMap &ShaderManager::GetShaderUniformLocations(const ProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(program);
     return program->mUniformLocations;
 }
 
 //--------------------------------------------------------------------------------------
-const VariableLocMap ShaderManager::GetShaderAttribLocations(const SepProgramPtr& program) const
-{
+const VariableLocMap ShaderManager::GetShaderAttribLocations(const SepProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(program);
     VariableLocMap ret;
 
-    for (auto it : program->mPrograms)
-    {
+    for (auto it : program->mPrograms) {
         ret.insert(it->mAttributeLocations.begin(), it->mAttributeLocations.end());
     }
 
@@ -1325,14 +1219,12 @@ const VariableLocMap ShaderManager::GetShaderAttribLocations(const SepProgramPtr
 }
 
 //--------------------------------------------------------------------------------------
-const VariableLocMap ShaderManager::GetShaderUniformLocations(const SepProgramPtr& program) const
-{
+const VariableLocMap ShaderManager::GetShaderUniformLocations(const SepProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(program);
 
     VariableLocMap ret;
 
-    for (auto it : program->mPrograms)
-    {
+    for (auto it : program->mPrograms) {
         ret.insert(it->mUniformLocations.begin(), it->mUniformLocations.end());
     }
 
@@ -1340,8 +1232,7 @@ const VariableLocMap ShaderManager::GetShaderUniformLocations(const SepProgramPt
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::AttachProgram(SepProgramPtr& ppo, const ProgramPtr& program) const
-{
+void ShaderManager::AttachProgram(SepProgramPtr &ppo, const ProgramPtr &program) const {
     GLUF_NULLPTR_CHECK(ppo);
     GLUF_NULLPTR_CHECK(program);
 
@@ -1352,12 +1243,10 @@ void ShaderManager::AttachProgram(SepProgramPtr& ppo, const ProgramPtr& program)
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::AttachPrograms(SepProgramPtr& ppo, const ProgramPtrList& programs) const
-{
+void ShaderManager::AttachPrograms(SepProgramPtr &ppo, const ProgramPtrList &programs) const {
     GLUF_NULLPTR_CHECK(ppo);
 
-    for (auto it : programs)
-    {
+    for (auto it : programs) {
         GLUF_NULLPTR_CHECK(it);
         if (it->GetId() == 0)
             GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Uninitialized Program Attempted to be Added to a PPO"));
@@ -1367,23 +1256,20 @@ void ShaderManager::AttachPrograms(SepProgramPtr& ppo, const ProgramPtrList& pro
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::ClearPrograms(SepProgramPtr& ppo, GLbitfield stages) const
-{
+void ShaderManager::ClearPrograms(SepProgramPtr &ppo, GLbitfield stages) const {
     GLUF_NULLPTR_CHECK(ppo);
     ppo->ClearStages(stages);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::UseProgram(const SepProgramPtr& ppo) const
-{
+void ShaderManager::UseProgram(const SepProgramPtr &ppo) const {
     GLUF_NULLPTR_CHECK(ppo);
     glUseProgram(0);
     glBindProgramPipeline(ppo->GetId());
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLActiveShaderProgram(SepProgramPtr& ppo, ShaderType stage) const
-{
+void ShaderManager::GLActiveShaderProgram(SepProgramPtr &ppo, ShaderType stage) const {
     GLUF_NULLPTR_CHECK(ppo);
     ppo->SetActiveShaderProgram(ShaderTypeToProgramStage(stage));
 }
@@ -1401,50 +1287,42 @@ float's
 
 */
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1f(GLuint loc, const GLfloat& value) const noexcept
-{
+void ShaderManager::GLUniform1f(GLuint loc, const GLfloat &value) const noexcept {
     glUniform1f(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2f(GLuint loc, const glm::vec2& value) const noexcept
-{
+void ShaderManager::GLUniform2f(GLuint loc, const glm::vec2 &value) const noexcept {
     glUniform2fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3f(GLuint loc, const glm::vec3& value) const noexcept
-{
+void ShaderManager::GLUniform3f(GLuint loc, const glm::vec3 &value) const noexcept {
     glUniform3fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4f(GLuint loc, const glm::vec4& value) const noexcept
-{
+void ShaderManager::GLUniform4f(GLuint loc, const glm::vec4 &value) const noexcept {
     glUniform4fv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1f(const ProgramPtr& prog, const std::string& name, const GLfloat& value) const 
-{    
+void ShaderManager::GLUniform1f(const ProgramPtr &prog, const std::string &name, const GLfloat &value) const {
     glUniform1f(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2f(const ProgramPtr& prog, const std::string& name, const glm::vec2& value) const 
-{
+void ShaderManager::GLUniform2f(const ProgramPtr &prog, const std::string &name, const glm::vec2 &value) const {
     glUniform2fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3f(const ProgramPtr& prog, const std::string& name, const glm::vec3& value) const
-{
+void ShaderManager::GLUniform3f(const ProgramPtr &prog, const std::string &name, const glm::vec3 &value) const {
     glUniform3fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4f(const ProgramPtr& prog, const std::string& name, const glm::vec4& value) const 
-{
+void ShaderManager::GLUniform4f(const ProgramPtr &prog, const std::string &name, const glm::vec4 &value) const {
     glUniform4fv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
@@ -1455,50 +1333,42 @@ int's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1i(GLuint loc, const GLint& value) const noexcept
-{
+void ShaderManager::GLUniform1i(GLuint loc, const GLint &value) const noexcept {
     glUniform1i(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2i(GLuint loc, const glm::i32vec2& value) const noexcept
-{
+void ShaderManager::GLUniform2i(GLuint loc, const glm::i32vec2 &value) const noexcept {
     glUniform2iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3i(GLuint loc, const glm::i32vec3& value) const noexcept
-{
+void ShaderManager::GLUniform3i(GLuint loc, const glm::i32vec3 &value) const noexcept {
     glUniform3iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4i(GLuint loc, const glm::i32vec4& value) const noexcept
-{
+void ShaderManager::GLUniform4i(GLuint loc, const glm::i32vec4 &value) const noexcept {
     glUniform4iv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1i(const ProgramPtr& prog, const std::string& name, const GLint& value) const 
-{
+void ShaderManager::GLUniform1i(const ProgramPtr &prog, const std::string &name, const GLint &value) const {
     glUniform1i(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2i(const ProgramPtr& prog, const std::string& name, const glm::i32vec2& value) const 
-{
+void ShaderManager::GLUniform2i(const ProgramPtr &prog, const std::string &name, const glm::i32vec2 &value) const {
     glUniform2iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3i(const ProgramPtr& prog, const std::string& name, const glm::i32vec3& value) const
-{
+void ShaderManager::GLUniform3i(const ProgramPtr &prog, const std::string &name, const glm::i32vec3 &value) const {
     glUniform3iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4i(const ProgramPtr& prog, const std::string& name, const glm::i32vec4& value) const 
-{
+void ShaderManager::GLUniform4i(const ProgramPtr &prog, const std::string &name, const glm::i32vec4 &value) const {
     glUniform4iv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
@@ -1510,50 +1380,42 @@ uint's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1ui(GLuint loc, const GLuint& value) const noexcept
-{
+void ShaderManager::GLUniform1ui(GLuint loc, const GLuint &value) const noexcept {
     glUniform1ui(loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2ui(GLuint loc, const glm::u32vec2& value) const noexcept
-{
+void ShaderManager::GLUniform2ui(GLuint loc, const glm::u32vec2 &value) const noexcept {
     glUniform2uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3ui(GLuint loc, const glm::u32vec3& value) const noexcept
-{
+void ShaderManager::GLUniform3ui(GLuint loc, const glm::u32vec3 &value) const noexcept {
     glUniform3uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4ui(GLuint loc, const glm::u32vec4& value) const noexcept
-{
+void ShaderManager::GLUniform4ui(GLuint loc, const glm::u32vec4 &value) const noexcept {
     glUniform4uiv(loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform1ui(const ProgramPtr& prog, const std::string& name, const GLuint& value) const 
-{
+void ShaderManager::GLUniform1ui(const ProgramPtr &prog, const std::string &name, const GLuint &value) const {
     glUniform1ui(GetUniformIdFromName(prog, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform2ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec2& value) const 
-{
+void ShaderManager::GLUniform2ui(const ProgramPtr &prog, const std::string &name, const glm::u32vec2 &value) const {
     glUniform2uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform3ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec3& value) const
-{
+void ShaderManager::GLUniform3ui(const ProgramPtr &prog, const std::string &name, const glm::u32vec3 &value) const {
     glUniform3uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniform4ui(const ProgramPtr& prog, const std::string& name, const glm::u32vec4& value) const
-{
+void ShaderManager::GLUniform4ui(const ProgramPtr &prog, const std::string &name, const glm::u32vec4 &value) const {
     glUniform4uiv(GetUniformIdFromName(prog, name), 1, &value[0]);
 }
 
@@ -1564,111 +1426,93 @@ matrices
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2f(GLuint loc, const glm::mat2& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix2f(GLuint loc, const glm::mat2 &value) const noexcept {
     glUniformMatrix2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3f(GLuint loc, const glm::mat3& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix3f(GLuint loc, const glm::mat3 &value) const noexcept {
     glUniformMatrix3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4f(GLuint loc, const glm::mat4& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix4f(GLuint loc, const glm::mat4 &value) const noexcept {
     glUniformMatrix4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix2x3f(GLuint loc, const glm::mat2x3 &value) const noexcept {
     glUniformMatrix2x3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix3x2f(GLuint loc, const glm::mat3x2 &value) const noexcept {
     glUniformMatrix3x2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix2x4f(GLuint loc, const glm::mat2x4 &value) const noexcept {
     glUniformMatrix2x4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix4x2f(GLuint loc, const glm::mat4x2 &value) const noexcept {
     glUniformMatrix4x2fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix3x4f(GLuint loc, const glm::mat3x4 &value) const noexcept {
     glUniformMatrix3x4fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3& value) const noexcept
-{
+void ShaderManager::GLUniformMatrix4x3f(GLuint loc, const glm::mat4x3 &value) const noexcept {
     //warning here can be IGNORED
     glUniformMatrix4x3fv(loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2f(const ProgramPtr& prog, const std::string& name, const glm::mat2& value) const
-{
+void ShaderManager::GLUniformMatrix2f(const ProgramPtr &prog, const std::string &name, const glm::mat2 &value) const {
     glUniformMatrix2fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3f(const ProgramPtr& prog, const std::string& name, const glm::mat3& value) const
-{
+void ShaderManager::GLUniformMatrix3f(const ProgramPtr &prog, const std::string &name, const glm::mat3 &value) const {
     glUniformMatrix3fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4f(const ProgramPtr& prog, const std::string& name, const glm::mat4& value) const
-{
+void ShaderManager::GLUniformMatrix4f(const ProgramPtr &prog, const std::string &name, const glm::mat4 &value) const {
     glUniformMatrix4fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2x3f(const ProgramPtr& prog, const std::string& name, const glm::mat2x3& value) const
-{
+void ShaderManager::GLUniformMatrix2x3f(const ProgramPtr &prog, const std::string &name, const glm::mat2x3 &value) const {
     glUniformMatrix2x3fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3x2f(const ProgramPtr& prog, const std::string& name, const glm::mat3x2& value) const
-{
+void ShaderManager::GLUniformMatrix3x2f(const ProgramPtr &prog, const std::string &name, const glm::mat3x2 &value) const {
     glUniformMatrix3x2fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix2x4f(const ProgramPtr& prog, const std::string& name, const glm::mat2x4& value) const
-{
+void ShaderManager::GLUniformMatrix2x4f(const ProgramPtr &prog, const std::string &name, const glm::mat2x4 &value) const {
     glUniformMatrix2x4fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4x2f(const ProgramPtr& prog, const std::string& name, const glm::mat4x2& value) const
-{
+void ShaderManager::GLUniformMatrix4x2f(const ProgramPtr &prog, const std::string &name, const glm::mat4x2 &value) const {
     glUniformMatrix4x2fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix3x4f(const ProgramPtr& prog, const std::string& name, const glm::mat3x4& value) const
-{
+void ShaderManager::GLUniformMatrix3x4f(const ProgramPtr &prog, const std::string &name, const glm::mat3x4 &value) const {
     glUniformMatrix3x4fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLUniformMatrix4x3f(const ProgramPtr& prog, const std::string& name, const glm::mat4x3& value) const
-{
+void ShaderManager::GLUniformMatrix4x3f(const ProgramPtr &prog, const std::string &name, const glm::mat4x3 &value) const {
     glUniformMatrix4x3fv(GetUniformIdFromName(prog, name), 1, 0, &value[0][0]);
 }
 
@@ -1701,58 +1545,50 @@ float's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform1f(const SepProgramPtr& ppo, GLuint loc, const GLfloat& value) const
-{
+void ShaderManager::GLProgramUniform1f(const SepProgramPtr &ppo, GLuint loc, const GLfloat &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform1f(ppo->GetActiveProgram()->GetId(), loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform2f(const SepProgramPtr& ppo, GLuint loc, const glm::vec2& value) const
-{
+void ShaderManager::GLProgramUniform2f(const SepProgramPtr &ppo, GLuint loc, const glm::vec2 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform2fv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform3f(const SepProgramPtr& ppo, GLuint loc, const glm::vec3& value) const
-{
+void ShaderManager::GLProgramUniform3f(const SepProgramPtr &ppo, GLuint loc, const glm::vec3 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform3fv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform4f(const SepProgramPtr& ppo, GLuint loc, const glm::vec4& value) const
-{
+void ShaderManager::GLProgramUniform4f(const SepProgramPtr &ppo, GLuint loc, const glm::vec4 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform4fv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform1f(const SepProgramPtr& ppo, const std::string& name, const GLfloat& value) const
-{
+void ShaderManager::GLProgramUniform1f(const SepProgramPtr &ppo, const std::string &name, const GLfloat &value) const {
     glProgramUniform1f(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform2f(const SepProgramPtr& ppo, const std::string& name, const glm::vec2& value) const
-{
+void ShaderManager::GLProgramUniform2f(const SepProgramPtr &ppo, const std::string &name, const glm::vec2 &value) const {
     glProgramUniform2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform3f(const SepProgramPtr& ppo, const std::string& name, const glm::vec3& value) const
-{
+void ShaderManager::GLProgramUniform3f(const SepProgramPtr &ppo, const std::string &name, const glm::vec3 &value) const {
     glProgramUniform3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform4f(const SepProgramPtr& ppo, const std::string& name, const glm::vec4& value) const
-{
+void ShaderManager::GLProgramUniform4f(const SepProgramPtr &ppo, const std::string &name, const glm::vec4 &value) const {
     glProgramUniform4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
@@ -1764,58 +1600,50 @@ int's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform1i(const SepProgramPtr& ppo, GLuint loc, const GLint& value) const
-{
+void ShaderManager::GLProgramUniform1i(const SepProgramPtr &ppo, GLuint loc, const GLint &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform1i(ppo->GetActiveProgram()->GetId(), loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform2i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec2& value) const
-{
+void ShaderManager::GLProgramUniform2i(const SepProgramPtr &ppo, GLuint loc, const glm::i32vec2 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform2iv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform3i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec3& value) const
-{
+void ShaderManager::GLProgramUniform3i(const SepProgramPtr &ppo, GLuint loc, const glm::i32vec3 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform3iv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform4i(const SepProgramPtr& ppo, GLuint loc, const glm::i32vec4& value) const
-{
+void ShaderManager::GLProgramUniform4i(const SepProgramPtr &ppo, GLuint loc, const glm::i32vec4 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform4iv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform1i(const SepProgramPtr& ppo, const std::string& name, const GLint& value) const
-{
+void ShaderManager::GLProgramUniform1i(const SepProgramPtr &ppo, const std::string &name, const GLint &value) const {
     glProgramUniform1i(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform2i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec2& value) const
-{
+void ShaderManager::GLProgramUniform2i(const SepProgramPtr &ppo, const std::string &name, const glm::i32vec2 &value) const {
     glProgramUniform2iv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform3i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec3& value) const
-{
+void ShaderManager::GLProgramUniform3i(const SepProgramPtr &ppo, const std::string &name, const glm::i32vec3 &value) const {
     glProgramUniform3iv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform4i(const SepProgramPtr& ppo, const std::string& name, const glm::i32vec4& value) const
-{
+void ShaderManager::GLProgramUniform4i(const SepProgramPtr &ppo, const std::string &name, const glm::i32vec4 &value) const {
     glProgramUniform4iv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
@@ -1827,58 +1655,50 @@ uint's
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform1ui(const SepProgramPtr& ppo, GLuint loc, const GLuint& value) const
-{
+void ShaderManager::GLProgramUniform1ui(const SepProgramPtr &ppo, GLuint loc, const GLuint &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform1ui(ppo->GetActiveProgram()->GetId(), loc, value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform2ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec2& value) const
-{
+void ShaderManager::GLProgramUniform2ui(const SepProgramPtr &ppo, GLuint loc, const glm::u32vec2 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform2uiv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform3ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec3& value) const
-{
+void ShaderManager::GLProgramUniform3ui(const SepProgramPtr &ppo, GLuint loc, const glm::u32vec3 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform3uiv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform4ui(const SepProgramPtr& ppo, GLuint loc, const glm::u32vec4& value) const
-{
+void ShaderManager::GLProgramUniform4ui(const SepProgramPtr &ppo, GLuint loc, const glm::u32vec4 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniform4uiv(ppo->GetActiveProgram()->GetId(), loc, 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform1ui(const SepProgramPtr& ppo, const std::string& name, const GLuint& value) const
-{
+void ShaderManager::GLProgramUniform1ui(const SepProgramPtr &ppo, const std::string &name, const GLuint &value) const {
     glProgramUniform1ui(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), value);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform2ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec2& value) const
-{
+void ShaderManager::GLProgramUniform2ui(const SepProgramPtr &ppo, const std::string &name, const glm::u32vec2 &value) const {
     glProgramUniform2uiv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform3ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec3& value) const
-{
+void ShaderManager::GLProgramUniform3ui(const SepProgramPtr &ppo, const std::string &name, const glm::u32vec3 &value) const {
     glProgramUniform3uiv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniform4ui(const SepProgramPtr& ppo, const std::string& name, const glm::u32vec4& value) const
-{
+void ShaderManager::GLProgramUniform4ui(const SepProgramPtr &ppo, const std::string &name, const glm::u32vec4 &value) const {
     glProgramUniform4uiv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, &value[0]);
 }
 
@@ -1889,127 +1709,111 @@ matricies
 */
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2& value) const
-{
+void ShaderManager::GLProgramUniformMatrix2f(const SepProgramPtr &ppo, GLuint loc, const glm::mat2 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix2fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3& value) const
-{
+void ShaderManager::GLProgramUniformMatrix3f(const SepProgramPtr &ppo, GLuint loc, const glm::mat3 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix3fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4& value) const
-{
+void ShaderManager::GLProgramUniformMatrix4f(const SepProgramPtr &ppo, GLuint loc, const glm::mat4 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix4fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix2x3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2x3& value) const
-{
+void ShaderManager::GLProgramUniformMatrix2x3f(const SepProgramPtr &ppo, GLuint loc, const glm::mat2x3 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix2x3fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix3x2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3x2& value) const
-{
+void ShaderManager::GLProgramUniformMatrix3x2f(const SepProgramPtr &ppo, GLuint loc, const glm::mat3x2 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix3x2fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix2x4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat2x4& value) const
-{
+void ShaderManager::GLProgramUniformMatrix2x4f(const SepProgramPtr &ppo, GLuint loc, const glm::mat2x4 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix2x4fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix4x2f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4x2& value) const
-{
+void ShaderManager::GLProgramUniformMatrix4x2f(const SepProgramPtr &ppo, GLuint loc, const glm::mat4x2 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix4x2fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix3x4f(const SepProgramPtr& ppo, GLuint loc, const glm::mat3x4& value) const
-{
+void ShaderManager::GLProgramUniformMatrix3x4f(const SepProgramPtr &ppo, GLuint loc, const glm::mat3x4 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix3x4fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix4x3f(const SepProgramPtr& ppo, GLuint loc, const glm::mat4x3& value) const
-{
+void ShaderManager::GLProgramUniformMatrix4x3f(const SepProgramPtr &ppo, GLuint loc, const glm::mat4x3 &value) const {
     HAS_ACTIVE_PROGRAM(ppo);
 
     glProgramUniformMatrix4x3fv(ppo->GetActiveProgram()->GetId(), loc, 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2& value) const
-{
+void ShaderManager::GLProgramUniformMatrix2f(const SepProgramPtr &ppo, const std::string &name, const glm::mat2 &value) const {
     glProgramUniformMatrix2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3& value) const
-{
+void ShaderManager::GLProgramUniformMatrix3f(const SepProgramPtr &ppo, const std::string &name, const glm::mat3 &value) const {
     glProgramUniformMatrix3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4& value) const
-{
+void ShaderManager::GLProgramUniformMatrix4f(const SepProgramPtr &ppo, const std::string &name, const glm::mat4 &value) const {
     glProgramUniformMatrix4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix2x3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2x3& value) const
-{
+void ShaderManager::GLProgramUniformMatrix2x3f(const SepProgramPtr &ppo, const std::string &name, const glm::mat2x3 &value) const {
     glProgramUniformMatrix2x3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix3x2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3x2& value) const
-{
+void ShaderManager::GLProgramUniformMatrix3x2f(const SepProgramPtr &ppo, const std::string &name, const glm::mat3x2 &value) const {
     glProgramUniformMatrix3x2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix2x4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat2x4& value) const
-{
+void ShaderManager::GLProgramUniformMatrix2x4f(const SepProgramPtr &ppo, const std::string &name, const glm::mat2x4 &value) const {
     glProgramUniformMatrix2x4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix4x2f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4x2& value) const
-{
+void ShaderManager::GLProgramUniformMatrix4x2f(const SepProgramPtr &ppo, const std::string &name, const glm::mat4x2 &value) const {
     glProgramUniformMatrix4x2fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix3x4f(const SepProgramPtr& ppo, const std::string& name, const glm::mat3x4& value) const
-{
+void ShaderManager::GLProgramUniformMatrix3x4f(const SepProgramPtr &ppo, const std::string &name, const glm::mat3x4 &value) const {
     glProgramUniformMatrix3x4fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
 }
 
 //--------------------------------------------------------------------------------------
-void ShaderManager::GLProgramUniformMatrix4x3f(const SepProgramPtr& ppo, const std::string& name, const glm::mat4x3& value) const
-{
+void ShaderManager::GLProgramUniformMatrix4x3f(const SepProgramPtr &ppo, const std::string &name, const glm::mat4x3 &value) const {
     glProgramUniformMatrix4x3fv(ppo->GetActiveProgram()->GetId(), GetUniformIdFromName(ppo, name), 1, 0, &value[0][0]);
+}
+
 }

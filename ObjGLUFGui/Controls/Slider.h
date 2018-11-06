@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_SLIDER_H
 #define OBJGLUF_SLIDER_H
 
+namespace GLUF {
 /*
 Slider
 
@@ -18,13 +19,12 @@ Slider
         'mButtonRegion': the region the button occupies
 
 */
-class Slider : public Control
-{
+class Slider : public Control {
 protected:
 
     Slider() = delete;
-    Slider(Dialog& dialog);
-    friend std::shared_ptr<Slider> CreateSlider(Dialog& dialog);
+    Slider(Dialog &dialog);
+    friend std::shared_ptr <Slider> CreateSlider(Dialog &dialog);
 
     Value mValue;
     Value mMin;
@@ -44,11 +44,16 @@ public:
             no-throw guarantee
 
     */
-    Value   GetValue() const noexcept           { return mValue;                    }
-    void        GetRange(Value& nMin, Value& nMax) const noexcept
-    { nMin = mMin; nMax = mMax;         }
-    void        SetValue(Value nValue) noexcept { SetValueInternal(nValue, false);  }
-    void        SetRange(Value  nMin, Value  nMax) noexcept;
+    Value GetValue() const noexcept { return mValue; }
+
+    void GetRange(Value &nMin, Value &nMax) const noexcept {
+        nMin = mMin;
+        nMax = mMax;
+    }
+
+    void SetValue(Value nValue) noexcept { SetValueInternal(nValue, false); }
+
+    void SetRange(Value nMin, Value nMax) noexcept;
 
     /*
     Overridden Unambiguous Member Functions
@@ -56,8 +61,10 @@ public:
 
     */
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-    virtual bool ContainsPoint(const Point& pt) const noexcept override;
-    virtual bool CanHaveFocus()const noexcept override{ return (mVisible && mEnabled); }
+    virtual bool ContainsPoint(const Point &pt) const noexcept override;
+
+    virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
+
     virtual void UpdateRects() noexcept override;
     virtual void Render(float elapsedTime) noexcept override;
 
@@ -75,7 +82,7 @@ protected:
         Throws:
             no-throw guarantee
     */
-    void      SetValueInternal(int nValue, bool bFromInput) noexcept;
+    void SetValueInternal(int nValue, bool bFromInput) noexcept;
 
     /*
     ValueFromXPos
@@ -96,4 +103,5 @@ protected:
     Value ValueFromXPos(Value xPos) const noexcept;
 
 };
+}
 #endif //OBJGLUF_SLIDER_H

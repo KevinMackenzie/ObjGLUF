@@ -1,6 +1,8 @@
 #ifndef OBJGLUF_DIALOGRESOURCEMANAGER_H
 #define OBJGLUF_DIALOGRESOURCEMANAGER_H
 
+namespace GLUF {
+
 /*
 DialogResourceManager
 
@@ -16,15 +18,14 @@ DialogResourceManager
         'mFontCache': a list of shared fonts
 
 */
-class DialogResourceManager
-{
+class DialogResourceManager {
 
     Point mWndSize;
 
     VertexArray mSpriteBuffer;
-    std::vector<DialogPtr> mDialogs;
-    std::vector<TextureNodePtr> mTextureCache;
-    std::vector<FontNodePtr>    mFontCache;
+    std::vector <DialogPtr> mDialogs;
+    std::vector <TextureNodePtr> mTextureCache;
+    std::vector <FontNodePtr> mFontCache;
 
     friend Dialog;
 public:
@@ -83,7 +84,7 @@ public:
         Throws:
             'std::out_of_range': if element texture index is out of range
     */
-    void EndSprites(const Element* element, bool textured);
+    void EndSprites(const Element *element, bool textured);
 
     /*
     GetFont/TextureNode
@@ -94,8 +95,9 @@ public:
         Throws:
             'std::out_of_range': if 'index' is larger than the size of the font/texture cache
     */
-    FontNodePtr    GetFontNode(FontIndex index) const        { return mFontCache[index];        }
-    TextureNodePtr GetTextureNode(TextureIndex index) const    { return mTextureCache[index];    }
+    FontNodePtr GetFontNode(FontIndex index) const { return mFontCache[index]; }
+
+    TextureNodePtr GetTextureNode(TextureIndex index) const { return mTextureCache[index]; }
 
 
     /*
@@ -108,8 +110,9 @@ public:
             no-throw guarantee
 
     */
-    Size GetTextureCount() const noexcept   { return static_cast<Size>(mTextureCache.size()); }
-    Size GetFontCount() const noexcept      { return static_cast<Size>(mFontCache.size());    }
+    Size GetTextureCount() const noexcept { return static_cast<Size>(mTextureCache.size()); }
+
+    Size GetFontCount() const noexcept { return static_cast<Size>(mFontCache.size()); }
 
     /*
     AddFont
@@ -126,7 +129,7 @@ public:
             no-throw guarantee
 
     */
-    FontIndex AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept;
+    FontIndex AddFont(const FontPtr &font, FontSize leading, FontWeight weight) noexcept;
 
     /*
     AddTexture
@@ -159,7 +162,7 @@ public:
             no-throw guarantee
 
     */
-    void RegisterDialog(const DialogPtr& pDialog) noexcept;
+    void RegisterDialog(const DialogPtr &pDialog) noexcept;
 
     /*
     UnregisterDialog
@@ -171,7 +174,7 @@ public:
             'std::invalid_argument': if 'dialog' == nullptr or if 'dialog' is not a registered dialog in _DEBUG mode
 
     */
-    void UnregisterDialog(const DialogPtr& dialog);
+    void UnregisterDialog(const DialogPtr &dialog);
 
     /*
     EnableKeyboardInputForAllDialogs
@@ -221,7 +224,7 @@ public:
             'ref': a reference to a dialog
 
     */
-    DialogPtr GetDialogPtrFromRef(const Dialog& ref) noexcept;
+    DialogPtr GetDialogPtrFromRef(const Dialog &ref) noexcept;
 protected:
     /*
     ApplyOrtho
@@ -236,4 +239,5 @@ protected:
 
 };
 
+}
 #endif //OBJGLUF_DIALOGRESOURCEMANAGER_H

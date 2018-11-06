@@ -1,5 +1,6 @@
 #include "VertexBuffer.h"
 
+namespace GLUF {
 
 /*
 
@@ -8,8 +9,7 @@ Buffer Utilities
 */
 
 //--------------------------------------------------------------------------------------
-const VertexAttribInfo& VertexArrayBase::GetAttribInfoFromLoc(AttribLoc loc) const
-{
+const VertexAttribInfo &VertexArrayBase::GetAttribInfoFromLoc(AttribLoc loc) const {
     auto val = mAttribInfos.find(loc);
     if (val == mAttribInfos.end())
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"loc\" not found in attribute list"));
@@ -18,11 +18,10 @@ const VertexAttribInfo& VertexArrayBase::GetAttribInfoFromLoc(AttribLoc loc) con
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage), mPrimitiveType(PrimType)
-{
+VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) : mUsageType(buffUsage),
+                                                                                  mPrimitiveType(PrimType) {
     SWITCH_GL_VERSION
-    GL_VERSION_GREATER_EQUAL(30)
-    {
+    GL_VERSION_GREATER_EQUAL(30) {
         glGenVertexArrayBindVertexArray(&mVertexArrayId);
 
         if (mVertexArrayId == 0)
@@ -30,11 +29,9 @@ VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) 
 
     }
 
-    if (index)
-    {
+    if (index) {
         glGenBuffers(1, &mIndexBuffer);
-        if (mIndexBuffer == 0)
-        {
+        if (mIndexBuffer == 0) {
             GLUF_ERROR("Failed to create index buffer!");
             GLUF_CRITICAL_EXCEPTION(MakeBufferException());
         }
@@ -45,47 +42,44 @@ VertexArrayBase::VertexArrayBase(GLenum PrimType, GLenum buffUsage, bool index) 
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayBase::~VertexArrayBase() noexcept
-{
+VertexArrayBase::~VertexArrayBase() noexcept {
     BindVertexArray();
 
     glDeleteBuffers(1, &mIndexBuffer);
 
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)
-        glDeleteVertexArrays(1, &mVertexArrayId);
+    glDeleteVertexArrays(1, &mVertexArrayId);
 
     UnBindVertexArray();
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayBase::VertexArrayBase(VertexArrayBase&& other)
-{
+VertexArrayBase::VertexArrayBase(VertexArrayBase &&other) {
     //set this class
-    mVertexArrayId      = other.mVertexArrayId;
-    mVertexCount        = other.mVertexCount;
-    mUsageType          = other.mUsageType;
-    mPrimitiveType      = other.mPrimitiveType;
-    mAttribInfos        = std::move(other.mAttribInfos);
-    mIndexBuffer        = other.mIndexBuffer;
-    mIndexCount         = other.mIndexCount;
-    mTempVAOId          = other.mTempVAOId;//likely will be 0 anyways
+    mVertexArrayId = other.mVertexArrayId;
+    mVertexCount = other.mVertexCount;
+    mUsageType = other.mUsageType;
+    mPrimitiveType = other.mPrimitiveType;
+    mAttribInfos = std::move(other.mAttribInfos);
+    mIndexBuffer = other.mIndexBuffer;
+    mIndexCount = other.mIndexCount;
+    mTempVAOId = other.mTempVAOId;//likely will be 0 anyways
 
 
     //reset other class
-    other.mVertexArrayId        = 0;
-    other.mVertexCount          = 0;
-    other.mUsageType            = GL_STATIC_DRAW;
-    other.mPrimitiveType        = GL_TRIANGLES;
+    other.mVertexArrayId = 0;
+    other.mVertexCount = 0;
+    other.mUsageType = GL_STATIC_DRAW;
+    other.mPrimitiveType = GL_TRIANGLES;
     //other.mAttribInfos.clear();
-    other.mIndexBuffer          = 0;
-    other.mIndexCount           = 0;
-    other.mTempVAOId            = 0;//likely will be 0 anyways
+    other.mIndexBuffer = 0;
+    other.mIndexCount = 0;
+    other.mTempVAOId = 0;//likely will be 0 anyways
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayBase& VertexArrayBase::operator=(VertexArrayBase&& other)
-{
+VertexArrayBase &VertexArrayBase::operator=(VertexArrayBase &&other) {
     //set this class
     mVertexArrayId = other.mVertexArrayId;
     mVertexCount = other.mVertexCount;
@@ -111,8 +105,7 @@ VertexArrayBase& VertexArrayBase::operator=(VertexArrayBase&& other)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::AddVertexAttrib(const VertexAttribInfo& info)
-{
+void VertexArrayBase::AddVertexAttrib(const VertexAttribInfo &info) {
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
 
@@ -132,8 +125,7 @@ void VertexArrayBase::AddVertexAttrib(const VertexAttribInfo& info)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::RemoveVertexAttrib(AttribLoc loc)
-{
+void VertexArrayBase::RemoveVertexAttrib(AttribLoc loc) {
     auto val = mAttribInfos.find(loc);
     if (val == mAttribInfos.end())
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"loc\" not found in attribute list"));
@@ -144,11 +136,9 @@ void VertexArrayBase::RemoveVertexAttrib(AttribLoc loc)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BindVertexArray() noexcept
-{
+void VertexArrayBase::BindVertexArray() noexcept {
     SWITCH_GL_VERSION
-    GL_VERSION_GREATER_EQUAL(30)
-    {
+    GL_VERSION_GREATER_EQUAL(30) {
         //store the old one before binding this one
         GLint tmpVAOId = 0;
         glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &tmpVAOId);
@@ -159,40 +149,32 @@ void VertexArrayBase::BindVertexArray() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::UnBindVertexArray() noexcept
-{    
+void VertexArrayBase::UnBindVertexArray() noexcept {
     SWITCH_GL_VERSION
-    GL_VERSION_GREATER_EQUAL(30)
-    {
+    GL_VERSION_GREATER_EQUAL(30) {
         glBindVertexArray(mTempVAOId);
         mTempVAOId = 0;
     }
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::Draw() noexcept
-{
+void VertexArrayBase::Draw() noexcept {
     BindVertexArray();
 
     SWITCH_GL_VERSION
-    GL_VERSION_LESS(30)
-    {
+    GL_VERSION_LESS(30) {
         EnableVertexAttributes();//must disable and re-enable every time with openGL less than 3.0
     }
 
-    if (mIndexBuffer != 0)
-    {
+    if (mIndexBuffer != 0) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
         glDrawElements(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr);
-    }
-    else
-    {
+    } else {
         glDrawArrays(mPrimitiveType, 0, mVertexCount);
     }
 
     SWITCH_GL_VERSION
-    GL_VERSION_LESS(30)
-    {
+    GL_VERSION_LESS(30) {
         DisableVertexAttributes();
     }
 
@@ -200,29 +182,24 @@ void VertexArrayBase::Draw() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::DrawRange(GLuint start, GLuint count) noexcept
-{
+void VertexArrayBase::DrawRange(GLuint start, GLuint count) noexcept {
     BindVertexArray();
 
     SWITCH_GL_VERSION
-    GL_VERSION_LESS(30)
-    {
+    GL_VERSION_LESS(30) {
         EnableVertexAttributes();//must disable and re-enable every time with openGL less than 3.0
     }
 
-    if (mIndexBuffer != 0)
-    {
+    if (mIndexBuffer != 0) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-        glDrawElements(mPrimitiveType, count, GL_UNSIGNED_INT, static_cast<GLuint*>(nullptr) + start);
-    }
-    else
-    {
-        glDrawArrays(mPrimitiveType, (start < 0 || start > mVertexCount) ? 0 : start, (count > mVertexCount) ? mVertexCount : count);
+        glDrawElements(mPrimitiveType, count, GL_UNSIGNED_INT, static_cast<GLuint *>(nullptr) + start);
+    } else {
+        glDrawArrays(mPrimitiveType, (start < 0 || start > mVertexCount) ? 0 : start,
+                     (count > mVertexCount) ? mVertexCount : count);
     }
 
     SWITCH_GL_VERSION
-    GL_VERSION_LESS(30)
-    {
+    GL_VERSION_LESS(30) {
         DisableVertexAttributes();
     }
 
@@ -230,29 +207,23 @@ void VertexArrayBase::DrawRange(GLuint start, GLuint count) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::DrawInstanced(GLuint instances) noexcept
-{
+void VertexArrayBase::DrawInstanced(GLuint instances) noexcept {
     BindVertexArray();
 
     SWITCH_GL_VERSION
-    GL_VERSION_LESS(30)
-    {
+    GL_VERSION_LESS(30) {
         EnableVertexAttributes();//must disable and re-enable every time with openGL less than 3.0
     }
 
-    if (mIndexBuffer != 0)
-    {
+    if (mIndexBuffer != 0) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
         glDrawElementsInstanced(mPrimitiveType, mIndexCount, GL_UNSIGNED_INT, nullptr, instances);
-    }
-    else
-    {
+    } else {
         glDrawArraysInstanced(mPrimitiveType, 0, mVertexCount, instances);
     }
 
     SWITCH_GL_VERSION
-    GL_VERSION_LESS(30)
-    {
+    GL_VERSION_LESS(30) {
         DisableVertexAttributes();
     }
 
@@ -261,8 +232,7 @@ void VertexArrayBase::DrawInstanced(GLuint instances) noexcept
 
 //helper function
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept
-{
+void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid *data) noexcept {
     BindVertexArray();
     mIndexCount = indexCount;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
@@ -272,26 +242,22 @@ void VertexArrayBase::BufferIndicesBase(GLuint indexCount, const GLvoid* data) n
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<GLuint>& indices) noexcept
-{
+void VertexArrayBase::BufferIndices(const std::vector<GLuint> &indices) noexcept {
     BufferIndicesBase(indices.size(), &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec2>& indices) noexcept
-{
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec2> &indices) noexcept {
     BufferIndicesBase(indices.size() * 2, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec3>& indices) noexcept
-{
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec3> &indices) noexcept {
     BufferIndicesBase(indices.size() * 3, &indices[0]);
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec4>& indices) noexcept
-{
+void VertexArrayBase::BufferIndices(const std::vector<glm::u32vec4> &indices) noexcept {
     BufferIndicesBase(indices.size() * 4, &indices[0]);
 }
 
@@ -337,10 +303,8 @@ RoundNearestMultiple
 
 */
 //--------------------------------------------------------------------------------------
-int RoundNearestMultiple(unsigned int num, unsigned int multiple)
-{
-    if (multiple == 0)
-    {
+int RoundNearestMultiple(unsigned int num, unsigned int multiple) {
+    if (multiple == 0) {
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("Multiple Cannot Be 0"));
         return 0;//if the multiple is 0, still needs to return something in release mode
     }
@@ -348,8 +312,7 @@ int RoundNearestMultiple(unsigned int num, unsigned int multiple)
     unsigned int nearestMultiple = 0;
 
     //loop up to the 
-    for (unsigned int i = 0; i < num; i += multiple)
-    {
+    for (unsigned int i = 0; i < num; i += multiple) {
         nearestMultiple = i;
     }
 
@@ -358,8 +321,7 @@ int RoundNearestMultiple(unsigned int num, unsigned int multiple)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::RefreshDataBufferAttribute() noexcept
-{
+void VertexArrayAoS::RefreshDataBufferAttribute() noexcept {
     SWITCH_GL_VERSION
     GL_VERSION_GREATER_EQUAL(30)//this is done at draw time in opengl less than 3.0
     {
@@ -369,10 +331,11 @@ void VertexArrayAoS::RefreshDataBufferAttribute() noexcept
         glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
 
         GLuint stride = GetVertexSize();
-        for (auto it : mAttribInfos)
-        {
+        for (auto it : mAttribInfos) {
             //the last parameter might be wrong
-            glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<GLvoid*>(static_cast<uintptr_t>(it.second.mOffset)));
+            glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType,
+                                  GL_FALSE, stride,
+                                  reinterpret_cast<GLvoid *>(static_cast<uintptr_t>(it.second.mOffset)));
         }
 
         UnBindVertexArray();
@@ -380,8 +343,8 @@ void VertexArrayAoS::RefreshDataBufferAttribute() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage, indexed)
-{
+VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage,
+                                                                                                  indexed) {
     //the VAO is already bound
 
     glGenBuffers(1, &mDataBuffer);
@@ -392,8 +355,7 @@ VertexArrayAoS::VertexArrayAoS(GLenum PrimType, GLenum buffUsage, bool indexed) 
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayAoS::~VertexArrayAoS() noexcept
-{
+VertexArrayAoS::~VertexArrayAoS() noexcept {
     BindVertexArray();
 
     glDeleteBuffers(1, &mDataBuffer);
@@ -402,19 +364,17 @@ VertexArrayAoS::~VertexArrayAoS() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayAoS::VertexArrayAoS(VertexArrayAoS&& other) : VertexArrayBase(std::move(other))
-{
+VertexArrayAoS::VertexArrayAoS(VertexArrayAoS &&other) : VertexArrayBase(std::move(other)) {
     mDataBuffer = other.mDataBuffer;
 
     other.mDataBuffer = 0;
 }
 
 //--------------------------------------------------------------------------------------
-VertexArrayAoS& VertexArrayAoS::operator=(VertexArrayAoS&& other)
-{
+VertexArrayAoS &VertexArrayAoS::operator=(VertexArrayAoS &&other) {
     //since there is no possibility for user error, not catching dynamic cast here is A-OK
 
-    VertexArrayBase* thisParentPtr = dynamic_cast<VertexArrayBase*>(this);
+    VertexArrayBase *thisParentPtr = dynamic_cast<VertexArrayBase *>(this);
     *thisParentPtr = std::move(other);
 
     mDataBuffer = other.mDataBuffer;
@@ -424,12 +384,10 @@ VertexArrayAoS& VertexArrayAoS::operator=(VertexArrayAoS&& other)
 }
 
 //--------------------------------------------------------------------------------------
-GLuint VertexArrayAoS::GetVertexSize() const noexcept
-{
+GLuint VertexArrayAoS::GetVertexSize() const noexcept {
     GLuint stride = 0;
     //WOW: this before was allocating memory to find the size of the memory, then didn't even delete it
-    for (auto it : mAttribInfos)
-    {
+    for (auto it : mAttribInfos) {
         //round to the 4 bytes bounderies
         stride += it.second.mElementsPerValue * RoundNearestMultiple(it.second.mBytesPerElement, 4);
     }
@@ -438,15 +396,14 @@ GLuint VertexArrayAoS::GetVertexSize() const noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo& info)
-{
+void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo &info) {
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
 
     //make sure the attribute contains valid data
     if (info.mBytesPerElement == 0 || info.mElementsPerValue == 0)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("Invalid Data in Vertex Attribute Info!"));
-    
+
     mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, info));
 
     //this is a bit inefficient to refresh every time an attribute is added, but this should not be significant
@@ -459,8 +416,7 @@ void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo& info)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo& info, GLuint offset)
-{
+void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo &info, GLuint offset) {
     //don't do null checks, because BindVertexArray already does them for us
     BindVertexArray();
 
@@ -484,19 +440,17 @@ void VertexArrayAoS::AddVertexAttrib(const VertexAttribInfo& info, GLuint offset
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei newOldDataOffset)
-{
+void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei newOldDataOffset) {
     //if we are keeping the old data, move it into a new buffer
     GLsizei vertSize = GetVertexSize();
     GLsizei newTotalSize = vertSize * numVertices;
-    if (keepOldData)
-    {
+    if (keepOldData) {
         GLsizei totalSize = vertSize * mVertexCount;
         GLsizei newOldDataTotalOffset = vertSize * newOldDataOffset;
 
         glBindBuffer(GL_COPY_READ_BUFFER, mDataBuffer);
         glBindBuffer(GL_COPY_WRITE_BUFFER, mCopyBuffer);
-        
+
         //resize the copy buffer
         glBufferData(GL_COPY_WRITE_BUFFER, totalSize, nullptr, GL_STREAM_COPY);
 
@@ -512,9 +466,7 @@ void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei
 
         //copy the data back
         glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, newOldDataTotalOffset, totalSize);
-    }
-    else
-    {
+    } else {
         glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
         glBufferData(GL_ARRAY_BUFFER, newTotalSize, nullptr, GL_STREAM_DRAW);
     }
@@ -523,52 +475,45 @@ void VertexArrayAoS::ResizeBuffer(GLsizei numVertices, bool keepOldData, GLsizei
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::EnableVertexAttributes() const noexcept
-{
+void VertexArrayAoS::EnableVertexAttributes() const noexcept {
     glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
 
     GLuint stride = GetVertexSize();
-    for (auto it : mAttribInfos)
-    {
+    for (auto it : mAttribInfos) {
         glEnableVertexAttribArray(it.second.mVertexAttribLocation);
-        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, stride, reinterpret_cast<const GLvoid*>(it.second.mOffset));
+        glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE,
+                              stride, reinterpret_cast<const GLvoid *>(it.second.mOffset));
     }
 
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArrayAoS::DisableVertexAttributes() const noexcept
-{
+void VertexArrayAoS::DisableVertexAttributes() const noexcept {
     glBindBuffer(GL_ARRAY_BUFFER, mDataBuffer);
 
-    for(auto it : mAttribInfos)
-    {
+    for (auto it : mAttribInfos) {
         glDisableVertexAttribArray(it.second.mVertexAttribLocation);
     }
 }
 
 
-
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::RefreshDataBufferAttribute() noexcept
-{
+void VertexArraySoA::RefreshDataBufferAttribute() noexcept {
     //this is done at draw time less than opengl 3.0
     SWITCH_GL_VERSION
-    GL_VERSION_GREATER_EQUAL(30)
-    {
+    GL_VERSION_GREATER_EQUAL(30) {
         BindVertexArray();
-        for (auto it : mAttribInfos)
-        {
+        for (auto it : mAttribInfos) {
             glBindBuffer(GL_ARRAY_BUFFER, mDataBuffers[it.second.mVertexAttribLocation]);
-            glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType, GL_FALSE, 0, nullptr);
+            glVertexAttribPointer(it.second.mVertexAttribLocation, it.second.mElementsPerValue, it.second.mType,
+                                  GL_FALSE, 0, nullptr);
         }
         UnBindVertexArray();
     }
 }
 
 //--------------------------------------------------------------------------------------
-GLuint VertexArraySoA::GetBufferIdFromAttribLoc(AttribLoc loc) const
-{
+GLuint VertexArraySoA::GetBufferIdFromAttribLoc(AttribLoc loc) const {
     auto ret = mDataBuffers.find(loc);
     if (ret == mDataBuffers.end())
         GLUF_CRITICAL_EXCEPTION(InvalidAttrubuteLocationException());
@@ -577,13 +522,12 @@ GLuint VertexArraySoA::GetBufferIdFromAttribLoc(AttribLoc loc) const
 }
 
 //--------------------------------------------------------------------------------------
-VertexArraySoA::VertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage, indexed)
-{
+VertexArraySoA::VertexArraySoA(GLenum PrimType, GLenum buffUsage, bool indexed) : VertexArrayBase(PrimType, buffUsage,
+                                                                                                  indexed) {
 }
 
 //--------------------------------------------------------------------------------------
-VertexArraySoA::~VertexArraySoA() noexcept
-{
+VertexArraySoA::~VertexArraySoA() noexcept {
     BindVertexArray();
     for (auto it : mDataBuffers)
         glDeleteBuffers(1, &it.second);
@@ -591,17 +535,15 @@ VertexArraySoA::~VertexArraySoA() noexcept
 }
 
 //--------------------------------------------------------------------------------------
-VertexArraySoA::VertexArraySoA(VertexArraySoA&& other) : VertexArrayBase(std::move(other))
-{
+VertexArraySoA::VertexArraySoA(VertexArraySoA &&other) : VertexArrayBase(std::move(other)) {
     mDataBuffers = std::move(other.mDataBuffers);
 }
 
 //--------------------------------------------------------------------------------------
-VertexArraySoA& VertexArraySoA::operator=(VertexArraySoA&& other)
-{
+VertexArraySoA &VertexArraySoA::operator=(VertexArraySoA &&other) {
     //since there is no possibility for user error, not catching dynamic cast here is A-OK
 
-    VertexArrayBase* thisParentPtr = dynamic_cast<VertexArrayBase*>(this);
+    VertexArrayBase *thisParentPtr = dynamic_cast<VertexArrayBase *>(this);
     *thisParentPtr = std::move(other);
 
     mDataBuffers = std::move(other.mDataBuffers);
@@ -610,25 +552,23 @@ VertexArraySoA& VertexArraySoA::operator=(VertexArraySoA&& other)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::GetBarebonesMesh(MeshBarebones& inData)
-{
+void VertexArraySoA::GetBarebonesMesh(MeshBarebones &inData) {
     BindVertexArray();
 
     std::map<AttribLoc, GLuint>::iterator it = mDataBuffers.find(GLUF_VERTEX_ATTRIB_POSITION);
-    if (mIndexBuffer == 0 || it == mDataBuffers.end())
-    {
+    if (mIndexBuffer == 0 || it == mDataBuffers.end()) {
         GLUF_CRITICAL_EXCEPTION(InvalidAttrubuteLocationException());
     }
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, it->second);
-    glm::vec3* pVerts = (glm::vec3*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+    glm::vec3 *pVerts = (glm::vec3 *) glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
 
     inData.mVertices = ArrToVec(pVerts, mVertexCount);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-    GLuint* pIndices = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
+    GLuint *pIndices = (GLuint *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
 
     inData.mIndices = ArrToVec(pIndices, mIndexCount);
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -637,8 +577,7 @@ void VertexArraySoA::GetBarebonesMesh(MeshBarebones& inData)
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info) noexcept
-{
+void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo &info) noexcept {
     BindVertexArray();
 
     mAttribInfos.insert(std::pair<AttribLoc, VertexAttribInfo>(info.mVertexAttribLocation, info));
@@ -646,15 +585,14 @@ void VertexArraySoA::AddVertexAttrib(const VertexAttribInfo& info) noexcept
     GLuint newBuff = 0;
     glGenBuffers(1, &newBuff);
     mDataBuffers.insert(std::pair<AttribLoc, GLuint>(info.mVertexAttribLocation, newBuff));
-    
+
     RefreshDataBufferAttribute();
 
     UnBindVertexArray();
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc) noexcept
-{
+void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc) noexcept {
     BindVertexArray();
 
     auto it = mDataBuffers.find(loc);
@@ -668,23 +606,21 @@ void VertexArraySoA::RemoveVertexAttrib(AttribLoc loc) noexcept
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::EnableVertexAttributes() const noexcept
-{
+void VertexArraySoA::EnableVertexAttributes() const noexcept {
     auto it = mDataBuffers.begin();
-    for (auto itAttrib : mAttribInfos)
-    {
+    for (auto itAttrib : mAttribInfos) {
         glBindBuffer(GL_ARRAY_BUFFER, it->second);
         glEnableVertexAttribArray(itAttrib.second.mVertexAttribLocation);
-        glVertexAttribPointer(itAttrib.second.mVertexAttribLocation, itAttrib.second.mElementsPerValue, itAttrib.second.mType, GL_FALSE, 0, nullptr);
+        glVertexAttribPointer(itAttrib.second.mVertexAttribLocation, itAttrib.second.mElementsPerValue,
+                              itAttrib.second.mType, GL_FALSE, 0, nullptr);
         ++it;
     }
 }
 
 //--------------------------------------------------------------------------------------
-void VertexArraySoA::DisableVertexAttributes() const noexcept
-{
-    for (auto it : mAttribInfos)
-    {
+void VertexArraySoA::DisableVertexAttributes() const noexcept {
+    for (auto it : mAttribInfos) {
         glDisableVertexAttribArray(it.second.mVertexAttribLocation);
     }
+}
 }

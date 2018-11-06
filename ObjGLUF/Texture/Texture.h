@@ -2,6 +2,7 @@
 #define OBJGLUF_TEXTURE_H
 
 #include "../ObjGLUF.h"
+
 namespace GLUF {
 /*
 
@@ -12,19 +13,19 @@ Texture Utilities:
 
 */
 
-    class TextureCreationException : public Exception {
-    public:
-        virtual const char *what() const noexcept override {
-            return "Failed to Create Texture!";
-        }
+class TextureCreationException : public Exception {
+public:
+    virtual const char *what() const noexcept override {
+        return "Failed to Create Texture!";
+    }
 
-        EXCEPTION_CONSTRUCTOR(TextureCreationException)
-    };
+    EXCEPTION_CONSTRUCTOR(TextureCreationException)
+};
 
-    enum TextureFileFormat {
-        TFF_DDS = 0,//we will ONLY support dds's, because they are flexible enough, AND have mipmaps
-        TTF_DDS_CUBEMAP = 1
-    };
+enum TextureFileFormat {
+    TFF_DDS = 0,//we will ONLY support dds's, because they are flexible enough, AND have mipmaps
+    TTF_DDS_CUBEMAP = 1
+};
 
 
 /*
@@ -48,10 +49,10 @@ LoadTextureFrom*
         If formats other than ABGR are supported, ABGR will likely be faster at loading
 
 */
-    OBJGLUF_API GLuint LoadTextureFromFile(const std::string &filePath, TextureFileFormat format);
+OBJGLUF_API GLuint LoadTextureFromFile(const std::string &filePath, TextureFileFormat format);
 
-    // TODO: This is broken
-    OBJGLUF_API GLuint LoadTextureFromMemory(const std::vector<char> &data, TextureFileFormat format);
+// TODO: This is broken
+OBJGLUF_API GLuint LoadTextureFromMemory(const std::vector<char> &data, TextureFileFormat format);
 
 }
 

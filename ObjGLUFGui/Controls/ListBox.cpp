@@ -1,8 +1,9 @@
 #include "ListBox.h"
 
+namespace GLUF {
+
 //--------------------------------------------------------------------------------------
-ListBox::ListBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Control(dialog)
-{
+ListBox::ListBox(Dialog &dialog) : mScrollBar(CreateScrollBar(dialog)), Control(dialog) {
     mType = CONTROL_LISTBOX;
 
     Point pt = mDialog.GetManager()->GetWindowSize();
@@ -18,27 +19,23 @@ ListBox::ListBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Control(
 
 
 //--------------------------------------------------------------------------------------
-ListBox::~ListBox()
-{
+ListBox::~ListBox() {
     RemoveAllItems();
 }
 
 //--------------------------------------------------------------------------------------
-GenericData& ListBox::GetItemData(const std::wstring& text, Index start) const
-{
+GenericData &ListBox::GetItemData(const std::wstring &text, Index start) const {
     return FindItem(text, start)->mData;
 }
 
 //--------------------------------------------------------------------------------------
-GenericData& ListBox::GetItemData(Index index) const
-{
+GenericData &ListBox::GetItemData(Index index) const {
     return mItems[index]->mData;
 }
 
 
 //--------------------------------------------------------------------------------------
-void ListBox::UpdateRects() noexcept
-{
+void ListBox::UpdateRects() noexcept {
     Control::UpdateRects();
 
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
@@ -46,9 +43,9 @@ void ListBox::UpdateRects() noexcept
 
     mSelectionRegion = mRegion;
     mSelectionRegion.right -= mSBWidth;
-    InflateRect(mSelectionRegion, -(int32_t)mHorizontalMargin, -(int32_t)mVerticalMargin);
+    InflateRect(mSelectionRegion, -(int32_t) mHorizontalMargin, -(int32_t) mVerticalMargin);
     mTextRegion = mSelectionRegion;
-    InflateRect(mTextRegion, -(int32_t)mHorizontalMargin, -(int32_t)mVerticalMargin);
+    InflateRect(mTextRegion, -(int32_t) mHorizontalMargin, -(int32_t) mVerticalMargin);
 
     // Update the scrollbar's rects
     //mScrollBar->SetLocation(mRegion.right - mSBWidth, mRegion.top);
@@ -57,8 +54,7 @@ void ListBox::UpdateRects() noexcept
     mScrollBar->SetLocation(mRegion.right, mRegion.bottom);
     mScrollBar->SetSize(mSBWidth, RectHeight(mRegion));
     FontNodePtr pFontNode = mDialog.GetFont(mElements[0].mFontIndex);
-    if (pFontNode && pFontNode->mFontType->mHeight)
-    {
+    if (pFontNode && pFontNode->mFontType->mHeight) {
         mScrollBar->SetPageSize(int(RectHeight(mTextRegion) / pFontNode->mLeading));
 
         // The selected item may have been scrolled off the page.
@@ -73,16 +69,14 @@ void ListBox::UpdateRects() noexcept
 
 //--------------------------------------------------------------------------------------
 
-void ListBox::AddItem(const std::wstring& text, GenericData& data) noexcept
-{
+void ListBox::AddItem(const std::wstring &text, GenericData &data) noexcept {
     InsertItem(mItems.size(), text, data);
 }
 
 
 //--------------------------------------------------------------------------------------
 
-void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept
-{
+void ListBox::InsertItem(Index index, const std::wstring &text, GenericData &data) noexcept {
     auto newItem = std::make_shared<ListBoxItem>(data);
 
     //clear the selection vector
@@ -94,30 +88,27 @@ void ListBox::InsertItem(Index index, const std::wstring& text, GenericData& dat
     SetRect(newItem->mTextRegion, 0, 0, 0, 0);
     //pNewItem->bSelected = false;
 
-    if (index >= mItems.size())
-    {
+    if (index >= mItems.size()) {
         mItems.push_back(nullptr);
         index = mItems.size() - 1;
     }
 
     mItems[index] = newItem;
-    mScrollBar->SetTrackRange(0, (int)mItems.size());
+    mScrollBar->SetTrackRange(0, (int) mItems.size());
 }
 
 
 //--------------------------------------------------------------------------------------
-void ListBox::RemoveItem(Index index)
-{
-    if (index >= (int)mItems.size())
-    {
+void ListBox::RemoveItem(Index index) {
+    if (index >= (int) mItems.size()) {
         GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Attempt To Remove List Box Item Out Of Range"));
         return;
     }
 
     auto it = mItems.begin() + index;
     mItems.erase(it);
-    mScrollBar->SetTrackRange(0, (int)mItems.size());
-    if (mSelected[0] >= (int)mItems.size())
+    mScrollBar->SetTrackRange(0, (int) mItems.size());
+    if (mSelected[0] >= (int) mItems.size())
         mSelected[0] = int(mItems.size()) - 1;
 
     mDialog.SendEvent(EVENT_LISTBOX_SELECTION, true, shared_from_this());
@@ -125,8 +116,7 @@ void ListBox::RemoveItem(Index index)
 
 
 //--------------------------------------------------------------------------------------
-void ListBox::RemoveAllItems() noexcept
-{
+void ListBox::RemoveAllItems() noexcept {
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
     mSelected.clear();
@@ -135,10 +125,8 @@ void ListBox::RemoveAllItems() noexcept
 
 
 //--------------------------------------------------------------------------------------
-ListBoxItemPtr ListBox::GetItem(const std::wstring& text, Index start) const
-{
-    for (auto it : mItems)
-    {
+ListBoxItemPtr ListBox::GetItem(const std::wstring &text, Index start) const {
+    for (auto it : mItems) {
         if (it->mText == text)
             return it;
     }
@@ -147,10 +135,8 @@ ListBoxItemPtr ListBox::GetItem(const std::wstring& text, Index start) const
 }
 
 //--------------------------------------------------------------------------------------
-Index ListBox::GetSelectedIndex(Index previousSelected) const
-{
-    if (mStyle & MULTISELECTION)
-    {
+Index ListBox::GetSelectedIndex(Index previousSelected) const {
+    if (mStyle & MULTISELECTION) {
         // Multiple selection enabled. Search for the next item with the selected flag.
         /*for (int i = nPreviousSelected + 1; i < (int)mItems.size(); ++i)
         {
@@ -165,17 +151,14 @@ Index ListBox::GetSelectedIndex(Index previousSelected) const
             throw NoItemSelectedException();
 
         return *in;
-    }
-    else
-    {
+    } else {
         // Single selection
         return GetSelectedIndex();
     }
 }
 
 //--------------------------------------------------------------------------------------
-Index ListBox::GetSelectedIndex() const
-{
+Index ListBox::GetSelectedIndex() const {
     if (mSelected.size() == 0)
         throw NoItemSelectedException();
 
@@ -183,11 +166,9 @@ Index ListBox::GetSelectedIndex() const
 }
 
 //--------------------------------------------------------------------------------------
-void ListBox::SelectItem(Index index)
-{
+void ListBox::SelectItem(Index index) {
     // If no item exists, do nothing.
-    if (index >= mItems.size())
-    {
+    if (index >= mItems.size()) {
         GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Item To Select Does Not Exist"));
         return;
     }
@@ -200,11 +181,10 @@ void ListBox::SelectItem(Index index)
     // Perform capping
     if (mSelected[0] < 0)
         mSelected[0] = 0;
-    if (mSelected[0] >= (int)mItems.size())
+    if (mSelected[0] >= (int) mItems.size())
         mSelected[0] = int(mItems.size()) - 1;
 
-    if (nOldSelected != mSelected[0])
-    {
+    if (nOldSelected != mSelected[0]) {
         index = mSelected[0];
         mSelected.clear();
         mSelected.push_back(index);
@@ -217,12 +197,9 @@ void ListBox::SelectItem(Index index)
 }
 
 //--------------------------------------------------------------------------------------
-void ListBox::SelectItem(const std::wstring& text, Index start)
-{
-    for (unsigned int i = start; i < mItems.size(); ++i)
-    {
-        if (mItems[i]->mText == text)
-        {
+void ListBox::SelectItem(const std::wstring &text, Index start) {
+    for (unsigned int i = start; i < mItems.size(); ++i) {
+        if (mItems[i]->mText == text) {
             SelectItem(i);
             return;
         }
@@ -233,17 +210,14 @@ void ListBox::SelectItem(const std::wstring& text, Index start)
 }
 
 //--------------------------------------------------------------------------------------
-void ListBox::ClearSelected() noexcept
-{
+void ListBox::ClearSelected() noexcept {
     mSelected.clear();
 }
 
 
 //--------------------------------------------------------------------------------------
-bool ListBox::ContainsItem(const std::wstring& text, Index start) const noexcept
-{
-    for (auto it : mItems)
-    {
+bool ListBox::ContainsItem(const std::wstring &text, Index start) const noexcept {
+    for (auto it : mItems) {
         if (it->mText == text)
             return true;
     }
@@ -253,10 +227,8 @@ bool ListBox::ContainsItem(const std::wstring& text, Index start) const noexcept
 
 
 //--------------------------------------------------------------------------------------
-Index ListBox::FindItemIndex(const std::wstring& text, Index start) const
-{
-    for (Index i = start; i < mItems.size(); ++i)
-    {
+Index ListBox::FindItemIndex(const std::wstring &text, Index start) const {
+    for (Index i = start; i < mItems.size(); ++i) {
         ListBoxItemPtr pItem = mItems[i];
 
         if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
@@ -270,10 +242,8 @@ Index ListBox::FindItemIndex(const std::wstring& text, Index start) const
 
 
 //--------------------------------------------------------------------------------------
-ListBoxItemPtr ListBox::FindItem(const std::wstring& text, Index start) const
-{
-    for (auto it : mItems)
-    {
+ListBoxItemPtr ListBox::FindItem(const std::wstring &text, Index start) const {
+    for (auto it : mItems) {
         if (it->mText == text)//REMEMBER if this returns 0, they are the same
         {
             return it;
@@ -284,11 +254,9 @@ ListBoxItemPtr ListBox::FindItem(const std::wstring& text, Index start) const
 }
 
 //--------------------------------------------------------------------------------------
-bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
 
-    if (FOCUS == msg && param1 == GL_FALSE)
-    {
+    if (FOCUS == msg && param1 == GL_FALSE) {
         // The application just lost mouse capture. We may not have gotten
         // the WM_MOUSEUP message, so reset mDrag here.
         mDrag = false;
@@ -308,20 +276,16 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
     if (mScrollBar->MsgProc(_PASS_CALLBACK_PARAM))
         return true;
 
-    switch (msg)
-    {
+    switch (msg) {
         case KEY:
-            if (param3 == GLFW_RELEASE)
-            {
-                switch (param1)
-                {
+            if (param3 == GLFW_RELEASE) {
+                switch (param1) {
                     case GLFW_KEY_UP:
                     case GLFW_KEY_DOWN:
                     case GLFW_KEY_PAGE_DOWN:
                     case GLFW_KEY_PAGE_UP:
                     case GLFW_KEY_HOME:
-                    case GLFW_KEY_END:
-                    {
+                    case GLFW_KEY_END: {
                         // If no item exists, do nothing.
                         if (mItems.size() == 0)
                             return true;
@@ -331,32 +295,35 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                         mSelected.push_back(nOldSelected);
 
                         // Adjust m_nSelected
-                        switch (param1)
-                        {
+                        switch (param1) {
                             case GLFW_KEY_UP:
-                                --mSelected[0]; break;
+                                --mSelected[0];
+                                break;
                             case GLFW_KEY_DOWN:
-                                ++mSelected[0]; break;
+                                ++mSelected[0];
+                                break;
                             case GLFW_KEY_PAGE_DOWN:
-                                mSelected[0] += mScrollBar->GetPageSize() - 1; break;
+                                mSelected[0] += mScrollBar->GetPageSize() - 1;
+                                break;
                             case GLFW_KEY_PAGE_UP:
-                                mSelected[0] -= mScrollBar->GetPageSize() - 1; break;
+                                mSelected[0] -= mScrollBar->GetPageSize() - 1;
+                                break;
                             case GLFW_KEY_HOME:
-                                mSelected[0] = 0; break;
+                                mSelected[0] = 0;
+                                break;
                             case GLFW_KEY_END:
-                                mSelected[0] = int(mItems.size()) - 1; break;
+                                mSelected[0] = int(mItems.size()) - 1;
+                                break;
                         }
 
                         // Perform capping
                         if (mSelected[0] < 0)
                             mSelected[0] = 0;
-                        if (mSelected[0] >= (int)mItems.size())
+                        if (mSelected[0] >= (int) mItems.size())
                             mSelected[0] = int(mItems.size()) - 1;
 
-                        if (nOldSelected != mSelected[0])
-                        {
-                            if (mStyle & MULTISELECTION)
-                            {
+                        if (nOldSelected != mSelected[0]) {
+                            if (mStyle & MULTISELECTION) {
                                 // Multiple selection
 
                                 // Clear all selection
@@ -386,8 +353,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                                 }*/
 
                                 //TODO: key callback
-                            }
-                            else;
+                            } else;
                             //m_nSelStart = m_nSelected;
 
                             // Adjust scroll bar
@@ -412,11 +378,9 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
             //case WM_LBUTTONDOWN:
             //case WM_LBUTTONDBLCLK:
         case MB:
-            if (param2 == GLFW_PRESS)
-            {
+            if (param2 == GLFW_PRESS) {
                 // Check for clicks in the text area
-                if (!mItems.empty() && PtInRect(mSelectionRegion, pt))
-                {
+                if (!mItems.empty() && PtInRect(mSelectionRegion, pt)) {
                     // Compute the index of the clicked item
 
                     //int nClicked;
@@ -452,38 +416,31 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     Index currSelectedIndex = 0;
 
                     //the easy way
-                    for (unsigned int it = 0; it < mItems.size(); ++it)
-                    {
-                        if (it != 0 && mItems[it]->mTextRegion.top <= pt.y && mItems[it - 1]->mTextRegion.bottom >= pt.y)
-                        {
+                    for (unsigned int it = 0; it < mItems.size(); ++it) {
+                        if (it != 0 && mItems[it]->mTextRegion.top <= pt.y &&
+                            mItems[it - 1]->mTextRegion.bottom >= pt.y) {
                             long halfDistance = (mItems[it - 1]->mTextRegion.bottom - mItems[it]->mTextRegion.top) / 2;
                             long relative = pt.y - mItems[it - 1]->mTextRegion.bottom;
                             currSelectedIndex = (relative > halfDistance) ? it : it - 1;
                         }
-                        if (PtInRect(mItems[it]->mTextRegion, pt))
-                        {
+                        if (PtInRect(mItems[it]->mTextRegion, pt)) {
                             currSelectedIndex = it;
                             break;
                         }
                     }
 
-                    if (mStyle & MULTISELECTION)
-                    {
+                    if (mStyle & MULTISELECTION) {
                         // Determine behavior based on the state of Shift and Ctrl
 
                         //ListBoxItemPtr pSelItem = mItems[currSelectedIndex];
-                        if (param3 & GLFW_MOD_CONTROL)
-                        {
+                        if (param3 & GLFW_MOD_CONTROL) {
                             // Control click. Reverse the selection of this item.
 
                             //pSelItem->bSelected = !pSelItem->bSelected;
                             auto it = std::find(mSelected.begin(), mSelected.end(), currSelectedIndex);
-                            if (it == mSelected.end())
-                            {
+                            if (it == mSelected.end()) {
                                 mSelected.push_back(currSelectedIndex);
-                            }
-                            else
-                            {
+                            } else {
                                 mSelected.erase(it);//this should never fail
 
                                 //make sure that if it is the last one, then add the -1
@@ -492,9 +449,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                                 mSelected.push_back(-1);
                                 }*/
                             }
-                        }
-                        else if (param3 & GLFW_MOD_SHIFT)
-                        {
+                        } else if (param3 & GLFW_MOD_SHIFT) {
                             // Shift click. Set the selection for all items
                             // from last selected item to the current item.
                             // Clear everything else.
@@ -519,20 +474,15 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                             pItem->bSelected = false;
                             }*/
 
-                            if (nBegin < nEnd)
-                            {
-                                for (uint32_t i = nBegin; i <= nEnd; ++i)
-                                {
+                            if (nBegin < nEnd) {
+                                for (uint32_t i = nBegin; i <= nEnd; ++i) {
                                     /*ListBoxItemPtr pItem = mItems[i];
                                     pItem->bSelected = true;
                                     */
                                     mSelected.push_back(i);
                                 }
-                            }
-                            else if (nBegin > nEnd)
-                            {
-                                for (uint32_t i = nBegin; i >= nEnd; --i)
-                                {
+                            } else if (nBegin > nEnd) {
+                                for (uint32_t i = nBegin; i >= nEnd; --i) {
                                     /*ListBoxItemPtr pItem = mItems[i];
                                     pItem->bSelected = true;
                                     */
@@ -546,9 +496,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                             {
                             mSelected.push_back(-1);
                             */
-                        }
-                        else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL))
-                        {
+                        } else if (param3 & (GLFW_MOD_SHIFT | GLFW_MOD_CONTROL)) {
                             //No one uses shift control anyway (i see no use in it
 
                             // Control-Shift-click.
@@ -579,9 +527,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                             // This matches the Windows behavior
 
                             //m_nSelected = m_nSelStart;
-                        }
-                        else
-                        {
+                        } else {
                             // Simple click.  Clear all items and select the clicked
                             // item.
 
@@ -601,8 +547,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                             //NOTE: clicking not on an item WILL lead to a clearing of the selection
                         }
                     }  // End of multi-selection case
-                    else
-                    {
+                    else {
                         mSelected[0] = currSelectedIndex;
                     }
 
@@ -619,9 +564,7 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
                     return true;
                 }
                 break;
-            }
-            else
-            {
+            } else {
                 //TODO: drag click
                 //ReleaseCapture();
                 /*mDrag = false;
@@ -702,11 +645,9 @@ bool ListBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t p
 }
 
 //--------------------------------------------------------------------------------------
-void ListBox::UpdateItemRects() noexcept
-{
+void ListBox::UpdateItemRects() noexcept {
     FontNodePtr pFont = mDialog.GetFont(GetElement(0).mFontIndex);
-    if (pFont)
-    {
+    if (pFont) {
         int curY = mTextRegion.top - mVerticalMargin;
         int nRemainingHeight = RectHeight(mRegion) - 2 * mVerticalMargin;
 
@@ -714,41 +655,38 @@ void ListBox::UpdateItemRects() noexcept
         //int nRemainingHeight = RectHeight(mRegion) - pFont->mLeading;
 
         //for all of the ones before the displayed, just set them to something impossible
-        for (size_t i = 0; i < (size_t)mScrollBar->GetTrackPos(); ++i)
-        {
+        for (size_t i = 0; i < (size_t) mScrollBar->GetTrackPos(); ++i) {
             SetRect(mItems[i]->mTextRegion, 0, 0, 0, 0);
         }
-        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
-        {
+        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++) {
             ListBoxItemPtr pItem = mItems[i];
 
             // Make sure there's room left in the box
             nRemainingHeight -= pFont->mLeading;
-            if (nRemainingHeight - (int)mVerticalMargin < 0)
-            {
+            if (nRemainingHeight - (int) mVerticalMargin < 0) {
                 pItem->mVisible = false;
                 continue;
             }
 
             pItem->mVisible = true;
 
-            SetRect(pItem->mTextRegion, mRegion.left + mHorizontalMargin, curY, mRegion.right - mHorizontalMargin, curY - pFont->mFontType->mHeight);
+            SetRect(pItem->mTextRegion, mRegion.left + mHorizontalMargin, curY, mRegion.right - mHorizontalMargin,
+                    curY - pFont->mFontType->mHeight);
             curY -= pFont->mLeading;
         }
     }
 }
 
 //--------------------------------------------------------------------------------------
-void ListBox::Render(float elapsedTime) noexcept
-{
+void ListBox::Render(float elapsedTime) noexcept {
     if (mVisible == false)
         return;
 
-    Element* pElement = &mElements[0];
+    Element *pElement = &mElements[0];
     pElement->mTextureColor.Blend(STATE_NORMAL, elapsedTime);
     pElement->mFontColor.Blend(STATE_NORMAL, elapsedTime);
 
-    Element& pSelElement = mElements[1];
+    Element &pSelElement = mElements[1];
     pSelElement.mTextureColor.Blend(STATE_NORMAL, elapsedTime);
     pSelElement.mFontColor.Blend(STATE_NORMAL, elapsedTime);
 
@@ -756,14 +694,12 @@ void ListBox::Render(float elapsedTime) noexcept
 
     FontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
     // Render the text
-    if (!mItems.empty() && pFont)
-    {
+    if (!mItems.empty() && pFont) {
 
         UpdateItemRects();
 
         static bool bSBInit;
-        if (!bSBInit)
-        {
+        if (!bSBInit) {
             // Update the page size of the scroll bar
             if (mTextHeight > 0)
                 mScrollBar->SetPageSize(int((RectHeight(mRegion) - (2 * mVerticalMargin)) / mTextHeight) + 1);
@@ -773,8 +709,7 @@ void ListBox::Render(float elapsedTime) noexcept
         }
 
 
-        for (int i = mScrollBar->GetTrackPos(); i < (int)mItems.size(); ++i)
-        {
+        for (int i = mScrollBar->GetTrackPos(); i < (int) mItems.size(); ++i) {
 
             ListBoxItemPtr pItem = mItems[i];
 
@@ -789,8 +724,7 @@ void ListBox::Render(float elapsedTime) noexcept
 
             if (!(mStyle & MULTISELECTION) && i == mSelected[0])
                 bSelectedStyle = true;
-            else if (mStyle & MULTISELECTION)
-            {
+            else if (mStyle & MULTISELECTION) {
                 for (auto it : mSelected)
                     if (i == it)
                         bSelectedStyle = true;
@@ -805,8 +739,7 @@ void ListBox::Render(float elapsedTime) noexcept
             }
 
             //bSelectedStyle = mItems[i]->bSelected;
-            if (bSelectedStyle)
-            {
+            if (bSelectedStyle) {
                 //rcSel.top = rc.top; rcSel.bottom = rc.bottom;
                 Rect activeRect = pItem->mTextRegion;
 
@@ -814,8 +747,7 @@ void ListBox::Render(float elapsedTime) noexcept
                 InflateRect(activeRect, 0, pFont->mLeading / 4 + 1);
                 mDialog.DrawSprite(pSelElement, activeRect, _NEAR_BUTTON_DEPTH);
                 mDialog.DrawText(pItem->mText, pSelElement, pItem->mTextRegion);
-            }
-            else
+            } else
                 mDialog.DrawText(pItem->mText, *pElement, pItem->mTextRegion);
 
             //OffsetRect(rc, 0, m_fTextHeight);
@@ -827,4 +759,4 @@ void ListBox::Render(float elapsedTime) noexcept
 
     mScrollBar->Render(elapsedTime);
 }
-
+}

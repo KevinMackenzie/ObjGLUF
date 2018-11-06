@@ -3,20 +3,19 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H"freetype/freetype.h"
 
+namespace GLUF {
 
-struct TextVertexStruct : public VertexStruct
-{
+struct TextVertexStruct : public VertexStruct {
     glm::vec3 mPos;
     glm::vec2 mTexCoords;
 
-    TextVertexStruct(){}
-    TextVertexStruct(const glm::vec3& pos, const glm::vec2& texCoords) :
-            mPos(pos), mTexCoords(texCoords)
-    {}
+    TextVertexStruct() {}
 
-    virtual char* get_data() const override
-    {
-        char* ret = new char[size()];
+    TextVertexStruct(const glm::vec3 &pos, const glm::vec2 &texCoords) :
+            mPos(pos), mTexCoords(texCoords) {}
+
+    virtual char *get_data() const override {
+        char *ret = new char[size()];
 
         memcpy(ret, &mPos[0], 12);
         memcpy(ret + 12, &mTexCoords[0], 8);
@@ -24,15 +23,12 @@ struct TextVertexStruct : public VertexStruct
         return ret;
     }
 
-    virtual size_t size() const override
-    {
+    virtual size_t size() const override {
         return 20; // sizeof(mPos) + sizeof(mTexCoords);
     }
 
-    virtual size_t n_elem_size(size_t element)
-    {
-        switch (element)
-        {
+    virtual size_t n_elem_size(size_t element) {
+        switch (element) {
             case 0:
                 return 12;
             case 1:
@@ -42,22 +38,19 @@ struct TextVertexStruct : public VertexStruct
         }
     }
 
-    virtual void buffer_element(void* data, size_t element) override
-    {
-        switch (element)
-        {
+    virtual void buffer_element(void *data, size_t element) override {
+        switch (element) {
             case 0:
-                mPos = static_cast<glm::vec3*>(data)[0];
+                mPos = static_cast<glm::vec3 *>(data)[0];
             case 1:
-                mTexCoords = static_cast<glm::vec2*>(data)[0];
+                mTexCoords = static_cast<glm::vec2 *>(data)[0];
             default:
                 break;
         }
     }
 
-    static GLVector<TextVertexStruct> MakeMany(size_t howMany)
-    {
-        GLVector<TextVertexStruct> ret;
+    static GLVector <TextVertexStruct> MakeMany(size_t howMany) {
+        GLVector <TextVertexStruct> ret;
         ret.resize(howMany);
 
         return ret;
@@ -67,15 +60,14 @@ struct TextVertexStruct : public VertexStruct
 FT_Library g_FtLib;
 ProgramPtr g_TextProgram = nullptr;
 VertexArrayPtr g_TextVertexArray = nullptr;
-struct TextShaderLocations_t
-{
+struct TextShaderLocations_t {
     GLuint position = 0;
     GLuint uv = 0;
     GLuint ortho = 0;
     GLuint color = 0;
     GLuint sampler = 0;
 
-}g_TextShaderLocations;
+} g_TextShaderLocations;
 
 std::string g_TextShaderVert =
         "#version 120                                                        \n"\
@@ -106,24 +98,23 @@ std::string g_TextShaderFrag =
 bool InitText() {
 
     ShaderSourceList sources;
-    sources.insert({ SH_VERTEX_SHADER, g_TextShaderVert });
-    sources.insert({ SH_FRAGMENT_SHADER, g_TextShaderFrag });
+    sources.insert({SH_VERTEX_SHADER, g_TextShaderVert});
+    sources.insert({SH_FRAGMENT_SHADER, g_TextShaderFrag});
     SHADERMANAGER.CreateProgram(g_TextProgram, sources);
 
-    g_TextShaderLocations.position        = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
-    g_TextShaderLocations.uv            = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
-    g_TextShaderLocations.color            = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
-    g_TextShaderLocations.ortho            = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
-    g_TextShaderLocations.sampler        = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
+    g_TextShaderLocations.position = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_Position");
+    g_TextShaderLocations.uv = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_ATTRIB, "_UV");
+    g_TextShaderLocations.color = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Color");
+    g_TextShaderLocations.ortho = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_Ortho");
+    g_TextShaderLocations.sampler = SHADERMANAGER.GetShaderVariableLocation(g_TextProgram, GLT_UNIFORM, "_TS");
 
     g_TextVertexArray = std::make_shared<VertexArray>(GL_TRIANGLES, GL_STREAM_DRAW, true);
-    g_TextVertexArray->AddVertexAttrib({ 4, 3, g_TextShaderLocations.position, GL_FLOAT, 0 });
-    g_TextVertexArray->AddVertexAttrib({ 4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12 });
+    g_TextVertexArray->AddVertexAttrib({4, 3, g_TextShaderLocations.position, GL_FLOAT, 0});
+    g_TextVertexArray->AddVertexAttrib({4, 2, g_TextShaderLocations.uv, GL_FLOAT, 12});
 
     //initialize the freetype library.
     FT_Error err = FT_Init_FreeType(&g_FtLib);
-    if (err)
-    {
+    if (err) {
         GLUF_ERROR("Failed to Initialize the Freetype Library!");
         return false;
     }
@@ -141,8 +132,7 @@ Font Stuff
 
 
 //--------------------------------------------------------------------------------------
-void SetDefaultFont(FontPtr& pDefFont)
-{
+void SetDefaultFont(FontPtr &pDefFont) {
     g_DefaultFont = pDefFont;
 }
 
@@ -156,8 +146,7 @@ CharacterInfo
         'mTexXOffset': the x offset of glyph in texture coordinates
 
 */
-struct CharacterInfo
-{
+struct CharacterInfo {
     glm::u32vec2 mAdvance;
     glm::u32vec2 mBitSize;
     glm::u32vec2 mBitLoc;
@@ -181,8 +170,7 @@ Font
         'mCharacterEnd': the end of the writable characters
         'mTexLineBreakIndices': the character codes which caused line breaks within the texture
 */
-class Font
-{
+class Font {
     std::vector<uint32_t> mTexLineBreakIndices;
 public:
 
@@ -248,7 +236,7 @@ public:
             'std::out_of_range': if any characters within the string are not within mCharacterOffset and mCharacterEnd
 
     */
-    FontSize GetStringWidth(const std::wstring& str);
+    FontSize GetStringWidth(const std::wstring &str);
 
     /*
     Init
@@ -263,7 +251,7 @@ public:
         Throws:
             'LoadFontException': if loading failed
     */
-    void Init(const std::vector<char>& data, FontSize fontHeight);
+    void Init(const std::vector<char> &data, FontSize fontHeight);
 
     /*
     Refresh
@@ -295,24 +283,21 @@ public:
 
 };
 
-FontSize GetFontHeight(FontPtr font)
-{
+FontSize GetFontHeight(FontPtr font) {
     return font->mHeight;
 }
 
-void Font::Refresh() noexcept
-{
+void Font::Refresh() noexcept {
 
     //reset variables
-    mAtlasSize = { 0, 0 };
+    mAtlasSize = {0, 0};
 
 
     //int mult = (g_WndHeight >= g_WndWidth) ? g_WndWidth : g_WndHeight;
 
     int pxlHeight = mHeight;
 
-    if (FT_Set_Char_Size(mFtFont, pxlHeight << 6, pxlHeight << 6, 96, 96))
-    {
+    if (FT_Set_Char_Size(mFtFont, pxlHeight << 6, pxlHeight << 6, 96, 96)) {
         GLUF_ERROR("Size setting Failed");
     }
 
@@ -328,21 +313,17 @@ void Font::Refresh() noexcept
     uint32_t atlasWidthTmp = 0;
 
     //load the characters' dimmensions
-    for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++)
-    {
-        if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
-        {
+    for (unsigned int i = mCharacterOffset; i < mCharacterEnd; i++) {
+        if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER)) {
             GLUF_ERROR("Loading character failed!\n");
             continue;
         }
 
         //on each line, make sure we check if the next texture will go past the max x position
         glm::uint32 potentialAtlasX = atlasWidthTmp + g->bitmap.width + GLYPH_PADDING;
-        if (potentialAtlasX > maxTexSize)
-        {
+        if (potentialAtlasX > maxTexSize) {
             mAtlasSize.y += lineHeightWithSpacing;
-            if (mAtlasSize.y > maxTexSize)
-            {
+            if (mAtlasSize.y > maxTexSize) {
                 //if it is too big, actually clamp the characters which can not be loaded (not good, but not catestrophic either)
                 mCharacterEnd = i - 1;
                 break;
@@ -350,9 +331,7 @@ void Font::Refresh() noexcept
 
             mTexLineBreakIndices.push_back(i);
             atlasWidthTmp = 0;
-        }
-        else
-        {
+        } else {
             atlasWidthTmp = potentialAtlasX;
             mAtlasSize.x = glm::max(atlasWidthTmp, mAtlasSize.x);
         }
@@ -381,7 +360,7 @@ void Font::Refresh() noexcept
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    GLfloat transparent[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    GLfloat transparent[] = {0.0f, 0.0f, 0.0f, 0.0f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, transparent);//any overflow will be transparent
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mAtlasSize.x, mAtlasSize.y, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, 0);
@@ -395,9 +374,9 @@ void Font::Refresh() noexcept
     int x = 0;
     int y = 0;
     unsigned int lineIndex = 0;
-    for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i)
-    {
-        if (std::find(std::begin(mTexLineBreakIndices), std::end(mTexLineBreakIndices), i) != std::end(mTexLineBreakIndices))
+    for (unsigned int i = mCharacterOffset; i < mCharacterEnd; ++i) {
+        if (std::find(std::begin(mTexLineBreakIndices), std::end(mTexLineBreakIndices), i) != std::end(
+                mTexLineBreakIndices))
         {
             y += lineHeightWithSpacing;
             x = 0;
@@ -409,8 +388,7 @@ void Font::Refresh() noexcept
         if (FT_Load_Char(mFtFont, i, FT_LOAD_RENDER))
             continue;
 
-        if (i == 32/*space*/)
-        {
+        if (i == 32/*space*/) {
             FT_UInt spId = FT_Get_Char_Index(mFtFont, 32);
             if (FT_Load_Glyph(mFtFont, spId, FT_LOAD_RENDER))
                 continue;
@@ -430,13 +408,16 @@ void Font::Refresh() noexcept
             continue;
         }
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING), y, g->bitmap.width, g->bitmap.rows, GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING), y, g->bitmap.width, g->bitmap.rows,
+                        GL_LUMINANCE, GL_UNSIGNED_BYTE, g->bitmap.buffer);
 
         //this adds padding to keep the characters looking clean
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING, mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x + (lineIndex * GLYPH_PADDING) + g->bitmap.width, y, GLYPH_PADDING,
+                        mAtlasSize.y, GL_LUMINANCE, GL_UNSIGNED_BYTE, paddingData.data());
 
-        mCharAtlas[p].mTexXOffset = static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
-        mCharAtlas[p].mTexYOffset = (static_cast<float>(y)+0.5f) / static_cast<float>(mAtlasSize.y);
+        mCharAtlas[p].mTexXOffset =
+                static_cast<float>(x + (lineIndex * GLYPH_PADDING)) / static_cast<float>(mAtlasSize.x);
+        mCharAtlas[p].mTexYOffset = (static_cast<float>(y) + 0.5f) / static_cast<float>(mAtlasSize.y);
 
         x += g->bitmap.width;
 
@@ -456,31 +437,27 @@ void Font::Refresh() noexcept
     g = 0;
 }
 
-void Font::Init(const std::vector<char>& data, FontSize fontHeight)
-{
+void Font::Init(const std::vector<char> &data, FontSize fontHeight) {
     mHeight = fontHeight;
 
-    if (FT_New_Memory_Face(g_FtLib, (const FT_Byte*)data.data(), (FT_Long)data.size(), 0, &mFtFont))
+    if (FT_New_Memory_Face(g_FtLib, (const FT_Byte *) data.data(), (FT_Long) data.size(), 0, &mFtFont))
         throw LoadFontException();
 
     glGenTextures(1, &mTexId);
 
-    if (mTexId == 0)
-    {
+    if (mTexId == 0) {
         throw LoadFontException();
     }
 
     Refresh();
 }
 
-Rect Font::GetCharRect(wchar_t ch)
-{
-    if (ch < mCharacterOffset || ch >= mCharacterEnd)
-    {
-        return{ { 0 }, 0, 0, { 0 } };
+Rect Font::GetCharRect(wchar_t ch) {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd) {
+        return {{0}, 0, 0, {0}};
     }
 
-    Rect rc = { 0, GetCharHeight(ch), GetCharWidth(ch), 0 };
+    Rect rc = {0, GetCharHeight(ch), GetCharWidth(ch), 0};
 
     if (ch < mCharacterOffset)
         return rc;
@@ -489,7 +466,8 @@ Rect Font::GetCharRect(wchar_t ch)
     //if there is a dropdown, make sure it is accounted for
     //float dy = ((mCharAtlas[ch - mCharacterOffset].bh - mCharAtlas[ch - mCharacterOffset].bt) / mAtlasHeight) * mHeight;
     //OffsetRect(rc, (mCharAtlas[ch - mCharacterOffset].bl * GetCharHeight(ch)) / mAtlasHeight, dy);
-    OffsetRect(rc, mCharAtlas[ch - mCharacterOffset].mBitLoc.x, -(long)(mCharAtlas[ch - mCharacterOffset].mBitSize.y - mCharAtlas[ch - mCharacterOffset].mBitLoc.y));
+    OffsetRect(rc, mCharAtlas[ch - mCharacterOffset].mBitLoc.x,
+               -(long) (mCharAtlas[ch - mCharacterOffset].mBitSize.y - mCharAtlas[ch - mCharacterOffset].mBitLoc.y));
     return rc;
 }
 
@@ -504,55 +482,48 @@ Rect Font::GetCharRect(wchar_t ch)
     return rc;
 }*/
 
-Rectf Font::GetCharTexRect(wchar_t ch)
-{
-    if (ch < mCharacterOffset || ch >= mCharacterEnd)
-    {
-        return{ 0, 0, 0, 0 };
+Rectf Font::GetCharTexRect(wchar_t ch) {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd) {
+        return {0, 0, 0, 0};
     }
 
     float l = 0, t = 0, r = 0, b = 0;
 
     l = mCharAtlas[ch - mCharacterOffset].mTexXOffset;
     t = mCharAtlas[ch - mCharacterOffset].mTexYOffset;
-    r = mCharAtlas[ch - mCharacterOffset].mTexXOffset + static_cast<float>(GetCharWidth(ch)) / static_cast<float>(mAtlasSize.x);
-    b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y) + mCharAtlas[ch - mCharacterOffset].mTexYOffset;
+    r = mCharAtlas[ch - mCharacterOffset].mTexXOffset +
+        static_cast<float>(GetCharWidth(ch)) / static_cast<float>(mAtlasSize.x);
+    b = static_cast<float>(mCharAtlas[ch - mCharacterOffset].mBitSize.y) / static_cast<float>(mAtlasSize.y) +
+        mCharAtlas[ch - mCharacterOffset].mTexYOffset;
 
-    return{ l, t, r, b };
+    return {l, t, r, b};
 };
 
-FontSize Font::GetCharAdvance(wchar_t ch)
-{
-    if (ch < mCharacterOffset || ch >= mCharacterEnd)
-    {
+FontSize Font::GetCharAdvance(wchar_t ch) {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd) {
         return 0;
     }
 
     return mCharAtlas[ch - mCharacterOffset].mAdvance.x;
 }
 
-FontSize Font::GetCharWidth(wchar_t ch)
-{
-    if (ch < mCharacterOffset || ch >= mCharacterEnd)
-    {
+FontSize Font::GetCharWidth(wchar_t ch) {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd) {
         return 0;
     }
 
     return mCharAtlas[ch - mCharacterOffset].mBitSize.x;
 }
 
-FontSize Font::GetCharHeight(wchar_t ch)
-{
-    if (ch < mCharacterOffset || ch >= mCharacterEnd)
-    {
+FontSize Font::GetCharHeight(wchar_t ch) {
+    if (ch < mCharacterOffset || ch >= mCharacterEnd) {
         return 0;
     }
 
     return mCharAtlas[ch - mCharacterOffset].mBitSize.y;
 }
 
-FontSize Font::GetStringWidth(const std::wstring& str)
-{
+FontSize Font::GetStringWidth(const std::wstring &str) {
     /*for (auto ch : str)
     {
         if (ch < mCharacterOffset || ch >= mCharacterEnd)
@@ -562,16 +533,14 @@ FontSize Font::GetStringWidth(const std::wstring& str)
     }
     */
     FontSize tmp = 0;
-    for (auto it : str)
-    {
+    for (auto it : str) {
         tmp += GetCharAdvance(it);
     }
     return tmp;
 }
 
 
-void LoadFont(FontPtr& font, const std::vector<char>& rawData, FontSize fontHeight)
-{
+void LoadFont(FontPtr &font, const std::vector<char> &rawData, FontSize fontHeight) {
     font = std::make_shared<Font>();
 
     font->Init(rawData, fontHeight);
@@ -583,17 +552,16 @@ void LoadFont(FontPtr& font, const std::vector<char>& rawData, FontSize fontHeig
 //Color4f g_TextColor;
 
 //--------------------------------------------------------------------------------------
-void BeginText(const glm::mat4& orthoMatrix)
-{
+void BeginText(const glm::mat4 &orthoMatrix) {
     g_TextOrtho = orthoMatrix;
     //g_TextVertices.clear();
 }
 
 //--------------------------------------------------------------------------------------
-void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rect, const Color& color, Bitfield textFlags, bool hardRect)
-{
+void
+DrawText(const FontNodePtr &font, const std::wstring &text, const Rect &rect, const Color &color, Bitfield textFlags, bool hardRect) {
 
-    if ((long)font->mFontType->mHeight > RectHeight(rect) && hardRect)
+    if ((long) font->mFontType->mHeight > RectHeight(rect) && hardRect)
         return;//no sense rendering if it is too big
 
     //rcScreen = ScreenToClipspace(rcScreen);
@@ -611,31 +579,24 @@ void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rec
     //calc widths
     long strWidth = font->mFontType->GetStringWidth(text);
     int centerOffset = (RectWidth(rcScreen) - strWidth) / 2;
-    if (textFlags & GT_CENTER)
-    {
+    if (textFlags & GT_CENTER) {
         CurX = rcScreen.left + centerOffset;
-    }
-    else if (textFlags & GT_RIGHT)
-    {
+    } else if (textFlags & GT_RIGHT) {
         CurX = rcScreen.left + centerOffset * 2;
     }
 
     int numLines = 1;//always have one to get the GT_VCENTER correct
-    for (auto it : text)
-    {
+    for (auto it : text) {
         if (it == L'\n')
             numLines++;
     }
 
-    if (textFlags & GT_VCENTER)
-    {
+    if (textFlags & GT_VCENTER) {
         long value = RectHeight(rcScreen);
         value = value - numLines * font->mFontType->mHeight;
         value /= 2;
-        CurY -= (RectHeight(rcScreen) - (long)numLines * (long)font->mFontType->mHeight) / 2;
-    }
-    else if (textFlags & GT_BOTTOM)
-    {
+        CurY -= (RectHeight(rcScreen) - (long) numLines * (long) font->mFontType->mHeight) / 2;
+    } else if (textFlags & GT_BOTTOM) {
         CurY -= RectHeight(rcScreen) - numLines * font->mFontType->mHeight;
     }
 
@@ -649,13 +610,12 @@ void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rec
 
     float z = _NEAR_BUTTON_DEPTH;
     unsigned int i = 0;
-    for (auto ch : text)
-    {
-        int widthConverted = font->mFontType->GetCharAdvance(ch);//(font->mFontType->CellX * tmpSize) / font->mFontType->mAtlasWidth;
+    for (auto ch : text) {
+        int widthConverted = font->mFontType->GetCharAdvance(
+                ch);//(font->mFontType->CellX * tmpSize) / font->mFontType->mAtlasWidth;
 
         //lets support newlines :) (or if the next char will go outside the rect)
-        if (ch == '\n' || (CurX + widthConverted > rcScreen.right && hardRect))
-        {
+        if (ch == '\n' || (CurX + widthConverted > rcScreen.right && hardRect)) {
             if (textFlags & GT_CENTER)
                 CurX = rcScreen.left + centerOffset;
             else if (textFlags & GT_LEFT)
@@ -666,11 +626,10 @@ void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rec
             CurY -= font->mLeading;// *1.1f;//assume a reasonible leding
 
             //if the next line will go off of the page, then don't draw it
-            if ((CurY - (long)font->mLeading < rcScreen.bottom) && hardRect)
+            if ((CurY - (long) font->mLeading < rcScreen.bottom) && hardRect)
                 break;
 
-            if (ch == '\n')
-            {
+            if (ch == '\n') {
                 continue;
             }
         }
@@ -765,8 +724,7 @@ void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rec
 }
 
 
-void EndText(const FontPtr& font, const VertexArrayPtr& data, const Color& textColor, const glm::mat4& projMatrix)
-{
+void EndText(const FontPtr &font, const VertexArrayPtr &data, const Color &textColor, const glm::mat4 &projMatrix) {
     SHADERMANAGER.UseProgram(g_TextProgram);
 
     //first uniform: model-view matrix
@@ -792,13 +750,11 @@ void EndText(const FontPtr& font, const VertexArrayPtr& data, const Color& textC
 
 
 //TextHelper
-TextHelper::TextHelper(DialogResourceManagerPtr& manager) :
+TextHelper::TextHelper(DialogResourceManagerPtr &manager) :
         mManager(manager), mColor(0, 0, 0, 255), mPoint(0L, 0L),
-        mFontIndex(0), mFontSize(15L)
-{}
+        mFontIndex(0), mFontSize(15L) {}
 
-void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
-{
+void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size) {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_CLAMP);
@@ -815,27 +771,25 @@ void TextHelper::Begin(FontIndex drmFont, FontSize leading, FontSize size)
     Text::BeginText(mManager->GetOrthoMatrix());
 }
 
-void TextHelper::DrawTextLine(const std::wstring& text) noexcept
-{
-    DrawTextLineBase({ { mPoint.x }, mPoint.y, mPoint.x + 50L, { mPoint.y - 50L } }, GT_LEFT | GT_TOP, text);
+void TextHelper::DrawTextLine(const std::wstring &text) noexcept {
+    DrawTextLineBase({{mPoint.x}, mPoint.y, mPoint.x + 50L, {mPoint.y - 50L}}, GT_LEFT | GT_TOP, text);
 
     //set the point down however many lines were drawn
-    for (auto it : text)
-    {
+    for (auto it : text) {
         if (it == '\n')
             mPoint.y += mLeading;
     }
     mPoint.y -= mLeading;//once no matter what because we are drawing a LINE of text
 }
 
-void TextHelper::DrawTextLineBase(const Rect& rc, Bitfield flags, const std::wstring& text) noexcept
-{
+void TextHelper::DrawTextLineBase(const Rect &rc, Bitfield flags, const std::wstring &text) noexcept {
     mManager->GetFontNode(mFontIndex)->mLeading = mLeading;
     Text::DrawText(mManager->GetFontNode(mFontIndex), text, rc, mColor, flags, true);
 }
 
-void TextHelper::End() noexcept
-{
+void TextHelper::End() noexcept {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_CLAMP);//set this back because it is the default
+}
+
 }

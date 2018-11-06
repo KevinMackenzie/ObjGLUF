@@ -1,6 +1,8 @@
 #ifndef OBJGLUF_SCROLLBAR_H
 #define OBJGLUF_SCROLLBAR_H
 
+namespace GLUF {
+
 /*
 ScrollBar
 
@@ -22,8 +24,7 @@ ScrollBar
         'mArrow': the state of the arrows
         'mArrowTS': the timestamp of the previous arrow event
 */
-class ScrollBar : public Control
-{
+class ScrollBar : public Control {
 public:
 
     /*
@@ -35,8 +36,7 @@ public:
         'HELD_UP':          Up arrow is held down for sustained period.
         'HELD_DOWN':        Down arrow is held down for sustained period.
     */
-    enum ArrowState
-    {
+    enum ArrowState {
         CLEAR,
         CLICKED_UP,
         CLICKED_DOWN,
@@ -46,8 +46,8 @@ public:
 protected:
 
     ScrollBar() = delete;
-    ScrollBar(Dialog& dialog);
-    friend std::shared_ptr<ScrollBar> CreateScrollBar(Dialog& dialog);
+    ScrollBar(Dialog &dialog);
+    friend std::shared_ptr <ScrollBar> CreateScrollBar(Dialog &dialog);
 
 
     bool mShowThumb;
@@ -76,10 +76,22 @@ public:
 
     */
     void SetTrackRange(int nStart, int nEnd) noexcept;
-    void SetTrackPos(int nPosition) noexcept    { mPosition = nPosition; Cap(); UpdateThumbRect();  }
-    void SetPageSize(int nPageSize)    noexcept    { mPageSize = nPageSize; Cap(); UpdateThumbRect();  }
-    int  GetTrackPos() const noexcept            { return mPosition;                                    }
-    int  GetPageSize() const noexcept            { return mPageSize;                                    }
+
+    void SetTrackPos(int nPosition) noexcept {
+        mPosition = nPosition;
+        Cap();
+        UpdateThumbRect();
+    }
+
+    void SetPageSize(int nPageSize) noexcept {
+        mPageSize = nPageSize;
+        Cap();
+        UpdateThumbRect();
+    }
+
+    int GetTrackPos() const noexcept { return mPosition; }
+
+    int GetPageSize() const noexcept { return mPageSize; }
 
     /*
     Scroll
@@ -132,4 +144,5 @@ protected:
     */
     void Cap();
 };
+}
 #endif //OBJGLUF_SCROLLBAR_H

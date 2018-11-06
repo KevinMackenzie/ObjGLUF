@@ -1,6 +1,8 @@
 #ifndef OBJGLUF_BLENDCOLOR_H
 #define OBJGLUF_BLENDCOLOR_H
 
+namespace GLUF {
+
 /*
 BlendColor
 
@@ -15,13 +17,12 @@ BlendColor
 
 */
 using HighBitColor = glm::i16vec4;
-using ColorStateMap = std::map < ControlState, HighBitColor >;
+using ColorStateMap = std::map<ControlState, HighBitColor>;
 
-struct BlendColor
-{
+struct BlendColor {
     float mPrevBlendTime = 0.0f;
-    ColorStateMap       mStates;
-    HighBitColor        mCurrentColor;
+    ColorStateMap mStates;
+    HighBitColor mCurrentColor;
 public:
 
     BlendColor();
@@ -35,7 +36,8 @@ public:
             'hiddenColor': the hidden color state
 
     */
-    void        Init(const Color& defaultColor, const Color& disabledColor = { 128, 128, 128, 200 }, const Color& hiddenColor = { 255, 255, 255, 0 });
+    void Init(const Color &defaultColor, const Color &disabledColor = {128, 128, 128, 200}, const Color &hiddenColor = {
+            255, 255, 255, 0});
 
     /*
     Blend
@@ -49,7 +51,7 @@ public:
             this is designed to be called every update cycle to provide a smooth blend animation
 
     */
-    void        Blend(ControlState state, float elapsedTime, float rate = 5.0f);
+    void Blend(ControlState state, float elapsedTime, float rate = 5.0f);
 
     /*
     SetCurrent
@@ -59,8 +61,8 @@ public:
             'state': the state to set the current state to
 
     */
-    void        SetCurrent(const Color& current);
-    void        SetCurrent(ControlState state);
+    void SetCurrent(const Color &current);
+    void SetCurrent(ControlState state);
 
     /*
     SetAll
@@ -69,10 +71,11 @@ public:
             'color': the color to set all of the states to; used for static elements
 
     */
-    void        SetAll(const Color& color);
+    void SetAll(const Color &color);
 
     Color GetState(ControlState state) const noexcept;
-    void        SetState(ControlState state, const Color& col) noexcept;
+    void SetState(ControlState state, const Color &col) noexcept;
     Color GetCurrent() const noexcept;
 };
+}
 #endif //OBJGLUF_BLENDCOLOR_H

@@ -3,16 +3,15 @@
 
 #include "../ObjGLUF.h"
 
-namespace GLUF
-{
+#include "GLVector.h"
+
+namespace GLUF {
 
 
-struct MeshBarebones
-{
+struct MeshBarebones {
     Vec3Array mVertices;
     IndexArray mIndices;
 };
-
 
 
 /*
@@ -25,13 +24,12 @@ VertexAttribInfo
         'mType': primitive type of the data
 */
 
-struct OBJGLUF_API VertexAttribInfo
-{
+struct OBJGLUF_API VertexAttribInfo {
     unsigned short mBytesPerElement;//int would be 4
     unsigned short mElementsPerValue;//vec4 would be 4
-    AttribLoc  mVertexAttribLocation;
-    GLenum         mType;//float would be GL_FLOAT
-    GLuint         mOffset;//will be 0 in SoA
+    AttribLoc mVertexAttribLocation;
+    GLenum mType;//float would be GL_FLOAT
+    GLuint mOffset;//will be 0 in SoA
 };
 
 /*
@@ -41,44 +39,36 @@ Vertex Array Exceptions
 
 */
 
-class MakeVOAException : public Exception
-{
+class MakeVOAException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "VAO Creation Failed!";
     }
 
     EXCEPTION_CONSTRUCTOR(MakeVOAException)
 };
 
-class InvalidSoABufferLenException : public Exception
-{
+class InvalidSoABufferLenException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "Buffer Passed Has Length Inconsistent With the Vertex Attributes!";
     }
 
     EXCEPTION_CONSTRUCTOR(InvalidSoABufferLenException)
 };
 
-class MakeBufferException : public Exception
-{
+class MakeBufferException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "Buffer Creation Failed!";
     }
 
     EXCEPTION_CONSTRUCTOR(MakeBufferException)
 };
 
-class InvalidAttrubuteLocationException : public Exception
-{
+class InvalidAttrubuteLocationException : public Exception {
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         return "Attribute Location Not Found in This Buffer!";
     }
 
@@ -101,8 +91,7 @@ VertexArrayBase
 
 */
 
-class OBJGLUF_API VertexArrayBase
-{
+class OBJGLUF_API VertexArrayBase {
 protected:
     GLuint mVertexArrayId = 0;
     GLuint mVertexCount = 0;
@@ -113,7 +102,7 @@ protected:
     std::map<AttribLoc, VertexAttribInfo> mAttribInfos;
 
     GLuint mIndexBuffer = 0;
-    GLuint mIndexCount  = 0;
+    GLuint mIndexCount = 0;
 
     GLuint mTempVAOId = 0;
 
@@ -133,13 +122,13 @@ protected:
 
     */
     virtual void RefreshDataBufferAttribute() noexcept = 0;
-    const VertexAttribInfo& GetAttribInfoFromLoc(AttribLoc loc) const;
-    void BufferIndicesBase(GLuint indexCount, const GLvoid* data) noexcept;
+    const VertexAttribInfo &GetAttribInfoFromLoc(AttribLoc loc) const;
+    void BufferIndicesBase(GLuint indexCount, const GLvoid *data) noexcept;
 
 
     //disallow copy constructor and assignment operator
-    VertexArrayBase(const VertexArrayBase& other) = delete;
-    VertexArrayBase& operator=(const VertexArrayBase& other) = delete;
+    VertexArrayBase(const VertexArrayBase &other) = delete;
+    VertexArrayBase &operator=(const VertexArrayBase &other) = delete;
 public:
     /*
 
@@ -168,8 +157,8 @@ public:
             May Throw something in Map Copy Constructor
     */
 
-    VertexArrayBase(VertexArrayBase&& other);
-    VertexArrayBase& operator=(VertexArrayBase&& other);
+    VertexArrayBase(VertexArrayBase &&other);
+    VertexArrayBase &operator=(VertexArrayBase &&other);
 
     /*
     Add/RemoveVertexAttrib
@@ -183,7 +172,7 @@ public:
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void AddVertexAttrib(const VertexAttribInfo& info);
+    virtual void AddVertexAttrib(const VertexAttribInfo &info);
     virtual void RemoveVertexAttrib(AttribLoc loc);
 
     /*
@@ -265,10 +254,10 @@ public:
                 is entering reasonible data to give predictible results
     */
 
-    void BufferIndices(const std::vector<GLuint>& indices) noexcept;
-    void BufferIndices(const std::vector<glm::u32vec2>& indices) noexcept;
-    void BufferIndices(const std::vector<glm::u32vec3>& indices) noexcept;
-    void BufferIndices(const std::vector<glm::u32vec4>& indices) noexcept;
+    void BufferIndices(const std::vector<GLuint> &indices) noexcept;
+    void BufferIndices(const std::vector<glm::u32vec2> &indices) noexcept;
+    void BufferIndices(const std::vector<glm::u32vec3> &indices) noexcept;
+    void BufferIndices(const std::vector<glm::u32vec4> &indices) noexcept;
     //void BufferFaces(GLuint* indices, GLuint FaceCount);
 
     /*
@@ -316,105 +305,6 @@ public:
 
 
 /*
-VertexStruct
-
-    Base struct for data used in 'VertexArrayAoS'
-
-*/
-
-struct VertexStruct
-{
-    virtual char* get_data() const = 0;
-    virtual size_t size() const = 0;
-    virtual size_t n_elem_size(size_t element) = 0;
-    virtual void buffer_element(void* data, size_t element) = 0;
-};
-
-/*
-
-GLVector
-    TODO: Re-evaluate this class
-
-    -a small excention to the std::vector class;
-    -use this just like you would std::vector, except T MUST be derived from 'VertexStruct'
-    -T::size() must be the same for every element of the vector, however it will only throw an exception when calling gl_data()
-
-    Data Members:
-        'mGLData': the cached data from 'gl_data()', gets destroyed when vector does
-*/
-
-template<typename T>
-class GLVector : public std::vector<T>
-{
-    mutable char* mGLData = nullptr;
-public:
-
-    /*
-    Default Constructor
-    */
-    GLVector(){}
-    ~GLVector();
-
-    /*
-
-    Move Copy Constructor and Move Assignment Operator
-
-        Throws:
-            May throw something in 'std::vector's move constructor or assignment operator
-    */
-
-    GLVector(GLVector&& other);
-    GLVector& operator=(GLVector&& other);
-
-    /*
-    Copy Constructor and Assignment Operator
-
-        Throws:
-            May throw something in 'std::vector's copy constructor or assignment operator
-    */
-    GLVector(const GLVector& other) : std::vector<T>(other), mGLData(0) {}
-    GLVector& operator=(const GLVector& other);
-
-    /*
-    gl_data
-
-        Returns:
-            contiguous, raw data of each element in the vector
-
-        Throws:
-            'std::length_error': if any two elements in the vector are not the same length
-
-    */
-    void* gl_data() const;
-
-    /*
-    gl_delete_data
-
-        deletes 'mGLData'
-
-        Returns:
-            always nullptr; usage: "rawData = vec.gl_delete_data();"
-
-        Throws:
-            no-throw guarantee
-    */
-    void* gl_delete_data() const;
-
-    /*
-    buffer_element
-
-        Parameters:
-            'data': raw data to buffer
-            'element': which element in the Vertex is it modifying
-
-        Throws:
-            undefined
-
-    */
-    void buffer_element(void* data, size_t element);
-};
-
-/*
 
 VertexArrayAoS:
 
@@ -429,8 +319,7 @@ VertexArrayAoS:
 
 */
 
-class OBJGLUF_API VertexArrayAoS : public VertexArrayBase
-{
+class OBJGLUF_API VertexArrayAoS : public VertexArrayBase {
 
 
     /*
@@ -445,7 +334,6 @@ class OBJGLUF_API VertexArrayAoS : public VertexArrayBase
 protected:
     GLuint mDataBuffer = 0;
     GLuint mCopyBuffer = 0;
-
 
 
     //see 'VertexArrayBase' Docs
@@ -480,8 +368,8 @@ public:
 
     */
 
-    VertexArrayAoS(VertexArrayAoS&& other);
-    VertexArrayAoS& operator=(VertexArrayAoS&& other);
+    VertexArrayAoS(VertexArrayAoS &&other);
+    VertexArrayAoS &operator=(VertexArrayAoS &&other);
 
 
     /*
@@ -509,8 +397,8 @@ public:
 
     */
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
-    virtual void AddVertexAttrib(const VertexAttribInfo& info);
-    virtual void AddVertexAttrib(const VertexAttribInfo& info, GLuint offset);
+    virtual void AddVertexAttrib(const VertexAttribInfo &info);
+    virtual void AddVertexAttrib(const VertexAttribInfo &info, GLuint offset);
 
 
     /*
@@ -527,7 +415,7 @@ public:
 
     */
     template<typename T>
-    void BufferData(const GLVector<T>& data);
+    void BufferData(const GLVector<T> &data);
 
 
     /*
@@ -592,8 +480,7 @@ VertexArraySoA
         'mDataBuffers': one OpenGL buffer per vertex attribute
 
 */
-class OBJGLUF_API VertexArraySoA : public VertexArrayBase
-{
+class OBJGLUF_API VertexArraySoA : public VertexArrayBase {
 protected:
     //       Attrib Location, buffer location
     std::map<AttribLoc, GLuint> mDataBuffers;
@@ -642,8 +529,8 @@ public:
 
     */
 
-    VertexArraySoA(VertexArraySoA&& other);
-    VertexArraySoA& operator=(VertexArraySoA&& other);
+    VertexArraySoA(VertexArraySoA &&other);
+    VertexArraySoA &operator=(VertexArraySoA &&other);
 
 
     /*
@@ -657,7 +544,7 @@ public:
 
     */
 
-    void GetBarebonesMesh(MeshBarebones& inData);
+    void GetBarebonesMesh(MeshBarebones &inData);
 
     /*
     BufferData
@@ -671,7 +558,7 @@ public:
             'InvalidAttrubuteLocationException': if loc does not exist in this buffer
     */
     template<typename T>
-    void BufferData(AttribLoc loc, const std::vector<T>& data);
+    void BufferData(AttribLoc loc, const std::vector<T> &data);
 
     /*
     BufferSubData
@@ -685,7 +572,7 @@ public:
             'InvalidAttrubuteLocationException': if loc does not exist in this buffer
     */
     template<typename T>
-    void BufferSubData(AttribLoc loc, GLuint vertexOffsetCount, const std::vector<T>& data);
+    void BufferSubData(AttribLoc loc, GLuint vertexOffsetCount, const std::vector<T> &data);
 
     //this would be used to add color, or normals, or texcoords, or even positions.  NOTE: this also deletes ALL DATA in this buffer
 
@@ -704,7 +591,7 @@ public:
                 attribute simply is not added
             if 'loc' does not exist, nothing is deleted
     */
-    virtual void AddVertexAttrib(const VertexAttribInfo& info) noexcept;
+    virtual void AddVertexAttrib(const VertexAttribInfo &info) noexcept;
     virtual void RemoveVertexAttrib(AttribLoc loc) noexcept;
 
 

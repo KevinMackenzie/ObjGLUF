@@ -1,106 +1,96 @@
 #include "CheckBox.h"
 
+namespace GLUF {
+
 //--------------------------------------------------------------------------------------
-CheckBox::CheckBox(bool checked, Dialog& dialog) : Button(dialog)
-{
+CheckBox::CheckBox(bool checked, Dialog &dialog) : Button(dialog) {
     mType = CONTROL_CHECKBOX;
 
     mChecked = checked;
 }
 
 //--------------------------------------------------------------------------------------
-bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
     if (!mEnabled || !mVisible)
         return false;
 
     Point mousePos = mDialog.GetMousePositionDialogSpace();
 
-    switch (msg)
-    {
+    switch (msg) {
 
-    case CURSOR_POS:
+        case CURSOR_POS:
 
-        if (mPressed)
-        {
-            //if the button is pressed and the mouse is moved off, then unpress it
-            if (!ContainsPoint(mousePos))
-            {
-                mPressed = false;
-
-                //ContainsPoint(mousePos);
-
-                if (!mDialog.IsKeyboardInputEnabled())
-                    mDialog.ClearFocus();
-            }
-        }
-
-        break;
-    case MB:
-    {
-        if (param1 == GLFW_MOUSE_BUTTON_LEFT)
-        {
-            if (param2 == GLFW_PRESS)
-            {
-                if (ContainsPoint(mousePos))
-                {
-                    // Pressed while inside the control
-                    mPressed = true;
-                    //SetCapture(GetHWND());
-
-                    if (!mHasFocus)
-                        mDialog.RequestFocus(shared_from_this());
-
-                    return true;
-
-                }
-            }
-            else if (param2 == GLFW_RELEASE)
-            {
-                if (mPressed && ContainsPoint(mousePos))
-                {
+            if (mPressed) {
+                //if the button is pressed and the mouse is moved off, then unpress it
+                if (!ContainsPoint(mousePos)) {
                     mPressed = false;
-                    //ReleaseCapture();
+
+                    //ContainsPoint(mousePos);
 
                     if (!mDialog.IsKeyboardInputEnabled())
                         mDialog.ClearFocus();
+                }
+            }
 
-                    // Button click
-                    if (ContainsPoint(mousePos))
+            break;
+        case MB: {
+            if (param1 == GLFW_MOUSE_BUTTON_LEFT) {
+                if (param2 == GLFW_PRESS) {
+                    if (ContainsPoint(mousePos)) {
+                        // Pressed while inside the control
+                        mPressed = true;
+                        //SetCapture(GetHWND());
+
+                        if (!mHasFocus)
+                            mDialog.RequestFocus(shared_from_this());
+
+                        return true;
+
+                    }
+                } else if (param2 == GLFW_RELEASE) {
+                    if (mPressed && ContainsPoint(mousePos)) {
+                        mPressed = false;
+                        //ReleaseCapture();
+
+                        if (!mDialog.IsKeyboardInputEnabled())
+                            mDialog.ClearFocus();
+
+                        // Button click
+                        if (ContainsPoint(mousePos))
+                            SetCheckedInternal(!mChecked, true);
+
+                        return true;
+                    }
+
+                }
+            }
+            break;
+        }
+
+            /*case KEY:
+            {
+
+                if (param1 = GLFW_KEY_SPACE)
+                {
+                    if (param3 == GLFW_PRESS)
+                    {
+                        mPressed = true;
+                    }
+                    if (param3 == GLFW_RELEASE)
+                    {
+                        mPressed = false;
+
                         SetCheckedInternal(!mChecked, true);
+                    }
 
                     return true;
                 }
 
-            }
-        }
-        break;
-    }
 
-    /*case KEY:
-    {
+                return true;
 
-        if (param1 = GLFW_KEY_SPACE)
-        {
-            if (param3 == GLFW_PRESS)
-            {
-                mPressed = true;
-            }
-            if (param3 == GLFW_RELEASE)
-            {
-                mPressed = false;
-
-                SetCheckedInternal(!mChecked, true);
-            }
-
-            return true;
-        }
-
-
-        return true;
-
-        break;
-    }*/
+                break;
+            }*/
     };
 
     return false;
@@ -108,8 +98,7 @@ bool CheckBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
 
 //--------------------------------------------------------------------------------------
-void CheckBox::SetCheckedInternal(bool checked, bool fromInput)
-{
+void CheckBox::SetCheckedInternal(bool checked, bool fromInput) {
     mChecked = checked;
 
     mDialog.SendEvent(EVENT_CHECKBOXCHANGED, fromInput, shared_from_this());
@@ -117,17 +106,15 @@ void CheckBox::SetCheckedInternal(bool checked, bool fromInput)
 
 
 //--------------------------------------------------------------------------------------
-bool CheckBox::ContainsPoint(const Point& pt) const noexcept
-{
+bool CheckBox::ContainsPoint(const Point &pt) const noexcept {
     return (PtInRect(mRegion, pt) ||
-    PtInRect(mButtonRegion, pt) ||
-    PtInRect(mTextRegion, pt));
+            PtInRect(mButtonRegion, pt) ||
+            PtInRect(mTextRegion, pt));
 }
 
 
 //--------------------------------------------------------------------------------------
-void CheckBox::UpdateRects() noexcept
-{
+void CheckBox::UpdateRects() noexcept {
     Button::UpdateRects();
 
     mButtonRegion = mRegion;
@@ -142,8 +129,7 @@ void CheckBox::UpdateRects() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void CheckBox::Render(float elapsedTime) noexcept
-{
+void CheckBox::Render(float elapsedTime) noexcept {
     ControlState iState = STATE_NORMAL;
 
     if (mVisible == false)
@@ -157,7 +143,7 @@ void CheckBox::Render(float elapsedTime) noexcept
     else if (mHasFocus)
         iState = STATE_FOCUS;
 
-    Element* pElement = &mElements[0];
+    Element *pElement = &mElements[0];
 
     float fBlendRate = 5.0f;
 
@@ -167,8 +153,7 @@ void CheckBox::Render(float elapsedTime) noexcept
     mDialog.DrawSprite(*pElement, mButtonRegion, _FAR_BUTTON_DEPTH);
     mDialog.DrawText(mText, *pElement, mTextRegion, false, false);
 
-    if (mChecked)
-    {
+    if (mChecked) {
         pElement = &mElements[1];
 
         pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
@@ -178,10 +163,10 @@ void CheckBox::Render(float elapsedTime) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void CheckBox::OnHotkey() noexcept
-{
+void CheckBox::OnHotkey() noexcept {
     if (mDialog.IsKeyboardInputEnabled())
         mDialog.RequestFocus(shared_from_this());
     SetCheckedInternal(!mChecked, true);
 }
 
+}

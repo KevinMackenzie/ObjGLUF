@@ -1,8 +1,26 @@
 cmake_minimum_required(VERSION 2.6)
 project(objgluf)
 
-set(objgluf_SOURCES ObjGLUF.cpp)
-set(objgluf_HEADERS ObjGLUF.h ObjGLUFTemplates.inl Shader/Shader.h Shader/Shader.cpp Exports.h Texture/Texture.h VertexBuffer/VertexBuffer.h Ext/Assimp.h)
+set(objgluf_SOURCES
+        ObjGLUF.cpp
+        Ext/Assimp.cpp
+        Shader/Shader.cpp
+        Texture/Texture.cpp
+        VertexBuffer/VertexBuffer.cpp
+        )
+set(objgluf_HEADERS
+        ObjGLUF.h
+        Exports.h
+        ObjGLUFTemplates.inl
+        Ext/Assimp.h
+        Shader/Shader.h
+        Texture/Texture.h
+        VertexBuffer/VertexBuffer.h
+        VertexBuffer/GLVector.h
+        VertexBuffer/GLVector.inl
+        VertexBuffer/VertexBuffer.inl
+        Exports.h
+        Extensions.h)
 
 add_definitions(-DOBJGLUF_EXPORTS)
 

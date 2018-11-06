@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_CHECKBOX_H
 #define OBJGLUF_CHECKBOX_H
 
+namespace GLUF {
 /*
 CheckBox
 
@@ -13,14 +14,13 @@ CheckBox
         'mTextRegion': the region the text covers
 
 */
-class CheckBox : public Button
-{
+class CheckBox : public Button {
 
 protected:
 
     CheckBox() = delete;
-    CheckBox(bool checked, Dialog& dialog);
-    friend std::shared_ptr<CheckBox> CreateCheckBox(bool checked, Dialog& dialog);
+    CheckBox(bool checked, Dialog &dialog);
+    friend std::shared_ptr <CheckBox> CreateCheckBox(bool checked, Dialog &dialog);
 
     bool mChecked;
     Rect mButtonRegion;
@@ -35,8 +35,9 @@ public:
             no-throw guarantee
 
     */
-    bool GetChecked() const noexcept         { return mChecked;                      }
-    void SetChecked(bool checked) noexcept   { SetCheckedInternal(checked, false);   }
+    bool GetChecked() const noexcept { return mChecked; }
+
+    void SetChecked(bool checked) noexcept { SetCheckedInternal(checked, false); }
 
     /*
     Overridden Unambiguous Member Functions
@@ -45,7 +46,7 @@ public:
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void Render(float elapsedTime) noexcept override;
     virtual void OnHotkey() noexcept override;
-    virtual bool ContainsPoint(const Point& pt) const noexcept override;
+    virtual bool ContainsPoint(const Point &pt) const noexcept override;
     virtual void UpdateRects() noexcept override;
 
 protected:
@@ -66,5 +67,6 @@ protected:
     */
     virtual void SetCheckedInternal(bool checked, bool fromInput);
 };
+}
 
 #endif //OBJGLUF_CHECKBOX_H

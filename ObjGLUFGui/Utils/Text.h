@@ -1,7 +1,10 @@
 #ifndef OBJGLUF_TEXT_H
 #define OBJGLUF_TEXT_H
 
+#include "../Exports.h"
+#include "../Types.h"
 
+namespace GLUF {
 //WIP, support more font options eg. stroke, italics, variable leading, etc.
 
 /*
@@ -60,7 +63,7 @@ using FontSize = uint32_t;//in 'points'
 #define _PICAS_TO_POINTERS(picas) ((picas) * 6.0)
 
 
-OBJGLUF_API void SetDefaultFont(FontPtr& pDefFont);
+OBJGLUF_GUI_API void SetDefaultFont(FontPtr& pDefFont);
 
 
 class LoadFontException : public Exception
@@ -86,9 +89,9 @@ LoadFont
         'LoadFontException': if font loading failed
 
 */
-OBJGLUF_API void LoadFont(FontPtr& font, const std::vector<char>& rawData, FontSize fontHeight);
+OBJGLUF_GUI_API void LoadFont(FontPtr& font, const std::vector<char>& rawData, FontSize fontHeight);
 
-OBJGLUF_API FontSize GetFontHeight(const FontPtr& font);
+OBJGLUF_GUI_API FontSize GetFontHeight(const FontPtr& font);
 
 /*
 TextHelper
@@ -104,7 +107,7 @@ TextHelper
         'mFontSize': the font size in points
         'mLeading': the leading of the text
 */
-class OBJGLUF_API TextHelper
+class OBJGLUF_GUI_API TextHelper
 {
 protected:
 
@@ -221,5 +224,9 @@ protected:
     template<class... Types>
     static void RenderText(const std::wstring& format, std::wstring& outString, const Types&... args) noexcept;
 };
+
+}
+
+#include "Text.inl"
 
 #endif //OBJGLUF_TEXT_H

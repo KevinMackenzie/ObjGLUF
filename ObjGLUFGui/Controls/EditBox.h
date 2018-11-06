@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_EDITBOX_H
 #define OBJGLUF_EDITBOX_H
 
+namespace GLUF {
 
 /*
 EditBox
@@ -34,13 +35,12 @@ EditBox
         'mRenderCount': the number of characters to render
         'mTextDataBuffer': the text box's openGL data buffer
 */
-class EditBox : public Control
-{
+class EditBox : public Control {
 protected:
 
     EditBox() = delete;
-    EditBox(Dialog& dialog, bool isMultiline);
-    friend std::shared_ptr<EditBox> CreateEditBox(Dialog& dialog, bool isMultiline);
+    EditBox(Dialog &dialog, bool isMultiline);
+    friend std::shared_ptr <EditBox> CreateEditBox(Dialog &dialog, bool isMultiline);
 
     /*
 
@@ -89,8 +89,8 @@ protected:
     Render Data
 
     */
-    std::vector<Rect> mCharacterBBs;
-    std::vector<Rect> mCharacterRects;
+    std::vector <Rect> mCharacterBBs;
+    std::vector <Rect> mCharacterRects;
     GLuint mRenderOffset = 0;
     GLuint mRenderCount = 0;
     VertexArrayPtr mTextDataBuffer;
@@ -110,7 +110,7 @@ protected:
     Text Control Methods
 
     */
-    Value PointToCharPos(const Point& pt) noexcept;
+    Value PointToCharPos(const Point &pt) noexcept;
     Rect CharPosToRect(Value charPos) noexcept;
     Value RenderTextToText(Value rndIndex);
     Value TextToRenderText(Value txtIndex);
@@ -135,9 +135,9 @@ protected:
 
 
     */
-    using UpdateRectsPtr = void(EditBox::*)() noexcept;
-    using UpdateCharRectsPtr = void(EditBox::*)() noexcept;
-    using RenderPtr = void(EditBox::*)(float) noexcept;
+    using UpdateRectsPtr = void (EditBox::*)() noexcept;
+    using UpdateCharRectsPtr = void (EditBox::*)() noexcept;
+    using RenderPtr = void (EditBox::*)(float) noexcept;
     UpdateRectsPtr mUpdateRectsFunction;
     UpdateCharRectsPtr mUpdateCharRectsFunction;
     RenderPtr mRenderFunction;
@@ -161,31 +161,47 @@ public:
 
     */
 #pragma region Setters and Getters
-    std::wstring GetText() const noexcept{ return mTextHistoryKeeper.Top(); }
-    Charset GetCharset() const noexcept{ return mCharset; }
-    Rect GetTextRegion() const noexcept{ return mTextRegion; }
-    double GetBlinkPeriod() const noexcept{ return mBlinkPeriod; }
-    bool IsCaretHidden() const noexcept{ return mHideCaret; }
-    Value GetCaretPos() const noexcept{ return mCaretPos; }
-    bool GetInsertMode() const noexcept{ return mInsertMode; }
-    Value GetSelectionStart() const noexcept{ return mSelStart; }
-    Size GetHorizontalMargin() const noexcept{ return mHorizontalMargin; }
-    Size GetVerticalMargin() const noexcept{ return mVerticalMargin; }
-    BlendColor& GetSelectedTextBlendColor() noexcept{ return mSelTextColor; }
-    BlendColor& GetSelectedBackgroundBlendColor() noexcept{ return mSelBkColor; }
-    BlendColor& GetCaretBlendColor() noexcept{ return mCaretColor; }
-    BlendColor& GetTextBlendColor() noexcept{ return mElements[0].mFontColor; }
+
+    std::wstring GetText() const noexcept { return mTextHistoryKeeper.Top(); }
+
+    Charset GetCharset() const noexcept { return mCharset; }
+
+    Rect GetTextRegion() const noexcept { return mTextRegion; }
+
+    double GetBlinkPeriod() const noexcept { return mBlinkPeriod; }
+
+    bool IsCaretHidden() const noexcept { return mHideCaret; }
+
+    Value GetCaretPos() const noexcept { return mCaretPos; }
+
+    bool GetInsertMode() const noexcept { return mInsertMode; }
+
+    Value GetSelectionStart() const noexcept { return mSelStart; }
+
+    Size GetHorizontalMargin() const noexcept { return mHorizontalMargin; }
+
+    Size GetVerticalMargin() const noexcept { return mVerticalMargin; }
+
+    BlendColor &GetSelectedTextBlendColor() noexcept { return mSelTextColor; }
+
+    BlendColor &GetSelectedBackgroundBlendColor() noexcept { return mSelBkColor; }
+
+    BlendColor &GetCaretBlendColor() noexcept { return mCaretColor; }
+
+    BlendColor &GetTextBlendColor() noexcept { return mElements[0].mFontColor; }
 
     std::wstring GetSelectedText() noexcept;
 
-    BlendColor GetSelectedTextCBlendColor() const noexcept{ return mSelTextColor; }
-    BlendColor GetSelectedBackgroundCBlendColor() const noexcept{ return mSelBkColor; }
-    BlendColor GetCaretCBlendColor() const noexcept{ return mCaretColor; }
-    BlendColor GetTextCBlendColor() const noexcept{ return mElements.at(0).mFontColor; }
+    BlendColor GetSelectedTextCBlendColor() const noexcept { return mSelTextColor; }
+
+    BlendColor GetSelectedBackgroundCBlendColor() const noexcept { return mSelBkColor; }
+
+    BlendColor GetCaretCBlendColor() const noexcept { return mCaretColor; }
+
+    BlendColor GetTextCBlendColor() const noexcept { return mElements.at(0).mFontColor; }
 
 
-
-    void SetText(const std::wstring& text); //may throw 'StringContainsInvalidCharacters'
+    void SetText(const std::wstring &text); //may throw 'StringContainsInvalidCharacters'
     void SetCharset(Charset chSet) noexcept;//this will automatically remove all characters not in this charset from the string
     void SetBlinkPeriod(double period) noexcept;
     void SetCaretState(bool state) noexcept;
@@ -195,10 +211,10 @@ public:
     void SetSelectionEmpty() noexcept;
     void SetVerticalMargin(Size marg) noexcept;
     void SetHorizontalMargin(Size marg) noexcept;
-    void SetSelectedTextBlendColor(const BlendColor& col) noexcept;
-    void SetSelectedBackgroundBlendColor(const BlendColor& col) noexcept;
-    void SetCaretBlendColor(const BlendColor& col) noexcept;
-    void SetTextBlendColor(const BlendColor& col) noexcept;
+    void SetSelectedTextBlendColor(const BlendColor &col) noexcept;
+    void SetSelectedBackgroundBlendColor(const BlendColor &col) noexcept;
+    void SetCaretBlendColor(const BlendColor &col) noexcept;
+    void SetTextBlendColor(const BlendColor &col) noexcept;
 
 #pragma endregion
 
@@ -208,7 +224,7 @@ public:
     Text Modification Methods
 
     */
-    void InsertString(const std::wstring& str, Value pos) noexcept;
+    void InsertString(const std::wstring &str, Value pos) noexcept;
     void InsertChar(wchar_t ch, Value pos) noexcept;
     void DeleteChar(Value pos) noexcept;
 
@@ -220,7 +236,9 @@ public:
 
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
     virtual void UpdateRects() noexcept override;
+
     virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
+
     virtual void Render(float elapsedTime) noexcept override;
     virtual void OnFocusIn() noexcept override;
     virtual void OnFocusOut() noexcept override;
@@ -229,4 +247,5 @@ public:
     virtual void OnInit() override;
 
 };
+}
 #endif //OBJGLUF_EDITBOX_H

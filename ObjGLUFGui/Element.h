@@ -1,7 +1,7 @@
 #ifndef OBJGLUF_ELEMENT_H
 #define OBJGLUF_ELEMENT_H
 
-
+namespace GLUF {
 
 
 /*
@@ -18,8 +18,7 @@ Element
         'mTextureColor': the blend color for the texture for the element
         'mFontColor': the blend color for the font for this element
 */
-class Element
-{
+class Element {
 public:
 
     TextureIndex mTextureIndex;
@@ -40,7 +39,8 @@ public:
             'defaultTextureBlendColor': the default texture blend color
 
     */
-    void    SetTexture(TextureIndex textureIndex, const Rectf& uvRect, const Color& defaultTextureColor = { 255, 255, 255, 255 });
+    void SetTexture(TextureIndex textureIndex, const Rectf &uvRect, const Color &defaultTextureColor = {255, 255, 255,
+                                                                                                        255});
 
     /*
     SetFont
@@ -51,7 +51,8 @@ public:
             'textFormat': a bitfield of the horizontal and vertical text formatting
 
     */
-    void    SetFont(FontIndex font, const Color& defaultFontColor = { 255, 255, 255, 255 }, Bitfield textFormat = GT_CENTER | GT_VCENTER);
+    void SetFont(FontIndex font, const Color &defaultFontColor = {255, 255, 255, 255}, Bitfield textFormat = GT_CENTER |
+                                                                                                             GT_VCENTER);
 
     /*
     Refresh
@@ -59,7 +60,7 @@ public:
         Note:
             This function sets the current blend states to the 'hidden' state
     */
-    void    Refresh();
+    void Refresh();
 };
 
 
@@ -75,10 +76,10 @@ ElementHolder
         'mElement': the element itself
 
 */
-struct ElementHolder
-{
+struct ElementHolder {
     ControlType mControlType;
     ElementIndex mElementIndex;
     Element mElement;
 };
+}
 #endif //OBJGLUF_ELEMENT_H

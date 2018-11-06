@@ -1,6 +1,8 @@
 #ifndef OBJGLUF_RADIOBUTTON_H
 #define OBJGLUF_RADIOBUTTON_H
 
+namespace GLUF {
+
 /*
 RadioButton
 
@@ -10,13 +12,12 @@ RadioButton
     Data Members
         'mButtonGroup': the id of the button group this belongs to in a dialog
 */
-class RadioButton : public CheckBox
-{
+class RadioButton : public CheckBox {
 public:
 
     RadioButton() = delete;
-    RadioButton(Dialog& dialog);
-    friend std::shared_ptr<RadioButton> CreateRadioButton(Dialog& dialog);
+    RadioButton(Dialog &dialog);
+    friend std::shared_ptr <RadioButton> CreateRadioButton(Dialog &dialog);
 
     RadioButtonGroup mButtonGroup;
 
@@ -29,9 +30,11 @@ public:
         Throws:
             no-throw guarantee
     */
-    void            SetChecked(bool checked, bool clearGroup = true) noexcept   { SetCheckedInternal(checked, clearGroup, false);   }
-    void            SetButtonGroup(RadioButtonGroup buttonGroup) noexcept   { mButtonGroup = buttonGroup;                       }
-    unsigned int    GetButtonGroup() const noexcept                             { return mButtonGroup;                              }
+    void SetChecked(bool checked, bool clearGroup = true) noexcept { SetCheckedInternal(checked, clearGroup, false); }
+
+    void SetButtonGroup(RadioButtonGroup buttonGroup) noexcept { mButtonGroup = buttonGroup; }
+
+    unsigned int GetButtonGroup() const noexcept { return mButtonGroup; }
 
 
     /*
@@ -66,4 +69,5 @@ protected:
     */
     virtual void SetCheckedInternal(bool checked, bool clearGroup, bool fromInput);
 };
+}
 #endif //OBJGLUF_RADIOBUTTON_H

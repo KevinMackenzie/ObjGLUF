@@ -1,8 +1,9 @@
 #include "Dialog.h"
 
+namespace GLUF {
+
 //--------------------------------------------------------------------------------------
-Dialog::Dialog()
-{
+Dialog::Dialog() {
 #ifdef _DEBUG
     //TODO: get a more graceful way to test this
     //This is to make sure all dialogs are being destroyed
@@ -15,8 +16,7 @@ ControlPtr Dialog::sControlFocus = nullptr;
 ControlPtr Dialog::sControlPressed = nullptr;
 
 //--------------------------------------------------------------------------------------
-Dialog::~Dialog()
-{
+Dialog::~Dialog() {
 #ifdef _DEBUG
     //TODO: get a more graceful way to test this
     //This is to make sure all dialogs are being destroyed
@@ -28,10 +28,8 @@ Dialog::~Dialog()
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog)
-{
-    if (g_ControlTextureResourceManLocation == -1)
-    {
+void Dialog::Init(DialogResourceManagerPtr &manager, bool registerDialog) {
+    if (g_ControlTextureResourceManLocation == -1) {
         g_ControlTextureResourceManLocation = manager->AddTexture(g_pControlTexturePtr);
     }
 
@@ -40,8 +38,7 @@ void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog, TextureIndex textureIndex)
-{
+void Dialog::Init(DialogResourceManagerPtr &manager, bool registerDialog, TextureIndex textureIndex) {
     if (manager == nullptr)
         throw std::invalid_argument("Nullptr DRM");
 
@@ -68,8 +65,7 @@ void Dialog::Init(DialogResourceManagerPtr& manager, bool registerDialog, Textur
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext) noexcept
-{
+void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivablePtr userContext) noexcept {
     // If this assert triggers, you need to call Dialog::Init() first.  This change
     // was made so that the 's GUI could become separate and optional from 's core.  The
     // creation and interfacing with DialogResourceManager is now the responsibility
@@ -82,12 +78,10 @@ void Dialog::SetCallback(EventCallbackFuncPtr callback, EventCallbackReceivableP
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::RemoveControl(ControlIndex ID)
-{
+void Dialog::RemoveControl(ControlIndex ID) {
     auto it = mControls.find(ID);
 
-    if (it != mControls.end())
-    {
+    if (it != mControls.end()) {
         // Clean focus first
         ClearFocus();
 
@@ -106,8 +100,7 @@ void Dialog::RemoveControl(ControlIndex ID)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::RemoveAllControls() noexcept
-{
+void Dialog::RemoveAllControls() noexcept {
     if (sControlFocus && &sControlFocus->mDialog == this)
         sControlFocus = nullptr;
     if (sControlPressed && &sControlPressed->mDialog == this)
@@ -119,8 +112,7 @@ void Dialog::RemoveAllControls() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::Refresh() noexcept
-{
+void Dialog::Refresh() noexcept {
     if (sControlFocus)
         sControlFocus->OnFocusOut();
 
@@ -131,8 +123,7 @@ void Dialog::Refresh() noexcept
     sControlPressed = nullptr;
     mControlMouseOver = nullptr;
 
-    for (auto it : mControls)
-    {
+    for (auto it : mControls) {
         it.second->Refresh();
     }
 
@@ -142,8 +133,7 @@ void Dialog::Refresh() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::OnRender(float elapsedTime) noexcept
-{
+void Dialog::OnRender(float elapsedTime) noexcept {
     // If this assert triggers, you need to call DialogResourceManager::On*Device() from inside
     // the application's device callbacks.  See the SDK samples for an example of how to do this.
     //assert(m_pManager->GetD3D11Device() &&
@@ -151,8 +141,7 @@ void Dialog::OnRender(float elapsedTime) noexcept
     //no need for "devices", this is all handled by GLFW
 
     // See if the dialog needs to be refreshed
-    if (mTimePrevRefresh < sTimeRefresh)
-    {
+    if (mTimePrevRefresh < sTimeRefresh) {
         mTimePrevRefresh = GetTime();
         Refresh();
     }
@@ -172,10 +161,9 @@ void Dialog::OnRender(float elapsedTime) noexcept
 
     mDialogManager->BeginSprites();
 
-    if (!mMinimized)
-    {
+    if (!mMinimized) {
         // Convert the draw rectangle from screen coordinates to clip space coordinates.(where the origin is in the middle of the screen, and the edges are 1, or negative 1
-        Rect windowCoords = { 0, GetHeight(), GetWidth(), 0 };
+        Rect windowCoords = {0, GetHeight(), GetWidth(), 0};
         //windowCoords = ScreenToClipspace(windowCoords);
 
         DrawSprite(mDlgElement, windowCoords, -0.99f, false);
@@ -188,10 +176,8 @@ void Dialog::OnRender(float elapsedTime) noexcept
     //m_pManager->ApplyRenderUI();
     // If the dialog is minimized, skip rendering
     // its controls.
-    if (!mMinimized)
-    {
-        for (auto it : mControls)
-        {
+    if (!mMinimized) {
+        for (auto it : mControls) {
             // Focused control is drawn last
             if (it.second == sControlFocus)
                 continue;
@@ -204,29 +190,26 @@ void Dialog::OnRender(float elapsedTime) noexcept
     }
 
     // Render the caption if it's enabled.
-    if (mCaptionEnabled)
-    {
+    if (mCaptionEnabled) {
         // DrawSprite will offset the rect down by
         // m_nCaptionHeight, so adjust the rect higher
         // here to negate the effect.
 
         mCapElement.mTextureColor.SetCurrent(STATE_NORMAL);
         mCapElement.mFontColor.SetCurrent(STATE_NORMAL);
-        Rect rc = { 0, 0, GetWidth(), -mCaptionHeight };
+        Rect rc = {0, 0, GetWidth(), -mCaptionHeight};
 
         mDialogManager->ApplyRenderUIUntex();
         DrawSprite(mCapElement, rc, -0.99f, false);
 
         rc.left += 5; // Make a left margin
 
-        if (mMinimized)
-        {
+        if (mMinimized) {
             std::wstringstream wss;
             wss << mCaptionText;
             wss << L" (Minimized)";
             DrawText(wss.str(), mCapElement, rc);
-        }
-        else
+        } else
             DrawText(mCaptionText, mCapElement, rc);
     }
 
@@ -244,8 +227,7 @@ void Dialog::OnRender(float elapsedTime) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept
-{
+void Dialog::SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control) noexcept {
     // If no callback has been registered there's nowhere to send the event to
     if (!mCallbackEvent)
         return;
@@ -260,8 +242,7 @@ void Dialog::SendEvent(Event ctrlEvent, bool triggeredByUser, ControlPtr control
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::SetFont(FontIndex index, FontIndex resManFontIndex)
-{
+void Dialog::SetFont(FontIndex index, FontIndex resManFontIndex) {
     // If this assert triggers, you need to call Dialog::Init() first.  This change
     // was made so that the 's GUI could become separate and optional from 's core.  The
     // creation and interfacing with DialogResourceManager is now the responsibility
@@ -278,8 +259,7 @@ void Dialog::SetFont(FontIndex index, FontIndex resManFontIndex)
 
 
 //--------------------------------------------------------------------------------------
-FontNodePtr Dialog::GetFont(FontIndex index) const
-{
+FontNodePtr Dialog::GetFont(FontIndex index) const {
     if (!mDialogManager)
         return nullptr;
     return mDialogManager->GetFontNode(index);
@@ -287,8 +267,7 @@ FontNodePtr Dialog::GetFont(FontIndex index) const
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::SetTexture(TextureIndex index, TextureIndex resManTexIndex)
-{
+void Dialog::SetTexture(TextureIndex index, TextureIndex resManTexIndex) {
     // If this assert triggers, you need to call Dialog::Init() first.  This change
     // was made so that the 's GUI could become separate and optional from 's core.  The
     // creation and interfacing with DialogResourceManager is now the responsibility
@@ -303,16 +282,14 @@ void Dialog::SetTexture(TextureIndex index, TextureIndex resManTexIndex)
 }
 
 //--------------------------------------------------------------------------------------
-TextureNodePtr Dialog::GetTexture(TextureIndex index) const
-{
+TextureNodePtr Dialog::GetTexture(TextureIndex index) const {
     if (!mDialogManager)
         return nullptr;
     return mDialogManager->GetTextureNode(index);
 }
 
 //--------------------------------------------------------------------------------------
-bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
     if (mFirstTime)
         mFirstTime = false;
     else
@@ -320,8 +297,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
     mDialogManager->MsgProc(_PASS_CALLBACK_PARAM);
 
-    if (msg == UNICODE_CHAR)
-    {
+    if (msg == UNICODE_CHAR) {
         int i = 0;
     }
 
@@ -341,10 +317,8 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
 
     //if it is a resize method, refresh ALL components
-    if (msg == RESIZE || msg == FRAMEBUFFER_SIZE)
-    {
-        for (auto it = mControls.begin(); it != mControls.end(); ++it)
-        {
+    if (msg == RESIZE || msg == FRAMEBUFFER_SIZE) {
+        for (auto it = mControls.begin(); it != mControls.end(); ++it) {
             it->second->MsgProc(msg, param1, param2, param3, param4);
         }
     }
@@ -357,65 +331,50 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
         return false;
 
     // If caption is enable, check for clicks in the caption area.
-    if (mCaptionEnabled && !mLocked)
-    {
+    if (mCaptionEnabled && !mLocked) {
         static Point totalDelta;
 
         if (((msg == MB) == true) &&
             ((param1 == GLFW_MOUSE_BUTTON_LEFT) == true) &&
-            ((param2 == GLFW_PRESS) == true) )
-        {
+            ((param2 == GLFW_PRESS) == true)) {
 
             if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < RectWidth(mRegion) &&
-                mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
-            {
+                mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0) {
                 mDrag = true;
                 mDragged = false;
                 //SetCapture(GetHWND());
                 return true;
-            }
-            else if (!mMinimized && mGrabAnywhere && !GetControlAtPoint(mMousePositionDialogSpace))
-            {
+            } else if (!mMinimized && mGrabAnywhere && !GetControlAtPoint(mMousePositionDialogSpace)) {
                 //ONLY allow this if it is not on top of a control
                 mDrag = true;
                 return true;
             }
-        }
-        else if ((msg == MB) == true &&
-                 (param1 == GLFW_MOUSE_BUTTON_LEFT) == true &&
-                 (param2 == GLFW_RELEASE) == true &&
-                 (mDrag))
-        {
+        } else if ((msg == MB) == true &&
+                   (param1 == GLFW_MOUSE_BUTTON_LEFT) == true &&
+                   (param2 == GLFW_RELEASE) == true &&
+                   (mDrag)) {
             if (mMousePositionDialogSpace.x >= 0 && mMousePositionDialogSpace.x < RectWidth(mRegion) &&
-                mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0)
-            {
+                mMousePositionDialogSpace.y >= -mCaptionHeight && mMousePositionDialogSpace.y < 0) {
                 //ReleaseCapture();
 
                 mDrag = false;
 
                 //only minimize if the dialog WAS NOT moved
-                if (!mDragged)
-                {
+                if (!mDragged) {
                     //reset this when it passes its threshhold, which is when m_bDragged is toggled
-                    totalDelta = { 0L, 0L };
+                    totalDelta = {0L, 0L};
                     mMinimized = !mMinimized;
                 }
 
                 return true;
-            }
-            else if (!mMinimized && mGrabAnywhere)
-            {
+            } else if (!mMinimized && mGrabAnywhere) {
                 mDrag = false;
                 return true;
             }
-        }
-        else if ((msg == CURSOR_POS))
-        {
+        } else if ((msg == CURSOR_POS)) {
             //is it over the caption?
-            if (glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-            {
-                if (mDrag)
-                {
+            if (glfwGetMouseButton(g_pGLFWWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+                if (mDrag) {
                     //if (m_MousePosition.x < 0.0f || m_MousePosition.y < 0.0f)
                     //{
                     //    glfwSetCursorPos(g_pGLFWWindow, (m_MousePosition.x < 0.0f) ? 0 : param1, (m_MousePosition.y < 0.0f) ? param2 : 0);
@@ -423,11 +382,13 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
 
                     Point delta = mMousePosition - mMousePositionOld;
-                    totalDelta = { totalDelta.x + delta.x, totalDelta.y + delta.y };
+                    totalDelta = {totalDelta.x + delta.x, totalDelta.y + delta.y};
 
                     RepositionRect(mRegion,
-                                   std::clamp(delta.x + mRegion.x, 0L, static_cast<long>(g_WndWidth) - RectWidth(mRegion)),
-                                   std::clamp(delta.y + mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight));
+                                   std::clamp(delta.x + mRegion.x, 0L,
+                                              static_cast<long>(g_WndWidth) - RectWidth(mRegion)),
+                                   std::clamp(delta.y + mRegion.y, 0L,
+                                              static_cast<long>(g_WndHeight) - mCaptionHeight));
 
 
                     //give a threshhold, because sometimes when a use clicks, the user will move the mouse a bit
@@ -441,8 +402,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
     }
 
     //this is important, if the window is resized, then make sure to reclamp the dialog position
-    if (mAutoClamp && msg == RESIZE)
-    {
+    if (mAutoClamp && msg == RESIZE) {
         ClampToScreen();
     }
 
@@ -454,18 +414,15 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
     // it the first chance at handling the message.
     if (sControlFocus &&
         &sControlFocus->mDialog == this &&
-        sControlFocus->GetEnabled())
-    {
+        sControlFocus->GetEnabled()) {
         // If the control MsgProc handles it, then we don't.
         if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
             return true;
     }
 
-    switch (msg)
-    {
+    switch (msg) {
         case RESIZE:
-        case POS:
-        {
+        case POS: {
             // Handle sizing and moving messages so that in case the mouse cursor is moved out
             // of an UI control because of the window adjustment, we can properly
             // unhighlight the highlighted control.
@@ -483,8 +440,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             // behavior.
             if (sControlFocus &&
                 &sControlFocus->mDialog == this &&
-                sControlFocus->GetEnabled())
-            {
+                sControlFocus->GetEnabled()) {
                 if (param1 == GL_TRUE)
                     sControlFocus->OnFocusIn();
                 else
@@ -514,12 +470,9 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             // edit box.
             if (param3 == GLFW_PRESS && (!sControlFocus ||
                                          (sControlFocus->GetType() != CONTROL_EDITBOX
-                                          && sControlFocus->GetType() != CONTROL_IMEEDITBOX)))
-            {
-                for (auto it : mControls)
-                {
-                    if (it.second->GetHotkey() == param1)
-                    {
+                                          && sControlFocus->GetType() != CONTROL_IMEEDITBOX))) {
+                for (auto it : mControls) {
+                    if (it.second->GetHotkey() == param1) {
                         it.second->OnHotkey();
                         return true;
                     }
@@ -527,34 +480,29 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             }
 
             // Not yet handled, check for focus messages
-            if (param3 == GLFW_PRESS)
-            {
+            if (param3 == GLFW_PRESS) {
                 // If keyboard input is not enabled, this message should be ignored
                 if (!mKeyboardInput)
                     return false;
 
-                switch (param1)
-                {
+                switch (param1) {
                     case GLFW_KEY_RIGHT:
                     case GLFW_KEY_DOWN:
-                        if (sControlFocus)
-                        {
+                        if (sControlFocus) {
                             return OnCycleFocus(true);
                         }
                         break;
 
                     case GLFW_KEY_LEFT:
                     case GLFW_KEY_UP:
-                        if (sControlFocus)
-                        {
+                        if (sControlFocus) {
                             return OnCycleFocus(false);
                         }
                         break;
 
-                    case GLFW_KEY_TAB:
-                    {
-                        bool bShiftDown =(glfwGetKey(g_pGLFWWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ||
-                                         (glfwGetKey(g_pGLFWWindow, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
+                    case GLFW_KEY_TAB: {
+                        bool bShiftDown = (glfwGetKey(g_pGLFWWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ||
+                                          (glfwGetKey(g_pGLFWWindow, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS);
                         return OnCycleFocus(!bShiftDown);
                     }
                 }
@@ -581,8 +529,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             //case WM_MOUSEWHEEL:
         case MB:
         case SCROLL:
-        case CURSOR_POS:
-        {
+        case CURSOR_POS: {
             // If not accepting mouse input, return false to indicate the message should still
             // be handled by the application (usually to move the camera).
             if (!mMouseInput)
@@ -597,29 +544,24 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             // it the first chance at handling the message.
             if (sControlFocus &&
                 &sControlFocus->mDialog == this &&
-                sControlFocus->GetEnabled())
-            {
+                sControlFocus->GetEnabled()) {
                 if (sControlFocus->MsgProc(msg, param1, param2, param3, param4))
                     return true;
             }
 
             // Not yet handled, see if the mouse is over any controls
             ControlPtr pControl = GetControlAtPoint(mMousePositionDialogSpace);
-            if (pControl && pControl->GetEnabled())
-            {
+            if (pControl && pControl->GetEnabled()) {
                 bHandled = pControl->MsgProc(msg, param1, param2, param3, param4);
                 if (bHandled)
                     return true;
-            }
-            else
-            {
+            } else {
                 // Mouse not over any controls in this dialog, if there was a control
                 // which had focus it just lost it
                 if (param1 == GLFW_MOUSE_BUTTON_LEFT &&
                     param2 == GLFW_PRESS &&
                     sControlFocus &&
-                    &sControlFocus->mDialog == this)
-                {
+                    &sControlFocus->mDialog == this) {
                     sControlFocus->OnFocusOut();
                     sControlFocus = nullptr;
                 }
@@ -627,8 +569,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
             // Still not handled, hand this off to the dialog. Return false to indicate the
             // message should still be handled by the application (usually to move the camera).
-            switch (msg)
-            {
+            switch (msg) {
                 case CURSOR_POS:
                     OnMouseMove(mMousePositionDialogSpace);
                     return false;
@@ -637,8 +578,7 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             break;
         }
 
-        case CURSOR_ENTER:
-        {
+        case CURSOR_ENTER: {
             // The application has lost mouse capture.
             // The dialog object may not have received
             // a WM_MOUSEUP when capture changed. Reset
@@ -654,29 +594,24 @@ bool Dialog::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::ClampToScreen() noexcept
-{
+void Dialog::ClampToScreen() noexcept {
     mRegion.x = std::clamp(mRegion.x, 0L, static_cast<long>(g_WndWidth) - RectWidth(mRegion));
     mRegion.y = std::clamp(mRegion.y, 0L, static_cast<long>(g_WndHeight) - mCaptionHeight);
 }
 
 //--------------------------------------------------------------------------------------
-ControlPtr Dialog::GetControlAtPoint(const Point& pt) const noexcept
-{
+ControlPtr Dialog::GetControlAtPoint(const Point &pt) const noexcept {
     // Search through all child controls for the first one which
     // contains the mouse point
-    for (auto it : mControls)
-    {
-        if (!it.second)
-        {
+    for (auto it : mControls) {
+        if (!it.second) {
             continue;
         }
 
         // We only return the current control if it is visible
         // and enabled.  Because GetControlAtPoint() is used to do mouse
         // hittest, it makes sense to perform this filtering.
-        if (it.second->ContainsPoint(pt) && it.second->GetEnabled() && it.second->GetVisible())
-        {
+        if (it.second->ContainsPoint(pt) && it.second->GetEnabled() && it.second->GetVisible()) {
             return it.second;
         }
     }
@@ -686,8 +621,7 @@ ControlPtr Dialog::GetControlAtPoint(const Point& pt) const noexcept
 
 
 //--------------------------------------------------------------------------------------
-bool Dialog::GetControlEnabled(ControlIndex ID) const
-{
+bool Dialog::GetControlEnabled(ControlIndex ID) const {
     ControlPtr pControl = GetControl<Control>(ID);
     if (!pControl)
         return false;
@@ -696,10 +630,8 @@ bool Dialog::GetControlEnabled(ControlIndex ID) const
 }
 
 
-
 //--------------------------------------------------------------------------------------
-void Dialog::SetControlEnabled(ControlIndex ID, bool bEnabled)
-{
+void Dialog::SetControlEnabled(ControlIndex ID, bool bEnabled) {
     ControlPtr pControl = GetControl<Control>(ID);
     if (!pControl)
         return;
@@ -709,8 +641,7 @@ void Dialog::SetControlEnabled(ControlIndex ID, bool bEnabled)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::OnMouseUp(const Point& pt) noexcept
-{
+void Dialog::OnMouseUp(const Point &pt) noexcept {
     //TODO: do something here?
     GLUF_UNREFERENCED_PARAMETER(pt);
     sControlPressed = nullptr;
@@ -719,8 +650,7 @@ void Dialog::OnMouseUp(const Point& pt) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::OnMouseMove(const Point& pt) noexcept
-{
+void Dialog::OnMouseMove(const Point &pt) noexcept {
     // Figure out which control the mouse is over now
     ControlPtr pControl = GetControlAtPoint(pt);
 
@@ -729,29 +659,24 @@ void Dialog::OnMouseMove(const Point& pt) noexcept
         return;
 
     // Handle mouse leaving the old control
-    if (mControlMouseOver)
-    {
+    if (mControlMouseOver) {
         mControlMouseOver->OnMouseLeave();
         mControlMouseOver = nullptr;
     }
 
     // Handle mouse entering the new control
     mControlMouseOver = pControl;
-    if (pControl)
-    {
+    if (pControl) {
         mControlMouseOver->OnMouseEnter();
     }
 }
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element& element)
-{
+void Dialog::SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element &element) {
     // If this Element type already exist in the list, simply update the stored Element
-    for (auto it : mDefaultElements)
-    {
-        if (it->mControlType == controlType && it->mElementIndex == elementIndex)
-        {
+    for (auto it : mDefaultElements) {
+        if (it->mControlType == controlType && it->mElementIndex == elementIndex) {
             it->mElement = element;
             return;
         }
@@ -769,24 +694,21 @@ void Dialog::SetDefaultElement(ControlType controlType, ElementIndex elementInde
 
 
 //--------------------------------------------------------------------------------------
-Element Dialog::GetDefaultElement(ControlType controlType, ElementIndex elementIndex) const
-{
-    for (auto it : mDefaultElements)
-    {
-        if (it->mControlType == controlType && it->mElementIndex == elementIndex)
-        {
+Element Dialog::GetDefaultElement(ControlType controlType, ElementIndex elementIndex) const {
+    for (auto it : mDefaultElements) {
+        if (it->mControlType == controlType && it->mElementIndex == elementIndex) {
             return it->mElement;
         }
     }
 
-    GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("GetDefaultElement: elementIndex could not be found within controlType"));
+    GLUF_NON_CRITICAL_EXCEPTION(
+            std::invalid_argument("GetDefaultElement: elementIndex could not be found within controlType"));
 
     return Element();
 }
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddStatic(ControlIndex ID, const std::wstring& strText, const Rect& region, Bitfield textFlags, bool isDefault, std::shared_ptr<StaticPtr> ctrlPtr)
-{
+void Dialog::AddStatic(ControlIndex ID, const std::wstring &strText, const Rect &region, Bitfield textFlags, bool isDefault, std::shared_ptr <StaticPtr> ctrlPtr) {
     auto pStatic = CreateStatic(textFlags, *this);
 
     if (ctrlPtr)
@@ -803,8 +725,7 @@ void Dialog::AddStatic(ControlIndex ID, const std::wstring& strText, const Rect&
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddButton(ControlIndex ID, const std::wstring& strText, const Rect& region, int hotkey, bool isDefault, std::shared_ptr<ButtonPtr> ctrlPtr)
-{
+void Dialog::AddButton(ControlIndex ID, const std::wstring &strText, const Rect &region, int hotkey, bool isDefault, std::shared_ptr <ButtonPtr> ctrlPtr) {
     auto pButton = CreateButton(*this);
 
     if (ctrlPtr)
@@ -822,8 +743,7 @@ void Dialog::AddButton(ControlIndex ID, const std::wstring& strText, const Rect&
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddCheckBox(ControlIndex ID, const std::wstring& strText, const Rect& region, bool checked , int hotkey, bool isDefault, std::shared_ptr<CheckBoxPtr> ctrlPtr)
-{
+void Dialog::AddCheckBox(ControlIndex ID, const std::wstring &strText, const Rect &region, bool checked, int hotkey, bool isDefault, std::shared_ptr <CheckBoxPtr> ctrlPtr) {
     auto pCheckBox = CreateCheckBox(checked, *this);
 
     if (ctrlPtr)
@@ -842,8 +762,7 @@ void Dialog::AddCheckBox(ControlIndex ID, const std::wstring& strText, const Rec
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const std::wstring& strText, const Rect& region, bool checked, int hotkey, bool isDefault, std::shared_ptr<RadioButtonPtr> ctrlPtr)
-{
+void Dialog::AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const std::wstring &strText, const Rect &region, bool checked, int hotkey, bool isDefault, std::shared_ptr <RadioButtonPtr> ctrlPtr) {
     auto pRadioButton = CreateRadioButton(*this);
 
     if (ctrlPtr)
@@ -864,8 +783,7 @@ void Dialog::AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddComboBox(ControlIndex ID, const Rect& region, int hotKey, bool isDefault, std::shared_ptr<ComboBoxPtr> ctrlPtr)
-{
+void Dialog::AddComboBox(ControlIndex ID, const Rect &region, int hotKey, bool isDefault, std::shared_ptr <ComboBoxPtr> ctrlPtr) {
     auto pComboBox = CreateComboBox(*this);
 
     if (ctrlPtr)
@@ -882,8 +800,7 @@ void Dialog::AddComboBox(ControlIndex ID, const Rect& region, int hotKey, bool i
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddSlider(ControlIndex ID, const Rect& region, long min, long max, long value, bool isDefault, std::shared_ptr<SliderPtr> ctrlPtr)
-{
+void Dialog::AddSlider(ControlIndex ID, const Rect &region, long min, long max, long value, bool isDefault, std::shared_ptr <SliderPtr> ctrlPtr) {
     auto pSlider = CreateSlider(*this);
 
     if (ctrlPtr)
@@ -902,8 +819,7 @@ void Dialog::AddSlider(ControlIndex ID, const Rect& region, long min, long max, 
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset, GLbitfield textFlags, bool isDefault, std::shared_ptr<EditBoxPtr> ctrlPtr)
-{
+void Dialog::AddEditBox(ControlIndex ID, const std::wstring &strText, const Rect &region, Charset charset, GLbitfield textFlags, bool isDefault, std::shared_ptr <EditBoxPtr> ctrlPtr) {
     auto pEditBox = CreateEditBox(*this, (textFlags & GT_MULTI_LINE) == GT_MULTI_LINE);
 
     if (ctrlPtr)
@@ -923,8 +839,7 @@ void Dialog::AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddListBox(ControlIndex ID, const Rect& region, Bitfield style, std::shared_ptr<ListBoxPtr> ctrlPtr)
-{
+void Dialog::AddListBox(ControlIndex ID, const Rect &region, Bitfield style, std::shared_ptr <ListBoxPtr> ctrlPtr) {
     auto pListBox = CreateListBox(*this);
 
     if (ctrlPtr)
@@ -940,8 +855,7 @@ void Dialog::AddListBox(ControlIndex ID, const Rect& region, Bitfield style, std
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::AddControl(ControlPtr pControl)
-{
+void Dialog::AddControl(ControlPtr pControl) {
     InitControl(pControl);
 
     if (!pControl)
@@ -953,8 +867,7 @@ void Dialog::AddControl(ControlPtr pControl)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::InitControl(ControlPtr pControl)
-{
+void Dialog::InitControl(ControlPtr pControl) {
     //Result hr;
 
     if (!pControl)
@@ -963,8 +876,7 @@ void Dialog::InitControl(ControlPtr pControl)
     pControl->mIndex = static_cast<unsigned int>(mControls.size());
 
     // Look for a default Element entry
-    for (auto it : mDefaultElements)
-    {
+    for (auto it : mDefaultElements) {
         if (it->mControlType == pControl->GetType())
             pControl->SetElement(it->mElementIndex, it->mElement);
     }
@@ -974,13 +886,10 @@ void Dialog::InitControl(ControlPtr pControl)
 
 
 //--------------------------------------------------------------------------------------
-ControlPtr Dialog::GetControl(ControlIndex ID, ControlType controlType) const
-{
+ControlPtr Dialog::GetControl(ControlIndex ID, ControlType controlType) const {
     // Try to find the control with the given ID
-    for (auto it : mControls)
-    {
-        if (it.second->GetID() == ID && it.second->GetType() == controlType)
-        {
+    for (auto it : mControls) {
+        if (it.second->GetID() == ID && it.second->GetType() == controlType) {
             return it.second;
         }
     }
@@ -993,9 +902,8 @@ ControlPtr Dialog::GetControl(ControlIndex ID, ControlType controlType) const
 
 
 //--------------------------------------------------------------------------------------
-ControlPtr Dialog::GetNextControl(ControlPtr control)
-{
-    Dialog& dialog = control->mDialog;
+ControlPtr Dialog::GetNextControl(ControlPtr control) {
+    Dialog &dialog = control->mDialog;
 
 
     auto indexIt = dialog.mControls.find(control->mID);
@@ -1017,14 +925,12 @@ ControlPtr Dialog::GetNextControl(ControlPtr control)
     auto nextDialogIndexIt = nextDlg->mControls.begin();
 
     //keep going through dialogs until one with a control is found, but prevent looping back through
-    while (nextDialogIndexIt == nextDlg->mControls.end())
-    {
+    while (nextDialogIndexIt == nextDlg->mControls.end()) {
         nextDlg = nextDlg->mNextDialog;
         nextDialogIndexIt = nextDlg->mControls.begin();
 
         //if the same dialog is looped back through, return the current control
-        if (nextDlg.get() == &dialog)
-        {
+        if (nextDlg.get() == &dialog) {
             return control;
         }
     }
@@ -1035,9 +941,8 @@ ControlPtr Dialog::GetNextControl(ControlPtr control)
 
 
 //--------------------------------------------------------------------------------------
-ControlPtr Dialog::GetPrevControl(ControlPtr control)
-{
-    Dialog& dialog = control->mDialog;
+ControlPtr Dialog::GetPrevControl(ControlPtr control) {
+    Dialog &dialog = control->mDialog;
 
     auto indexIt = dialog.mControls.find(control->mID);
 
@@ -1058,14 +963,12 @@ ControlPtr Dialog::GetPrevControl(ControlPtr control)
     auto prevDialogIndexIt = prevDlg->mControls.rbegin();
 
     //keep going through the dialogs until one with a control is found, but prevent looping back through
-    while (prevDialogIndexIt == prevDlg->mControls.rend())
-    {
+    while (prevDialogIndexIt == prevDlg->mControls.rend()) {
         prevDlg = prevDlg->mPrevDialog;
         prevDialogIndexIt = prevDlg->mControls.rbegin();
 
         //if the same dialog is looped back through, return the current control
-        if (prevDlg.get() == &dialog)
-        {
+        if (prevDlg.get() == &dialog) {
             return control;
         }
     }
@@ -1076,13 +979,10 @@ ControlPtr Dialog::GetPrevControl(ControlPtr control)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::ClearRadioButtonGroup(RadioButtonGroup buttonGroup)
-{
+void Dialog::ClearRadioButtonGroup(RadioButtonGroup buttonGroup) {
     // Find all radio buttons with the given group number
-    for (auto it : mControls)
-    {
-        if (it.second->GetType() == CONTROL_RADIOBUTTON)
-        {
+    for (auto it : mControls) {
+        if (it.second->GetType() == CONTROL_RADIOBUTTON) {
             RadioButtonPtr radioButton = std::dynamic_pointer_cast<RadioButton>(it.second);
 
             if (radioButton->GetButtonGroup() == buttonGroup)
@@ -1093,15 +993,12 @@ void Dialog::ClearRadioButtonGroup(RadioButtonGroup buttonGroup)
 
 
 //--------------------------------------------------------------------------------------
-std::vector<RadioButtonPtr> Dialog::GetRadioButtonGroup(RadioButtonGroup buttonGroup)
-{
-    std::vector<RadioButtonPtr> ret;
+std::vector <RadioButtonPtr> Dialog::GetRadioButtonGroup(RadioButtonGroup buttonGroup) {
+    std::vector <RadioButtonPtr> ret;
 
     // Find all radio buttons with the given group number
-    for (auto it : mControls)
-    {
-        if (it.second->GetType() == CONTROL_RADIOBUTTON)
-        {
+    for (auto it : mControls) {
+        if (it.second->GetType() == CONTROL_RADIOBUTTON) {
             RadioButtonPtr radioButton = std::dynamic_pointer_cast<RadioButton>(it.second);
 
             if (radioButton->GetButtonGroup() == buttonGroup)
@@ -1114,8 +1011,7 @@ std::vector<RadioButtonPtr> Dialog::GetRadioButtonGroup(RadioButtonGroup buttonG
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::ClearComboBox(ControlIndex ID)
-{
+void Dialog::ClearComboBox(ControlIndex ID) {
     ComboBoxPtr comboBox = GetControl<ComboBox>(ID);
     if (!comboBox)
         return;
@@ -1125,8 +1021,7 @@ void Dialog::ClearComboBox(ControlIndex ID)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::RequestFocus(ControlPtr control)
-{
+void Dialog::RequestFocus(ControlPtr control) {
     if (sControlFocus == control)
         return;
 
@@ -1142,8 +1037,7 @@ void Dialog::RequestFocus(ControlPtr control)
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::DrawRect(const Rect& rect, const Color& color, bool transform)
-{
+void Dialog::DrawRect(const Rect &rect, const Color &color, bool transform) {
     Rect rcScreen = rect;
 
     if (transform)
@@ -1193,8 +1087,7 @@ void Dialog::DrawRect(const Rect& rect, const Color& color, bool transform)
 
 //--------------------------------------------------------------------------------------
 
-void Dialog::DrawSprite(const Element& element, const Rect& rect, float depth, bool textured)
-{
+void Dialog::DrawSprite(const Element &element, const Rect &rect, float depth, bool textured) {
     // No need to draw fully transparent layers
     if (element.mTextureColor.GetCurrent().a == 0)
         return;
@@ -1252,8 +1145,7 @@ void Dialog::DrawSprite(const Element& element, const Rect& rect, float depth, b
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::DrawText(const std::wstring& text, const Element& element, const Rect& rect, bool shadow, bool hardRect)
-{
+void Dialog::DrawText(const std::wstring &text, const Element &element, const Rect &rect, bool shadow, bool hardRect) {
     // No need to draw fully transparent layers
     if (element.mFontColor.GetCurrent().a == 0)
         return;
@@ -1275,13 +1167,13 @@ void Dialog::DrawText(const std::wstring& text, const Element& element, const Re
     }*/
 
     Color vFontColor = element.mFontColor.GetCurrent();
-    Text::DrawText(mDialogManager->GetFontNode(element.mFontIndex), text, screen, element.mFontColor.GetCurrent(), element.mTextFormatFlags, hardRect);
+    Text::DrawText(mDialogManager->GetFontNode(element.mFontIndex), text, screen, element.mFontColor.GetCurrent(),
+                   element.mTextFormatFlags, hardRect);
 }
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::CalcTextRect(const std::wstring& text, const Element& element, Rect& rect) const
-{
+void Dialog::CalcTextRect(const std::wstring &text, const Element &element, Rect &rect) const {
     FontNodePtr pFontNode = GetFont(element.mFontIndex);
     if (!pFontNode)
         return;
@@ -1294,12 +1186,10 @@ void Dialog::CalcTextRect(const std::wstring& text, const Element& element, Rect
 }
 
 //--------------------------------------------------------------------------------------
-void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept
-{
+void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept {
     if (!nextDialog)
         mNextDialog = shared_from_this();
-    else
-    {
+    else {
         mNextDialog = nextDialog;
         nextDialog->mPrevDialog = shared_from_this();
     }
@@ -1307,10 +1197,8 @@ void Dialog::SetNextDialog(DialogPtr nextDialog) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::ClearFocus() noexcept
-{
-    if (sControlFocus)
-    {
+void Dialog::ClearFocus() noexcept {
+    if (sControlFocus) {
         sControlFocus->OnFocusOut();
         sControlFocus = nullptr;
     }
@@ -1318,13 +1206,10 @@ void Dialog::ClearFocus() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void Dialog::FocusDefaultControl() noexcept
-{
+void Dialog::FocusDefaultControl() noexcept {
     // Check for default control in this dialog
-    for (auto it : mControls)
-    {
-        if (it.second->mIsDefault)
-        {
+    for (auto it : mControls) {
+        if (it.second->mIsDefault) {
             // Remove focus from the current control
             ClearFocus();
 
@@ -1336,83 +1221,66 @@ void Dialog::FocusDefaultControl() noexcept
     }
 }
 
-void Dialog::ScreenSpaceToGLSpace(Rect& rc) noexcept
-{
+void Dialog::ScreenSpaceToGLSpace(Rect &rc) noexcept {
     OffsetRect(rc, mRegion.left - long(g_WndWidth / 2), mRegion.bottom - long(g_WndHeight / 2));
 }
 
-void Dialog::ScreenSpaceToGLSpace(Point& pt) noexcept
-{
+void Dialog::ScreenSpaceToGLSpace(Point &pt) noexcept {
     pt.x += mRegion.left - long(g_WndWidth / 2);
     pt.y += mRegion.bottom - long(g_WndHeight / 2);
 }
 
 
 //--------------------------------------------------------------------------------------
-bool Dialog::OnCycleFocus(bool forward) noexcept
-{
+bool Dialog::OnCycleFocus(bool forward) noexcept {
     ControlPtr pControl = nullptr;
     DialogPtr pDialog = nullptr; // pDialog and pLastDialog are used to track wrapping of
     DialogPtr pLastDialog;    // focus from first control to last or vice versa.
 
-    if (!sControlFocus)
-    {
+    if (!sControlFocus) {
         // If sControlFocus is nullptr, we focus the first control of first dialog in
         // the case that bForward is true, and focus the last control of last dialog when
         // bForward is false.
         //
-        if (forward)
-        {
+        if (forward) {
             // Search for the first control from the start of the dialog
             // array.
-            for (auto it : mDialogManager->mDialogs)
-            {
+            for (auto it : mDialogManager->mDialogs) {
                 pDialog = pLastDialog = it;
-                if (pDialog && !pDialog->mControls.empty())
-                {
+                if (pDialog && !pDialog->mControls.empty()) {
                     pControl = pDialog->mControls[0];
                     break;
                 }
             }
 
-            if (!pDialog || !pControl)
-            {
+            if (!pDialog || !pControl) {
                 // No dialog has been registered yet or no controls have been
                 // added to the dialogs. Cannot proceed.
                 return true;
             }
-        }
-        else
-        {
+        } else {
             // Search for the first control from the end of the dialog
             // array.
-            for (auto it = mDialogManager->mDialogs.crbegin(); it != mDialogManager->mDialogs.crend(); ++it)
-            {
+            for (auto it = mDialogManager->mDialogs.crbegin(); it != mDialogManager->mDialogs.crend(); ++it) {
                 pDialog = pLastDialog = *it;
-                if (pDialog && !pDialog->mControls.empty())
-                {
+                if (pDialog && !pDialog->mControls.empty()) {
                     pControl = pDialog->mControls[pDialog->mControls.size() - 1];
                     break;
                 }
             }
 
-            if (!pDialog || !pControl)
-            {
+            if (!pDialog || !pControl) {
                 // No dialog has been registered yet or no controls have been
                 // added to the dialogs. Cannot proceed.
                 return true;
             }
         }
-    }
-    else if (&sControlFocus->mDialog != this)
-    {
+    } else if (&sControlFocus->mDialog != this) {
         // If a control belonging to another dialog has focus, let that other
         // dialog handle this event by returning false.
         //
         return false;
-    }
-    else
-    {
+    } else {
         // Focused control belongs to this dialog. Cycle to the
         // next/previous control.
         assert(pControl != 0);
@@ -1433,28 +1301,23 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
     // set the focused control to nullptr. This state, where no control
     // has focus, allows the camera to work.
     int nLastDialogIndex = -1;
-    for (uint32_t i = 0; i < mDialogManager->mDialogs.size(); ++i)
-    {
-        if (mDialogManager->mDialogs[i] == pLastDialog)
-        {
+    for (uint32_t i = 0; i < mDialogManager->mDialogs.size(); ++i) {
+        if (mDialogManager->mDialogs[i] == pLastDialog) {
             nLastDialogIndex = i;
             break;
         }
     }
 
     int nDialogIndex = -1;
-    for (uint32_t i = 0; i < mDialogManager->mDialogs.size(); ++i)
-    {
-        if (mDialogManager->mDialogs[i] == pDialog)
-        {
+    for (uint32_t i = 0; i < mDialogManager->mDialogs.size(); ++i) {
+        if (mDialogManager->mDialogs[i] == pDialog) {
             nDialogIndex = i;
             break;
         }
     }
 
     if ((!forward && nLastDialogIndex < nDialogIndex) ||
-        (forward && nDialogIndex < nLastDialogIndex))
-    {
+        (forward && nDialogIndex < nLastDialogIndex)) {
         if (sControlFocus)
             sControlFocus->OnFocusOut();
         sControlFocus = nullptr;
@@ -1467,8 +1330,7 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
 
     // If the dialog accepts keybord input and the control can have focus then
     // move focus
-    if (pControl->mDialog.mKeyboardInput && pControl->CanHaveFocus())
-    {
+    if (pControl->mDialog.mKeyboardInput && pControl->CanHaveFocus()) {
         if (sControlFocus)
             sControlFocus->OnFocusOut();
         sControlFocus = pControl;
@@ -1488,15 +1350,13 @@ bool Dialog::OnCycleFocus(bool forward) noexcept
 }
 
 FontPtr g_ArialDefault = nullptr;
+
 //--------------------------------------------------------------------------------------
-void Dialog::InitDefaultElements()
-{
+void Dialog::InitDefaultElements() {
     //this makes it more efficient
     int fontIndex = 0;
-    if (g_DefaultFont == nullptr)
-    {
-        if (g_ArialDefault == nullptr)
-        {
+    if (g_DefaultFont == nullptr) {
+        if (g_ArialDefault == nullptr) {
 
             std::vector<char> rawData;
             LoadFileIntoMemory("Arial.ttf", rawData);
@@ -1504,9 +1364,7 @@ void Dialog::InitDefaultElements()
         }
 
         fontIndex = mDialogManager->AddFont(g_ArialDefault, 20, FONT_WEIGHT_NORMAL);
-    }
-    else
-    {
+    } else {
         fontIndex = mDialogManager->AddFont(g_DefaultFont, 20, FONT_WEIGHT_NORMAL);
     }
 
@@ -1522,9 +1380,9 @@ void Dialog::InitDefaultElements()
     mCapElement.SetFont(0);
     SetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
     mCapElement.SetTexture(0, rcTexture);
-    mCapElement.mTextureColor.Init({ 255, 255, 255, 255 });
-    mCapElement.mFontColor.Init({ 255, 255, 255, 255 });
-    mCapElement.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
+    mCapElement.mTextureColor.Init({255, 255, 255, 255});
+    mCapElement.mFontColor.Init({255, 255, 255, 255});
+    mCapElement.SetFont(0, {0, 0, 0, 255}, GT_LEFT | GT_VCENTER);
     // Pre-blend as we don't need to transition the state
     mCapElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
     mCapElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
@@ -1534,9 +1392,9 @@ void Dialog::InitDefaultElements()
     SetRect(rcTexture, 0.0f, 0.078125f, 0.4296875f, 0.0f);//blank part of the texture
     //SetRect(rcTexture, 0.0f, 1.0f, 1.0f, 0.0f);//blank part of the texture
     mDlgElement.SetTexture(0, rcTexture);
-    mDlgElement.mTextureColor.Init({ 255, 0, 0, 128 });
-    mDlgElement.mFontColor.Init({ 0, 0, 0, 255 });
-    mDlgElement.SetFont(0, { 0, 0, 0, 255 }, GT_LEFT | GT_VCENTER);
+    mDlgElement.mTextureColor.Init({255, 0, 0, 128});
+    mDlgElement.mFontColor.Init({0, 0, 0, 255});
+    mDlgElement.SetFont(0, {0, 0, 0, 255}, GT_LEFT | GT_VCENTER);
     // Pre-blend as we don't need to transition the state
     mDlgElement.mTextureColor.Blend(STATE_NORMAL, 10.0f);
     mDlgElement.mFontColor.Blend(STATE_NORMAL, 10.0f);
@@ -1554,12 +1412,12 @@ void Dialog::InitDefaultElements()
     Element.mFontColor.SetState(STATE_PRESSED, {0, 0, 0, 255});
     Element.mFontColor.SetCurrent(STATE_NORMAL);
 
-    Element.mTextureColor.SetState(STATE_NORMAL, { 180, 180, 180, 255 });
-    Element.mTextureColor.SetState(STATE_DISABLED, { 128, 128, 128, 128 });
-    Element.mTextureColor.SetState(STATE_HIDDEN, { 0, 0, 0, 0 });
-    Element.mTextureColor.SetState(STATE_FOCUS, { 200, 200, 200, 255 });
-    Element.mTextureColor.SetState(STATE_MOUSEOVER, { 255, 255, 255, 255 });
-    Element.mTextureColor.SetState(STATE_PRESSED, { 200, 200, 200, 255 });
+    Element.mTextureColor.SetState(STATE_NORMAL, {180, 180, 180, 255});
+    Element.mTextureColor.SetState(STATE_DISABLED, {128, 128, 128, 128});
+    Element.mTextureColor.SetState(STATE_HIDDEN, {0, 0, 0, 0});
+    Element.mTextureColor.SetState(STATE_FOCUS, {200, 200, 200, 255});
+    Element.mTextureColor.SetState(STATE_MOUSEOVER, {255, 255, 255, 255});
+    Element.mTextureColor.SetState(STATE_PRESSED, {200, 200, 200, 255});
     Element.mTextureColor.SetCurrent(STATE_NORMAL);
 
     Element.mFontIndex = 0;
@@ -1700,7 +1558,8 @@ void Dialog::InitDefaultElements()
     //-------------------------------------
     float nScrollBarStartX = 0.76470588f;
     float nScrollBarStartY = 0.046875f;
-    SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
+    SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.12890625f, nScrollBarStartX + 0.09076287f,
+            nScrollBarStartY + 0.125f);
     Element.mUVRect = rcTexture;
 
     // Assign the Element
@@ -1709,7 +1568,8 @@ void Dialog::InitDefaultElements()
     //-------------------------------------
     // ScrollBar - Down Arrow
     //-------------------------------------
-    SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.00390625f);
+    SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.08203125f, nScrollBarStartX + 0.09076287f,
+            nScrollBarStartY + 0.00390625f);
     Element.mUVRect = rcTexture;
 
 
@@ -1719,7 +1579,8 @@ void Dialog::InitDefaultElements()
     //-------------------------------------
     // ScrollBar - Up Arrow
     //-------------------------------------
-    SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f, nScrollBarStartY + 0.125f);
+    SetRect(rcTexture, nScrollBarStartX + 0.0f, nScrollBarStartY + 0.20703125f, nScrollBarStartX + 0.09076287f,
+            nScrollBarStartY + 0.125f);
     Element.mUVRect = rcTexture;
 
 
@@ -1807,3 +1668,4 @@ void Dialog::InitDefaultElements()
     SetDefaultElement(CONTROL_LISTBOX, 1, Element);
 }
 
+}

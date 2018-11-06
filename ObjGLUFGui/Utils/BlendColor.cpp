@@ -1,5 +1,7 @@
 #include "BlendColor.h"
 
+namespace GLUF {
+
 /*
 ======================================================================================================================================================================================================
 BlendColor Functions
@@ -8,17 +10,14 @@ BlendColor Functions
 */
 
 //--------------------------------------------------------------------------------------
-BlendColor::BlendColor()
-{
-    SetAll({ 255, 255, 255, 255 });
+BlendColor::BlendColor() {
+    SetAll({255, 255, 255, 255});
 }
 
 //--------------------------------------------------------------------------------------
-void BlendColor::Init(const Color& defaultColor, const Color& disabledColor, const Color& hiddenColor)
-{
+void BlendColor::Init(const Color &defaultColor, const Color &disabledColor, const Color &hiddenColor) {
     HighBitColor defColor = static_cast<HighBitColor>(defaultColor);
-    for (auto it = mStates.begin(); it != mStates.end(); ++it)
-    {
+    for (auto it = mStates.begin(); it != mStates.end(); ++it) {
         it->second = defColor;
     }
 
@@ -29,8 +28,7 @@ void BlendColor::Init(const Color& defaultColor, const Color& disabledColor, con
 
 
 //--------------------------------------------------------------------------------------
-void BlendColor::Blend(ControlState state, float elapsedTime, float rate)
-{
+void BlendColor::Blend(ControlState state, float elapsedTime, float rate) {
     //this is quite condensed, this basically interpolates from the current state to the destination state based on the time
     //the speed of this transition is a recurisve version of e^kx - 1.0f
     float delta = elapsedTime - mPrevBlendTime;
@@ -46,22 +44,18 @@ void BlendColor::Blend(ControlState state, float elapsedTime, float rate)
 }
 
 //--------------------------------------------------------------------------------------
-void BlendColor::SetCurrent(const Color& current)
-{
+void BlendColor::SetCurrent(const Color &current) {
     mCurrentColor = current;
 }
 
 //--------------------------------------------------------------------------------------
-void BlendColor::SetCurrent(ControlState state)
-{
+void BlendColor::SetCurrent(ControlState state) {
     mCurrentColor = mStates[state];
 }
 
 //--------------------------------------------------------------------------------------
-void BlendColor::SetAll(const Color& color)
-{
-    for (unsigned int i = STATE_NORMAL; i <= STATE_HIDDEN; ++i)
-    {
+void BlendColor::SetAll(const Color &color) {
+    for (unsigned int i = STATE_NORMAL; i <= STATE_HIDDEN; ++i) {
         mStates[static_cast<ControlState>(i)] = color;
     }
 
@@ -69,21 +63,18 @@ void BlendColor::SetAll(const Color& color)
 }
 
 //--------------------------------------------------------------------------------------
-Color BlendColor::GetState(ControlState state) const noexcept
-{
+Color BlendColor::GetState(ControlState state) const noexcept {
     return static_cast<Color>(mStates.at(state));
 }
 
 //--------------------------------------------------------------------------------------
-void BlendColor::SetState(ControlState state, const Color& col) noexcept
-{
+void BlendColor::SetState(ControlState state, const Color &col) noexcept {
     mStates[state] = static_cast<HighBitColor>(col);
 }
 
 //--------------------------------------------------------------------------------------
-Color BlendColor::GetCurrent() const noexcept
-{
+Color BlendColor::GetCurrent() const noexcept {
     return static_cast<Color>(mCurrentColor);
 }
 
-
+}

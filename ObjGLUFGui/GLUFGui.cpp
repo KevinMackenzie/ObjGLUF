@@ -19,8 +19,7 @@ for more details.
 #include <cassert>
 
 
-namespace GLUF
-{
+namespace GLUF {
 
 /*
 
@@ -30,16 +29,15 @@ Random Text Helping functions
     Relocate these methods into a more sensible spot/container/namespace/whatever
         Probably in a source file instead of a header file
 */
-namespace Text
-{
-    glm::mat4 g_TextOrtho;
+namespace Text {
+glm::mat4 g_TextOrtho;
 
 
-    void BeginText(const glm::mat4& orthoMatrix);
+void BeginText(const glm::mat4 &orthoMatrix);
 
 
-    void DrawText(const FontNodePtr& font, const std::wstring& text, const Rect& rect, const Color& color, Bitfield textFlags, bool hardRect = false);
-    void EndText(const FontPtr& font, const VertexArrayPtr& data, const Color& textColor, const glm::mat4& projMatrix = g_TextOrtho);
+void DrawText(const FontNodePtr &font, const std::wstring &text, const Rect &rect, const Color &color, Bitfield textFlags, bool hardRect = false);
+void EndText(const FontPtr &font, const VertexArrayPtr &data, const Color &textColor, const glm::mat4 &projMatrix = g_TextOrtho);
 
 }
 
@@ -61,8 +59,7 @@ namespace Text
 #define _WHEEL_DELTA 400//TODO:
 
 //this is just a constant to be a little bit less windows api dependent (TODO: make this a setting)
-unsigned int GetCaretBlinkTime()
-{
+unsigned int GetCaretBlinkTime() {
     return 400;
 }
 
@@ -83,20 +80,17 @@ GLFW Window Callbacks
 */
 
 //--------------------------------------------------------------------------------------
-void GLFWWindowPosCallback(GLFWwindow*, int x, int y)
-{
+void GLFWWindowPosCallback(GLFWwindow *, int x, int y) {
     MessageProcedure(POS, x, y, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWWindowSizeCallback(GLFWwindow*, int width, int height)
-{
+void GLFWWindowSizeCallback(GLFWwindow *, int width, int height) {
     MessageProcedure(RESIZE, width, height, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWWindowCloseCallback(GLFWwindow*)
-{
+void GLFWWindowCloseCallback(GLFWwindow *) {
     MessageProcedure(CLOSE, 0, 0, 0, 0);
 }
 /*
@@ -107,20 +101,17 @@ void GLFWWindowRefreshCallback(GLFWwindow*)
 }*/
 
 //--------------------------------------------------------------------------------------
-void GLFWWindowFocusCallback(GLFWwindow*, int focused)
-{
+void GLFWWindowFocusCallback(GLFWwindow *, int focused) {
     MessageProcedure(FOCUS, focused, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWWindowIconifyCallback(GLFWwindow*, int iconified)
-{
+void GLFWWindowIconifyCallback(GLFWwindow *, int iconified) {
     MessageProcedure(ICONIFY, iconified, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWFrameBufferSizeCallback(GLFWwindow*, int width, int height)
-{
+void GLFWFrameBufferSizeCallback(GLFWwindow *, int width, int height) {
     MessageProcedure(FRAMEBUFFER_SIZE, width, height, 0, 0);
 }
 
@@ -131,56 +122,46 @@ GLFW Input Callback
 */
 
 //--------------------------------------------------------------------------------------
-void GLFWMouseButtonCallback(GLFWwindow*, int button, int action, int mods)
-{
+void GLFWMouseButtonCallback(GLFWwindow *, int button, int action, int mods) {
     MessageProcedure(MB, button, action, mods, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWCursorPosCallback(GLFWwindow*, double xPos, double yPos)
-{
-    MessageProcedure(CURSOR_POS, (int)xPos, (int)yPos, 0, 0);
+void GLFWCursorPosCallback(GLFWwindow *, double xPos, double yPos) {
+    MessageProcedure(CURSOR_POS, (int) xPos, (int) yPos, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWCursorEnterCallback(GLFWwindow*, int entered)
-{
+void GLFWCursorEnterCallback(GLFWwindow *, int entered) {
     MessageProcedure(CURSOR_ENTER, entered, 0, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWScrollCallback(GLFWwindow*, double xoffset, double yoffset)
-{
-    MessageProcedure(SCROLL, (int)(xoffset * 1000.0), (int)(yoffset * 1000.0), 0, 0);
+void GLFWScrollCallback(GLFWwindow *, double xoffset, double yoffset) {
+    MessageProcedure(SCROLL, (int) (xoffset * 1000.0), (int) (yoffset * 1000.0), 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWKeyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
-{
+void GLFWKeyCallback(GLFWwindow *, int key, int scancode, int action, int mods) {
     MessageProcedure(KEY, key, scancode, action, mods);
 }
 
 //--------------------------------------------------------------------------------------
-void GLFWCharCallback(GLFWwindow*, unsigned int codepoint)
-{
-    MessageProcedure(UNICODE_CHAR, (int)codepoint, 0, 0, 0);
+void GLFWCharCallback(GLFWwindow *, unsigned int codepoint) {
+    MessageProcedure(UNICODE_CHAR, (int) codepoint, 0, 0, 0);
 }
 
 
 CallbackFuncPtr g_pCallback;
 
 //--------------------------------------------------------------------------------------
-void MessageProcedure(MessageType msg, int param1, int param2, int param3, int param4)
-{
-    if (g_pCallback(msg, param1, param2, param3, param4))
-    {
+void MessageProcedure(MessageType msg, int param1, int param2, int param3, int param4) {
+    if (g_pCallback(msg, param1, param2, param3, param4)) {
 
     }
 
     //todo: anything else to do?
 }
-
-
 
 
 /*
@@ -189,17 +170,15 @@ Various Structs Used For UI
 
 
 */
-struct ScreenVertex
-{
+struct ScreenVertex {
     glm::vec3 pos;
-    Color     color;
+    Color color;
     glm::vec2 uv;
 };
 
-struct ScreenVertexUntex
-{
+struct ScreenVertexUntex {
     glm::vec3 pos;
-    Color     color;
+    Color color;
 };
 
 
@@ -220,30 +199,27 @@ ProgramPtr g_UIProgram = nullptr;
 ProgramPtr g_UIProgramUntex = nullptr;
 
 
-GLFWwindow* g_pGLFWWindow;
+GLFWwindow *g_pGLFWWindow;
 GLuint g_pControlTexturePtr;
 int g_ControlTextureResourceManLocation = -1;
 
 
-
 //uniform locations
-struct UIShaderLocations_t
-{
+struct UIShaderLocations_t {
     GLuint position = 0;
     GLuint color = 0;
     GLuint uv = 0;
     GLuint ortho = 0;
     GLuint sampler = 0;
 
-}g_UIShaderLocations;
+} g_UIShaderLocations;
 
-struct UIShaderLocationsUntex_t
-{
+struct UIShaderLocationsUntex_t {
     GLuint position = 0;
     GLuint color = 0;
     GLuint ortho = 0;
 
-}g_UIShaderLocationsUntex;
+} g_UIShaderLocationsUntex;
 
 
 /*
@@ -254,7 +230,7 @@ Shaders for UI Elements
 */
 
 std::string g_UIShaderVert =
-"#version 120                                                        \n"\
+        "#version 120                                                        \n"\
 "attribute vec3 _Position;                                            \n"\
 "attribute vec2 _UV;                                                \n"\
 "attribute vec4 _Color;                                                \n"\
@@ -271,7 +247,7 @@ std::string g_UIShaderVert =
 
 
 std::string g_UIShaderFrag =
-"#version 120                                                        \n"\
+        "#version 120                                                        \n"\
 "varying vec4 Color;                                                \n"\
 "varying vec2 uvCoord;                                                \n"\
 "uniform sampler2D _TS;                                                \n"\
@@ -286,10 +262,10 @@ std::string g_UIShaderFrag =
 "       oColor.b * Color.b,                                         \n"\
 "       oColor.a * Color.a);                                        \n"\
 "    gl_FragColor = oColor;                                            \n"\
-"}                                                                    \n"; 
+"}                                                                    \n";
 
 std::string g_UIShaderFragUntex =
-"#version 120                                                        \n"\
+        "#version 120                                                        \n"\
 "varying vec4 Color;                                                \n"\
 "varying vec2 uvCoord;                                                \n"\
 "void main(void)                                                    \n"\
@@ -306,11 +282,10 @@ Initialization Functions
 */
 
 //--------------------------------------------------------------------------------------
-bool InitGui(GLFWwindow* pInitializedGLFWWindow, CallbackFuncPtr callback, GLuint controltex)
-{
+bool InitGui(GLFWwindow *pInitializedGLFWWindow, CallbackFuncPtr callback, GLuint controltex) {
     g_pGLFWWindow = pInitializedGLFWWindow;
     g_pCallback = callback;
-    
+
     //register glfw event handlers
     glfwSetMouseButtonCallback(g_pGLFWWindow, GLFWMouseButtonCallback);
     glfwSetCursorPosCallback(g_pGLFWWindow, GLFWCursorPosCallback);
@@ -329,28 +304,28 @@ bool InitGui(GLFWwindow* pInitializedGLFWWindow, CallbackFuncPtr callback, GLuin
 
     //load the ui shaders
     ShaderSourceList sources;
-    sources.insert({ SH_VERTEX_SHADER, g_UIShaderVert });
-    sources.insert({ SH_FRAGMENT_SHADER, g_UIShaderFrag });
+    sources.insert({SH_VERTEX_SHADER, g_UIShaderVert});
+    sources.insert({SH_FRAGMENT_SHADER, g_UIShaderFrag});
     SHADERMANAGER.CreateProgram(g_UIProgram, sources);
     sources.clear();
 
-    sources.insert({ SH_VERTEX_SHADER, g_UIShaderVert });
-    sources.insert({ SH_FRAGMENT_SHADER, g_UIShaderFragUntex });
+    sources.insert({SH_VERTEX_SHADER, g_UIShaderVert});
+    sources.insert({SH_FRAGMENT_SHADER, g_UIShaderFragUntex});
     SHADERMANAGER.CreateProgram(g_UIProgramUntex, sources);
     sources.clear();
 
 
 
     //load the locations
-    g_UIShaderLocations.position        = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
-    g_UIShaderLocations.uv                = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
-    g_UIShaderLocations.color            = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
-    g_UIShaderLocations.ortho            = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
-    g_UIShaderLocations.sampler            = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
+    g_UIShaderLocations.position = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+    g_UIShaderLocations.uv = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_UV");
+    g_UIShaderLocations.color = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+    g_UIShaderLocations.ortho = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
+    g_UIShaderLocations.sampler = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_TS");
 
-    g_UIShaderLocationsUntex.position    = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
-    g_UIShaderLocationsUntex.color        = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
-    g_UIShaderLocationsUntex.ortho        = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
+    g_UIShaderLocationsUntex.position = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Position");
+    g_UIShaderLocationsUntex.color = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_ATTRIB, "_Color");
+    g_UIShaderLocationsUntex.ortho = SHADERMANAGER.GetShaderVariableLocation(g_UIProgram, GLT_UNIFORM, "_Ortho");
 
     //create the text arrrays
     /*glGenVertexArrayBindVertexArray(&g_TextVAO);
@@ -387,59 +362,51 @@ bool InitGui(GLFWwindow* pInitializedGLFWWindow, CallbackFuncPtr callback, GLuin
 }
 
 //--------------------------------------------------------------------------------------
-CallbackFuncPtr ChangeCallbackFunc(CallbackFuncPtr newCallback)
-{
+CallbackFuncPtr ChangeCallbackFunc(CallbackFuncPtr newCallback) {
     CallbackFuncPtr tmp = g_pCallback;
     g_pCallback = newCallback;
     return tmp;
 }
 
 //--------------------------------------------------------------------------------------
-void Terminate()
-{
+void Terminate() {
     FT_Done_FreeType(g_FtLib);
 }
 
 
-const std::wstring g_Charsets[] = 
-{ 
-    L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
-    L"0123456789",
-    L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-    L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-};
+const std::wstring g_Charsets[] =
+        {
+                L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+                L"0123456789",
+                L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        };
 
 //--------------------------------------------------------------------------------------
-bool CharsetContains(int codepoint, Charset charset)
-{
-    switch (charset)
-    {
-    case Unicode:
-        return true;
-    default:
-        for (unsigned int i = 0; i < g_Charsets[charset].size(); ++i)
-        {
-            if (g_Charsets[charset][i] == codepoint)
-                return true;
-        }
-        return false;
+bool CharsetContains(int codepoint, Charset charset) {
+    switch (charset) {
+        case Unicode:
+            return true;
+        default:
+            for (unsigned int i = 0; i < g_Charsets[charset].size(); ++i) {
+                if (g_Charsets[charset][i] == codepoint)
+                    return true;
+            }
+            return false;
     }
 }
 
 //--------------------------------------------------------------------------------------
-bool CharsetContains(const std::wstring& codepoint, Charset charset)
-{
-    switch (charset)
-    {
-    case Unicode:
-        return true;
-    default:
-        for (auto it : codepoint)
-        {
-            if (!CharsetContains(it, charset))
-                return false;
-        }
-return false;
+bool CharsetContains(const std::wstring &codepoint, Charset charset) {
+    switch (charset) {
+        case Unicode:
+            return true;
+        default:
+            for (auto it : codepoint) {
+                if (!CharsetContains(it, charset))
+                    return false;
+            }
+            return false;
     }
 }
 

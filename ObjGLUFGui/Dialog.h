@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_DIALOG_H
 #define OBJGLUF_DIALOG_H
 
+namespace GLUF {
 
 /*
 Dialog
@@ -50,8 +51,7 @@ Dialog
         'mMousePositionOld': the mouse position cached when the mouse is pressed down to detect whether it is a drag or a minimize/maximize event
 
 */
-class Dialog : public std::enable_shared_from_this<Dialog>
-{
+class Dialog : public std::enable_shared_from_this<Dialog> {
     friend class DialogResourceManager;
 
     bool mFirstTime = true;
@@ -91,8 +91,8 @@ class Dialog : public std::enable_shared_from_this<Dialog>
     std::map <TextureIndex, TextureIndexResMan> mTextures;
     std::map <FontIndex, FontIndexResMan> mFonts;
 
-    std::map<ControlIndex, ControlPtr> mControls;
-    std::vector<ElementHolderPtr> mDefaultElements;
+    std::map <ControlIndex, ControlPtr> mControls;
+    std::vector <ElementHolderPtr> mDefaultElements;
 
     Element mCapElement;
     Element mDlgElement;
@@ -116,7 +116,7 @@ class Dialog : public std::enable_shared_from_this<Dialog>
 
     */
     Dialog();
-    friend std::shared_ptr<Dialog> CreateDialog_();
+    friend std::shared_ptr <Dialog> CreateDialog_();
 
 public:
     ~Dialog();
@@ -134,8 +134,8 @@ public:
             'std::invalid_argument': if 'manager == nullptr'
 
     */
-    void Init(DialogResourceManagerPtr& manager, bool registerDialog = true);
-    void Init(DialogResourceManagerPtr& manager, bool registerDialog, TextureIndexResMan textureIndex);
+    void Init(DialogResourceManagerPtr &manager, bool registerDialog = true);
+    void Init(DialogResourceManagerPtr &manager, bool registerDialog, TextureIndexResMan textureIndex);
 
     /*
     MsgProc
@@ -179,14 +179,16 @@ public:
 
 
     */
-    void AddStatic(ControlIndex ID, const std::wstring& strText, const Rect& region, Bitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<StaticPtr> ctrlPtr = nullptr);
-    void AddButton(ControlIndex ID, const std::wstring& strText, const Rect& region, int hotkey = 0, bool isDefault = false, std::shared_ptr<ButtonPtr> ctrlPtr = nullptr);
-    void AddCheckBox(ControlIndex ID, const std::wstring& strText, const Rect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<CheckBoxPtr> ctrlPtr = nullptr);
-    void AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const std::wstring& strText, const Rect& region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr<RadioButtonPtr> ctrlPtr = nullptr);
-    void AddComboBox(ControlIndex ID, const Rect& region, int hotKey = 0, bool isDefault = false, std::shared_ptr<ComboBoxPtr> ctrlPtr = nullptr);
-    void AddSlider(ControlIndex ID, const Rect& region, long min, long max, long value, bool isDefault = false, std::shared_ptr<SliderPtr> ctrlPtr = nullptr);
-    void AddEditBox(ControlIndex ID, const std::wstring& strText, const Rect& region, Charset charset = Unicode, GLbitfield textFlags = GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr<EditBoxPtr> ctrlPtr = nullptr);
-    void AddListBox(ControlIndex ID, const Rect& region, Bitfield style = 0, std::shared_ptr<ListBoxPtr> ctrlPtr = nullptr);
+    void AddStatic(ControlIndex ID, const std::wstring &strText, const Rect &region, Bitfield textFlags = GT_LEFT |
+                                                                                                          GT_TOP, bool isDefault = false, std::shared_ptr <StaticPtr> ctrlPtr = nullptr);
+    void AddButton(ControlIndex ID, const std::wstring &strText, const Rect &region, int hotkey = 0, bool isDefault = false, std::shared_ptr <ButtonPtr> ctrlPtr = nullptr);
+    void AddCheckBox(ControlIndex ID, const std::wstring &strText, const Rect &region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr <CheckBoxPtr> ctrlPtr = nullptr);
+    void AddRadioButton(ControlIndex ID, RadioButtonGroup buttonGroup, const std::wstring &strText, const Rect &region, bool checked = false, int hotkey = 0, bool isDefault = false, std::shared_ptr <RadioButtonPtr> ctrlPtr = nullptr);
+    void AddComboBox(ControlIndex ID, const Rect &region, int hotKey = 0, bool isDefault = false, std::shared_ptr <ComboBoxPtr> ctrlPtr = nullptr);
+    void AddSlider(ControlIndex ID, const Rect &region, long min, long max, long value, bool isDefault = false, std::shared_ptr <SliderPtr> ctrlPtr = nullptr);
+    void AddEditBox(ControlIndex ID, const std::wstring &strText, const Rect &region, Charset charset = Unicode, GLbitfield textFlags =
+    GT_LEFT | GT_TOP, bool isDefault = false, std::shared_ptr <EditBoxPtr> ctrlPtr = nullptr);
+    void AddListBox(ControlIndex ID, const Rect &region, Bitfield style = 0, std::shared_ptr <ListBoxPtr> ctrlPtr = nullptr);
 
     /*
     AddControl
@@ -232,8 +234,8 @@ public:
 
     */
     template<typename T>
-    std::shared_ptr<T>  GetControl(ControlIndex ID) const;
-    ControlPtr          GetControl(ControlIndex ID, ControlType controlType) const;
+    std::shared_ptr <T> GetControl(ControlIndex ID) const;
+    ControlPtr GetControl(ControlIndex ID, ControlType controlType) const;
 
 
     /*
@@ -249,7 +251,7 @@ public:
             no-throw guarantee
 
     */
-    ControlPtr GetControlAtPoint(const Point& pt) const noexcept;
+    ControlPtr GetControlAtPoint(const Point &pt) const noexcept;
 
     /*
     Set/Get Control Enabled
@@ -290,7 +292,7 @@ public:
             a vector of RadioButton's which have the given group
 
     */
-    std::vector<RadioButtonPtr> GetRadioButtonGroup(RadioButtonGroup groupId);
+    std::vector <RadioButtonPtr> GetRadioButtonGroup(RadioButtonGroup groupId);
 
     /*
     ClearComboBox
@@ -322,8 +324,8 @@ public:
             'std::invalid_argument': if 'elementIndex' is not found within 'controlType', but only in _DEBUG; or if 'element' == nullptr
 
     */
-    void        SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element& element);
-    Element     GetDefaultElement(ControlType controlType, ElementIndex elementIndex) const;
+    void SetDefaultElement(ControlType controlType, ElementIndex elementIndex, const Element &element);
+    Element GetDefaultElement(ControlType controlType, ElementIndex elementIndex) const;
 
 
     /*
@@ -377,10 +379,10 @@ public:
             'std::invalid_argument' if 'elemement' == nullptr in _DEBUG
 
     */
-    void DrawRect(const Rect& rect, const Color& color, bool transform = true);
+    void DrawRect(const Rect &rect, const Color &color, bool transform = true);
     //void DrawPolyLine(Point* apPoints, uint32_t nNumPoints, Color color);
-    void DrawSprite(const Element& element, const Rect& rect, float depth, bool textured = true);
-    void DrawText(const std::wstring& text, const Element& element, const Rect& rect, bool shadow = false, bool hardRect = false);
+    void DrawSprite(const Element &element, const Rect &rect, float depth, bool textured = true);
+    void DrawText(const std::wstring &text, const Element &element, const Rect &rect, bool shadow = false, bool hardRect = false);
 
     /*
     CalcTextRect -- WIP --
@@ -399,7 +401,7 @@ public:
             'std::invalid_argument': if 'element' == nullptr, in _DEBUG
 
     */
-    void CalcTextRect(const std::wstring& text, const Element& element, Rect& rect) const;
+    void CalcTextRect(const std::wstring &text, const Element &element, Rect &rect) const;
 
 
     /*
@@ -412,35 +414,55 @@ public:
             no-throw guarantee
 
     */
-    bool        GetVisible() const noexcept                             { return mVisible;                          }
-    bool        GetMinimized() const noexcept                           { return mMinimized;                        }
-    long        GetCaptionHeight() const noexcept                       { return mCaptionHeight;                    }
-    Point       GetLocation() const noexcept                            { return{ mRegion.bottom, mRegion.left };   }
-    Rect        GetRegion() const noexcept                              { return mRegion;                           }
-    long        GetWidth() const noexcept                               { return RectWidth(mRegion);                }
-    long        GetHeight()    const noexcept                           { return RectHeight(mRegion);               }
+    bool GetVisible() const noexcept { return mVisible; }
 
-    Point       GetMousePositionDialogSpace() const noexcept            { return mMousePositionDialogSpace;         }
+    bool GetMinimized() const noexcept { return mMinimized; }
 
-    DialogResourceManagerPtr GetManager() const noexcept                { return mDialogManager;                    }
+    long GetCaptionHeight() const noexcept { return mCaptionHeight; }
 
-    void        SetVisible(bool visible) noexcept                       { mVisible = visible;                       }
-    void        SetMinimized(bool minimized) noexcept                   { mMinimized = minimized;                   }
-    void        SetBackgroundColor(const Color& color) noexcept         { mDlgElement.mTextureColor.SetAll(color);  }
-    void        SetCaptionHeight(long height) noexcept                  { mCaptionHeight = height;                  }
-    void        SetCaptionText(const std::wstring& text) noexcept       { mCaptionText = text;                      }
-    void        SetLocation(long x, long y) noexcept                    { RepositionRect(mRegion, x, y);            }
-    void        SetSize(long width, long height) noexcept               { ResizeRect(mRegion, width, height);       }
-    static void SetRefreshTime(float time) noexcept                     { sTimeRefresh = time;                      }
+    Point GetLocation() const noexcept { return {mRegion.bottom, mRegion.left}; }
 
-    void        Lock(bool lock = true) noexcept                         { mLocked = lock;                           }
-    void        EnableGrabAnywhere(bool enable = true) noexcept         { mGrabAnywhere = enable;                   }
-    void        EnableCaption(bool enable) noexcept                     { mCaptionEnabled = enable;                 }
-    void        EnableAutoClamp(bool enable = true) noexcept            { mAutoClamp = enable;                      }
-    void        EnableNonUserEvents(bool bEnable) noexcept              { mNonUserEvents = bEnable;                 }
-    void        EnableKeyboardInput(bool bEnable) noexcept              { mKeyboardInput = bEnable;                 }
-    void        EnableMouseInput(bool bEnable) noexcept                 { mMouseInput = bEnable;                    }
-    bool        IsKeyboardInputEnabled() const noexcept                 { return mKeyboardInput;                    }
+    Rect GetRegion() const noexcept { return mRegion; }
+
+    long GetWidth() const noexcept { return RectWidth(mRegion); }
+
+    long GetHeight() const noexcept { return RectHeight(mRegion); }
+
+    Point GetMousePositionDialogSpace() const noexcept { return mMousePositionDialogSpace; }
+
+    DialogResourceManagerPtr GetManager() const noexcept { return mDialogManager; }
+
+    void SetVisible(bool visible) noexcept { mVisible = visible; }
+
+    void SetMinimized(bool minimized) noexcept { mMinimized = minimized; }
+
+    void SetBackgroundColor(const Color &color) noexcept { mDlgElement.mTextureColor.SetAll(color); }
+
+    void SetCaptionHeight(long height) noexcept { mCaptionHeight = height; }
+
+    void SetCaptionText(const std::wstring &text) noexcept { mCaptionText = text; }
+
+    void SetLocation(long x, long y) noexcept { RepositionRect(mRegion, x, y); }
+
+    void SetSize(long width, long height) noexcept { ResizeRect(mRegion, width, height); }
+
+    static void SetRefreshTime(float time) noexcept { sTimeRefresh = time; }
+
+    void Lock(bool lock = true) noexcept { mLocked = lock; }
+
+    void EnableGrabAnywhere(bool enable = true) noexcept { mGrabAnywhere = enable; }
+
+    void EnableCaption(bool enable) noexcept { mCaptionEnabled = enable; }
+
+    void EnableAutoClamp(bool enable = true) noexcept { mAutoClamp = enable; }
+
+    void EnableNonUserEvents(bool bEnable) noexcept { mNonUserEvents = bEnable; }
+
+    void EnableKeyboardInput(bool bEnable) noexcept { mKeyboardInput = bEnable; }
+
+    void EnableMouseInput(bool bEnable) noexcept { mMouseInput = bEnable; }
+
+    bool IsKeyboardInputEnabled() const noexcept { return mKeyboardInput; }
 
     /*
     Set/Get Font/Texture
@@ -462,9 +484,9 @@ public:
             'std::out_of_range': if index/resManFontIndex/resManTexIndex do not exist in their respective locations
 
     */
-    void           SetFont(FontIndex fontIndex, FontIndexResMan resManFontIndex);
-    void           SetTexture(TextureIndex texIndex, TextureIndexResMan resManTexIndex);
-    FontNodePtr    GetFont(FontIndex index) const;
+    void SetFont(FontIndex fontIndex, FontIndexResMan resManFontIndex);
+    void SetTexture(TextureIndex texIndex, TextureIndexResMan resManTexIndex);
+    FontNodePtr GetFont(FontIndex index) const;
     TextureNodePtr GetTexture(TextureIndex index) const;
 
 
@@ -549,7 +571,7 @@ public:
             no-throw guarantee
 
     */
-    void Refresh()  noexcept;
+    void Refresh() noexcept;
 
     /*
     OnRender
@@ -599,8 +621,8 @@ public:
             'rc': the rect to convert
 
     */
-    void ScreenSpaceToGLSpace(Rect& rc) noexcept;
-    void ScreenSpaceToGLSpace(Point& pt) noexcept;
+    void ScreenSpaceToGLSpace(Rect &rc) noexcept;
+    void ScreenSpaceToGLSpace(Point &pt) noexcept;
 
 
 private:
@@ -628,8 +650,8 @@ private:
             no-throw guarantee
 
     */
-    void OnMouseMove(const Point& pt) noexcept;
-    void OnMouseUp(const Point& pt) noexcept;
+    void OnMouseMove(const Point &pt) noexcept;
+    void OnMouseUp(const Point &pt) noexcept;
 
     /*
     SetNextDialog
@@ -662,5 +684,8 @@ private:
     bool OnCycleFocus(bool forward) noexcept;
 
 };
+
+}
+#include "Dialog.inl"
 
 #endif //OBJGLUF_DIALOG_H

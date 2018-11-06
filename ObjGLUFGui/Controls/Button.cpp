@@ -1,40 +1,35 @@
 #include "Button.h"
 
-Button::Button(Dialog& dialog) : Static(GT_CENTER | GT_VCENTER, dialog)
-{
+namespace GLUF {
+
+Button::Button(Dialog &dialog) : Static(GT_CENTER | GT_VCENTER, dialog) {
     mType = CONTROL_BUTTON;
 
     mPressed = false;
 }
 
 //--------------------------------------------------------------------------------------
-void Button::OnHotkey() noexcept
-{
-    if (mDialog.IsKeyboardInputEnabled())
-    {
+void Button::OnHotkey() noexcept {
+    if (mDialog.IsKeyboardInputEnabled()) {
         mDialog.RequestFocus(shared_from_this());
         mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
     }
 }
 
 //--------------------------------------------------------------------------------------
-bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
     if (!mEnabled || !mVisible)
         return false;
 
     Point mousePos = mDialog.GetMousePositionDialogSpace();
 
-    switch (msg)
-    {
+    switch (msg) {
 
         case CURSOR_POS:
 
-            if (mPressed)
-            {
+            if (mPressed) {
                 //if the button is pressed and the mouse is moved off, then unpress it
-                if (!ContainsPoint(mousePos))
-                {
+                if (!ContainsPoint(mousePos)) {
                     mPressed = false;
 
                     ContainsPoint(mousePos);
@@ -46,12 +41,9 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 
             break;
         case MB:
-            if (param1 == GLFW_MOUSE_BUTTON_LEFT)
-            {
-                if (param2 == GLFW_PRESS)
-                {
-                    if (ContainsPoint(mousePos))
-                    {
+            if (param1 == GLFW_MOUSE_BUTTON_LEFT) {
+                if (param2 == GLFW_PRESS) {
+                    if (ContainsPoint(mousePos)) {
                         // Pressed while inside the control
                         mPressed = true;
                         //SetCapture(GetHWND());
@@ -62,11 +54,8 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
                         return true;
 
                     }
-                }
-                else if (param2 == GLFW_RELEASE)
-                {
-                    if (mPressed)
-                    {
+                } else if (param2 == GLFW_RELEASE) {
+                    if (mPressed) {
                         mPressed = false;
 
                         if (!mDialog.IsKeyboardInputEnabled())
@@ -83,17 +72,13 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
             }
             break;
 
-        case KEY:
-        {
+        case KEY: {
 
-            if (param1 == mHotkey)
-            {
-                if (param3 == GLFW_PRESS)
-                {
+            if (param1 == mHotkey) {
+                if (param3 == GLFW_PRESS) {
                     mPressed = true;
                 }
-                if (param3 == GLFW_RELEASE)
-                {
+                if (param3 == GLFW_RELEASE) {
                     mPressed = false;
 
                     mDialog.SendEvent(EVENT_BUTTON_CLICKED, true, shared_from_this());
@@ -112,8 +97,7 @@ bool Button::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t pa
 }
 
 //--------------------------------------------------------------------------------------
-void Button::Render(float elapsedTime) noexcept
-{
+void Button::Render(float elapsedTime) noexcept {
     int nOffsetX = 0;
     int nOffsetY = 0;
 
@@ -121,30 +105,21 @@ void Button::Render(float elapsedTime) noexcept
 
     ControlState iState = STATE_NORMAL;
 
-    if (mVisible == false)
-    {
+    if (mVisible == false) {
         iState = STATE_HIDDEN;
-    }
-    else if (mEnabled == false)
-    {
+    } else if (mEnabled == false) {
         iState = STATE_DISABLED;
-    }
-    else if (mPressed)
-    {
+    } else if (mPressed) {
         iState = STATE_PRESSED;
 
         nOffsetX = 1;
         nOffsetY = 2;
-    }
-    else if (mMouseOver)
-    {
+    } else if (mMouseOver) {
         iState = STATE_MOUSEOVER;
 
         nOffsetX = -1;
         nOffsetY = -2;
-    }
-    else if (mHasFocus)
-    {
+    } else if (mHasFocus) {
         iState = STATE_FOCUS;
     }
 
@@ -155,7 +130,7 @@ void Button::Render(float elapsedTime) noexcept
 
 
     // Background fill layer
-    Element* pElement = &mElements[0];
+    Element *pElement = &mElements[0];
 
     // Blend current color
     pElement->mTextureColor.Blend(iState, elapsedTime, fBlendRate);
@@ -173,4 +148,5 @@ void Button::Render(float elapsedTime) noexcept
 
     mDialog.DrawSprite(*pElement, rcWindow, _NEAR_BUTTON_DEPTH);
     mDialog.DrawText(mText, *pElement, rcWindow, false, true);
+}
 }

@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_CONTROL_H
 #define OBJGLUF_CONTROL_H
 
+namespace GLUF {
 /*
 Control
 
@@ -24,8 +25,7 @@ Control
         'mElements': the elements making up this control
 
 */
-class Control : public std::enable_shared_from_this<Control>
-{
+class Control : public std::enable_shared_from_this<Control> {
 protected:
     /*
     Constructor
@@ -38,13 +38,13 @@ protected:
             'dialog': the parent dialog
 
     */
-    Control(Dialog& dialog);
+    Control(Dialog &dialog);
 
     friend Dialog;
 
     ControlIndex mID;
     ControlType mType;
-    KeyId  mHotkey;
+    KeyId mHotkey;
 
     bool mEnabled;
     bool mVisible;
@@ -54,11 +54,11 @@ protected:
 
     Rect mRegion;
 
-    Dialog& mDialog;
+    Dialog &mDialog;
     ControlIndex mIndex;
 
     //use a map, because there may be gaps in indices
-    std::map<ElementIndex, Element> mElements;
+    std::map <ElementIndex, Element> mElements;
 
     FontNodePtr GetElementFont(ElementIndex index);
 
@@ -74,7 +74,7 @@ public:
             'ControlInitException': if child class initialization fails
 
     */
-    virtual void OnInit(){ UpdateRects(); }
+    virtual void OnInit() { UpdateRects(); }
 
     /*
     Refresh
@@ -98,7 +98,7 @@ public:
             no-throw guarantee: child classes must NOT throw any critical exceptions
 
     */
-    virtual void Render(float elapsedTime) noexcept{};
+    virtual void Render(float elapsedTime) noexcept {};
 
     /*
     MsgProc
@@ -120,26 +120,39 @@ public:
         Throws:
             GetElement: 'std::out_of_range'
     */
-    virtual bool    GetEnabled() const noexcept            { return mEnabled;              }
-    virtual bool    GetVisible() const noexcept            { return mVisible;              }
-    int                GetID() const noexcept                { return mID;                   }
-    int                GetHotkey()    const noexcept            { return mHotkey;               }
-    ControlType     GetType() const    noexcept            { return mType;                 }
-    virtual bool    CanHaveFocus() const noexcept        { return false;                    }
-    Rect            GetRegion() const noexcept          { return mRegion;               }
-    Element&          GetElement(ElementIndex element);
+    virtual bool GetEnabled() const noexcept { return mEnabled; }
 
-    virtual void    SetEnabled(bool enabled) noexcept            { mEnabled = enabled;                       }
-    virtual void    SetVisible(bool visible) noexcept            { mVisible = visible;                       }
-    virtual void    SetRegion(const Rect& region) noexcept
-    { mRegion = region;                         }
-    void            SetLocation(long x, long y) noexcept        { RepositionRect(mRegion, x, y);        }
-    void            SetSize(long width, long height) noexcept   { ResizeRect(mRegion, width, height);   }
-    void            SetHotkey(KeyId hotkey) noexcept        { mHotkey = hotkey;                         }
-    void            SetID(int ID) noexcept                        { mID = ID;                                 }
+    virtual bool GetVisible() const noexcept { return mVisible; }
 
-    bool IsMouseOver()  const noexcept   { return mMouseOver; }
-    bool IsFocused()    const noexcept   { return mHasFocus; }
+    int GetID() const noexcept { return mID; }
+
+    int GetHotkey() const noexcept { return mHotkey; }
+
+    ControlType GetType() const noexcept { return mType; }
+
+    virtual bool CanHaveFocus() const noexcept { return false; }
+
+    Rect GetRegion() const noexcept { return mRegion; }
+
+    Element &GetElement(ElementIndex element);
+
+    virtual void SetEnabled(bool enabled) noexcept { mEnabled = enabled; }
+
+    virtual void SetVisible(bool visible) noexcept { mVisible = visible; }
+
+    virtual void SetRegion(const Rect &region) noexcept { mRegion = region; }
+
+    void SetLocation(long x, long y) noexcept { RepositionRect(mRegion, x, y); }
+
+    void SetSize(long width, long height) noexcept { ResizeRect(mRegion, width, height); }
+
+    void SetHotkey(KeyId hotkey) noexcept { mHotkey = hotkey; }
+
+    void SetID(int ID) noexcept { mID = ID; }
+
+    bool IsMouseOver() const noexcept { return mMouseOver; }
+
+    bool IsFocused() const noexcept { return mHasFocus; }
 
     /*
     EventHandlers
@@ -151,13 +164,17 @@ public:
             no-throw guarantee; children may modify this behavior, but should not
 
     */
-    virtual bool ContainsPoint(const Point& pt) const noexcept
-    { return PtInRect(mRegion, pt);                         }
-    virtual void OnFocusIn() noexcept        { mHasFocus = true;                                            }
-    virtual void OnFocusOut() noexcept        { mHasFocus = false;                                        }
-    virtual void OnMouseEnter() noexcept    { mMouseOver = true;                                        }
-    virtual void OnMouseLeave() noexcept    { mMouseOver = false;                                        }
-    virtual void OnHotkey() noexcept        { /*this function usually acts like the user 'clicked' it*/ }
+    virtual bool ContainsPoint(const Point &pt) const noexcept { return PtInRect(mRegion, pt); }
+
+    virtual void OnFocusIn() noexcept { mHasFocus = true; }
+
+    virtual void OnFocusOut() noexcept { mHasFocus = false; }
+
+    virtual void OnMouseEnter() noexcept { mMouseOver = true; }
+
+    virtual void OnMouseLeave() noexcept { mMouseOver = false; }
+
+    virtual void OnHotkey() noexcept { /*this function usually acts like the user 'clicked' it*/ }
 
     /*
     SetElement
@@ -173,7 +190,7 @@ public:
             no-throw guarantee
 
     */
-    void SetElement(ElementIndex elementId, const Element& element) noexcept;
+    void SetElement(ElementIndex elementId, const Element &element) noexcept;
 
     /*
     SetTextColor
@@ -188,7 +205,7 @@ public:
             no-throw guarantee
 
     */
-    virtual void SetTextColor(const Color& color) noexcept;
+    virtual void SetTextColor(const Color &color) noexcept;
 
 
 protected:
@@ -199,7 +216,8 @@ protected:
             This method is used to recreate the regions for different elements when the main rect changes
 
     */
-    virtual void UpdateRects() noexcept{}
+    virtual void UpdateRects() noexcept {}
 };
 
+}
 #endif //OBJGLUF_CONTROL_H

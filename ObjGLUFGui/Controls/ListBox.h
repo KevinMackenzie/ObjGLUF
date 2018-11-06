@@ -1,7 +1,7 @@
 #ifndef OBJGLUF_LISTBOX_H
 #define OBJGLUF_LISTBOX_H
 
-
+namespace GLUF {
 
 /*
 ListBox
@@ -22,13 +22,12 @@ ListBox
         'mDrag': whether the user is dragging the mouse to select multiple items
 
 */
-class ListBox : public Control
-{
+class ListBox : public Control {
 protected:
 
     ListBox() = delete;
-    ListBox(Dialog& dialog);
-    friend std::shared_ptr<ListBox> CreateListBox(Dialog& dialog);
+    ListBox(Dialog &dialog);
+    friend std::shared_ptr <ListBox> CreateListBox(Dialog &dialog);
 
 
     Rect mTextRegion;
@@ -37,17 +36,16 @@ protected:
     Size mSBWidth;
     Size mVerticalMargin;
     Size mHorizontalMargin;
-    FontSize  mTextHeight;
+    FontSize mTextHeight;
     Bitfield mStyle;
-    std::vector<Index> mSelected;
+    std::vector <Index> mSelected;
     bool mDrag;
-    std::vector<ListBoxItemPtr> mItems;
+    std::vector <ListBoxItemPtr> mItems;
 
 public:
     virtual ~ListBox();
 
-    enum ListBoxStyle
-    {
+    enum ListBoxStyle {
         MULTISELECTION = 0x01
     };
 
@@ -68,17 +66,30 @@ public:
 
     */
 
-    GenericData&    GetItemData(const std::wstring& text, Index start) const;
-    GenericData&    GetItemData(Index index) const;
-    Size            GetNumItems() const    noexcept        { return mItems.size();        }
-    ListBoxItemPtr  GetItem(const std::wstring& text, Index start = 0) const;
-    ListBoxItemPtr  GetItem(Index index) const        { return mItems[index];     }
-    Bitfield        GetStyle() const noexcept            { return mStyle;            }
-    Size            GetScrollBarWidth() const noexcept    { return mSBWidth;          }
+    GenericData &GetItemData(const std::wstring &text, Index start) const;
+    GenericData &GetItemData(Index index) const;
 
-    void            SetStyle(Bitfield style)  noexcept                        { mStyle = style;                                                }
-    void            SetScrollBarWidth(Size width) noexcept                  { mSBWidth = width; UpdateRects();                              }
-    void            SetMargins(Size vertical, Size horizontal) noexcept     { mVerticalMargin = vertical; mHorizontalMargin = horizontal;   }
+    Size GetNumItems() const noexcept { return mItems.size(); }
+
+    ListBoxItemPtr GetItem(const std::wstring &text, Index start = 0) const;
+
+    ListBoxItemPtr GetItem(Index index) const { return mItems[index]; }
+
+    Bitfield GetStyle() const noexcept { return mStyle; }
+
+    Size GetScrollBarWidth() const noexcept { return mSBWidth; }
+
+    void SetStyle(Bitfield style) noexcept { mStyle = style; }
+
+    void SetScrollBarWidth(Size width) noexcept {
+        mSBWidth = width;
+        UpdateRects();
+    }
+
+    void SetMargins(Size vertical, Size horizontal) noexcept {
+        mVerticalMargin = vertical;
+        mHorizontalMargin = horizontal;
+    }
 
     /*
     AddItem
@@ -90,7 +101,7 @@ public:
         Throws:
             no-throw guarantee
     */
-    void AddItem(const std::wstring& text, GenericData& data) noexcept;
+    void AddItem(const std::wstring &text, GenericData &data) noexcept;
 
     /*
     InsertItem
@@ -108,7 +119,7 @@ public:
             no-throw guarantee
 
     */
-    void InsertItem(Index index, const std::wstring& text, GenericData& data) noexcept;
+    void InsertItem(Index index, const std::wstring &text, GenericData &data) noexcept;
 
     /*
     RemoveItem
@@ -167,7 +178,8 @@ public:
             'NoItemSelectedException': if no item is selected
 
     */
-    ListBoxItemPtr GetSelectedItem(Index previousSelected) const{ return GetItem(GetSelectedIndex(previousSelected)); }
+    ListBoxItemPtr GetSelectedItem(Index previousSelected) const { return GetItem(GetSelectedIndex(previousSelected)); }
+
     ListBoxItemPtr GetSelectedItem() const { return GetItem(GetSelectedIndex()); }
 
     /*
@@ -183,8 +195,11 @@ public:
             'NoItemSelectedException': if no item is selected
 
     */
-    GenericData& GetSelectedData(Index previousSelected) const { return GetItemData(GetSelectedIndex(previousSelected)); }
-    GenericData& GetSelectedData() const { return GetItemData(GetSelectedIndex()); }
+    GenericData &GetSelectedData(Index previousSelected) const {
+        return GetItemData(GetSelectedIndex(previousSelected));
+    }
+
+    GenericData &GetSelectedData() const { return GetItemData(GetSelectedIndex()); }
 
     /*
     SelectItem
@@ -203,7 +218,7 @@ public:
             'std::invalid_argument': if 'text' is not found in _DEBUG
     */
     void SelectItem(Index index);
-    void SelectItem(const std::wstring& text, Index start = 0);
+    void SelectItem(const std::wstring &text, Index start = 0);
 
     /*
     ClearSelected
@@ -232,7 +247,7 @@ public:
             'std::invalid_argument': if 'index' does not exist, in _DEBUG
     */
     void RemoveSelected(Index index);
-    void RemoveSelected(const std::wstring& text, Index start = 0);
+    void RemoveSelected(const std::wstring &text, Index start = 0);
 
     /*
     ContainsItem
@@ -248,7 +263,7 @@ public:
             no-throw guarantee
 
     */
-    bool ContainsItem(const std::wstring& text, Index start = 0) const noexcept;
+    bool ContainsItem(const std::wstring &text, Index start = 0) const noexcept;
 
     /*
     FindItem(Index)
@@ -266,8 +281,8 @@ public:
             'std::invalid_argument': if no item is found
 
     */
-    Index           FindItemIndex(const std::wstring& text, Index start = 0) const;
-    ListBoxItemPtr  FindItem(const std::wstring& text, Index start = 0) const;
+    Index FindItemIndex(const std::wstring &text, Index start = 0) const;
+    ListBoxItemPtr FindItem(const std::wstring &text, Index start = 0) const;
 
 
     /*
@@ -276,11 +291,20 @@ public:
 
     */
     virtual bool MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept override;
-    virtual void OnInit() override                      { mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar)); UpdateRects(); }
-    virtual bool CanHaveFocus() const noexcept override    { return (mVisible && mEnabled);                }
+
+    virtual void OnInit() override {
+        mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar));
+        UpdateRects();
+    }
+
+    virtual bool CanHaveFocus() const noexcept override { return (mVisible && mEnabled); }
+
     virtual void Render(float elapsedTime) noexcept override;
     virtual void UpdateRects() noexcept override;
-    virtual bool ContainsPoint(const Point& pt) const noexcept override{ return Control::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt); }
+
+    virtual bool ContainsPoint(const Point &pt) const noexcept override {
+        return Control::ContainsPoint(pt) || mScrollBar->ContainsPoint(pt);
+    }
 
 protected:
 
@@ -297,4 +321,5 @@ protected:
     */
     virtual void UpdateItemRects() noexcept;
 };
+}
 #endif //OBJGLUF_LISTBOX_H

@@ -1,9 +1,9 @@
 #include "ComboBox.h"
 
+namespace GLUF {
 
 //--------------------------------------------------------------------------------------
-ComboBox::ComboBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Button(dialog)
-{
+ComboBox::ComboBox(Dialog &dialog) : mScrollBar(CreateScrollBar(dialog)), Button(dialog) {
     mType = CONTROL_COMBOBOX;
 
     mDropHeight = 100L;
@@ -16,16 +16,14 @@ ComboBox::ComboBox(Dialog& dialog) : mScrollBar(CreateScrollBar(dialog)), Button
 
 
 //--------------------------------------------------------------------------------------
-ComboBox::~ComboBox()
-{
+ComboBox::~ComboBox() {
     RemoveAllItems();
 }
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::SetTextColor(const Color& Color) noexcept
-{
-    Element* pElement = &mElements[0];
+void ComboBox::SetTextColor(const Color &Color) noexcept {
+    Element *pElement = &mElements[0];
 
     pElement->mFontColor.mStates[STATE_NORMAL] = Color;
 
@@ -37,8 +35,7 @@ void ComboBox::SetTextColor(const Color& Color) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::UpdateRects() noexcept
-{
+void ComboBox::UpdateRects() noexcept {
 
     Button::UpdateRects();
 
@@ -68,8 +65,7 @@ void ComboBox::UpdateRects() noexcept
     //tmpRect.y = mTextRegion.top;
     //mScrollBar->SetRegion(tmpRect);
     FontNodePtr pFontNode = mDialog.GetFont(mElements[2].mFontIndex);
-    if (pFontNode/* && pFontNode->mSize*/)
-    {
+    if (pFontNode/* && pFontNode->mSize*/) {
         mScrollBar->SetPageSize(int(RectHeight(mDropdownTextRegion) / pFontNode->mFontType->mHeight));
 
         // The selected item may have been scrolled off the page.
@@ -84,56 +80,50 @@ void ComboBox::UpdateRects() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::OnInit()
-{
+void ComboBox::OnInit() {
     UpdateRects();
 
     mDialog.InitControl(std::dynamic_pointer_cast<Control>(mScrollBar));
 }
 
 //--------------------------------------------------------------------------------------
-void ComboBox::UpdateItemRects() noexcept
-{
+void ComboBox::UpdateItemRects() noexcept {
     FontNodePtr pFont = mDialog.GetFont(GetElement(2).mFontIndex);
-    if (pFont)
-    {
+    if (pFont) {
         int curY = mTextRegion.bottom - 4;// +((mScrollBar->GetTrackPos() - 1) * pFont->mSize);
-        int fRemainingHeight = RectHeight(mDropdownTextRegion) - pFont->mLeading;//subtract the font size initially too, because we do not want it hanging off the edge
+        int fRemainingHeight = RectHeight(mDropdownTextRegion) -
+                               pFont->mLeading;//subtract the font size initially too, because we do not want it hanging off the edge
 
 
-        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
-        {
+        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++) {
             ComboBoxItemPtr pItem = mItems[i];
 
             // Make sure there's room left in the dropdown
             fRemainingHeight -= pFont->mLeading;
-            if (fRemainingHeight <= 0.0f)
-            {
+            if (fRemainingHeight <= 0.0f) {
                 pItem->mVisible = false;
                 continue;
             }
 
             pItem->mVisible = true;
 
-            SetRect(pItem->mTextRegion, mDropdownTextRegion.left, curY, mDropdownTextRegion.right, curY - pFont->mFontType->mHeight);
+            SetRect(pItem->mTextRegion, mDropdownTextRegion.left, curY, mDropdownTextRegion.right,
+                    curY - pFont->mFontType->mHeight);
             curY -= pFont->mLeading;
         }
     }
 }
 
 //--------------------------------------------------------------------------------------
-void ComboBox::OnFocusOut() noexcept
-{
+void ComboBox::OnFocusOut() noexcept {
     Button::OnFocusOut();
 
     mOpened = false;
 }
 
 
-
 //--------------------------------------------------------------------------------------
-bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
     if (!mEnabled || !mVisible)
         return false;
 
@@ -143,10 +133,8 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
     Point pt = mDialog.GetMousePositionDialogSpace();
 
-    switch (msg)
-    {
-        case CURSOR_POS:
-        {
+    switch (msg) {
+        case CURSOR_POS: {
             /*if (mPressed)
             {
             //if the button is pressed and the mouse is moved off, then unpress it
@@ -161,15 +149,12 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
             }
             }*/
 
-            if (mOpened && PtInRect(mDropdownRegion, pt))
-            {
+            if (mOpened && PtInRect(mDropdownRegion, pt)) {
                 // Determine which item has been selected
-                for (size_t i = 0; i < mItems.size(); i++)
-                {
+                for (size_t i = 0; i < mItems.size(); i++) {
                     ComboBoxItemPtr pItem = mItems[i];
                     if (pItem->mVisible &&
-                        PtInRect(pItem->mTextRegion, pt))
-                    {
+                        PtInRect(pItem->mTextRegion, pt)) {
                         mFocused = static_cast<int>(i);
                     }
                 }
@@ -179,12 +164,9 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
         }
 
         case MB:
-            if (param1 == GLFW_MOUSE_BUTTON_LEFT)
-            {
-                if (param2 == GLFW_PRESS)
-                {
-                    if (ContainsPoint(pt))
-                    {
+            if (param1 == GLFW_MOUSE_BUTTON_LEFT) {
+                if (param2 == GLFW_PRESS) {
+                    if (ContainsPoint(pt)) {
                         // Pressed while inside the control
                         mPressed = true;
                         //SetCapture(GetHWND());
@@ -196,15 +178,12 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                     }
 
                     // Perhaps this click is within the dropdown
-                    if (mOpened && PtInRect(mDropdownRegion, pt))
-                    {
+                    if (mOpened && PtInRect(mDropdownRegion, pt)) {
                         // Determine which item has been selected
-                        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
-                        {
+                        for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++) {
                             ComboBoxItemPtr pItem = mItems[i];
                             if (pItem->mVisible &&
-                                PtInRect(pItem->mTextRegion, pt))
-                            {
+                                PtInRect(pItem->mTextRegion, pt)) {
                                 mFocused = mSelected = static_cast<int>(i);
                                 mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                                 mOpened = false;
@@ -220,8 +199,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                     }
 
                     // Mouse click not on main control or in dropdown, fire an event if needed
-                    if (mOpened)
-                    {
+                    if (mOpened) {
                         mFocused = mSelected;
 
                         mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
@@ -230,21 +208,16 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
 
                     break;
-                }
-                else if (param2 == GLFW_RELEASE)
-                {
-                    if (mPressed && ContainsPoint(pt))
-                    {
+                } else if (param2 == GLFW_RELEASE) {
+                    if (mPressed && ContainsPoint(pt)) {
                         // Button click
                         mPressed = false;
 
                         // Toggle dropdown
-                        if (mHasFocus)
-                        {
+                        if (mHasFocus) {
                             mOpened = !mOpened;
 
-                            if (!mOpened)
-                            {
+                            if (!mOpened) {
                                 if (!mDialog.IsKeyboardInputEnabled())
                                     mDialog.ClearFocus();
 
@@ -267,11 +240,9 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                 }
             }
 
-        case SCROLL:
-        {
+        case SCROLL: {
             int zDelta = (param2) / _WHEEL_DELTA;
-            if (mOpened)
-            {
+            if (mOpened) {
                 //UINT uLines = 0;
                 //if (!SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &uLines, 0))
                 //    uLines = 0;
@@ -279,7 +250,8 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
                 //if it is scroll, then make sure to also send a mouse move event to select the newly hovered item
                 UpdateItemRects();
-                this->MsgProc(CURSOR_POS, 0, 0, 0, 0);//all blank params may be sent because it retrieves the mouse position from the old message
+                this->MsgProc(CURSOR_POS, 0, 0, 0,
+                              0);//all blank params may be sent because it retrieves the mouse position from the old message
                 //TODO: make this work, but for now:
 
                 /*if (PtInRect(mDropdownRegion, pt))
@@ -299,24 +271,17 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
                 }
                 }*/
 
-            }
-            else
-            {
-                if (zDelta > 0)
-                {
-                    if (mFocused > 0)
-                    {
+            } else {
+                if (zDelta > 0) {
+                    if (mFocused > 0) {
                         mFocused--;
                         mSelected = mFocused;
 
                         if (!mOpened)
                             mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                     }
-                }
-                else
-                {
-                    if (mFocused + 1 < (int)GetNumItems())
-                    {
+                } else {
+                    if (mFocused + 1 < (int) GetNumItems()) {
                         mFocused++;
                         mSelected = mFocused;
 
@@ -328,18 +293,14 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
             }
             return true;
         }
-        case KEY:
-        {
+        case KEY: {
             if (param3 != GLFW_RELEASE)
                 return true;
 
-            switch (param1)
-            {
+            switch (param1) {
                 case GLFW_KEY_ENTER:
-                    if (mOpened)
-                    {
-                        if (mSelected != mFocused)
-                        {
+                    if (mOpened) {
+                        if (mSelected != mFocused) {
                             mSelected = mFocused;
                             mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
                         }
@@ -359,8 +320,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
                     mOpened = !mOpened;
 
-                    if (!mOpened)
-                    {
+                    if (!mOpened) {
                         mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 
                         if (!mDialog.IsKeyboardInputEnabled())
@@ -371,8 +331,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
                 case GLFW_KEY_UP:
                 case GLFW_KEY_LEFT:
-                    if (mFocused > 0)
-                    {
+                    if (mFocused > 0) {
                         mFocused--;
                         mSelected = mFocused;
 
@@ -384,8 +343,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 
                 case GLFW_KEY_RIGHT:
                 case GLFW_KEY_DOWN:
-                    if (mFocused + 1 < (int)GetNumItems())
-                    {
+                    if (mFocused + 1 < (int) GetNumItems()) {
                         mFocused++;
                         mSelected = mFocused;
 
@@ -403,8 +361,7 @@ bool ComboBox::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t 
 }
 
 //--------------------------------------------------------------------------------------
-void ComboBox::OnHotkey() noexcept
-{
+void ComboBox::OnHotkey() noexcept {
     if (mOpened)
         return;
 
@@ -416,22 +373,20 @@ void ComboBox::OnHotkey() noexcept
 
     mSelected++;
 
-    if (mSelected >= (int)mItems.size())
+    if (mSelected >= (int) mItems.size())
         mSelected = 0;
 
     mFocused = mSelected;
     mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, true, shared_from_this());
 }
 
-bool ComboBox::ContainsPoint(const Point& pt) const noexcept
-{
+bool ComboBox::ContainsPoint(const Point &pt) const noexcept {
     return (PtInRect(mRegion, pt) || PtInRect(mButtonRegion, pt));// || (PtInRect(mDropdownRegion, pt) && mOpened));
 }
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::Render( float elapsedTime) noexcept
-{
+void ComboBox::Render(float elapsedTime) noexcept {
     if (mVisible == false)
         return;
     ControlState iState = STATE_NORMAL;
@@ -440,30 +395,26 @@ void ComboBox::Render( float elapsedTime) noexcept
     //    iState = STATE_HIDDEN;
 
     // Dropdown box
-    Element* pElement = &mElements[2];
+    Element *pElement = &mElements[2];
 
     // If we have not initialized the scroll bar page size,
     // do that now.
     static bool bSBInit;
-    if (!bSBInit)
-    {
+    if (!bSBInit) {
         // Update the page size of the scroll bar
         auto fontNode = mDialog.GetFont(pElement->mFontIndex);
-        if (fontNode->mFontType->mHeight)
-        {
+        if (fontNode->mFontType->mHeight) {
             mScrollBar->SetPageSize(
                     static_cast<int>(glm::round(
                             static_cast<float>(RectHeight(mDropdownTextRegion)) /
                             static_cast<float>(fontNode->mLeading))));
-        }
-        else
+        } else
             mScrollBar->SetPageSize(0);
         bSBInit = true;
     }
 
     // Scroll bar --EDITED, only render any of this stuff if OPENED
-    if (mOpened)
-    {
+    if (mOpened) {
         mScrollBar->Render(elapsedTime);
 
         // Blend current color
@@ -474,21 +425,19 @@ void ComboBox::Render( float elapsedTime) noexcept
 
 
         // Selection outline
-        Element* pSelectionElement = &mElements[3];
+        Element *pSelectionElement = &mElements[3];
         pSelectionElement->mTextureColor.GetCurrent() = pElement->mTextureColor.GetCurrent();
-        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[STATE_NORMAL]*/{ 0, 0, 0, 255 });
+        pSelectionElement->mFontColor.SetCurrent(/*pSelectionElement->mFontColor.mStates[STATE_NORMAL]*/{0, 0, 0, 255});
 
         FontNodePtr pFont = mDialog.GetFont(pElement->mFontIndex);
-        if (pFont)
-        {
+        if (pFont) {
             //float curY = mDropdownTextRegion.top - 0.02f;
             //float fRemainingHeight = RectHeight(mDropdownTextRegion) - pFont->mSize;//subtract the font size initially too, because we do not want it hanging off the edge
             //WCHAR strDropdown[4096] = {0};
 
             UpdateItemRects();
 
-            for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++)
-            {
+            for (size_t i = mScrollBar->GetTrackPos(); i < mItems.size(); i++) {
                 ComboBoxItemPtr pItem = mItems[i];
                 Rect active = pItem->mTextRegion;
 
@@ -512,8 +461,7 @@ void ComboBox::Render( float elapsedTime) noexcept
                 //SetRect(rc, mDropdownRegion.left + RectWidth(mDropdownRegion) / 12.0f, mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * i), mDropdownRegion.right,
                 //    mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * (i + 1)));
 
-                if ((int)i == mFocused)
-                {
+                if ((int) i == mFocused) {
                     //SetRect(rc, mDropdownRegion.left, pItem->mActiveRegion.top - (2 / mDialog.GetManager()->GetWindowSize().y), mDropdownRegion.right,
                     //    pItem->mActiveRegion.bottom + (2 / mDialog.GetManager()->GetWindowSize().y));
                     /*SetRect(rc, mDropdownRegion.left, mDropdownRegion.top - (RectHeight(pItem->mActiveRegion) * i), mDropdownRegion.right,
@@ -521,9 +469,7 @@ void ComboBox::Render( float elapsedTime) noexcept
                     //mDialog.DrawText(pItem->mText, pSelectionElement, rc);
                     mDialog.DrawSprite(*pSelectionElement, active, _NEAR_BUTTON_DEPTH);
                     mDialog.DrawText(pItem->mText, *pSelectionElement, pItem->mTextRegion);
-                }
-                else
-                {
+                } else {
                     mDialog.DrawText(pItem->mText, *pElement, pItem->mTextRegion);
                 }
             }
@@ -539,21 +485,17 @@ void ComboBox::Render( float elapsedTime) noexcept
         iState = STATE_HIDDEN;
     else if (mEnabled == false)
         iState = STATE_DISABLED;
-    else if (mPressed)
-    {
+    else if (mPressed) {
         iState = STATE_PRESSED;
 
         OffsetX = 1;
         OffsetY = 2;
-    }
-    else if (mMouseOver)
-    {
+    } else if (mMouseOver) {
         iState = STATE_MOUSEOVER;
 
         OffsetX = -1;
         OffsetY = -2;
-    }
-    else if (mHasFocus)
+    } else if (mHasFocus)
         iState = STATE_FOCUS;
 
     float fBlendRate = 5.0f;
@@ -582,11 +524,9 @@ void ComboBox::Render( float elapsedTime) noexcept
 
     mDialog.DrawSprite(*pElement, mRegion, _NEAR_BUTTON_DEPTH);
 
-    if (mSelected >= 0 && mSelected < (int)mItems.size())
-    {
+    if (mSelected >= 0 && mSelected < (int) mItems.size()) {
         ComboBoxItemPtr pItem = mItems[mSelected];
-        if (pItem)
-        {
+        if (pItem) {
             mDialog.DrawText(pItem->mText, *pElement, mTextRegion, false, true);
 
         }
@@ -597,8 +537,7 @@ void ComboBox::Render( float elapsedTime) noexcept
 
 //--------------------------------------------------------------------------------------
 
-void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
-{
+void ComboBox::AddItem(const std::wstring &text, GenericData &data) noexcept {
     // Create a new item and set the data
     auto pItem = std::make_shared<ComboBoxItem>(data);
 
@@ -608,11 +547,10 @@ void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
     mItems.push_back(pItem);
 
     // Update the scroll bar with new range
-    mScrollBar->SetTrackRange(0, (int)mItems.size());
+    mScrollBar->SetTrackRange(0, (int) mItems.size());
 
     // If this is the only item in the list, it's selected
-    if (GetNumItems() == 1)
-    {
+    if (GetNumItems() == 1) {
         mSelected = 0;
         mFocused = 0;
         mDialog.SendEvent(EVENT_COMBOBOX_SELECTION_CHANGED, false, shared_from_this());
@@ -621,19 +559,16 @@ void ComboBox::AddItem(const std::wstring& text, GenericData& data) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::RemoveItem(Index index)
-{
-    if (index >= mItems.size())
-    {
+void ComboBox::RemoveItem(Index index) {
+    if (index >= mItems.size()) {
         GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Error Removing Item From Combo Box"));
         return;
     }
 
     //erase the item (kinda sloppy)
-    std::vector<ComboBoxItemPtr> newItemList;
+    std::vector <ComboBoxItemPtr> newItemList;
     newItemList.resize(mItems.size() - 1);
-    for (Index i = 0; i < mItems.size(); ++i)
-    {
+    for (Index i = 0; i < mItems.size(); ++i) {
         if (i == index)
             continue;
 
@@ -641,15 +576,14 @@ void ComboBox::RemoveItem(Index index)
     }
     mItems = newItemList;
 
-    mScrollBar->SetTrackRange(0, (int)mItems.size());
-    if (mSelected >= (int)mItems.size())
-        mSelected = (int)mItems.size() - 1;
+    mScrollBar->SetTrackRange(0, (int) mItems.size());
+    if (mSelected >= (int) mItems.size())
+        mSelected = (int) mItems.size() - 1;
 }
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::RemoveAllItems() noexcept
-{
+void ComboBox::RemoveAllItems() noexcept {
     mItems.clear();
     mScrollBar->SetTrackRange(0, 1);
     mFocused = mSelected = -1;
@@ -657,17 +591,14 @@ void ComboBox::RemoveAllItems() noexcept
 
 
 //--------------------------------------------------------------------------------------
-bool ComboBox::ContainsItem(const std::wstring& text, Index start) const noexcept
-{
+bool ComboBox::ContainsItem(const std::wstring &text, Index start) const noexcept {
     return (-1 != FindItemIndex(text, start));
 }
 
 
 //--------------------------------------------------------------------------------------
-Index ComboBox::FindItemIndex(const std::wstring& text, Index start) const
-{
-    for (Index i = start; i < mItems.size(); ++i)
-    {
+Index ComboBox::FindItemIndex(const std::wstring &text, Index start) const {
+    for (Index i = start; i < mItems.size(); ++i) {
         ComboBoxItemPtr pItem = mItems[i];
 
         if (pItem->mText == text)//REMEMBER if this returns 0, they are the same
@@ -681,10 +612,8 @@ Index ComboBox::FindItemIndex(const std::wstring& text, Index start) const
 
 
 //--------------------------------------------------------------------------------------
-ComboBoxItemPtr ComboBox::FindItem(const std::wstring& text, Index start) const
-{
-    for (auto it : mItems)
-    {
+ComboBoxItemPtr ComboBox::FindItem(const std::wstring &text, Index start) const {
+    for (auto it : mItems) {
         if (it->mText == text)//REMEMBER if this returns 0, they are the same
         {
             return it;
@@ -696,8 +625,7 @@ ComboBoxItemPtr ComboBox::FindItem(const std::wstring& text, Index start) const
 
 
 //--------------------------------------------------------------------------------------
-GenericData& ComboBox::GetSelectedData() const
-{
+GenericData &ComboBox::GetSelectedData() const {
     if (mSelected < 0)
         throw NoItemSelectedException();
 
@@ -707,8 +635,7 @@ GenericData& ComboBox::GetSelectedData() const
 
 
 //--------------------------------------------------------------------------------------
-ComboBoxItemPtr ComboBox::GetSelectedItem() const
-{
+ComboBoxItemPtr ComboBox::GetSelectedItem() const {
     if (mSelected < 0)
         throw NoItemSelectedException();
 
@@ -717,24 +644,20 @@ ComboBoxItemPtr ComboBox::GetSelectedItem() const
 
 
 //--------------------------------------------------------------------------------------
-GenericData& ComboBox::GetItemData(const std::wstring& text, Index start) const
-{
+GenericData &ComboBox::GetItemData(const std::wstring &text, Index start) const {
     return FindItem(text, start)->mData;
 }
 
 
 //--------------------------------------------------------------------------------------
-GenericData& ComboBox::GetItemData(Index index) const
-{
+GenericData &ComboBox::GetItemData(Index index) const {
     return mItems[index]->mData;
 }
 
 
 //--------------------------------------------------------------------------------------
-void ComboBox::SelectItem(Index index)
-{
-    if (index >= mItems.size())
-    {
+void ComboBox::SelectItem(Index index) {
+    if (index >= mItems.size()) {
         GLUF_NON_CRITICAL_EXCEPTION(std::out_of_range("Index Too Large"));
         return;
     }
@@ -744,17 +667,13 @@ void ComboBox::SelectItem(Index index)
 }
 
 
-
 //--------------------------------------------------------------------------------------
-void ComboBox::SelectItem(const std::wstring& text, Index start)
-{
+void ComboBox::SelectItem(const std::wstring &text, Index start) {
     Index itemIndex = 0;
-    try
-    {
+    try {
         itemIndex = FindItemIndex(text, start);
     }
-    catch (...)
-    {
+    catch (...) {
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"text\" not found in combo box"));
         return;
     }
@@ -764,22 +683,17 @@ void ComboBox::SelectItem(const std::wstring& text, Index start)
 }
 
 
-
 //--------------------------------------------------------------------------------------
-void ComboBox::SelectItem(const GenericData& data)
-{
+void ComboBox::SelectItem(const GenericData &data) {
     sIndex itemIndex = -1;
-    for (unsigned int i = 0; i < mItems.size(); ++i)
-    {
-        if (&mItems[i]->mData == &data)
-        {
+    for (unsigned int i = 0; i < mItems.size(); ++i) {
+        if (&mItems[i]->mData == &data) {
             itemIndex = i;
             break;
         }
     }
 
-    if (itemIndex == -1)
-    {
+    if (itemIndex == -1) {
         GLUF_NON_CRITICAL_EXCEPTION(std::invalid_argument("\"data\" not found"));
         return;
     }
@@ -787,3 +701,4 @@ void ComboBox::SelectItem(const GenericData& data)
     SelectItem(itemIndex);
 }
 
+}

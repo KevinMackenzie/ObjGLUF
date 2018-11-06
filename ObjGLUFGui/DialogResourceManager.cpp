@@ -1,5 +1,7 @@
 #include "DialogResourceManager.h"
 
+namespace GLUF {
+
 //--------------------------------------------------------------------------------------
 DialogResourceManager::DialogResourceManager() :
         mSpriteBuffer(GL_TRIANGLES, GL_STREAM_DRAW)//use stream draw because it will be changed every frame
@@ -35,9 +37,9 @@ DialogResourceManager::DialogResourceManager() :
     //glGenBuffers(1, &m_SpriteBufferTexCoords);
     //glGenBuffers(1, &m_SpriteBufferIndices);
 
-    mSpriteBuffer.AddVertexAttrib({ 4, 3, g_UIShaderLocations.position, GL_FLOAT, 0 }, 0);
-    mSpriteBuffer.AddVertexAttrib({ 4, 4, g_UIShaderLocations.color, GL_FLOAT, 0 }, 12);
-    mSpriteBuffer.AddVertexAttrib({ 4, 2, g_UIShaderLocations.uv, GL_FLOAT, 0 }, 28);
+    mSpriteBuffer.AddVertexAttrib({4, 3, g_UIShaderLocations.position, GL_FLOAT, 0}, 0);
+    mSpriteBuffer.AddVertexAttrib({4, 4, g_UIShaderLocations.color, GL_FLOAT, 0}, 12);
+    mSpriteBuffer.AddVertexAttrib({4, 2, g_UIShaderLocations.uv, GL_FLOAT, 0}, 28);
 
     //this is static
     //glGenBufferBindBuffer(GL_ELEMENT_ARRAY_BUFFER, &m_SpriteBufferIndices);
@@ -58,8 +60,7 @@ DialogResourceManager::DialogResourceManager() :
 
 
 //--------------------------------------------------------------------------------------
-DialogResourceManager::~DialogResourceManager()
-{
+DialogResourceManager::~DialogResourceManager() {
     //mFontCache.clear();
     //mTextureCache.clear();
 
@@ -80,16 +81,14 @@ DialogResourceManager::~DialogResourceManager()
 
 
 //--------------------------------------------------------------------------------------
-bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept
-{
+bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t param2, int32_t param3, int32_t param4) noexcept {
     GLUF_UNREFERENCED_PARAMETER(msg);
     //GLUF_UNREFERENCED_PARAMETER(param1);
     //GLUF_UNREFERENCED_PARAMETER(param2);
     GLUF_UNREFERENCED_PARAMETER(param3);
     GLUF_UNREFERENCED_PARAMETER(param4);
 
-    switch (msg)
-    {
+    switch (msg) {
         case RESIZE:
             mWndSize.width = 0L;
             mWndSize.height = 0L;
@@ -105,8 +104,7 @@ bool DialogResourceManager::MsgProc(MessageType msg, int32_t param1, int32_t par
 }
 
 //--------------------------------------------------------------------------------------
-void DialogResourceManager::ApplyRenderUI() noexcept
-{
+void DialogResourceManager::ApplyRenderUI() noexcept {
     // Shaders
     /*glEnableVertexAttribArray(g_UIShaderLocations.position);
     glEnableVertexAttribArray(g_UIShaderLocations.color);
@@ -118,8 +116,7 @@ void DialogResourceManager::ApplyRenderUI() noexcept
 
 
 //--------------------------------------------------------------------------------------
-void DialogResourceManager::ApplyRenderUIUntex() noexcept
-{
+void DialogResourceManager::ApplyRenderUIUntex() noexcept {
     /*glEnableVertexAttribArray(g_UIShaderLocationsUntex.position);
     glEnableVertexAttribArray(g_UIShaderLocationsUntex.color);*/
     SHADERMANAGER.UseProgram(g_UIProgramUntex);
@@ -127,20 +124,16 @@ void DialogResourceManager::ApplyRenderUIUntex() noexcept
     ApplyOrtho();
 }
 
-glm::mat4 DialogResourceManager::GetOrthoMatrix() noexcept
-{
+glm::mat4 DialogResourceManager::GetOrthoMatrix() noexcept {
     Point pt = GetWindowSize();
-    float x2 = (float)pt.x / 2.0f;
-    float y2 = (float)pt.y / 2.0f;
-    return glm::ortho((float)-x2, (float)x2, (float)-y2, (float)y2);
+    float x2 = (float) pt.x / 2.0f;
+    float y2 = (float) pt.y / 2.0f;
+    return glm::ortho((float) -x2, (float) x2, (float) -y2, (float) y2);
 }
 
-DialogPtr DialogResourceManager::GetDialogPtrFromRef(const Dialog& ref) noexcept
-{
-    for (auto it = mDialogs.cbegin(); it != mDialogs.cend(); ++it)
-    {
-        if (it->get() == &ref)
-        {
+DialogPtr DialogResourceManager::GetDialogPtrFromRef(const Dialog &ref) noexcept {
+    for (auto it = mDialogs.cbegin(); it != mDialogs.cend(); ++it) {
+        if (it->get() == &ref) {
             return *it;
         }
     }
@@ -148,22 +141,19 @@ DialogPtr DialogResourceManager::GetDialogPtrFromRef(const Dialog& ref) noexcept
     return nullptr;
 }
 
-void DialogResourceManager::ApplyOrtho() noexcept
-{
+void DialogResourceManager::ApplyOrtho() noexcept {
     glm::mat4 mat = GetOrthoMatrix();
     SHADERMANAGER.GLUniformMatrix4f(g_UIShaderLocations.ortho, mat);
 }
 
 //--------------------------------------------------------------------------------------
-void DialogResourceManager::BeginSprites() noexcept
-{
+void DialogResourceManager::BeginSprites() noexcept {
 }
 
 
 //--------------------------------------------------------------------------------------
 
-void DialogResourceManager::EndSprites(const Element* element, bool textured)
-{
+void DialogResourceManager::EndSprites(const Element *element, bool textured) {
     /*if (textured)
     {
         mSpriteBuffer.EnableVertexAttribute(2);
@@ -174,8 +164,7 @@ void DialogResourceManager::EndSprites(const Element* element, bool textured)
     }*/
 
 
-    if (textured && element)
-    {
+    if (textured && element) {
         ApplyRenderUI();
 
         TextureNodePtr pTexture = GetTextureNode(element->mTextureIndex);
@@ -183,9 +172,7 @@ void DialogResourceManager::EndSprites(const Element* element, bool textured)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, pTexture->mTextureElement);
         glUniform1i(g_UIShaderLocations.sampler, 0);
-    }
-    else
-    {
+    } else {
         ApplyRenderUIUntex();
     }
 
@@ -195,14 +182,12 @@ void DialogResourceManager::EndSprites(const Element* element, bool textured)
 
 
 //--------------------------------------------------------------------------------------
-void DialogResourceManager::RegisterDialog(const DialogPtr& dialog) noexcept
-{
+void DialogResourceManager::RegisterDialog(const DialogPtr &dialog) noexcept {
     if (!dialog)
         return;
 
     // Check that the dialog isn't already registered.
-    for (auto it : mDialogs)
-    {
+    for (auto it : mDialogs) {
         if (it == dialog)
             return;
     }
@@ -218,16 +203,12 @@ void DialogResourceManager::RegisterDialog(const DialogPtr& dialog) noexcept
 
 
 //--------------------------------------------------------------------------------------
-void DialogResourceManager::UnregisterDialog(const DialogPtr& pDialog)
-{
+void DialogResourceManager::UnregisterDialog(const DialogPtr &pDialog) {
     // Search for the dialog in the list.
-    for (size_t i = 0; i < mDialogs.size(); ++i)
-    {
-        if (mDialogs[i] == pDialog)
-        {
+    for (size_t i = 0; i < mDialogs.size(); ++i) {
+        if (mDialogs[i] == pDialog) {
             mDialogs.erase(mDialogs.begin() + i);
-            if (!mDialogs.empty())
-            {
+            if (!mDialogs.empty()) {
                 int l, r;
 
                 if (0 == i)
@@ -249,34 +230,29 @@ void DialogResourceManager::UnregisterDialog(const DialogPtr& pDialog)
 
 
 //--------------------------------------------------------------------------------------
-void DialogResourceManager::EnableKeyboardInputForAllDialogs() noexcept
-{
+void DialogResourceManager::EnableKeyboardInputForAllDialogs() noexcept {
     // Enable keyboard input for all registered dialogs
     for (auto it : mDialogs)
         it->EnableKeyboardInput(true);
 }
 
 //--------------------------------------------------------------------------------------
-Point DialogResourceManager::GetWindowSize()
-{
-    if (mWndSize.x == 0L || mWndSize.y == 0L)
-    {
+Point DialogResourceManager::GetWindowSize() {
+    if (mWndSize.x == 0L || mWndSize.y == 0L) {
         int w, h;
         glfwGetWindowSize(g_pGLFWWindow, &w, &h);
-        mWndSize.width = (long)w;
-        mWndSize.height = (long)h;
-        g_WndHeight = (unsigned short)h;
-        g_WndWidth = (unsigned short)w;
+        mWndSize.width = (long) w;
+        mWndSize.height = (long) h;
+        g_WndHeight = (unsigned short) h;
+        g_WndWidth = (unsigned short) w;
     }
     return mWndSize;
 }
 
 //--------------------------------------------------------------------------------------
-FontIndex DialogResourceManager::AddFont(const FontPtr& font, FontSize leading, FontWeight weight) noexcept
-{
+FontIndex DialogResourceManager::AddFont(const FontPtr &font, FontSize leading, FontWeight weight) noexcept {
     // See if this font already exists (this is simple)
-    for (size_t i = 0; i < mFontCache.size(); ++i)
-    {
+    for (size_t i = 0; i < mFontCache.size(); ++i) {
         FontNodePtr node = mFontCache[i];
         if (node->mFontType == font && node->mWeight == weight && node->mLeading == leading)
             return i;
@@ -297,11 +273,9 @@ FontIndex DialogResourceManager::AddFont(const FontPtr& font, FontSize leading, 
 
 
 //--------------------------------------------------------------------------------------
-TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept
-{
+TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept {
     // See if this texture already exists
-    for (size_t i = 0; i < mTextureCache.size(); ++i)
-    {
+    for (size_t i = 0; i < mTextureCache.size(); ++i) {
         TextureNodePtr pTextureNode = mTextureCache[i];
         if (texture == pTextureNode->mTextureElement)
             return i;
@@ -316,3 +290,4 @@ TextureIndex DialogResourceManager::AddTexture(GLuint texture) noexcept
     return mTextureCache.size() - 1;
 }
 
+}

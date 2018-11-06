@@ -1,6 +1,7 @@
 #ifndef OBJGLUF_SPRITEVERTEXSTRUCT_H
 #define OBJGLUF_SPRITEVERTEXSTRUCT_H
 
+namespace GLUF {
 /*
 SpriteVertexStruct
 
@@ -13,20 +14,18 @@ SpriteVertexStruct
         'mTexCoords': a uv coord
 
 */
-struct SpriteVertexStruct : public VertexStruct
-{
+struct SpriteVertexStruct : public VertexStruct {
     glm::vec3 mPos;
     Color4f mColor;
     glm::vec2 mTexCoords;
 
-    SpriteVertexStruct(){}
-    SpriteVertexStruct(const glm::vec3& pos, const Color4f& color, const glm::vec2& texCoords) :
-            mPos(pos), mColor(color), mTexCoords(texCoords)
-    {}
+    SpriteVertexStruct() {}
 
-    virtual char* get_data() const override
-    {
-        char* ret = new char[size()];
+    SpriteVertexStruct(const glm::vec3 &pos, const Color4f &color, const glm::vec2 &texCoords) :
+            mPos(pos), mColor(color), mTexCoords(texCoords) {}
+
+    virtual char *get_data() const override {
+        char *ret = new char[size()];
 
         memcpy(ret, &mPos[0], 12);
         memcpy(ret + 12, &mColor[0], 16);
@@ -35,15 +34,12 @@ struct SpriteVertexStruct : public VertexStruct
         return ret;
     }
 
-    virtual size_t size() const override
-    {
+    virtual size_t size() const override {
         return 36; // sizeof(mPos) + sizeof(mColor) + sizeof(mTexCoords);
     }
 
-    virtual size_t n_elem_size(size_t element)
-    {
-        switch (element)
-        {
+    virtual size_t n_elem_size(size_t element) {
+        switch (element) {
             case 0:
                 return 12;
             case 1:
@@ -55,27 +51,25 @@ struct SpriteVertexStruct : public VertexStruct
         }
     }
 
-    virtual void buffer_element(void* data, size_t element) override
-    {
-        switch (element)
-        {
+    virtual void buffer_element(void *data, size_t element) override {
+        switch (element) {
             case 0:
-                mPos = static_cast<glm::vec3*>(data)[0];
+                mPos = static_cast<glm::vec3 *>(data)[0];
             case 1:
-                mColor = static_cast<Color4f*>(data)[0];
+                mColor = static_cast<Color4f *>(data)[0];
             case 2:
-                mTexCoords = static_cast<glm::vec2*>(data)[0];
+                mTexCoords = static_cast<glm::vec2 *>(data)[0];
             default:
                 break;
         }
     }
 
-    static GLVector<SpriteVertexStruct> MakeMany(size_t howMany)
-    {
-        GLVector<SpriteVertexStruct> ret;
+    static GLVector <SpriteVertexStruct> MakeMany(size_t howMany) {
+        GLVector <SpriteVertexStruct> ret;
         ret.resize(howMany);
 
         return ret;
     }
 };
+}
 #endif //OBJGLUF_SPRITEVERTEXSTRUCT_H

@@ -1,5 +1,6 @@
 #include "Assimp.h"
 
+namespace GLUF {
 /*
 =======================================================================================================================================================================================================
 Assimp Utility Functions
@@ -7,8 +8,7 @@ Assimp Utility Functions
 */
 
 //--------------------------------------------------------------------------------------
-std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLuint meshNum)
-{
+std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene *scene, GLuint meshNum) {
     if (meshNum > scene->mNumMeshes)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than number of meshes in \"scene\""));
 
@@ -113,7 +113,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, GLui
     }
     vertexData->BufferIndices(&indices[0], indices.size());*/
 
-return arr;
+    return arr;
 }
 
 /*
@@ -124,24 +124,21 @@ AssimpVertexStruct
 */
 
 //--------------------------------------------------------------------------------------
-struct AssimpVertexStruct : public VertexStruct
-{
+struct AssimpVertexStruct : public VertexStruct {
     std::vector<aiVector2D> v2;
     std::vector<aiVector3D> v3;
     std::vector<aiColor4D> v4;
 
-    AssimpVertexStruct(size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
-    {
+    AssimpVertexStruct(size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt) {
         v2.resize(vec2Cnt);
         v3.resize(vec3Cnt);
         v4.resize(vec4Cnt);
     }
 
-    AssimpVertexStruct(){};
+    AssimpVertexStruct() {};
 
-    virtual char* get_data() const override
-    {
-        char* ret = new char[size()];
+    virtual char *get_data() const override {
+        char *ret = new char[size()];
 
         size_t v2Size = 2 * v2.size() * 4;
         size_t v3Size = 3 * v3.size() * 4;
@@ -154,13 +151,11 @@ struct AssimpVertexStruct : public VertexStruct
         return ret;
     }
 
-    virtual size_t size() const override
-    {
+    virtual size_t size() const override {
         return 4 * (2 * v2.size() + 3 * v3.size() + 4 * v4.size());
     }
 
-    virtual size_t n_elem_size(size_t element)
-    {
+    virtual size_t n_elem_size(size_t element) {
         size_t i = 0;
         if (element < v2.size())
             return sizeof(aiVector2D);
@@ -178,40 +173,35 @@ struct AssimpVertexStruct : public VertexStruct
         return 0;//if it is too big, just return 0; not worth an exception
     }
 
-    virtual void buffer_element(void* data, size_t element) override
-    {
+    virtual void buffer_element(void *data, size_t element) override {
         size_t i = 0;
-        if (element < v2.size())
-        {
-            v2[element] = static_cast<aiVector2D*>(data)[0];
+        if (element < v2.size()) {
+            v2[element] = static_cast<aiVector2D *>(data)[0];
             return;
         }
 
         i += v2.size();
 
-        if (element < i + v3.size())
-        {
-            v3[element - i] = static_cast<aiVector3D*>(data)[0];
+        if (element < i + v3.size()) {
+            v3[element - i] = static_cast<aiVector3D *>(data)[0];
             return;
         }
 
         i += v3.size();
 
-        if (element < i + v4.size())
-        {
-            v4[element - i] = static_cast<aiColor4D*>(data)[0];
+        if (element < i + v4.size()) {
+            v4[element - i] = static_cast<aiColor4D *>(data)[0];
             return;
         }
     }
 
-    static GLVector<AssimpVertexStruct> MakeMany(size_t howMany, size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt)
-    {
+    static GLVector<AssimpVertexStruct> MakeMany(size_t howMany, size_t vec2Cnt, size_t vec3Cnt, size_t vec4Cnt) {
         GLVector<AssimpVertexStruct> ret;
         ret.reserve(howMany);
 
         //the individual struct object that will be cloned to fill the return vector
-        AssimpVertexStruct clone{ vec2Cnt, vec3Cnt, vec4Cnt };
-        
+        AssimpVertexStruct clone{vec2Cnt, vec3Cnt, vec4Cnt};
+
         //use 'fill' version of vector::insert for increased speed
         ret.insert(ret.begin(), howMany, clone);
 
@@ -221,12 +211,11 @@ struct AssimpVertexStruct : public VertexStruct
 
 
 //--------------------------------------------------------------------------------------
-std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, const VertexAttribMap& inputs, GLuint meshNum)
-{
+std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene *scene, const VertexAttribMap &inputs, GLuint meshNum) {
     if (meshNum > scene->mNumMeshes)
         GLUF_CRITICAL_EXCEPTION(std::invalid_argument("\"meshNum\" is higher than the number of meshes in \"scene\""));
 
-    const aiMesh* mesh = scene->mMeshes[meshNum];
+    const aiMesh *mesh = scene->mMeshes[meshNum];
 
     auto vertexData = std::make_shared<VertexArray>(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
 
@@ -240,8 +229,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV0 = inputs.find(GLUF_VERTEX_ATTRIB_UV0);
     auto it = itUV0;
-    if (mesh->HasTextureCoords(0) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(0) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV0] = numVec2;
         ++numVec2;
@@ -249,8 +237,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV1 = inputs.find(GLUF_VERTEX_ATTRIB_UV1);
     it = itUV1;
-    if (mesh->HasTextureCoords(1) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(1) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV1] = numVec2;
         ++numVec2;
@@ -258,8 +245,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV2 = inputs.find(GLUF_VERTEX_ATTRIB_UV2);
     it = itUV2;
-    if (mesh->HasTextureCoords(2) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(2) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV2] = numVec2;
         ++numVec2;
@@ -267,8 +253,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV3 = inputs.find(GLUF_VERTEX_ATTRIB_UV3);
     it = itUV3;
-    if (mesh->HasTextureCoords(3) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(3) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV3] = numVec2;
         ++numVec2;
@@ -276,8 +261,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV4 = inputs.find(GLUF_VERTEX_ATTRIB_UV4);
     it = itUV4;
-    if (mesh->HasTextureCoords(4) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(4) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV4] = numVec2;
         ++numVec2;
@@ -285,8 +269,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV5 = inputs.find(GLUF_VERTEX_ATTRIB_UV5);
     it = itUV5;
-    if (mesh->HasTextureCoords(5) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(5) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV5] = numVec2;
         ++numVec2;
@@ -294,8 +277,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV6 = inputs.find(GLUF_VERTEX_ATTRIB_UV6);
     it = itUV6;
-    if (mesh->HasTextureCoords(6) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(6) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV6] = numVec2;
         ++numVec2;
@@ -303,8 +285,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itUV7 = inputs.find(GLUF_VERTEX_ATTRIB_UV7);
     it = itUV7;
-    if (mesh->HasTextureCoords(7) && it != inputs.end())
-    {
+    if (mesh->HasTextureCoords(7) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec2 * 8);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV7] = numVec2;
         ++numVec2;
@@ -317,8 +298,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
     //vec3's go between vec2's and vec4's
     auto itPos = inputs.find(GLUF_VERTEX_ATTRIB_POSITION);
     it = itPos;
-    if (mesh->HasPositions() && it != inputs.end())
-    {
+    if (mesh->HasPositions() && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec3 * 12 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION] = numVec3 + numVec2;
         ++numVec3;
@@ -326,8 +306,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itNorm = inputs.find(GLUF_VERTEX_ATTRIB_NORMAL);
     it = itNorm;
-    if (mesh->HasNormals() && it != inputs.end())
-    {
+    if (mesh->HasNormals() && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec3 * 12 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_NORMAL] = numVec3 + numVec2;
         ++numVec3;
@@ -336,8 +315,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itTan = inputs.find(GLUF_VERTEX_ATTRIB_TAN);
     auto itBitan = inputs.find(GLUF_VERTEX_ATTRIB_BITAN);
-    if (mesh->HasTangentsAndBitangents() && itTan != inputs.end() && itBitan != inputs.end())
-    {
+    if (mesh->HasTangentsAndBitangents() && itTan != inputs.end() && itBitan != inputs.end()) {
         vertexData->AddVertexAttrib(itTan->second, numVec3 * 12 + runningOffsetTotal);
         vertexData->AddVertexAttrib(itBitan->second, (numVec3 + 1) * 12 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN] = numVec3 + numVec2;
@@ -352,8 +330,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol0 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR0);
     it = itCol0;
-    if (mesh->HasVertexColors(0) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(0) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR0] = numVec4 + runningTotal;
         ++numVec4;
@@ -361,8 +338,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol1 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR1);
     it = itCol1;
-    if (mesh->HasVertexColors(1) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(1) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR1] = numVec4 + runningTotal;
         ++numVec4;
@@ -370,8 +346,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol2 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR2);
     it = itCol2;
-    if (mesh->HasVertexColors(2) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(2) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR2] = numVec4 + runningTotal;
         ++numVec4;
@@ -379,8 +354,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol3 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR3);
     it = itCol3;
-    if (mesh->HasVertexColors(3) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(3) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR3] = numVec4 + runningTotal;
         ++numVec4;
@@ -388,17 +362,15 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol4 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR4);
     it = itCol4;
-    if (mesh->HasVertexColors(4) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(4) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4] = numVec4 + runningTotal;
         ++numVec4;
     }
-    
+
     auto itCol5 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR5);
     it = itCol5;
-    if (mesh->HasVertexColors(5) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(5) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR5] = numVec4 + runningTotal;
         ++numVec4;
@@ -406,8 +378,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol6 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR6);
     it = itCol6;
-    if (mesh->HasVertexColors(6) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(6) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR6] = numVec4 + runningTotal;
         ++numVec4;
@@ -415,8 +386,7 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
     auto itCol7 = inputs.find(GLUF_VERTEX_ATTRIB_COLOR7);
     it = itCol7;
-    if (mesh->HasVertexColors(7) && it != inputs.end())
-    {
+    if (mesh->HasVertexColors(7) && it != inputs.end()) {
         vertexData->AddVertexAttrib(it->second, numVec4 * 16 + runningOffsetTotal);
         vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7] = numVec4 + runningTotal;
         ++numVec4;
@@ -425,15 +395,14 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
 
     //the custom vertex array
-    GLVector<AssimpVertexStruct> vertexBuffer = AssimpVertexStruct::MakeMany(mesh->mNumVertices, numVec2, numVec3, numVec4);
+    GLVector<AssimpVertexStruct> vertexBuffer = AssimpVertexStruct::MakeMany(mesh->mNumVertices, numVec2, numVec3,
+                                                                             numVec4);
 
-    if (mesh->HasPositions() && itPos != inputs.end())
-    {
+    if (mesh->HasPositions() && itPos != inputs.end()) {
         //positions will ALWAYS be the first vec3
         vertexBuffer.buffer_element(mesh->mVertices, vertexAttribLoc[GLUF_VERTEX_ATTRIB_POSITION]);
     }
-    if (mesh->HasNormals() && itNorm != inputs.end())
-    {
+    if (mesh->HasNormals() && itNorm != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mNormals, vertexAttribLoc[GLUF_VERTEX_ATTRIB_NORMAL]);
     }
 
@@ -448,96 +417,77 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
     */
 
     //note: data2D must be size in length
-    const auto FlipAndConvertUVArray = [](aiVector3D* data, aiVector2D*& data2D, const unsigned int size)
-    {
-        for (unsigned int i = 0; i < size; ++i)
-        {
+    const auto FlipAndConvertUVArray = [](aiVector3D *data, aiVector2D *&data2D, const unsigned int size) {
+        for (unsigned int i = 0; i < size; ++i) {
             data2D[i].x = data[i].x;
             data2D[i].y = 1.0f - data[i].y;
         }
     };
 
-    aiVector2D* data2D = nullptr;
-    if (mesh->HasTextureCoords(0) && itUV0 != inputs.end())
-    {
+    aiVector2D *data2D = nullptr;
+    if (mesh->HasTextureCoords(0) && itUV0 != inputs.end()) {
         //do not initialize data2D until here, because if there is not a first texture coord, then there wil be no others
         data2D = new aiVector2D[mesh->mNumVertices];
 
         FlipAndConvertUVArray(mesh->mTextureCoords[0], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV0]);
     }
-    if (mesh->HasTextureCoords(1) && itUV1 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(1) && itUV1 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[1], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV1]);
     }
-    if (mesh->HasTextureCoords(2) && itUV2 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(2) && itUV2 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[2], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV2]);
     }
-    if (mesh->HasTextureCoords(3) && itUV3 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(3) && itUV3 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[3], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV3]);
     }
-    if (mesh->HasTextureCoords(4) && itUV4 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(4) && itUV4 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[4], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV4]);
     }
-    if (mesh->HasTextureCoords(5) && itUV5 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(5) && itUV5 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[5], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV5]);
     }
-    if (mesh->HasTextureCoords(6) && itUV6 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(6) && itUV6 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[6], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV6]);
     }
-    if (mesh->HasTextureCoords(7) && itUV7 != inputs.end())
-    {
+    if (mesh->HasTextureCoords(7) && itUV7 != inputs.end()) {
         FlipAndConvertUVArray(mesh->mTextureCoords[7], data2D, mesh->mNumVertices);
         vertexBuffer.buffer_element(data2D, vertexAttribLoc[GLUF_VERTEX_ATTRIB_UV7]);
     }
     delete[] data2D;
 
 
-    if (mesh->HasVertexColors(0) && itCol0 != inputs.end())
-    {
+    if (mesh->HasVertexColors(0) && itCol0 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[0], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR0]);
     }
-    if (mesh->HasVertexColors(1) && itCol1 != inputs.end())
-    {
+    if (mesh->HasVertexColors(1) && itCol1 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[1], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR1]);
     }
-    if (mesh->HasVertexColors(2) && itCol2 != inputs.end())
-    {
+    if (mesh->HasVertexColors(2) && itCol2 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[2], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR2]);
     }
-    if (mesh->HasVertexColors(3) && itCol3 != inputs.end())
-    {
+    if (mesh->HasVertexColors(3) && itCol3 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[3], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR3]);
     }
-    if (mesh->HasVertexColors(4) && itCol4 != inputs.end())
-    {
+    if (mesh->HasVertexColors(4) && itCol4 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[4], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR4]);
     }
-    if (mesh->HasVertexColors(5) && itCol5 != inputs.end())
-    {
+    if (mesh->HasVertexColors(5) && itCol5 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[5], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR5]);
     }
-    if (mesh->HasVertexColors(6) && itCol6 != inputs.end())
-    {
+    if (mesh->HasVertexColors(6) && itCol6 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[6], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR6]);
     }
-    if (mesh->HasVertexColors(7) && itCol7 != inputs.end())
-    {
+    if (mesh->HasVertexColors(7) && itCol7 != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mColors[7], vertexAttribLoc[GLUF_VERTEX_ATTRIB_COLOR7]);
     }
-    if (mesh->HasTangentsAndBitangents() && itBitan != inputs.end() && itTan != inputs.end())
-    {
+    if (mesh->HasTangentsAndBitangents() && itBitan != inputs.end() && itTan != inputs.end()) {
         vertexBuffer.buffer_element(mesh->mTangents, vertexAttribLoc[GLUF_VERTEX_ATTRIB_TAN]);
         vertexBuffer.buffer_element(mesh->mBitangents, vertexAttribLoc[GLUF_VERTEX_ATTRIB_BITAN]);
     }
@@ -547,10 +497,9 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
 
     std::vector<glm::u32vec3> indices;
-    for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
-    {
+    for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
         aiFace curr = mesh->mFaces[i];
-        indices.push_back({ curr.mIndices[0], curr.mIndices[1], curr.mIndices[2] });
+        indices.push_back({curr.mIndices[0], curr.mIndices[1], curr.mIndices[2]});
     }
     vertexData->BufferIndices(indices);
 
@@ -559,19 +508,17 @@ std::shared_ptr<VertexArray> LoadVertexArrayFromScene(const aiScene* scene, cons
 
 
 //--------------------------------------------------------------------------------------
-std::vector<std::shared_ptr<VertexArray>> LoadVertexArraysFromScene(const aiScene* scene, GLuint meshOffset, GLuint numMeshes)
-{
+std::vector<std::shared_ptr<VertexArray>> LoadVertexArraysFromScene(const aiScene *scene, GLuint meshOffset, GLuint numMeshes) {
     std::vector<std::shared_ptr<VertexArray>> arrays;
 
-    if (numMeshes > scene->mNumMeshes)
-    {
+    if (numMeshes > scene->mNumMeshes) {
         arrays.push_back(nullptr);
         return arrays;
     }
 
-    for(unsigned int cnt = 0; cnt < numMeshes; ++cnt)
-    {
-        arrays.push_back(LoadVertexArrayFromScene(scene, cnt));//new VertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
+    for (unsigned int cnt = 0; cnt < numMeshes; ++cnt) {
+        arrays.push_back(
+                LoadVertexArrayFromScene(scene, cnt));//new VertexArray(GL_TRIANGLES, GL_STATIC_DRAW, mesh->HasFaces());
     }
     return arrays;
 }
@@ -644,3 +591,4 @@ VertexArray *LoadVertexArrayFromFile(unsigned int size, void* data)
 
     return LoadVertexArray(scene);
 }*/
+}

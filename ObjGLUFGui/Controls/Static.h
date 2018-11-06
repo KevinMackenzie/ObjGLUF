@@ -1,7 +1,7 @@
 #ifndef OBJGLUF_STATIC_H
 #define OBJGLUF_STATIC_H
 
-
+namespace GLUF {
 /*
 Static
 
@@ -55,4 +55,5 @@ public:
     */
     virtual void Render(float elapsedTime) noexcept override;
 };
+}
 #endif //OBJGLUF_STATIC_H
