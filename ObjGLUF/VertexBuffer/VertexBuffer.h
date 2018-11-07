@@ -1,9 +1,10 @@
 #ifndef OBJGLUF_VERTEXBUFFER_H
 #define OBJGLUF_VERTEXBUFFER_H
 
-#include "../ObjGLUF.h"
-
+#include "../Exceptions.h"
+#include "../Types.h"
 #include "GLVector.h"
+#include <map>
 
 namespace GLUF {
 

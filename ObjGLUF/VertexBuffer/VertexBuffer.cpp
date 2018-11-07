@@ -1,4 +1,8 @@
 #include "VertexBuffer.h"
+#include "../GLExtensions.h"
+// TODO: Remove this dependency
+#include "../Ext/Assimp.h"
+#include "../ObjGLUF.h"
 
 namespace GLUF {
 

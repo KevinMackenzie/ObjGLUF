@@ -1,6 +1,11 @@
 #ifndef OBJGLUF_EXTENSIONS_H
 #define OBJGLUF_EXTENSIONS_H
 
+#include "ObjGLUF.h"
+#include "Exceptions.h"
+#include <map>
+#include <string>
+
 #define EXT_TO_TEXT(ext) #ext
 #define ASSERT_EXTENTION(ext) if(!gExtensions.HasExtension(#ext)) GLUF_CRITICAL_EXCEPTION(UnsupportedExtensionException(#ext));
 
@@ -9,10 +14,10 @@
 
 //for switch statements based on opengl version
 #define SWITCH_GL_VERSION if(false){}
-#define GL_VERSION_GREATER(val) else if(gGLVersion2Digit > val)
-#define GL_VERSION_GREATER_EQUAL(val) else if(gGLVersion2Digit >= val)
-#define GL_VERSION_LESS(val) else if(gGLVersion2Digit < val)
-#define GL_VERSION_LESS_EQUAL(val) else if(gGLVersion2Digit <= val)
+#define GL_VERSION_GREATER(val) else if(GetGLVersion2Digit() > val)
+#define GL_VERSION_GREATER_EQUAL(val) else if(GetGLVersion2Digit() >= val)
+#define GL_VERSION_LESS(val) else if(GetGLVersion2Digit() < val)
+#define GL_VERSION_LESS_EQUAL(val) else if(GetGLVersion2Digit() <= val)
 
 namespace GLUF {
 /*
@@ -28,79 +33,45 @@ GLExtensions
             randomly accessed extension support
 
 */
-class GLExtensions
-{
+class GLExtensions {
     std::map<std::string, bool> mExtensionList;
-
     std::map<std::string, bool> mBufferedExtensionList;
-
     std::vector<std::string> mCachedExtensionVector;
 
-    //--------------------------------------------------------------------------------------
-    void Init(const std::vector<std::string>& extensions)
-    {
-        for (auto it : extensions)
-        {
-            mExtensionList.insert({ it, true });
-        }
-
-        mCachedExtensionVector = extensions;
-    }
+    void Init(const std::vector<std::string> &extensions);
 
     friend bool InitOpenGLExtensions();
 public:
 
     //--------------------------------------------------------------------------------------
-    operator const std::vector<std::string>&() const
-    {
+    operator const std::vector<std::string> &() const {
         return mCachedExtensionVector;
     }
 
-    //--------------------------------------------------------------------------------------
-    bool HasExtension(const std::string& str)
-    {
-        //first look in the buffered list
-        auto buffIt = mBufferedExtensionList.find(str);
-        if (buffIt != mBufferedExtensionList.end())
-            return buffIt->second;
-
-        bool success = false;
-        auto it = mExtensionList.find(str);
-        if (it == mExtensionList.end())
-        {
-            //success = false; //defaults to false
-        }
-        else
-        {
-            success = true;
-        }
-
-        //buffer this one
-        mBufferedExtensionList.insert({ str, success });
-
-        //then return
-        return success;
-    }
+    bool HasExtension(const std::string &str);
 };
 
-class UnsupportedExtensionException : public Exception
-{
+class UnsupportedExtensionException : public Exception {
     const std::string mExt;
 public:
-    virtual const char* what() const noexcept override
-    {
+    virtual const char *what() const noexcept override {
         std::stringstream ss;
         ss << "Unsupported Extension: \"" << mExt << "\"";
         return ss.str().c_str();
     }
 
-    UnsupportedExtensionException(const std::string& ext) : mExt(ext)
-    {
+    UnsupportedExtensionException(const std::string &ext) : mExt(ext) {
         EXCEPTION_CONSTRUCTOR_BODY
     }
 };
 
+// TODO: make this internal to the GLExtensions class
 extern GLExtensions gExtensions;
+
+
+GLuint GetGLVersionMajor();
+GLuint GetGLVersionMinor();
+GLuint GetGLVersion2Digit();
 }
 
 #endif //OBJGLUF_EXTENSIONS_H

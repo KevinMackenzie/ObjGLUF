@@ -2,47 +2,9 @@
 #define OBJGLUF_TYPES_H
 
 #include "Exports.h"
+#include <memory>
 
 namespace GLUF {
-/*
-======================================================================================================================================================================================================
-Forward Declarations
-
-*/
-
-class OBJGLUF_GUI_API DialogResourceManager;
-
-class OBJGLUF_GUI_API Control;
-
-class OBJGLUF_GUI_API Button;
-
-class OBJGLUF_GUI_API Static;
-
-class OBJGLUF_GUI_API CheckBox;
-
-class OBJGLUF_GUI_API RadioButton;
-
-class OBJGLUF_GUI_API ComboBox;
-
-class OBJGLUF_GUI_API Slider;
-
-class OBJGLUF_GUI_API EditBox;
-
-class OBJGLUF_GUI_API ListBox;
-
-class OBJGLUF_GUI_API ScrollBar;
-
-class OBJGLUF_GUI_API Element;
-
-class OBJGLUF_GUI_API Font;
-
-class OBJGLUF_GUI_API Dialog;
-
-class OBJGLUF_GUI_API TextHelper;
-
-struct ElementHolder;
-struct TextureNode;
-struct FontNode;
 
 /*
 ======================================================================================================================================================================================================
@@ -114,28 +76,6 @@ enum Charset {
     Unicode = 5
 };
 
-/*
-
-Alphabetized list of  GUI Pointer Aliases
-
-*/
-using ButtonPtr                 = std::shared_ptr<Button>;
-using CheckBoxPtr               = std::shared_ptr<CheckBox>;
-using ComboBoxPtr               = std::shared_ptr<ComboBox>;
-using ControlPtr                = std::shared_ptr<Control>;
-using DialogPtr                 = std::shared_ptr<Dialog>;
-using DialogResourceManagerPtr  = std::shared_ptr<DialogResourceManager>;
-using EditBoxPtr                = std::shared_ptr<EditBox>;
-using ElementPtr                = std::shared_ptr<Element>;
-using ListBoxPtr                = std::shared_ptr<ListBox>;
-using RadioButtonPtr            = std::shared_ptr<RadioButton>;
-using ScrollBarPtr              = std::shared_ptr<ScrollBar>;
-using SliderPtr                 = std::shared_ptr<Slider>;
-using StaticPtr                 = std::shared_ptr<Static>;
-using TextHelperPtr             = std::shared_ptr<TextHelper>;
-using ElementHolderPtr          = std::shared_ptr<ElementHolder>;
-using FontNodePtr               = std::shared_ptr<FontNode>;
-using TextureNodePtr            = std::shared_ptr<TextureNode>;
 
 using TextureIndex      = uint32_t;
 using TextureIndexResMan= uint32_t;

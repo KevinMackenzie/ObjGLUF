@@ -2,6 +2,7 @@
 #define OBJGLUF_TEXTURE_H
 
 #include "../ObjGLUF.h"
+#include "../Exceptions.h"
 
 namespace GLUF {
 /*

@@ -2,6 +2,7 @@
 #define OBJGLUF_SHADER_H
 
 #include "../ObjGLUF.h"
+#include "../Exceptions.h"
 
 namespace GLUF {
 

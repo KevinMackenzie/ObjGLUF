@@ -3,6 +3,37 @@
 namespace GLUF {
 /*
 =======================================================================================================================================================================================================
+Premade Attribute Info's which comply with Assimp capibilities, but are not exclusive to them
+
+
+*/
+
+//initialize the standard vertex attributes
+//                            Name            bytes,    count,    location,                    type,     offset
+const VertexAttribInfo    g_attribPOS     = { 4,        3,        GLUF_VERTEX_ATTRIB_POSITION, GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribNORM    = { 4,        3,        GLUF_VERTEX_ATTRIB_NORMAL,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV0     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV0,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV1     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV1,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV2     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV2,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV3     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV3,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV4     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV4,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV5     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV5,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV6     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV6,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribUV7     = { 4,        2,        GLUF_VERTEX_ATTRIB_UV7,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR0  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR0,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR1  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR1,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR2  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR2,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR3  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR3,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR4  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR4,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR5  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR5,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR6  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR6,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribCOLOR7  = { 4,        4,        GLUF_VERTEX_ATTRIB_COLOR7,   GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribTAN     = { 4,        3,        GLUF_VERTEX_ATTRIB_TAN,      GL_FLOAT, 0 };
+const VertexAttribInfo    g_attribBITAN   = { 4,        3,        GLUF_VERTEX_ATTRIB_BITAN,    GL_FLOAT, 0 };
+VertexAttribMap g_stdAttrib;
+
+/*
+=======================================================================================================================================================================================================
 Assimp Utility Functions
 
 */

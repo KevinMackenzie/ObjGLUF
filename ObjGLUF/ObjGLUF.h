@@ -54,18 +54,7 @@ for more details.
 #include <mutex>
 #include <exception>
 
-#ifndef OBJGLUF_EXPORTS
-#ifndef SUPPRESS_RADIAN_ERROR
-#error "GLM is using radians as input, to suppress this error, #define SUPPRESS_RADIAN_ERROR"
-#endif
-#endif
-
-#ifndef OBJGLUF_EXPORTS
-#ifndef SUPPRESS_UTF8_ERROR
-#error "ATTENTION, all strings MUST be in utf8 encoding"
-#endif
-#endif
-
+// TODO: deal with this
 //uncomment this to build in release mode (i.e. no non-critical exceptions)
 #define GLUF_DEBUG
 #ifndef GLUF_DEBUG
@@ -261,22 +250,6 @@ Timing Macros (Uses GLFW Built-In Timer)
 
 /*
 ======================================================================================================================================================================================================
-Type Aliases
-
-*/
-
-using Color   = glm::u8vec4;//only accepts numbers from 0 to 255
-using Color3f = glm::vec3;
-using Color4f = glm::vec4;
-using Vec4Array = std::vector<glm::vec4>;
-using Vec3Array =  std::vector<glm::vec3>;
-using Vec2Array = std::vector<glm::vec2>;
-using IndexArray = std::vector<GLuint>;
-using AttribLoc = GLuint;
-
-
-/*
-======================================================================================================================================================================================================
 Mathematical and Conversion Macros
 
 */
@@ -377,84 +350,6 @@ OBJGLUF_API void LoadBinaryArrayIntoString(const std::vector<char>& rawMemory, s
 
 /*
 ======================================================================================================================================================================================================
-OpenGL Basic Data Structures and Operators
-
-Note: these only play a significant role in Gui, but are presented here as basic types and utilities which can be used independently of the Gui
-
-*/
-
-
-//Rect is supposed to be used where the origin is bottom left
-struct OBJGLUF_API Rect
-{
-    union{ long left, x; };
-    long top, right;
-    union{ long bottom, y; };
-};
-
-struct OBJGLUF_API Rectf
-{
-    float left, top, right, bottom;
-};
-
-struct OBJGLUF_API Point
-{
-    union{ long x, width; };
-    union{ long y, height; };
-
-    Point(long val1, long val2) : x(val1), y(val2){}
-    Point() : x(0L), y(0L){}
-};
-
-inline Point operator /(const Point& pt0, const Point& pt1)
-{
-    return{ pt0.x / pt1.x, pt0.y / pt1.y };
-}
-
-inline Point operator /(const Point& pt0, const long& f)
-{
-    return{ pt0.x / f, pt0.y / f };
-}
-
-inline Point operator -(const Point& pt0, const Point& pt1)
-{
-    return{ pt0.x - pt1.x, pt0.y - pt1.y };
-}
-
-inline bool operator ==(const Rect& rc0, const Rect& rc1)
-{
-    return
-        (
-        rc0.left == rc1.left && rc0.right == rc1.right &&
-        rc0.top == rc1.top  && rc0.bottom == rc1.bottom
-        );
-}
-
-inline bool operator !=(const Rect& rc0, const Rect& rc1)
-{
-    return !(rc0 == rc1);
-}
-
-inline void bFlip(bool& b)
-{
-    b = !b;
-}
-
-OBJGLUF_API bool        PtInRect(const Rect& rect, const Point& pt);
-OBJGLUF_API void        SetRectEmpty(Rect& rect);
-OBJGLUF_API void        SetRect(Rect& rect, long left, long top, long right, long bottom);
-OBJGLUF_API void        SetRect(Rectf& rect, float left, float top, float right, float bottom);
-OBJGLUF_API void        OffsetRect(Rect& rect, long x, long y);
-OBJGLUF_API void        RepositionRect(Rect& rect, long newX, long newY);
-OBJGLUF_API long        RectHeight(const Rect& rect);
-OBJGLUF_API long        RectWidth(const Rect& rect);
-OBJGLUF_API void        InflateRect(Rect& rect, long dx, long dy);//center stays in same spot
-OBJGLUF_API void        ResizeRect(Rect& rect, long newWidth, long newHeight);//bottom left stays in same spot
-OBJGLUF_API bool        IntersectRect(const Rect& rect0, const Rect& rect1, Rect& rectIntersect);
-OBJGLUF_API Point        MultPoints(const Point& pt0, const Point& pt1);
-
-/*
-======================================================================================================================================================================================================
 Misc.  Classes
 
 
@@ -500,28 +395,6 @@ public:
 };
 
 
-
-
-//macro for forcing an exception to show up on the log upon contruction
-#define EXCEPTION_CONSTRUCTOR_BODY \
-    GLUF_ERROR_LONG(" Exception Thrown: \"" << what() << "\"");
-#define EXCEPTION_CONSTRUCTOR(class_name) \
-class_name() \
-{ \
-    GLUF_ERROR_LONG(" Exception Thrown: \"" << what() << "\""); \
-}
-
-/*
-Exception
-
-    Serves as base class for all other  exceptions.
-    Override MyUniqueMessage in children
-*/
-    class Exception : public std::exception {
-    public:
-
-        const char *what() const noexcept = 0;
-    };
 
 
 
@@ -641,45 +514,6 @@ AdoptArray
 
 template<typename T>
 inline std::vector<T> AdoptArray(T*& arr, unsigned long len) noexcept;
-
-/*
-GetVec2FromRect
-    
-    Parameters:
-        'rect': the rect to retreive from
-        'x': true: right; false: left
-        'y': true: top; false: bottom
-
-*/
-OBJGLUF_API glm::vec2 GetVec2FromRect(const Rect& rect, bool x, bool y);
-OBJGLUF_API glm::vec2 GetVec2FromRect(const Rectf& rect, bool x, bool y);
-
-//used for getting vertices from rects 0,0 is bottom left
-OBJGLUF_API Point GetPointFromRect(const Rect& rect, bool x, bool y);
-
-
-OBJGLUF_API Color4f ColorToFloat(const Color& color);//takes 0-255 to 0.0f - 1.0f
-OBJGLUF_API Color3f ColorToFloat3(const Color& color);//takes 0-255 to 0.0f - 1.0f
-
-
-/*
-WStringToString
-
-    Converts std::wstring to std::string
-
-*/
-
-OBJGLUF_API std::string WStringToString(const std::wstring& str) noexcept;
-
-
-/*
-StringToWString
-
-    Converts std::string to std::wstring
-
-*/
-
-OBJGLUF_API std::wstring StringToWString(const std::string& str) noexcept;
 
 }
 

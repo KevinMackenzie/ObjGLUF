@@ -1,6 +1,11 @@
 #ifndef OBJGLUF_CONTROL_H
 #define OBJGLUF_CONTROL_H
 
+#include "Exports.h"
+#include "Dialog.h"
+#include "Types.h"
+#include <memory>
+
 namespace GLUF {
 /*
 Control
@@ -25,7 +30,7 @@ Control
         'mElements': the elements making up this control
 
 */
-class Control : public std::enable_shared_from_this<Control> {
+class OBJGLUF_GUI_API Control : public std::enable_shared_from_this<Control> {
 protected:
     /*
     Constructor
@@ -218,6 +223,8 @@ protected:
     */
     virtual void UpdateRects() noexcept {}
 };
+
+using ControlPtr = std::shared_ptr<Control>;
 
 }
 #endif //OBJGLUF_CONTROL_H

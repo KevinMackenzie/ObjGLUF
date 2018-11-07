@@ -1,4 +1,6 @@
 #include "Shader.h"
+#include "../GLExtensions.h"
+#include <fstream>
 
 namespace GLUF {
 

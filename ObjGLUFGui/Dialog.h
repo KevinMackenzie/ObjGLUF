@@ -1,6 +1,10 @@
 #ifndef OBJGLUF_DIALOG_H
 #define OBJGLUF_DIALOG_H
 
+#include "Exports.h"
+#include "Control.h"
+#include <memory>
+
 namespace GLUF {
 
 /*
@@ -51,7 +55,7 @@ Dialog
         'mMousePositionOld': the mouse position cached when the mouse is pressed down to detect whether it is a drag or a minimize/maximize event
 
 */
-class Dialog : public std::enable_shared_from_this<Dialog> {
+class OBJGLUF_GUI_API Dialog : public std::enable_shared_from_this<Dialog> {
     friend class DialogResourceManager;
 
     bool mFirstTime = true;

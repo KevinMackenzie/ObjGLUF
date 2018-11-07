@@ -1,6 +1,8 @@
 #ifndef OBJGLUF_GLVECTOR_INL
 #define OBJGLUF_GLVECTOR_INL
 
+#include <stdexcept>
+
 namespace GLUF {
 /*
 ===================================================================================================

@@ -18,6 +18,8 @@ for more details.
 #pragma once
 
 #include "../ObjGLUF/ObjGLUF.h"
+#include "Types.h"
+#include "Control.h"
 
 
 /*
@@ -98,7 +100,7 @@ protected:
     virtual void EventCallback() = 0;
 
 public:
-    static void EventCallbackStatic(Event event, int ctrlId, Control);
+    static void EventCallbackStatic(Event event, int ctrlId, Control&);
 };
 
 using EventCallbackReceivablePtr = std::shared_ptr<EventCallbackReceivable>;

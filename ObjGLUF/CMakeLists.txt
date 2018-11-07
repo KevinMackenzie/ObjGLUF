@@ -19,8 +19,9 @@ set(objgluf_HEADERS
         VertexBuffer/GLVector.h
         VertexBuffer/GLVector.inl
         VertexBuffer/VertexBuffer.inl
-        Exports.h
-        Extensions.h)
+        GLExtensions.h
+        Exceptions.h
+        GLExtensions.cpp Types.h Types.cpp)
 
 add_definitions(-DOBJGLUF_EXPORTS)
 
